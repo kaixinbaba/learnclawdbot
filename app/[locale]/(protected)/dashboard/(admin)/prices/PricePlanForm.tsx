@@ -166,7 +166,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
       form.setValue("price", undefined, { shouldValidate: true });
       form.setValue("currency", "", { shouldValidate: true });
     }
-  }, [watchStripePriceId]);
+  }, [watchStripePriceId, initialData?.stripe_price_id]);
 
   const handleStripeVerify = async () => {
     const priceId = form.getValues("stripe_price_id");
@@ -622,7 +622,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                           />
                         </FormControl>
                         <FormDescription>
-                          Required if payment type is 'recurring'.
+                          Required if payment type is &apos;recurring&apos;.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
