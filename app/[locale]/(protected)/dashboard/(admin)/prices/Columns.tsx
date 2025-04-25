@@ -14,10 +14,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Link as I18nLink } from "@/i18n/routing";
 import { PricingPlan } from "@/types/pricing";
 import { ColumnDef, TableMeta } from "@tanstack/react-table";
 import { ArrowUpDown, ExternalLink, MoreHorizontal } from "lucide-react";
-import Link from "next/link";
 
 interface CustomTableMeta extends TableMeta<PricingPlan> {
   openDeleteDialog: (plan: PricingPlan) => void;
@@ -196,7 +196,9 @@ export const columns: ColumnDef<PricingPlan>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem asChild>
-              <Link href={`/dashboard/prices/${plan.id}/edit`}>Edit Plan</Link>
+              <I18nLink href={`/dashboard/prices/${plan.id}/edit`}>
+                Edit Plan
+              </I18nLink>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(plan.id)}

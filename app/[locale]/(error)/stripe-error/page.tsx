@@ -1,9 +1,8 @@
 import { Card } from "@/components/ui/card";
-import { Locale } from "@/i18n/routing";
+import { Link as I18nLink, Locale } from "@/i18n/routing";
 import { constructMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
 
 type Params = Promise<{ locale: string }>;
 
@@ -45,15 +44,18 @@ export default async function StripeErrorPage({
       <div className="p-8 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">{t("title")}</h1>
         <p className="mb-6">{message}</p>
-        <Link href="/" className="px-4 py-2 gradient-bg text-white rounded-md">
+        <I18nLink
+          href="/"
+          className="px-4 py-2 gradient-bg text-white rounded-md"
+        >
           {t("goToHome")}
-        </Link>
-        <Link
+        </I18nLink>
+        <I18nLink
           href="/dashboard"
           className="ml-4 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           {t("goToDashboard")}
-        </Link>
+        </I18nLink>
       </div>
     </Card>
   );
