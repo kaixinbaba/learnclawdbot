@@ -50,13 +50,12 @@ ON public.users FOR SELECT
 USING (auth.uid() = id);
 
 -- Allow user to update their own profile
-  -- Only allows updating specific fields: full_name, avatar_url, billing_address, invite_code
+  -- Only allows updating specific fields: full_name, avatar_url, invite_code
   -- Add more fields as needed.
   -- See example usage in /api/user/settings/route.ts -> supabase.rpc('update_my_profile', ...)
 CREATE OR REPLACE FUNCTION update_my_profile(
     new_full_name TEXT,
     new_avatar_url TEXT,
-    new_billing_address JSONB,
     new_invite_code TEXT
 )
 RETURNS void
@@ -68,12 +67,14 @@ BEGIN
   SET
     full_name = new_full_name,
     avatar_url = new_avatar_url,
-    invite_code = new_invite_code
+    -- Use CASE to convert an empty string to NULL, otherwise use the provided value
+    invite_code = CASE WHEN new_invite_code = '' THEN NULL ELSE new_invite_code END
   WHERE id = auth.uid();
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION update_my_profile(TEXT, TEXT, JSONB, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION update_my_profile(TEXT, TEXT, TEXT) TO authenticated;
+
 
 -- =============================================
 -- Create Trigger for Profile Creation!
