@@ -49,7 +49,7 @@ export function UserInfo({ mobile = false, renderContainer }: UserInfoProps) {
     );
   }
 
-  const isStripeEnabled = !!process.env.NEXT_PUBLIC_ENABLE_STRIPE;
+  const isStripeEnabled = process.env.NEXT_PUBLIC_ENABLE_STRIPE === "true";
 
   const BenefitsLoadingFallback = () => (
     <Skeleton className="h-6 w-20 rounded-md" />

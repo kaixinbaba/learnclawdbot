@@ -69,7 +69,7 @@ export default async function LocaleLayout({
   let benefitsPromise: Promise<UserBenefits | null>;
 
   const isSupabaseEnabled = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const isStripeEnabled = !!process.env.NEXT_PUBLIC_ENABLE_STRIPE;
+  const isStripeEnabled = process.env.NEXT_PUBLIC_ENABLE_STRIPE === "true";
 
   if (isSupabaseEnabled) {
     supabase = await createClient();
