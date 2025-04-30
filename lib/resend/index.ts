@@ -1,5 +1,12 @@
 
 import { Resend } from 'resend';
 
-export const resend = new Resend(process.env.RESEND_API_KEY!);
+let resend = null;
 
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY);
+} else {
+  console.warn('Warning: RESEND_API_KEY is not set');
+}
+
+export default resend;
