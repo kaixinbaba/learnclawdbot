@@ -193,9 +193,7 @@
           "title": "前端框架",
           "icon": "Code",
           "description": "基于 Next.js 与 React 构建的现代化响应式界面",
-          "colorClass": "bg-blue-50 dark:bg-blue-950/20",
-          "borderClass": "border-blue-200 dark:border-blue-800",
-          "iconClass": "text-blue-600 dark:text-blue-400",
+          "color": "blue",
           "items": [
             {
               "name": "Next.js",
@@ -223,9 +221,7 @@
           "title": "后端与数据库",
           "icon": "Server",
           "description": "安全可靠的数据存储和用户认证系统",
-          "colorClass": "bg-emerald-50 dark:bg-emerald-950/20",
-          "borderClass": "border-emerald-200 dark:border-emerald-800",
-          "iconClass": "text-emerald-600 dark:text-emerald-400",
+          "color": "emerald",
           "items": [
             {
               "name": "Supabase",
@@ -253,9 +249,7 @@
           "title": "AI & 集成服务",
           "icon": "Sparkles",
           "description": "AI 功能和第三方服务集成",
-          "colorClass": "bg-violet-50 dark:bg-violet-950/20",
-          "borderClass": "border-violet-200 dark:border-violet-800",
-          "iconClass": "text-violet-600 dark:text-violet-400",
+          "color": "violet",
           "items": [
             {
               "name": "AI SDK",

@@ -12,29 +12,24 @@ type UserCaseConfig = {
 };
 
 type UseCase = UserCaseConfig & {
-  title: string;
-  description: string;
-  tags: string[];
-  image: string;
-  icon: string;
-  iconColor: string;
+  iconBg: string;
   bgColor: string;
-  tagColor: string;
+  tagBg: string;
   tagTextColor: string;
 };
 
 export default function UseCases() {
   const t = useTranslations("Landing.UseCases");
 
-  const useCases: UseCase[] = t.raw("cases").map((item: UseCase) => ({
+  const useCases: UseCase[] = t.raw("cases").map((item: UserCaseConfig) => ({
     title: item.title,
     description: item.description,
     tags: item.tags,
     image: item.image,
     icon: item.icon,
-    iconColor: colors[item.color || "default"].icon,
+    iconBg: colors[item.color || "default"].iconBg,
     bgColor: colors[item.color || "default"].bg,
-    tagColor: colors[item.color || "default"].tag,
+    tagBg: colors[item.color || "default"].tagBg,
     tagTextColor: colors[item.color || "default"].text,
   }));
 
@@ -69,7 +64,7 @@ export default function UseCases() {
             >
               <div className="flex items-center gap-4 mb-4">
                 <div
-                  className={`w-12 h-12 rounded-lg text-gray-700 ${useCase.iconColor} flex items-center justify-center`}
+                  className={`w-12 h-12 rounded-lg text-gray-700 dark:text-gray-200 ${useCase.iconBg} flex items-center justify-center`}
                 >
                   <DynamicIcon name={useCase.icon} className="w-6 h-6" />
                 </div>
@@ -84,7 +79,7 @@ export default function UseCases() {
                 {useCase.tags.map((tag) => (
                   <span
                     key={tag}
-                    className={`${useCase.tagColor} ${useCase.tagTextColor} text-xs px-2 py-1 rounded`}
+                    className={`${useCase.tagBg} ${useCase.tagTextColor} text-xs px-2 py-1 rounded`}
                   >
                     {tag}
                   </span>

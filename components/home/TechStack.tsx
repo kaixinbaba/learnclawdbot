@@ -1,4 +1,5 @@
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { colors } from "@/config/colors";
 import { Link as I18nLink } from "@/i18n/routing";
 import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -9,32 +10,38 @@ type Technology = {
   logo: string;
 };
 
-type TechGroup = {
+type TechGroupConfig = {
   title: string;
   icon: string;
   description: string;
+  color?: keyof typeof colors;
+  items: Technology[];
+};
+
+type TechGroup = TechGroupConfig & {
   colorClass: string;
   borderClass: string;
   iconClass: string;
-  items: Technology[];
 };
 
 export default function TechStack() {
   const t = useTranslations("Landing.TechStack");
 
-  const techGroups: TechGroup[] = t.raw("groups").map((group: any) => ({
-    title: group.title,
-    icon: group.icon,
-    description: group.description,
-    colorClass: group.colorClass,
-    borderClass: group.borderClass,
-    iconClass: group.iconClass,
-    items: group.items.map((item: any) => ({
-      name: item.name,
-      description: item.description,
-      logo: item.logo,
-    })),
-  }));
+  const techGroups: TechGroup[] = t
+    .raw("groups")
+    .map((group: TechGroupConfig) => ({
+      title: group.title,
+      icon: group.icon,
+      description: group.description,
+      colorClass: colors[group.color || "default"].bg,
+      borderClass: colors[group.color || "default"].border,
+      iconClass: colors[group.color || "default"].text,
+      items: group.items.map((item: any) => ({
+        name: item.name,
+        description: item.description,
+        logo: item.logo,
+      })),
+    }));
 
   const technologies: Technology[] = techGroups.flatMap((group) => group.items);
 

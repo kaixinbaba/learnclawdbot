@@ -193,9 +193,7 @@
           "title": "Frontend Framework",
           "icon": "Code",
           "description": "Modern responsive interfaces built with Next.js and React",
-          "colorClass": "bg-blue-50 dark:bg-blue-950/20",
-          "borderClass": "border-blue-200 dark:border-blue-800",
-          "iconClass": "text-blue-600 dark:text-blue-400",
+          "color": "blue",
           "items": [
             {
               "name": "Next.js",
@@ -223,9 +221,7 @@
           "title": "Backend & Database",
           "icon": "Server",
           "description": "Secure and reliable data storage with robust authentication",
-          "colorClass": "bg-emerald-50 dark:bg-emerald-950/20",
-          "borderClass": "border-emerald-200 dark:border-emerald-800",
-          "iconClass": "text-emerald-600 dark:text-emerald-400",
+          "color": "emerald",
           "items": [
             {
               "name": "Supabase",
@@ -253,9 +249,7 @@
           "title": "AI & Integration",
           "icon": "Sparkles",
           "description": "AI capabilities and third-party service integration",
-          "colorClass": "bg-violet-50 dark:bg-violet-950/20",
-          "borderClass": "border-violet-200 dark:border-violet-800",
-          "iconClass": "text-violet-600 dark:text-violet-400",
+          "color": "violet",
           "items": [
             {
               "name": "AI SDK",
