@@ -490,7 +490,7 @@
       },
       {
         "name": "R2リソース",
-        "href": "/dashboard/images"
+        "href": "/dashboard/r2"
       },
       {
         "name": "料金プラン管理",
@@ -572,8 +572,6 @@
           "allEnvironments": "すべての環境",
           "test": "テスト環境",
           "live": "本番環境",
-          "columnsVisibility": "表示列設定",
-          "toggleColumns": "列表示切替",
           "noPlansFound": "料金プランが登録されていません。"
         },
         "DeletePlanDialog": {
@@ -678,6 +676,10 @@
           "stripeApiError": "Stripe APIエラー！ code: {code}, type: {type}, message: {message}"
         }
       }
+    },
+    "Common": {
+      "columnsVisibility": "Columns Visibility",
+      "toggleColumns": "Toggle Columns"
     }
   },
   "AIDemo": {

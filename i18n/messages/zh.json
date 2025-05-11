@@ -490,7 +490,7 @@
       },
       {
         "name": "R2资源管理",
-        "href": "/dashboard/images"
+        "href": "/dashboard/r2"
       },
       {
         "name": "定价管理",
@@ -572,8 +572,6 @@
           "allEnvironments": "全部",
           "test": "测试环境",
           "live": "生产环境",
-          "columnsVisibility": "列显示设置",
-          "toggleColumns": "切换显示列",
           "noPlansFound": "暂无定价卡片。"
         },
         "DeletePlanDialog": {
@@ -678,6 +676,10 @@
           "stripeApiError": "Stripe API 错误！code: {code}, type: {type}, message: {message}"
         }
       }
+    },
+    "Common": {
+      "columnsVisibility": "Columns Visibility",
+      "toggleColumns": "Toggle Columns"
     }
   },
   "AIDemo": {

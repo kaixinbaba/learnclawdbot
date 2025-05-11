@@ -490,7 +490,7 @@
       },
       {
         "name": "R2 Files",
-        "href": "/dashboard/images"
+        "href": "/dashboard/r2"
       },
       {
         "name": "Prices",
@@ -572,8 +572,6 @@
           "allEnvironments": "All Environments",
           "test": "Test",
           "live": "Live",
-          "columnsVisibility": "Columns Visibility",
-          "toggleColumns": "Toggle Columns",
           "noPlansFound": "No pricing plans found."
         },
         "DeletePlanDialog": {
@@ -678,6 +676,10 @@
           "stripeApiError": "Stripe API error! code: {code}, type: {type}, message: {message}"
         }
       }
+    },
+    "Common": {
+      "columnsVisibility": "Columns Visibility",
+      "toggleColumns": "Toggle Columns"
     }
   },
   "AIDemo": {

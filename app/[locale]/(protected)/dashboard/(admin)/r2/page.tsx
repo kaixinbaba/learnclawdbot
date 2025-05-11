@@ -28,7 +28,7 @@ export async function generateMetadata({
     title: t("title"),
     description: t("description"),
     locale: locale as Locale,
-    path: `/dashboard/images`,
+    path: `/dashboard/r2`,
   });
 }
 

@@ -60,6 +60,7 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
   data,
 }: DataTableProps<TData, TValue>) {
   const t = useTranslations("Dashboard.Admin.Prices.PricesDataTable");
+  const tCommon = useTranslations("Dashboard.Common");
   const locale = useLocale();
 
   const router = useRouter();
@@ -183,7 +184,7 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="md:ml-auto">
-              {t("columnsVisibility")}
+              {tCommon("columnsVisibility")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

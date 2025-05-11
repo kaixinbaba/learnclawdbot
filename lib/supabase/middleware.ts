@@ -1,16 +1,16 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// TODO:only (admin) can access
+// TODO:only admin
 const ROLE_PROTECTED_ROUTES: Record<string, string[]> = {
   'dashboard/users': ['admin'],
   'dashboard/blogs': ['admin'],
-  'dashboard/images': ['admin'],
+  'dashboard/r2': ['admin'],
   'dashboard/prices': ['admin'],
   'dashboard/showcases': ['admin'],
 } as const;
 
-// TODO:only login user can access
+// TODO:only login user
 const PROTECTED_ROUTES = ['dashboard']
 
 export async function updateSession(request: NextRequest) {
