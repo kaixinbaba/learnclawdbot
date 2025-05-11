@@ -330,7 +330,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
     isLoading: isTranslating,
     complete,
   } = useCompletion({
-    api: "/api/admin/pricing-plans/translate",
+    api: "/api/admin/translate",
     experimental_throttle: 300,
     body: {
       // you can change the model and provider here
