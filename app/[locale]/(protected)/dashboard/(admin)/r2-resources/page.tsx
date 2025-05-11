@@ -34,10 +34,10 @@ export async function generateMetadata({
 }
 
 const CATEGORIES = [
+  { name: "Blogs Images", prefix: BLOGS_IMAGE_PATH },
   { name: "Text to Image", prefix: "text-to-images/" },
   { name: "Image to Image", prefix: "image-to-images/" },
   { name: "Image to Video", prefix: "image-to-videos/" },
-  { name: "Blogs Images", prefix: BLOGS_IMAGE_PATH },
 ];
 const PAGE_SIZE = 20;
 

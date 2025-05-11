@@ -16,20 +16,34 @@ import { toast } from "sonner";
 
 const getFileType = (key: string): "image" | "video" | "other" => {
   const lowerKey = key.toLowerCase();
+
   if (lowerKey.includes("image-to-videos/")) return "video";
+
+  const parts = lowerKey.split(".");
+  if (parts.length < 2) {
+    return "other";
+  }
+
+  const extension = parts.pop();
+  if (!extension) {
+    return "other";
+  }
+
   if (
-    lowerKey.endsWith(".png") ||
-    lowerKey.endsWith(".jpg") ||
-    lowerKey.endsWith(".jpeg") ||
-    lowerKey.endsWith(".webp") ||
-    lowerKey.endsWith(".gif")
+    extension?.includes("png") ||
+    extension?.includes("jpg") ||
+    extension?.includes("jpeg") ||
+    extension?.includes("webp") ||
+    extension?.includes("gif") ||
+    extension?.includes("icon") ||
+    extension?.includes("svg")
   ) {
     return "image";
   }
   if (
-    lowerKey.endsWith(".mp4") ||
-    lowerKey.endsWith(".webm") ||
-    lowerKey.endsWith(".mov")
+    extension?.includes("mp4") ||
+    extension?.includes("webm") ||
+    extension?.includes("mov")
   ) {
     return "video";
   }
