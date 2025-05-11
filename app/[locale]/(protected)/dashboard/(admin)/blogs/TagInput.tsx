@@ -7,7 +7,7 @@ import { Tag as TagIcon, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { TagManagerDialog } from "./TagManagerDialog";
+import { TagSelectDialog } from "./TagSelectDialog";
 
 export type FormTag = {
   id: string;
@@ -85,7 +85,7 @@ export function TagInput({ value, onChange, disabled }: TagInputProps) {
         </Button>
       </div>
 
-      <TagManagerDialog
+      <TagSelectDialog
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         selectedTags={value || []}

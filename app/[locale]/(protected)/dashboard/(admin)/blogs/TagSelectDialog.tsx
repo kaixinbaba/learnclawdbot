@@ -30,7 +30,7 @@ export type FormTag = {
   name: string;
 };
 
-interface TagManagerDialogProps {
+interface TagSelectDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   selectedTags: FormTag[];
@@ -39,14 +39,14 @@ interface TagManagerDialogProps {
   isLoadingInitialTags: boolean;
 }
 
-export function TagManagerDialog({
+export function TagSelectDialog({
   isOpen,
   onOpenChange,
   selectedTags,
   onTagsChange,
   initialAvailableTags,
   isLoadingInitialTags,
-}: TagManagerDialogProps) {
+}: TagSelectDialogProps) {
   const t = useTranslations("Dashboard.Admin.Blogs.TagManager");
   const locale = useLocale();
 
