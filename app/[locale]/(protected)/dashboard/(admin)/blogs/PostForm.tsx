@@ -48,12 +48,13 @@ import {
   BoldItalicUnderlineToggles,
   codeBlockPlugin,
   CreateLink,
+  diffSourcePlugin,
+  DiffSourceToggleWrapper,
   frontmatterPlugin,
   headingsPlugin,
   imagePlugin,
   InsertImage,
   InsertTable,
-  InsertThematicBreak,
   linkDialogPlugin,
   linkPlugin,
   listsPlugin,
@@ -90,20 +91,25 @@ function ContentToolbar({
 }: ContentToolbarProps) {
   const t = useTranslations("Dashboard.Admin.Blogs.Form.toolbar");
 
+  const showTooltip =
+    !process.env.NEXT_PUBLIC_AI_MODEL_ID ||
+    !process.env.NEXT_PUBLIC_AI_PROVIDER;
+
   return (
     <>
-      <BoldItalicUnderlineToggles />
-      <Separator />
-      <ListsToggle />
-      <Separator />
-      <BlockTypeSelect />
-      <Separator />
-      <CreateLink />
-      <InsertImage />
-      <Separator />
-      <InsertTable />
-      <InsertThematicBreak />
-      <Separator />
+      <DiffSourceToggleWrapper>
+        <BoldItalicUnderlineToggles />
+        <Separator />
+        <ListsToggle />
+        <Separator />
+        <BlockTypeSelect />
+        <Separator />
+        <CreateLink />
+        <InsertImage />
+        <Separator />
+        <InsertTable />
+        <Separator />
+      </DiffSourceToggleWrapper>
       <div className="flex items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -507,6 +513,9 @@ export function PostForm({
                         imagePlugin({ imageUploadHandler: handleImageUpload }),
                         tablePlugin(),
                         markdownShortcutPlugin(),
+                        diffSourcePlugin({
+                          viewMode: "source",
+                        }),
                         toolbarPlugin({
                           toolbarContents: toolbarContentFunc,
                         }),
