@@ -511,6 +511,7 @@
     "noPostsFoundForThisTag": "No posts found with this tag",
     "reachedTheEnd": "You've reached the end of all posts",
     "BlogDetail": {
+      "featured": "Featured Post",
       "accessRestricted": "Access Restricted",
       "unauthorized": "This article is only available to logged-in users",
       "premium": "Premium Content",

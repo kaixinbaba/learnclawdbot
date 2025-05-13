@@ -1,14 +1,20 @@
 import { listPublishedPostsAction } from "@/actions/blogs/posts";
-import { Callout } from "@/components/mdx/Callout";
 import MDXComponents from "@/components/mdx/MDXComponents";
 import { Button } from "@/components/ui/button";
 import { Link as I18nLink, Locale, LOCALES } from "@/i18n/routing";
 import { getPostBySlug, getPosts } from "@/lib/getBlogs";
 import { constructMetadata } from "@/lib/metadata";
-import { ArrowRightIcon, LockIcon } from "lucide-react";
+import dayjs from "dayjs";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CalendarIcon,
+  LockIcon,
+} from "lucide-react";
 import { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MDXRemote } from "next-mdx-remote-client/rsc";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 type Params = Promise<{
@@ -80,17 +86,19 @@ export default async function BlogPage({ params }: { params: Params }) {
     }
 
     return (
-      <div className="w-full md:w-3/5 px-2 md:px-12 py-20 flex flex-col items-center">
-        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-          <div className="p-1 bg-gradient-to-r from-blue-500 to-teal-400"></div>
+      <div className="w-full max-w-4xl mx-auto px-4 py-20 flex flex-col items-center">
+        <div className="w-full max-w-md bg-card rounded-xl shadow-lg overflow-hidden">
+          <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
           <div className="p-8">
             <div className="flex items-center justify-center mb-6">
-              <LockIcon className="w-12 h-12 text-blue-500" />
+              <div className="p-4 bg-primary/10 rounded-full">
+                <LockIcon className="w-10 h-10 text-primary" />
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-3">
+            <h2 className="text-2xl font-bold text-center mb-4">
               {messageTitle}
             </h2>
-            <p className="text-center text-gray-600 dark:text-gray-300 mb-6">
+            <p className="text-center text-muted-foreground mb-8">
               {messageContent}
             </p>
             {actionText && (
@@ -99,21 +107,22 @@ export default async function BlogPage({ params }: { params: Params }) {
                   <I18nLink
                     href={`/blogs`}
                     prefetch={false}
-                    className="inline-flex items-center justify-center"
+                    className="inline-flex items-center justify-center gap-2"
                   >
+                    <ArrowLeftIcon className="w-4 h-4" />
                     {t("BlogDetail.backToBlogs")}
                   </I18nLink>
                 </Button>
                 <Button
-                  className="gradient-bg text-white hover:text-white rounded-lg hover:opacity-90 shadow-lg"
+                  className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white"
                   asChild
                 >
                   <I18nLink
                     href={actionLink}
-                    className="inline-flex items-center justify-center"
+                    className="inline-flex items-center justify-center gap-2"
                   >
                     {actionText}
-                    <ArrowRightIcon className="ml-2 -mr-1 w-4 h-4" />
+                    <ArrowRightIcon className="w-4 h-4" />
                   </I18nLink>
                 </Button>
               </div>
@@ -135,34 +144,115 @@ export default async function BlogPage({ params }: { params: Params }) {
         .filter((tag) => tag)
     : [];
 
+  const getVisibilityInfo = () => {
+    switch (post.visibility) {
+      case "subscribers":
+        return {
+          label: "Subscribers Only",
+          bgColor: "bg-purple-600",
+        };
+      case "logged_in":
+        return {
+          label: "Members Only",
+          bgColor: "bg-blue-600",
+        };
+      default:
+        return {
+          label: "Public",
+          bgColor: "bg-green-600",
+        };
+    }
+  };
+
+  const visibilityInfo = getVisibilityInfo();
+
   return (
-    <div className="w-full md:w-3/5 px-2 md:px-12">
-      <h1 className="break-words text-4xl font-bold mt-6 mb-4">{post.title}</h1>
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="mb-8">
+        <Button asChild variant="ghost" size="sm" className="group">
+          <I18nLink href="/blogs" prefetch={false}>
+            <ArrowLeftIcon className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            {t("BlogDetail.backToBlogs")}
+          </I18nLink>
+        </Button>
+      </div>
+
+      <header className="mb-12">
+        {post.visibility !== "public" && (
+          <div
+            className={`${visibilityInfo.bgColor} text-white text-xs px-3 py-1 rounded-full inline-flex mb-6`}
+          >
+            {visibilityInfo.label}
+          </div>
+        )}
+
+        <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
+          {post.title}
+        </h1>
+
+        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8">
+          <div className="flex items-center">
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {dayjs(post.published_at).format("MMMM D, YYYY")}
+          </div>
+
+          {post.is_pinned && (
+            <div className="flex items-center bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 px-2 py-0.5 rounded-md text-xs">
+              {t("BlogDetail.featured")}
+            </div>
+          )}
+        </div>
+
+        {post.description && (
+          <div className="bg-muted rounded-lg p-6 text-lg mb-8">
+            {post.description}
+          </div>
+        )}
+      </header>
+
       {post.featured_image_url && (
-        <img
-          src={post.featured_image_url}
-          alt={post.title}
-          className="rounded-sm mb-4"
-        />
-      )}
-      {tagsArray.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {tagsArray.map((tag) => {
-            return (
-              <div
-                key={tag}
-                className={`rounded-md bg-gray-200 hover:!no-underline dark:bg-[#24272E] flex px-2.5 py-1.5 text-sm font-medium transition-colors hover:text-black hover:dark:bg-[#15AFD04C] hover:dark:text-[#82E9FF] text-gray-500 dark:text-[#7F818C] outline-none focus-visible:ring transition`}
-              >
-                {tag}
-              </div>
-            );
-          })}
+        <div className="my-10 rounded-xl overflow-hidden shadow-md aspect-video relative">
+          <Image
+            src={post.featured_image_url}
+            alt={post.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 1200px"
+            priority
+            className="object-cover"
+            unoptimized={post.featured_image_url.startsWith("http")}
+          />
         </div>
       )}
-      {post.description && <Callout>{post.description}</Callout>}
-      <article className="prose dark:prose-invert max-w-none">
+
+      {tagsArray.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-10">
+          {tagsArray.map((tag) => (
+            <div
+              key={tag}
+              className="rounded-full bg-secondary/80 hover:bg-secondary px-3 py-1 text-sm font-medium transition-colors"
+            >
+              {tag}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <article className="prose dark:prose-invert lg:prose-lg prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-img:rounded-xl prose-img:shadow-md max-w-none">
         <MDXRemote source={post?.content || ""} components={MDXComponents} />
       </article>
+
+      <div className="mt-16 pt-8 border-t">
+        <Button asChild variant="outline" size="sm">
+          <I18nLink
+            href="/blogs"
+            prefetch={false}
+            className="inline-flex items-center"
+          >
+            <ArrowLeftIcon className="mr-2 h-4 w-4" />
+            {t("BlogDetail.backToBlogs")}
+          </I18nLink>
+        </Button>
+      </div>
     </div>
   );
 }

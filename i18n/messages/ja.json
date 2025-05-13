@@ -511,6 +511,7 @@
     "noPostsFoundForThisTag": "このタグの記事は見つかりませんでした",
     "reachedTheEnd": "すべての記事を表示しました",
     "BlogDetail": {
+      "featured": "特集記事",
       "accessRestricted": "アクセス制限",
       "unauthorized": "この記事はログインユーザーのみ閲覧できます",
       "premium": "プレミアムコンテンツ",

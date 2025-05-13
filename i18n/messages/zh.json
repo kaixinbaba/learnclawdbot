@@ -511,6 +511,7 @@
     "noPostsFoundForThisTag": "暂无此标签的博客文章",
     "reachedTheEnd": "已加载全部博客文章",
     "BlogDetail": {
+      "featured": "精选文章",
       "accessRestricted": "访问受限",
       "unauthorized": "此文章仅对登录用户开放",
       "premium": "付费内容",
