@@ -440,6 +440,7 @@ interface ListPublishedPostsParams {
   pageSize?: number;
   tagId?: string | null;
   locale?: string;
+  visibility?: 'public'; // only public posts, for generateStaticParams
 }
 
 interface ListPublishedPostsResult {
@@ -456,6 +457,7 @@ export async function listPublishedPostsAction({
   pageSize = 60,
   tagId = null,
   locale = 'en',
+  visibility,
 }: ListPublishedPostsParams = {}): Promise<ListPublishedPostsResult> {
   const supabaseAdmin = createAdminClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -480,6 +482,10 @@ export async function listPublishedPostsAction({
 
     if (tagId) {
       query = query.eq('tags.id', tagId);
+    }
+
+    if (visibility && visibility === 'public') {
+      query = query.eq('visibility', 'public');
     }
 
     const from = pageIndex * pageSize;
