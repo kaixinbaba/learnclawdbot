@@ -1,30 +1,46 @@
----
-description: 
-globs: 
-alwaysApply: false
----
-This is a Next.js project with TypeScript and Tailwind CSS.
-Key directories:
+# Project Structure Guidelines
 
-- `app/`: Core application code using Next.js App Router. Contains layouts, pages (routes), and route-specific components.
-- `components/`: Shared, reusable React components used across the application.
-- `lib/`: Utility functions, helper scripts, or third-party library configurations.
-- `public/`: Static assets (images, fonts, etc.) directly served by Next.js.
-- `styles/`: Global styles, Tailwind base/component styles if any (though primarily utility-first).
-- `i18n/`: Internationalization files (translations for different locales).
-- `content/`: Markdown files or other content sources for pages (e.g., blog posts, documentation).
-- `blogs/`: Likely contains blog content, possibly in Markdown format.
-- `data/`: May contain static data, mock data, or data fetching configurations.
-- `stores/`: If present, likely contains state management logic (e.g., Zustand, Jotai, Redux stores or React Context providers).
-- `types/`: TypeScript type definitions, especially shared or global types.
-- `config/`: Project-level configuration files or constants.
-- `emails/`: Templates or components for transactional emails if the project sends emails.
+This is a Next.js project with TypeScript, Tailwind CSS, Supabase auth, and AI integration.
+Key directories and files:
 
-Important files:
+## Core Directories
+- `app/`: App Router architecture with nested routes, layouts, and pages.
+  - `[locale]/`: Routes wrapped in locale context
+  - `api/`: API endpoints using Next.js Route Handlers
+  - `auth/`: Authentication routes for callbacks and verification
+- `components/`: Reusable React components organized by feature and functionality
+  - `ui/`: Shadcn UI components and base UI elements
+  - `providers/`: Context providers including AuthProvider
+  - `ai-demo/`: Components related to AI functionality
+- `lib/`: Utility functions, helpers, and configurations
+  - `supabase/`: Supabase client/server configuration
+  - `ai/`: AI model and provider configuration
+- `i18n/`: Internationalization configuration and message files
+  - `messages/`: Translation JSON files by language
+  - `routing.ts`: Locale routing configuration
+- `public/`: Static assets like images, fonts, and files
+- `styles/`: Global CSS styles and Tailwind configuration
+- `types/`: TypeScript type definitions and interfaces
+- `stores/`: Zustand state management stores
 
-- `next.config.mjs`: Next.js configuration.
-- `tailwind.config.ts`: Tailwind CSS configuration.
-- `tsconfig.json`: TypeScript configuration.
-- `package.json`: Project dependencies and scripts.
-- `middleware.ts`: Next.js middleware for handling requests, potentially for auth or i18n routing.
-- `.eslintrc.json`: ESLint configuration (extends `next/core-web-vitals`). 
+## Content and Config
+- `blogs/`: Blog content with markdown files
+- `content/`: General content for the site
+- `config/`: Configuration files for various features
+- `emails/`: Email templates for transactional emails
+
+## Configuration Files
+- `next.config.mjs`: Next.js configuration
+- `tailwind.config.ts`: Tailwind CSS configuration
+- `tsconfig.json`: TypeScript configuration
+- `middleware.ts`: Next.js middleware for auth and i18n routing
+- `.env.local`: Environment variables (credentials not in version control)
+- `.env.example`: Example environment variables template
+
+## Feature Guide
+- **Authentication**: Uses Supabase Auth with Google, GitHub, and email providers.
+- **Internationalization**: Uses next-intl for translations in English, Japanese, and Chinese.
+- **AI Integration**: Multiple AI providers (OpenAI, Anthropic, Google, etc.) configured for chat and completion.
+- **UI Framework**: Uses Shadcn UI components with Tailwind CSS for styling.
+- **State Management**: Uses Zustand for global state management.
+- **Database**: Uses Supabase for PostgreSQL database access. 
