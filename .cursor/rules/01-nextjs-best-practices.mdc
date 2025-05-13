@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 - Follow Next.js App Router conventions.
 - Prioritize React Server Components (RSCs) for performance. Only use Client Components (`'use client'`) when necessary (e.g., for interactivity, browser APIs, React Context).
 - Fetch data in Server Components where possible. Use `async/await` in Server Components.

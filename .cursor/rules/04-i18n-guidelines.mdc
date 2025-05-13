@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 - All user-facing strings should be internationalized.
 - Internationalization files (e.g., JSON, JS/TS modules) are likely located in the `i18n/` directory.
 - When adding new text, ensure translations are provided for all supported locales.

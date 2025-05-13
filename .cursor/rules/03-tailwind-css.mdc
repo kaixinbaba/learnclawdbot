@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 - Embrace the utility-first approach. Apply utilities directly in your JSX.
 - Use `@apply` in CSS modules or global stylesheets sparingly, primarily for very common, repeated sets of utilities that form a component-like abstraction not suitable for a React component, or for styling third-party components.
 - Customization:

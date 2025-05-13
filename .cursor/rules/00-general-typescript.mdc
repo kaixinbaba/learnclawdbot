@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 - Strive for strong typing. Use `unknown` instead of `any` where possible if the type is truly unknown.
 - Prefer `interface` for defining object shapes and `type` for unions, intersections, or utility types.
 - Use explicit return types for functions, especially for public APIs or complex logic.
