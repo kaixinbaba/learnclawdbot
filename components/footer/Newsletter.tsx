@@ -1,6 +1,6 @@
 "use client";
 
-import { subscribeToNewsletter } from "@/app/actions/newsletter";
+import { subscribeToNewsletter } from "@/actions/newsletter";
 import { normalizeEmail, validateEmail } from "@/lib/email";
 import { cn } from "@/lib/utils";
 import { Send } from "lucide-react";

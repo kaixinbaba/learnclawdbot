@@ -1,4 +1,4 @@
-import { unsubscribeFromNewsletter } from "@/app/actions/newsletter";
+import { unsubscribeFromNewsletter } from "@/actions/newsletter";
 import { Link as I18nLink } from "@/i18n/routing";
 import { ArrowLeft } from "lucide-react";
 
