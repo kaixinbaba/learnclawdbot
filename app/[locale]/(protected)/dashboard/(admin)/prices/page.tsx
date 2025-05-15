@@ -1,7 +1,8 @@
-import { getAdminPricingPlans } from "@/app/actions/getPricingPlan";
+import { getAdminPricingPlans } from "@/actions/prices";
 import { Button } from "@/components/ui/button";
 import { Link as I18nLink, Locale } from "@/i18n/routing";
 import { constructMetadata } from "@/lib/metadata";
+import { PricingPlan } from "@/types/pricing";
 import { PlusCircle } from "lucide-react";
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
@@ -32,9 +33,15 @@ export async function generateMetadata({
 }
 
 export default async function AdminPricesPage() {
-  const plans = await getAdminPricingPlans();
-
+  const result = await getAdminPricingPlans();
   const t = await getTranslations("Dashboard.Admin.Prices");
+
+  let plans: PricingPlan[] = [];
+  if (result.success) {
+    plans = result.data || [];
+  } else {
+    console.error("Failed to fetch admin pricing plans:", result.error);
+  }
 
   return (
     <div className="space-y-6">

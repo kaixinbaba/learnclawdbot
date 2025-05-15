@@ -1,4 +1,4 @@
-import { getPublicPricingPlans } from "@/app/actions/getPricingPlan";
+import { getPublicPricingPlans } from "@/actions/prices";
 import PricingCTA from "@/components/home/PricingCTA";
 import { PricingPlan } from "@/types/pricing";
 import { Check, X } from "lucide-react";
@@ -14,7 +14,14 @@ export default async function Pricing() {
 
   const locale = await getLocale();
 
-  const newPlans: PricingPlan[] = await getPublicPricingPlans();
+  let newPlans: PricingPlan[] = [];
+  const result = await getPublicPricingPlans();
+
+  if (result.success) {
+    newPlans = result.data || [];
+  } else {
+    console.error("Failed to fetch public pricing plans:", result.error);
+  }
 
   return (
     <section id="pricing" className="py-20 bg-white dark:bg-gray-900">
@@ -40,7 +47,9 @@ export default async function Pricing() {
         </div>
 
         <div
-          className={`grid grid-cols-1  gap-8 md:grid-cols-${newPlans.length}`}
+          className={`grid grid-cols-1  gap-8 md:grid-cols-${
+            newPlans.length > 0 ? newPlans.length : 1
+          }`}
         >
           {newPlans.map((plan) => {
             const localizedPlan =

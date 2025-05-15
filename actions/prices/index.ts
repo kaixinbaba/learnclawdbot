@@ -1,3 +1,7 @@
+'use server';
+
+import { actionResponse, ActionResult } from '@/lib/action-response';
+import { getErrorMessage } from '@/lib/error-utils';
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/lib/supabase/types";
 import { PricingPlan } from "@/types/pricing";
@@ -6,57 +10,52 @@ import {
 } from "@supabase/supabase-js";
 import 'server-only';
 
-export async function getAdminPricingPlans(): Promise<PricingPlan[]> {
+export async function getAdminPricingPlans(): Promise<ActionResult<PricingPlan[]>> {
   const supabaseAdmin = createAdminClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
   try {
-    let query = supabaseAdmin
+    const { data: plans, error } = await supabaseAdmin
       .from("pricing_plans")
       .select("*")
       .order("environment", { ascending: true })
       .order("display_order", { ascending: true });
 
-    const { data: plans, error } = await query;
-
     if (error) {
       console.error("Error fetching pricing plans for admin page:", error);
-      throw new Error(`Failed to fetch pricing plans: ${error.message}`);
+      return actionResponse.error(`Failed to fetch pricing plans: ${error.message}`);
     }
 
-    return (plans as unknown as PricingPlan[]) || [];
+    return actionResponse.success((plans as unknown as PricingPlan[]) || []);
   } catch (error) {
     console.error("Unexpected error in getAdminPricingPlans:", error);
-    throw error;
+    return actionResponse.error(getErrorMessage(error));
   }
 }
 
-export async function getPublicPricingPlans(): Promise<PricingPlan[]> {
-
+export async function getPublicPricingPlans(): Promise<ActionResult<PricingPlan[]>> {
   const supabase = await createClient();
   const environment = process.env.NODE_ENV === 'production' ? 'live' : 'test';
 
   try {
-    let query = supabase
+    const { data: plans, error } = await supabase
       .from("pricing_plans")
       .select("*")
       .eq("environment", environment)
       .eq("is_active", true)
       .order("display_order", { ascending: true });
 
-    const { data: plans, error } = await query;
-
     if (error) {
-      console.error("Error fetching pricing plans for admin page:", error);
-      throw new Error(`Failed to fetch pricing plans: ${error.message}`);
+      console.error("Error fetching public pricing plans:", error);
+      return actionResponse.error(`Failed to fetch pricing plans: ${error.message}`);
     }
 
-    return (plans as unknown as PricingPlan[]) || [];
+    return actionResponse.success((plans as unknown as PricingPlan[]) || []);
   } catch (error) {
     console.error("Unexpected error in getPublicPricingPlans:", error);
-    throw error;
+    return actionResponse.error(getErrorMessage(error));
   }
 }
 
