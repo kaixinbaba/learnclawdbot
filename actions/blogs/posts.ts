@@ -531,6 +531,7 @@ export type PublicPostWithContent = Pick<
   | 'content'
   | 'featured_image_url'
   | 'status'
+  | 'visibility'
   | 'is_pinned'
   | 'published_at'
   | 'created_at'
