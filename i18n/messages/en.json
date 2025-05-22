@@ -633,7 +633,9 @@
             },
             "title": {
               "label": "Title",
-              "placeholder": "Enter title"
+              "placeholder": "Enter title",
+              "description": "Recommended length 60 characters",
+              "recommendedLength": "60"
             },
             "slug": {
               "label": "Slug",
@@ -644,7 +646,8 @@
             "description": {
               "label": "Description",
               "placeholder": "Enter description",
-              "description": "Enter blog description."
+              "description": "Recommended length 160 characters",
+              "recommendedLength": "160"
             },
             "tags": {
               "label": "Tags",

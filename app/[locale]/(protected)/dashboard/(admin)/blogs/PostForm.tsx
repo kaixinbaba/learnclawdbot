@@ -383,6 +383,13 @@ export function PostForm({
                       disabled={isSubmitting}
                     />
                   </FormControl>
+                  <FormDescription>
+                    {t("fields.title.description")} (
+                    {`${field.value?.length || 0} / ${t(
+                      "fields.title.recommendedLength"
+                    )}`}
+                    )
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -437,7 +444,11 @@ export function PostForm({
                     />
                   </FormControl>
                   <FormDescription>
-                    {t("fields.description.description")}
+                    {t("fields.description.description")} (
+                    {`${field.value?.length || 0} / ${t(
+                      "fields.description.recommendedLength"
+                    )}`}
+                    )
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -633,7 +633,9 @@
             },
             "title": {
               "label": "标题",
-              "placeholder": "输入标题"
+              "placeholder": "输入标题",
+              "description": "推荐长度不超过 60 字符",
+              "recommendedLength": "60"
             },
             "slug": {
               "label": "slug",
@@ -644,7 +646,8 @@
             "description": {
               "label": "描述",
               "placeholder": "输入描述",
-              "description": "输入博客描述。"
+              "description": "推荐长度不超过 160 字符",
+              "recommendedLength": "160"
             },
             "tags": {
               "label": "标签",

@@ -633,7 +633,9 @@
             },
             "title": {
               "label": "タイトル",
-              "placeholder": "タイトルを入力"
+              "placeholder": "タイトルを入力",
+              "description": "推奨長さは 60 文字以下",
+              "recommendedLength": "60"
             },
             "slug": {
               "label": "スラッグ",
@@ -644,7 +646,8 @@
             "description": {
               "label": "説明",
               "placeholder": "説明を入力",
-              "description": "ブログの説明を入力してください。"
+              "description": "推奨長さは 160 文字以下",
+              "recommendedLength": "160"
             },
             "tags": {
               "label": "タグ",
