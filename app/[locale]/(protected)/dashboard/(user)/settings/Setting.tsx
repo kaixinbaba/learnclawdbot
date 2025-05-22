@@ -1,11 +1,11 @@
 "use client";
 
+import { updateUserSettingsAction } from "@/actions/users/settings";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DEFAULT_LOCALE } from "@/i18n/routing";
 import {
   AVATAR_ACCEPT_ATTRIBUTE,
   AVATAR_ALLOWED_EXTENSIONS,
@@ -99,18 +99,13 @@ export default function Settings() {
         formData.append("avatar", avatarFile);
       }
 
-      const response = await fetch("/api/user/settings", {
-        method: "PUT",
-        body: formData,
-        headers: {
-          "Accept-Language": (locale || DEFAULT_LOCALE) as string,
-        },
+      const result = await updateUserSettingsAction({
+        formData,
+        locale: locale || undefined,
       });
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       toast.success(t("toast.updateSuccessTitle"), {
@@ -119,6 +114,16 @@ export default function Settings() {
 
       await refreshUser();
       setAvatarFile(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = "";
+      }
     } catch (error) {
       toast.error(t("toast.updateErrorTitle"), {
         description:
