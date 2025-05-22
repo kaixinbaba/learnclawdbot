@@ -1,5 +1,6 @@
 "use client";
 
+import { deletePricingPlanAction } from "@/actions/prices";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,23 +43,15 @@ export function PriceListActions({ plan }: PriceListActionsProps) {
   };
 
   const handleConfirmDelete = async (planId: string) => {
+    if (!planId) {
+      toast.error("Plan ID is required");
+      return;
+    }
     try {
-      const response = await fetch(`/api/admin/pricing-plans/${planId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept-Language": (locale || DEFAULT_LOCALE) as string,
-        },
+      const result = await deletePricingPlanAction({
+        id: planId,
+        locale: locale || DEFAULT_LOCALE,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || t("deleteError", { status: response.status })
-        );
-      }
-
-      const result = await response.json();
 
       if (!result.success) {
         throw new Error(result.error || t("deleteError2"));

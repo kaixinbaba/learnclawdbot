@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  createPricingPlanAction,
+  updatePricingPlanAction,
+} from "@/actions/prices";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +42,6 @@ import {
   Zap,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import Error from "next/error";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -394,32 +397,22 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
   const onSubmit = async (values: PricingPlanFormValues) => {
     setIsLoading(true);
     try {
-      const payload = { ...values };
+      const payload = {
+        ...values,
+      };
 
-      const response = await fetch(
-        isEditMode
-          ? `/api/admin/pricing-plans/${planId}`
-          : "/api/admin/pricing-plans",
-        {
-          method: isEditMode ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept-Language": (locale || DEFAULT_LOCALE) as string,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.error ||
-            t("createUpdateError", {
-              mode: isEditMode ? "update" : "create",
-              status: response.status,
-            })
-        );
+      let result;
+      if (isEditMode && planId) {
+        result = await updatePricingPlanAction({
+          id: planId,
+          planData: payload as Partial<PricingPlan>,
+          locale: locale || DEFAULT_LOCALE,
+        });
+      } else {
+        result = await createPricingPlanAction({
+          planData: payload as Partial<PricingPlan>,
+          locale: locale || DEFAULT_LOCALE,
+        });
       }
 
       if (!result.success) {
