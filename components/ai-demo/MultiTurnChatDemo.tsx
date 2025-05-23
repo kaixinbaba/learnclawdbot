@@ -24,7 +24,9 @@ import { toast } from "sonner";
 const constructModelValue = (provider: string, modelId: string) =>
   `${provider}/${modelId}`;
 const parseModelValue = (value: string) => {
-  const [provider, modelId] = value.split("/");
+  const parts = value.split("/");
+  const provider = parts[0];
+  const modelId = parts.slice(1).join("/");
   return { provider, modelId };
 };
 

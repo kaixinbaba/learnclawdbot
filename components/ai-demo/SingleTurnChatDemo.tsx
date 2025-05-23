@@ -28,7 +28,9 @@ import { toast } from "sonner";
 const constructModelValue = (provider: string, modelId: string) =>
   `${provider}/${modelId}`;
 const parseModelValue = (value: string) => {
-  const [provider, modelId] = value.split("/");
+  const parts = value.split("/");
+  const provider = parts[0];
+  const modelId = parts.slice(1).join("/");
   return { provider, modelId };
 };
 
@@ -147,26 +149,28 @@ export default function SingleTurnChatDemo() {
             </p>
           </div>
 
-          <Button
-            onClick={(e) => handleSubmit(e)}
-            disabled={isLoading || !input?.trim()}
-            className="flex-1"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              "Generate Response"
-            )}
-          </Button>
-
-          {isLoading && (
-            <Button variant="outline" onClick={stop} className="px-3">
-              Stop
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={(e) => handleSubmit(e)}
+              disabled={isLoading || !input?.trim()}
+              className="flex-1"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate Response"
+              )}
             </Button>
-          )}
+
+            {isLoading && (
+              <Button variant="outline" onClick={stop} className="px-3">
+                Stop
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

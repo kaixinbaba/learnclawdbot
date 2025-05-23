@@ -1,5 +1,29 @@
 export const LANGUAGE_MODELS = [
   {
+    provider: "openrouter",
+    name: "OpenRouter",
+    models: [
+      {
+        id: "x-ai/grok-3-mini-beta",
+        name: "Grok 3 Mini (OpenRouter)",
+        inputSupport: ["text"],
+        outputSupport: ["text", "reasoning"],
+      },
+      {
+        id: "openai/gpt-4o-mini",
+        name: "OpenAI GPT 4o mini (OpenRouter)",
+        inputSupport: ["text"],
+        outputSupport: ["text"],
+      },
+      {
+        id: "anthropic/claude-sonnet-4",
+        name: "Anthropic Claude 4 Sonnet (OpenRouter)",
+        inputSupport: ["text"],
+        outputSupport: ["text", "reasoning"],
+      }
+    ]
+  },
+  {
     provider: "deepseek",
     name: "DeepSeek",
     models: [
@@ -58,26 +82,20 @@ export const LANGUAGE_MODELS = [
     name: "Anthropic",
     models: [
       {
+        id: "claude-4-sonnet",
+        name: "Claude 4 Sonnet",
+        inputSupport: ["text"],
+        outputSupport: ["text"]
+      },
+      {
         id: "claude-3-7-sonnet",
         name: "Claude 3.7 Sonnet",
         inputSupport: ["text"],
         outputSupport: ["text", "reasoning"]
       },
       {
-        id: "claude-3-5-sonnet",
-        name: "Claude 3.5 Sonnet",
-        inputSupport: ["text"],
-        outputSupport: ["text"]
-      },
-      {
         id: "claude-3-5-haiku",
         name: "Claude 3.5 Haiku",
-        inputSupport: ["text"],
-        outputSupport: ["text"]
-      },
-      {
-        id: "claude-3-opus",
-        name: "Claude 3 Opus",
         inputSupport: ["text"],
         outputSupport: ["text"]
       },
@@ -124,7 +142,7 @@ export const LANGUAGE_MODELS = [
         outputSupport: ["text"]
       },
     ],
-  },
+  }
 ];
 
 export const TEXT_TO_IMAGE_MODELS = [

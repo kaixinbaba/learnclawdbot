@@ -20,6 +20,7 @@ import { deepseek } from "@ai-sdk/deepseek";
 import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 import { xai } from "@ai-sdk/xai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import {
   JSONValue,
   LanguageModel,
@@ -40,6 +41,10 @@ const inputSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return apiResponse.badRequest("This page is only for administrators to test locally. Please purchase nexty.dev to test it yourself.");
+  }
+
   try {
     const rawBody = await req.json();
 
@@ -97,6 +102,16 @@ export async function POST(req: Request) {
           return apiResponse.serverError("Server configuration error: Missing XAI API Key.");
         }
         textModel = xai(modelId);
+        break;
+
+      case "openrouter":
+        if (!process.env.OPENROUTER_API_KEY) {
+          return apiResponse.serverError("Server configuration error: Missing OpenRouter API Key.");
+        }
+        const openrouterProvider = createOpenRouter({
+          apiKey: process.env.OPENROUTER_API_KEY,
+        });
+        textModel = openrouterProvider.chat(modelId);
         break;
 
       default:
