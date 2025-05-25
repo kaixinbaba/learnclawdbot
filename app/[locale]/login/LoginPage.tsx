@@ -5,6 +5,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "@/i18n/routing";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Github, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -12,10 +13,11 @@ import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const { user, signInWithGoogle, signInWithGithub, signInWithEmail } =
     useAuth();
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
 
   const t = useTranslations("Login");
 
@@ -29,7 +31,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await signInWithEmail(email);
+      const { error } = await signInWithEmail(email, captchaToken);
       if (error) throw error;
       toast.success(t("Toast.Email.successTitle"), {
         description: t("Toast.Email.successDescription"),
@@ -116,6 +118,14 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                 />
+                {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                  <Turnstile
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => {
+                      setCaptchaToken(token);
+                    }}
+                  />
+                )}
               </div>
               <Button disabled={isLoading}>
                 {t("signInMethods.signInWithEmail")}

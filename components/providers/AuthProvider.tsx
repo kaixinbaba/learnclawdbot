@@ -15,7 +15,10 @@ type AuthContextType = {
   loading: boolean;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signInWithGithub: () => Promise<{ error: AuthError | null }>;
-  signInWithEmail: (email: string) => Promise<{ error: AuthError | null }>;
+  signInWithEmail: (
+    email: string,
+    captchaToken?: string
+  ) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -134,11 +137,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const signInWithEmail = async (email: string) => {
+  const signInWithEmail = async (email: string, captchaToken?: string) => {
     return await supabase.auth.signInWithOtp({
       email: normalizeEmail(email),
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}`,
+        captchaToken,
       },
     });
   };
