@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 
-type SearchParams = { [key: string]: string | string[] | undefined };
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 export default async function Page(props: { searchParams: SearchParams }) {
   const t = await getTranslations("Footer.Newsletter");
@@ -61,9 +61,9 @@ export default async function Page(props: { searchParams: SearchParams }) {
               <Link
                 href={`mailto:${process.env.ADMIN_EMAIL}`}
                 title={process.env.ADMIN_EMAIL}
+                prefetch={false}
                 className="text-blue-600 dark:text-blue-400 ml-1 hover:underline"
                 target="_blank"
-                prefetch={false}
               >
                 {process.env.ADMIN_EMAIL}
               </Link>
