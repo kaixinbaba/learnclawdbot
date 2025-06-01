@@ -67,6 +67,7 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
         !presignedUrlActionResponse.success ||
         !presignedUrlActionResponse.data
       ) {
+        setPreviewUrl(null);
         toast.error(t("uploadError"), {
           description:
             presignedUrlActionResponse.error || t("presignedUrlError"),
@@ -98,12 +99,12 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
         description: t("uploadSuccessDesc"),
       });
     } catch (error) {
+      setPreviewUrl(null);
       console.error("MDX Image Upload failed:", error);
       toast.error(getErrorMessage(error) || t("upload.uploadErrorUnexpected"));
       throw error;
     } finally {
       setIsLoading(false);
-      setPreviewUrl(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
