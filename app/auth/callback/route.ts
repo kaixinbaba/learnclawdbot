@@ -1,4 +1,4 @@
-import { isValidRedirectUrl } from '@/app/auth/confirm/route';
+import { isValidRedirectUrl } from '@/app/auth/utils';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
