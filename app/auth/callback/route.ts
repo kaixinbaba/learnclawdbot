@@ -10,7 +10,6 @@ export async function GET(request: Request) {
   let next = searchParams.get('next') ?? '/'
   next = next == 'null' ? '/' : next
 
-
   if (!isValidRedirectUrl(next)) {
     console.error('Invalid redirect URL')
     return NextResponse.redirect(new URL(`/redirect-error?code=invalid_redirect`, origin))
