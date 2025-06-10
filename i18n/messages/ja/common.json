@@ -182,10 +182,6 @@
       {
         "name": "サブスクリプション",
         "href": "/dashboard/subscription"
-      },
-      {
-        "name": "アフィリエイト",
-        "href": "/dashboard/affiliate"
       }
     ],
     "AdminMenus": [

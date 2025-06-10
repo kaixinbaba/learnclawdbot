@@ -9,6 +9,7 @@ import type { Stripe } from 'stripe';
 type RequestData = {
   priceId: string;
   couponCode?: string;
+  referral?: string;
 };
 
 export async function POST(req: Request) {
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     return apiResponse.badRequest()
   }
 
-  const { priceId, couponCode } = requestData;
+  const { priceId, couponCode, referral } = requestData;
 
   if (!priceId) {
     return apiResponse.badRequest('Missing priceId')
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
         planId: plan.id,
         planName: plan.card_title,
         priceId: priceId,
+        ...(referral && { tolt_referral: referral }),
       },
     };
 

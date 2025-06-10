@@ -35,16 +35,27 @@ export default function PricingCTA({
 
     setIsLoading(true);
     try {
+      const toltReferral = (window as any).tolt_referral;
+
+      const requestBody: {
+        priceId: string;
+        couponCode?: string;
+        referral?: string;
+      } = {
+        priceId: stripePriceId,
+      };
+
+      if (toltReferral) {
+        requestBody.referral = toltReferral;
+      }
+
       const response = await fetch("/api/stripe/checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Accept-Language": (locale || DEFAULT_LOCALE) as string,
         },
-        body: JSON.stringify({
-          priceId: stripePriceId,
-          // couponCode: couponCode || '', // you can add coupon code here if you want to
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();

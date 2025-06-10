@@ -182,10 +182,6 @@
       {
         "name": "Subscription",
         "href": "/dashboard/subscription"
-      },
-      {
-        "name": "Affiliate",
-        "href": "/dashboard/affiliate"
       }
     ],
     "AdminMenus": [

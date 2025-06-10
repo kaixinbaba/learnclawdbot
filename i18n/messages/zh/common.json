@@ -182,10 +182,6 @@
       {
         "name": "管理订阅",
         "href": "/dashboard/subscription"
-      },
-      {
-        "name": "联盟计划",
-        "href": "/dashboard/affiliate"
       }
     ],
     "AdminMenus": [

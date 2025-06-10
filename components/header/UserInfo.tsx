@@ -12,12 +12,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "@/i18n/routing";
+import { ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Suspense } from "react";
 
 type Menu = {
   name: string;
   href: string;
+  target?: string;
 };
 
 interface UserInfoProps {
@@ -93,10 +95,17 @@ export function UserInfo({ mobile = false, renderContainer }: UserInfoProps) {
       {userMenus.map((menu) => (
         <DropdownMenuItem
           key={menu.name}
-          onClick={() => router.push(menu.href)}
+          onClick={() => {
+            if (menu.target) {
+              window.open(menu.href, "_blank");
+            } else {
+              router.push(menu.href);
+            }
+          }}
           className="cursor-pointer"
         >
           {menu.name}
+          {menu.target && <ExternalLink className="w-4 h-4" />}
         </DropdownMenuItem>
       ))}
       {/* </>

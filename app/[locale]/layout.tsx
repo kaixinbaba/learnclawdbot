@@ -2,6 +2,7 @@ import BaiDuAnalytics from "@/app/BaiDuAnalytics";
 import GoogleAdsense from "@/app/GoogleAdsense";
 import GoogleAnalytics from "@/app/GoogleAnalytics";
 import PlausibleAnalytics from "@/app/PlausibleAnalytics";
+import ToltScript from "@/app/ToltScript";
 import GoogleOneTap from "@/components/auth/GoogleOneTap";
 import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
@@ -96,7 +97,15 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale || DEFAULT_LOCALE} suppressHydrationWarning>
-      <head />
+      <head>
+        {process.env.NODE_ENV === "development" ? (
+          <></>
+        ) : (
+          <>
+            <ToltScript />
+          </>
+        )}
+      </head>
       <body
         className={cn(
           "min-h-screen bg-background flex flex-col",

@@ -2,6 +2,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
+// Nexty.dev Affiliate Link: https://affiliates.nexty.dev/
+// sign up and use your affiliate link on BuiltWithButton to earn money
+
 export default function BuiltWithButton() {
   return (
     <Link

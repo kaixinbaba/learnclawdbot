@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Link as I18nLink, usePathname } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
+import { ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React from "react";
 
 type Menu = {
   name: string;
   href: string;
+  target?: string;
 };
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -51,8 +53,14 @@ export function Sidebar({ className, setOpenMobile }: SidebarProps) {
                 asChild
                 onClick={handleLinkClick}
               >
-                <I18nLink href={menu.href} title={menu.name} prefetch={true}>
+                <I18nLink
+                  href={menu.href}
+                  title={menu.name}
+                  prefetch={true}
+                  target={menu.target}
+                >
                   <span>{menu.name}</span>
+                  {menu.target && <ExternalLink className="w-4 h-4" />}
                 </I18nLink>
               </Button>
             ))}
