@@ -51,9 +51,9 @@ export function PricingCardDisplay({
         highlightedCtaStyle={highlightedCtaStyle}
       />
 
-      <div className="text-4xl font-bold mb-6">
+      <div className="text-4xl mb-6">
         {originalPrice ? (
-          <span className="text-xl line-through decoration-2 font-normal text-muted-foreground mr-2">
+          <span className="text-lg line-through decoration-2 text-muted-foreground mr-1">
             {originalPrice}
           </span>
         ) : null}
@@ -61,9 +61,7 @@ export function PricingCardDisplay({
         {displayPrice}
 
         {priceSuffix ? (
-          <span className="text-lg font-normal text-muted-foreground">
-            /{priceSuffix}
-          </span>
+          <span className="text-lg text-muted-foreground">/{priceSuffix}</span>
         ) : null}
       </div>
       <ul className="space-y-3 mb-6">
