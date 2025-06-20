@@ -82,19 +82,19 @@
           "links": [
             {
               "href": "/#features",
-              "label": "Features"
+              "name": "Features"
             },
             {
               "href": "/#tech-stack",
-              "label": "Tech Stack"
+              "name": "Tech Stack"
             },
             {
               "href": "/#pricing",
-              "label": "Pricing"
+              "name": "Pricing"
             },
             {
               "href": "/blogs",
-              "label": "Blogs"
+              "name": "Blogs"
             }
           ]
         },
@@ -102,17 +102,17 @@
           "title": "Support",
           "links": [
             {
-              "label": "Docs",
+              "name": "Docs",
               "href": "https://docs.nexty.dev/docs",
               "target": "_blank"
             },
             {
-              "label": "Roadmap",
+              "name": "Roadmap",
               "href": "/roadmap"
             },
             {
               "href": "mailto:hi@nexty.dev",
-              "label": "Contact Us"
+              "name": "Contact Us"
             }
           ]
         },
@@ -121,17 +121,17 @@
           "links": [
             {
               "href": "/en",
-              "label": "English",
+              "name": "English",
               "useA": true
             },
             {
               "href": "/zh",
-              "label": "中文",
+              "name": "中文",
               "useA": true
             },
             {
               "href": "/ja",
-              "label": "日本語",
+              "name": "日本語",
               "useA": true
             }
           ]
@@ -252,7 +252,7 @@
       "title": "403 - Access Denied",
       "description": "You don't have permission to access this page.",
       "button": {
-        "label": "Back to homepage",
+        "name": "Back to homepage",
         "href": "/"
       }
     },

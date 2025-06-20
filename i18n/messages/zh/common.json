@@ -82,19 +82,19 @@
           "links": [
             {
               "href": "/#features",
-              "label": "功能特性"
+              "name": "功能特性"
             },
             {
               "href": "/#tech-stack",
-              "label": "技术栈"
+              "name": "技术栈"
             },
             {
               "href": "/#pricing",
-              "label": "定价"
+              "name": "定价"
             },
             {
               "href": "/blogs",
-              "label": "博客"
+              "name": "博客"
             }
           ]
         },
@@ -102,17 +102,17 @@
           "title": "支持",
           "links": [
             {
-              "label": "文档",
+              "name": "文档",
               "href": "https://docs.nexty.dev/zh/docs",
               "target": "_blank"
             },
             {
-              "label": "功能路线图",
+              "name": "功能路线图",
               "href": "/roadmap"
             },
             {
               "href": "mailto:hi@nexty.dev",
-              "label": "联系我们"
+              "name": "联系我们"
             }
           ]
         },
@@ -121,17 +121,17 @@
           "links": [
             {
               "href": "/en",
-              "label": "English",
+              "name": "English",
               "useA": true
             },
             {
               "href": "/zh",
-              "label": "中文",
+              "name": "中文",
               "useA": true
             },
             {
               "href": "/ja",
-              "label": "日本語",
+              "name": "日本語",
               "useA": true
             }
           ]
@@ -252,7 +252,7 @@
       "title": "403 - 访问被拒绝",
       "description": "你没有权限访问此页面。",
       "button": {
-        "label": "返回首页",
+        "name": "返回首页",
         "href": "/"
       }
     },

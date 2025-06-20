@@ -82,19 +82,19 @@
           "links": [
             {
               "href": "/#features",
-              "label": "機能特性"
+              "name": "機能特性"
             },
             {
               "href": "/#tech-stack",
-              "label": "技術スタック"
+              "name": "技術スタック"
             },
             {
               "href": "/#pricing",
-              "label": "料金プラン"
+              "name": "料金プラン"
             },
             {
               "href": "/blogs",
-              "label": "ブログ"
+              "name": "ブログ"
             }
           ]
         },
@@ -102,17 +102,17 @@
           "title": "サポート",
           "links": [
             {
-              "label": "Docs",
+              "name": "Docs",
               "href": "https://docs.nexty.dev/ja/docs",
               "target": "_blank"
             },
             {
-              "label": "Roadmap",
+              "name": "Roadmap",
               "href": "/roadmap"
             },
             {
               "href": "mailto:hi@nexty.dev",
-              "label": "お問い合わせ"
+              "name": "お問い合わせ"
             }
           ]
         },
@@ -121,17 +121,17 @@
           "links": [
             {
               "href": "/en",
-              "label": "English",
+              "name": "English",
               "useA": true
             },
             {
               "href": "/zh",
-              "label": "中文",
+              "name": "中文",
               "useA": true
             },
             {
               "href": "/ja",
-              "label": "日本語",
+              "name": "日本語",
               "useA": true
             }
           ]
@@ -252,7 +252,7 @@
       "title": "403 - アクセスが拒否されました",
       "description": "このページにアクセスする権限がありません。",
       "button": {
-        "label": "ホームに戻る",
+        "name": "ホームに戻る",
         "href": "/"
       }
     },
