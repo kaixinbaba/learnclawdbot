@@ -13,7 +13,7 @@
 
 export const runtime = "edge";
 
-import { IMAGE_TO_VIDEO_MODELS } from "@/lib/ai/models";
+import { IMAGE_TO_VIDEO_MODELS } from "@/config/models";
 import { apiResponse } from "@/lib/api-response";
 // import { generateR2Key, getDataFromDataUrl, serverUploadFile } from "@/lib/cloudflare/r2";
 import { ReplicatePredictionResponse } from "@/types/ai";

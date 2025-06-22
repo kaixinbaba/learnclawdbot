@@ -14,7 +14,7 @@
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-import { IMAGE_TO_IMAGE_MODELS } from "@/lib/ai/models";
+import { IMAGE_TO_IMAGE_MODELS } from "@/config/models";
 import { apiResponse } from "@/lib/api-response";
 // import { generateR2Key, getDataFromDataUrl, serverUploadFile } from "@/lib/cloudflare/r2"; // Optional: Uncomment if you want to upload results to R2
 import { replicate } from "@ai-sdk/replicate";

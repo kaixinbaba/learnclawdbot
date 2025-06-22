@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LANGUAGE_MODELS } from "@/lib/ai/models";
+import { LANGUAGE_MODELS } from "@/config/models";
 import { useChat } from "@ai-sdk/react";
 import { Bot, Loader2, SendIcon, User } from "lucide-react";
 import { useState } from "react";

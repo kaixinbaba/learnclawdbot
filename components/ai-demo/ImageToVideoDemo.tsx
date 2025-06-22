@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { IMAGE_TO_VIDEO_MODELS } from "@/lib/ai/models";
+import { IMAGE_TO_VIDEO_MODELS } from "@/config/models";
 import { Download, FileUp, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";

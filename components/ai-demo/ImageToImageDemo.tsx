@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { IMAGE_TO_IMAGE_MODELS } from "@/lib/ai/models";
+import { IMAGE_TO_IMAGE_MODELS } from "@/config/models";
 import { downloadBase64File } from "@/lib/downloadFile";
 import { AlertTriangle, Download, FileUp, Loader2, X } from "lucide-react";
 import Image from "next/image";

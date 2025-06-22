@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { LANGUAGE_MODELS } from "@/lib/ai/models";
+import { LANGUAGE_MODELS } from "@/config/models";
 import { useCompletion } from "@ai-sdk/react";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
