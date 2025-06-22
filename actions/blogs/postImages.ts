@@ -33,7 +33,7 @@ export async function listBlogImagesAction(
 ): Promise<ListImagesResponse> {
   try {
     const filterPrefix = params?.filterPrefix || "";
-    const searchPrefix = filterPrefix ? `${BLOGS_IMAGE_PATH}${filterPrefix}` : BLOGS_IMAGE_PATH;
+    const searchPrefix = filterPrefix ? `${BLOGS_IMAGE_PATH}/${filterPrefix}` : `${BLOGS_IMAGE_PATH}/`;
     const result = await listR2Objects({
       prefix: searchPrefix,
       continuationToken: params?.continuationToken,
