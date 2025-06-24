@@ -30,7 +30,7 @@ export const apiResponse = {
     return apiResponse.error(message, 500);
   },
 
-  unauthorized: (message = "Unauthorized") => {
+  unauthorized: (message = "User not authenticated") => {
     return apiResponse.error(message, 401);
   },
 
