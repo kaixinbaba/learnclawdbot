@@ -45,11 +45,13 @@ export async function constructMetadata({
 
   const pageURL = `${locale === DEFAULT_LOCALE ? '' : locale}${path}` || siteConfig.url
 
+  canonicalUrl = canonicalUrl || path
   const alternateLanguages = Object.keys(LOCALE_NAMES).reduce((acc, lang) => {
     const path = canonicalUrl
-      ? `/${lang === DEFAULT_LOCALE ? '' : lang}${canonicalUrl}`
-      : `/${lang === DEFAULT_LOCALE ? '' : lang}`
+      ? `${lang === DEFAULT_LOCALE ? '' : `/${lang}`}${canonicalUrl}`
+      : `${lang === DEFAULT_LOCALE ? '' : `/${lang}`}`
     acc[lang] = `${siteConfig.url}${path}`
+
     return acc
   }, {} as Record<string, string>)
 
@@ -61,7 +63,7 @@ export async function constructMetadata({
     creator: siteConfig.creator,
     metadataBase: new URL(siteConfig.url),
     alternates: {
-      canonical: canonicalUrl ? `${siteConfig.url}/${canonicalUrl}` : undefined,
+      canonical: canonicalUrl ? `${siteConfig.url}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}${canonicalUrl}` : undefined,
       languages: alternateLanguages,
     },
     // Create an OG image using https://ogimage.click
