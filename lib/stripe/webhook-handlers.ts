@@ -438,7 +438,7 @@ export async function revokeSubscriptionCredits(userId: string, planId: string, 
         p_revoke_one_time: 0,
         p_revoke_subscription: subscriptionToRevoke,
         p_log_type: 'subscription_cancel_revoke',
-        p_notes: `Subscription ${subscriptionId} cancelled.`
+        p_notes: `Subscription ${subscriptionId} cancelled/ended.`
       });
 
       if (revokeError) {
