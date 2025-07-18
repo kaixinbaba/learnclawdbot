@@ -62,7 +62,7 @@ const GoogleOneTap = () => {
             }
           },
           nonce: hashedNonce,
-          use_fedcm_for_prompt: true,
+          use_fedcm_for_prompt: process.env.NODE_ENV === "production",
         });
 
         window.google.accounts.id.prompt();
