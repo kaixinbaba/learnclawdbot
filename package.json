@@ -10,7 +10,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:new-migration": "supabase migration new",
+    "db:gen-types": "supabase gen types typescript --project-id $(cat supabase/.temp/project-ref) --schema public > lib/supabase/types.ts",
+    "db:login": "supabase login",
+    "db:link": "supabase link",
+    "db:update": "npm run db:push && npm run db:gen-types"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.6",
