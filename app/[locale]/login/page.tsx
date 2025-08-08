@@ -1,4 +1,4 @@
-import { Locale, routing } from "@/i18n/routing";
+import { Locale } from "@/i18n/routing";
 import { constructMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
@@ -27,8 +27,4 @@ export async function generateMetadata({
 
 export default function Login() {
   return <LoginPage />;
-}
-
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
 }

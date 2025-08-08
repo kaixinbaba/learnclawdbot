@@ -5,7 +5,7 @@ import { normalizeEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/client";
 import { type AuthError, type User } from "@supabase/supabase-js";
 import Cookies from "js-cookie";
-import { redirect, useSearchParams } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const getReferral = () => {
@@ -22,11 +22,12 @@ type ExtendedUser = User & {
 type AuthContextType = {
   user: ExtendedUser | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<{ error: AuthError | null }>;
-  signInWithGithub: () => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: (next?: string) => Promise<{ error: AuthError | null }>;
+  signInWithGithub: (next?: string) => Promise<{ error: AuthError | null }>;
   signInWithEmail: (
     email: string,
-    captchaToken?: string
+    captchaToken?: string,
+    next?: string
   ) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -43,9 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
-
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next");
 
   const supabase = createClient();
 
@@ -117,13 +115,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: "users",
           filter: `id=eq.${user?.id}`,
         },
+
         async (payload) => {
-          if (user) {
-            setUser({
-              ...user,
-              role: payload.new.role,
-            });
-          }
+          setUser((prevUser) => {
+            if (prevUser) {
+              return {
+                ...prevUser,
+                role: payload.new.role,
+              };
+            }
+            return prevUser;
+          });
         }
       )
       .subscribe();
@@ -132,9 +134,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
       userSubscription.unsubscribe();
     };
-  }, []);
+  }, [user?.id]);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (next?: string) => {
     const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
 
     const referral = getReferral();
@@ -151,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const signInWithGithub = async () => {
+  const signInWithGithub = async (next?: string) => {
     const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
 
     const referral = getReferral();
@@ -168,7 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const signInWithEmail = async (email: string, captchaToken?: string) => {
+  const signInWithEmail = async (
+    email: string,
+    captchaToken?: string,
+    next?: string
+  ) => {
     const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
 
     const referral = getReferral();
@@ -183,9 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       options: {
         emailRedirectTo: redirectUrl.toString(),
         captchaToken,
-        data: {
-          referral,
-        },
+        data: { referral },
       },
     });
   };

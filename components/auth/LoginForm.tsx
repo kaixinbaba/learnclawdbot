@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Github, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -27,12 +28,14 @@ export default function LoginForm({
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
 
   const t = useTranslations("Login");
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await signInWithEmail(email, captchaToken);
+      const { error } = await signInWithEmail(email, captchaToken, next || "");
       if (error) throw error;
       toast.success(t("Toast.Email.successTitle"), {
         description: t("Toast.Email.successDescription"),
@@ -50,7 +53,7 @@ export default function LoginForm({
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     try {
-      const { error } = await signInWithGoogle();
+      const { error } = await signInWithGoogle(next || "");
       if (error) throw error;
       // onSuccess?.();
     } catch (error) {
@@ -64,7 +67,7 @@ export default function LoginForm({
   const handleGithubLogin = async () => {
     setIsGithubLoading(true);
     try {
-      const { error } = await signInWithGithub();
+      const { error } = await signInWithGithub(next || "");
       if (error) throw error;
       // onSuccess?.();
     } catch (error) {
