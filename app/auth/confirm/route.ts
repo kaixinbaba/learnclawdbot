@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
 
-  let next = searchParams.get('next') ?? '/'
+  let next = searchParams.get('next') || '/'
   next = next == 'null' ? '/' : next
 
   if (!token_hash || !type) {

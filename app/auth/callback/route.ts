@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const referral = searchParams.get('referral') || request.cookies.get('referral_source')?.value
 
-  let next = searchParams.get('next') ?? '/'
+  let next = searchParams.get('next') || '/'
   next = next == 'null' ? '/' : next
 
   if (!isValidRedirectUrl(next)) {
