@@ -170,33 +170,40 @@
     "UserMenus": [
       {
         "name": "Settings",
-        "href": "/dashboard/settings"
+        "href": "/dashboard/settings",
+        "icon": "Settings"
       },
       {
         "name": "Subscription",
-        "href": "/dashboard/subscription"
+        "href": "/dashboard/subscription",
+        "icon": "WalletCards"
       },
       {
         "name": "Credit History",
-        "href": "/dashboard/credit-history"
+        "href": "/dashboard/credit-history",
+        "icon": "Coins"
       }
     ],
     "AdminMenus": [
       {
         "name": "Users",
-        "href": "/dashboard/users"
+        "href": "/dashboard/users",
+        "icon": "Users"
       },
       {
         "name": "Prices",
-        "href": "/dashboard/prices"
+        "href": "/dashboard/prices",
+        "icon": "DollarSign"
       },
       {
         "name": "Blogs",
-        "href": "/dashboard/blogs"
+        "href": "/dashboard/blogs",
+        "icon": "Rss"
       },
       {
         "name": "R2 Files",
-        "href": "/dashboard/r2-resources"
+        "href": "/dashboard/r2-resources",
+        "icon": "FileBox"
       }
     ]
   },

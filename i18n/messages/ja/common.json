@@ -170,33 +170,40 @@
     "UserMenus": [
       {
         "name": "設定",
-        "href": "/dashboard/settings"
+        "href": "/dashboard/settings",
+        "icon": "Settings"
       },
       {
         "name": "サブスクリプション",
-        "href": "/dashboard/subscription"
+        "href": "/dashboard/subscription",
+        "icon": "WalletCards"
       },
       {
         "name": "クレジット履歴",
-        "href": "/dashboard/credit-history"
+        "href": "/dashboard/credit-history",
+        "icon": "Coins"
       }
     ],
     "AdminMenus": [
       {
         "name": "ユーザー管理",
-        "href": "/dashboard/users"
+        "href": "/dashboard/users",
+        "icon": "Users"
       },
       {
         "name": "料金プラン管理",
-        "href": "/dashboard/prices"
+        "href": "/dashboard/prices",
+        "icon": "DollarSign"
       },
       {
         "name": "ブログ管理",
-        "href": "/dashboard/blogs"
+        "href": "/dashboard/blogs",
+        "icon": "Rss"
       },
       {
         "name": "R2リソース",
-        "href": "/dashboard/r2-resources"
+        "href": "/dashboard/r2-resources",
+        "icon": "FileBox"
       }
     ]
   },

@@ -1,6 +1,7 @@
+import SidebarInsetHeader from "@/components/header/SidebarInsetHeader";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import React from "react";
-import { MobileSidebar } from "./MobileSidebar";
-import { Sidebar } from "./Sidebar";
+import { DashboardSidebar } from "./DashboardSidebar";
 
 export default function DashboardLayout({
   children,
@@ -8,14 +9,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background w-full">
-      <div className="md:hidden border-b px-4 py-3 sticky top-0 z-10 bg-background backdrop-blur-sm">
-        <MobileSidebar />
-      </div>
-      <div className="flex flex-1">
-        <Sidebar className="hidden md:block w-56 border-r p-4 sticky top-12 h-screen overflow-auto scrollbar-thin" />
-        <main className="flex-1 p-4 md:p-6 mx-auto">{children}</main>
-      </div>
-    </div>
+    <SidebarProvider>
+      <DashboardSidebar />
+      <SidebarInset className="overflow-hidden">
+        <SidebarInsetHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+            {children}
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

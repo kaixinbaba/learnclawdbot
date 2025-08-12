@@ -170,33 +170,40 @@
     "UserMenus": [
       {
         "name": "个人设置",
-        "href": "/dashboard/settings"
+        "href": "/dashboard/settings",
+        "icon": "Settings"
       },
       {
         "name": "管理订阅",
-        "href": "/dashboard/subscription"
+        "href": "/dashboard/subscription",
+        "icon": "WalletCards"
       },
       {
         "name": "积分明细",
-        "href": "/dashboard/credit-history"
+        "href": "/dashboard/credit-history",
+        "icon": "Coins"
       }
     ],
     "AdminMenus": [
       {
         "name": "用户管理",
-        "href": "/dashboard/users"
+        "href": "/dashboard/users",
+        "icon": "Users"
       },
       {
         "name": "定价管理",
-        "href": "/dashboard/prices"
+        "href": "/dashboard/prices",
+        "icon": "DollarSign"
       },
       {
         "name": "博客管理",
-        "href": "/dashboard/blogs"
+        "href": "/dashboard/blogs",
+        "icon": "Rss"
       },
       {
         "name": "R2资源管理",
-        "href": "/dashboard/r2-resources"
+        "href": "/dashboard/r2-resources",
+        "icon": "FileBox"
       }
     ]
   },

@@ -1,5 +1,6 @@
 "use client";
 
+import { DynamicIcon } from "@/components/DynamicIcon";
 import CurrentUserBenefitsDisplay from "@/components/layout/CurrentUserBenefitsDisplay";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +21,7 @@ type Menu = {
   name: string;
   href: string;
   target?: string;
+  icon?: string;
 };
 
 interface UserInfoProps {
@@ -101,9 +103,14 @@ export function UserInfo({ mobile = false, renderContainer }: UserInfoProps) {
               router.push(menu.href);
             }
           }}
-          className="cursor-pointer"
+          className="cursor-pointer flex items-center gap-x-2"
         >
-          {menu.name}
+          {menu.icon ? (
+            <DynamicIcon name={menu.icon} className="h-4 w-4" />
+          ) : (
+            <span>{menu.name.slice(0, 1)}</span>
+          )}
+          <span>{menu.name}</span>
           {menu.target && <ExternalLink className="w-4 h-4" />}
         </DropdownMenuItem>
       ))}
@@ -119,9 +126,14 @@ export function UserInfo({ mobile = false, renderContainer }: UserInfoProps) {
             <DropdownMenuItem
               key={menu.name}
               onClick={() => router.push(menu.href)}
-              className="cursor-pointer"
+              className="cursor-pointer flex items-center gap-x-2"
             >
-              {menu.name}
+              {menu.icon ? (
+                <DynamicIcon name={menu.icon} className="h-4 w-4" />
+              ) : (
+                <span>{menu.name.slice(0, 1)}</span>
+              )}
+              <span>{menu.name}</span>
             </DropdownMenuItem>
           ))}
         </>

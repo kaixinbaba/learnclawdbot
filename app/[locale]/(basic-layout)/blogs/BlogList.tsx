@@ -2,7 +2,6 @@
 
 import { listPublishedPostsAction, PublicPost } from "@/actions/blogs/posts";
 import { Tag } from "@/actions/blogs/tags";
-import { BlogCard } from "@/app/[locale]/blogs/BlogCard";
 import { BlogPost } from "@/types/blog";
 import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
@@ -10,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { toast } from "sonner";
+import { BlogCard } from "./BlogCard";
 import { TagSelector } from "./TagSelector";
 
 function mapServerPostToBlogCard(post: PublicPost, locale: string): BlogPost {

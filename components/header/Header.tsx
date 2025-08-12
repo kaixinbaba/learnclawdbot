@@ -30,14 +30,16 @@ const Header = () => {
 
         <div className="flex items-center gap-x-2 flex-1 justify-end">
           {/* PC */}
-          <div className="hidden md:flex items-center gap-x-2">
+          <div className="hidden lg:flex items-center gap-x-2">
             <LocaleSwitcher />
             <ThemeToggle />
             <UserAvatar />
           </div>
 
           {/* Mobile */}
-          <MobileMenu />
+          <div className="flex lg:hidden">
+            <MobileMenu />
+          </div>
         </div>
       </nav>
     </header>

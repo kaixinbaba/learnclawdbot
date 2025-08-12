@@ -4,8 +4,6 @@ import GoogleAnalytics from "@/app/GoogleAnalytics";
 import PlausibleAnalytics from "@/app/PlausibleAnalytics";
 import ToltScript from "@/app/ToltScript";
 import GoogleOneTap from "@/components/auth/GoogleOneTap";
-import Footer from "@/components/footer/Footer";
-import Header from "@/components/header/Header";
 import { LanguageDetectionAlert } from "@/components/LanguageDetectionAlert";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { TailwindIndicator } from "@/components/TailwindIndicator";
@@ -99,13 +97,13 @@ export default async function LocaleLayout({
             >
               {messages.LanguageDetection && <LanguageDetectionAlert />}
 
-              {messages.Header && <Header />}
+              {/* {messages.Header && <Header />} */}
 
-              <main className="flex-1 flex flex-col items-center">
-                {children}
-              </main>
+              {/* <main className="flex-1 flex flex-col items-center"> */}
+              {children}
+              {/* </main> */}
 
-              {messages.Footer && <Footer />}
+              {/* {messages.Footer && <Footer />} */}
             </ThemeProvider>
           </AuthProvider>
         </NextIntlClientProvider>

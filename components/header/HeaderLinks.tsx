@@ -17,7 +17,7 @@ const HeaderLinks = () => {
   }
 
   return (
-    <div className="hidden md:flex flex-row items-center gap-x-2 text-sm text-muted-foreground">
+    <div className="hidden lg:flex flex-row items-center gap-x-2 text-sm text-muted-foreground">
       {headerLinks.map((link) => (
         <I18nLink
           key={link.name}
