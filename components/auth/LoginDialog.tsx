@@ -18,10 +18,6 @@ interface LoginDialogProps {
 export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   const t = useTranslations("Login");
 
-  const handleSuccess = () => {
-    onOpenChange(false);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
@@ -30,7 +26,7 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
           <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
-        <LoginForm onSuccess={handleSuccess} />
+        <LoginForm />
       </DialogContent>
     </Dialog>
   );

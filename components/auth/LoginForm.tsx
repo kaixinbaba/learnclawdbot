@@ -12,14 +12,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 interface LoginFormProps {
-  onSuccess?: () => void;
   className?: string;
 }
 
-export default function LoginForm({
-  onSuccess,
-  className = "",
-}: LoginFormProps) {
+export default function LoginForm({ className = "" }: LoginFormProps) {
   const { signInWithGoogle, signInWithGithub, signInWithEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +37,6 @@ export default function LoginForm({
       toast.success(t("Toast.Email.successTitle"), {
         description: t("Toast.Email.successDescription"),
       });
-      // onSuccess?.();
     } catch (error) {
       toast.error(t("Toast.Email.errorTitle"), {
         description: t("Toast.Email.errorDescription"),
@@ -56,7 +51,6 @@ export default function LoginForm({
     try {
       const { error } = await signInWithGoogle(next || "");
       if (error) throw error;
-      // onSuccess?.();
     } catch (error) {
       setIsGoogleLoading(false);
       toast.error(t("Toast.Google.errorTitle"), {
@@ -70,7 +64,6 @@ export default function LoginForm({
     try {
       const { error } = await signInWithGithub(next || "");
       if (error) throw error;
-      // onSuccess?.();
     } catch (error) {
       setIsGithubLoading(false);
       toast.error(t("Toast.Github.errorTitle"), {

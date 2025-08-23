@@ -5,7 +5,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "@/i18n/routing";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,7 +37,9 @@ export default function LoginPage() {
           <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
 
-        <LoginForm className="w-[300px]" />
+        <Suspense fallback={<Loader2 className="w-4 h-4 animate-spin" />}>
+          <LoginForm className="w-[300px]" />
+        </Suspense>
       </div>
     </div>
   );

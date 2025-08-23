@@ -1,7 +1,9 @@
 import { Locale } from "@/i18n/routing";
 import { constructMetadata } from "@/lib/metadata";
+import { Loader2 } from "lucide-react";
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 import CreateBlogClient from "./CreateBlogClient";
 
 type Params = Promise<{ locale: string }>;
@@ -29,5 +31,9 @@ export async function generateMetadata({
 }
 
 export default function CreateBlogPage() {
-  return <CreateBlogClient />;
+  return (
+    <Suspense fallback={<Loader2 className="w-4 h-4 animate-spin" />}>
+      <CreateBlogClient />
+    </Suspense>
+  );
 }
