@@ -1,4 +1,8 @@
-import { sendInvoicePaymentFailedEmail, syncSubscriptionData } from '@/lib/stripe/actions';
+import {
+  sendCreditUpgradeFailedEmail,
+  sendInvoicePaymentFailedEmail,
+  syncSubscriptionData,
+} from '@/lib/stripe/actions';
 import stripe from '@/lib/stripe/stripe';
 
 import { Database, TablesInsert } from '@/lib/supabase/types';
@@ -94,6 +98,7 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
       await upgradeOneTimeCredits(userId, planId, orderId);
     } catch (error) {
       console.error(`CRITICAL: Failed to upgrade one-time credits for user ${userId}, order ${orderId}:`, error);
+      await sendCreditUpgradeFailedEmail({ userId, orderId, planId, error });
       throw error;
     }
     // --- End: [custom] Upgrade the user's benefits ---
@@ -155,7 +160,7 @@ export async function upgradeOneTimeCredits(userId: string, planId: string, orde
 
     if (lastError) {
       console.error(`Error updating usage (one-time credits, user_id: ${userId}, creditsToGrant: ${creditsToGrant}) after ${maxAttempts} attempts:`, lastError);
-      throw new Error(`Failed to grant one-time credits for user ${userId} after ${maxAttempts} attempts: ${lastError.message}`);
+      throw lastError;
     }
   } else {
     console.log(`No one-time credits defined or amount is zero for plan ${planId}. Skipping credit grant.`);
@@ -298,6 +303,7 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
         await upgradeSubscriptionCredits(userId, planId, orderId, subscription);
       } catch (error) {
         console.error(`CRITICAL: Failed to upgrade subscription credits for user ${userId}, order ${orderId}:`, error);
+        await sendCreditUpgradeFailedEmail({ userId, orderId, planId, error });
         throw error;
       }
       // --- End: [custom] Upgrade the user's benefits ---
@@ -371,7 +377,8 @@ export async function upgradeSubscriptionCredits(userId: string, planId: string,
         }
 
         if (lastError) {
-          throw new Error(`Failed to grant subscription credits for user ${userId} after ${maxAttempts} attempts: ${lastError.message}`);
+          console.error(`Error setting subscription credits for user ${userId} (order ${orderId}) after ${maxAttempts} attempts:`, lastError);
+          throw lastError;
         }
         return
       }
@@ -405,7 +412,8 @@ export async function upgradeSubscriptionCredits(userId: string, planId: string,
         }
 
         if (lastError) {
-          throw new Error(`Failed to initialize yearly allocation for user ${userId} after ${maxAttempts} attempts: ${lastError.message}`);
+          console.error(`Failed to initialize yearly allocation for user ${userId} after ${maxAttempts} attempts:`, lastError);
+          throw lastError;
         }
         return
       }

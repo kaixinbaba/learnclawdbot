@@ -2,6 +2,7 @@
 
 import { sendEmail } from '@/actions/resend';
 import { siteConfig } from '@/config/site';
+import { CreditUpgradeFailedEmail } from '@/emails/credit-upgrade-failed';
 import { InvoicePaymentFailedEmail } from '@/emails/invoice-payment-failed';
 import { getErrorMessage } from '@/lib/error-utils';
 import stripe from '@/lib/stripe/stripe';
@@ -260,6 +261,46 @@ export async function syncSubscriptionData(
     console.error(`Error in syncSubscriptionData for sub ${subscriptionId}, cust ${customerId}:`, error);
     const errorMessage = getErrorMessage(error);
     throw new Error(`Subscription sync failed (${subscriptionId}): ${errorMessage}`);
+  }
+}
+
+export async function sendCreditUpgradeFailedEmail({
+  userId,
+  orderId,
+  planId,
+  error,
+}: {
+  userId: string,
+  orderId: string,
+  planId: string,
+  error: any,
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.warn('ADMIN_EMAIL is not set, skipping credit upgrade failure email.');
+    return;
+  }
+
+  const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+  const errorStack = error instanceof Error ? error.stack : undefined;
+
+  try {
+    const subject = `🚨 CRITICAL: Credit Upgrade Failed for user ${userId}`;
+
+    await sendEmail({
+      email: adminEmail,
+      subject,
+      react: CreditUpgradeFailedEmail({
+        userId,
+        orderId,
+        planId: planId,
+        errorMessage,
+        errorStack,
+      }),
+    });
+    console.log(`Sent credit upgrade failure email to ${adminEmail} for order ${orderId}`);
+  } catch (emailError) {
+    console.error(`Failed to send credit upgrade failure email for order ${orderId}:`, emailError);
   }
 }
 
