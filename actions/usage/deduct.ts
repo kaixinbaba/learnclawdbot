@@ -8,7 +8,7 @@ import {
 import { actionResponse, ActionResult } from '@/lib/action-response';
 import { getSession } from '@/lib/auth/server';
 import { eq } from 'drizzle-orm';
-import { getUserBenefits as fetchUserBenefitsInternal, UserBenefits } from './benefits';
+import { getUserBenefits, UserBenefits } from './benefits';
 
 export interface DeductCreditsData {
   message: string;
@@ -83,7 +83,7 @@ export async function deductCredits(
         });
     });
 
-    const updatedBenefits = await fetchUserBenefitsInternal(user.id);
+    const updatedBenefits = await getUserBenefits(user.id);
 
     return actionResponse.success({
       message: 'Credits deducted successfully.',
@@ -104,7 +104,7 @@ export async function getClientUserBenefits(): Promise<ActionResult<UserBenefits
   const user = session?.user;
   if (!user) return actionResponse.unauthorized();
   try {
-    const benefits = await fetchUserBenefitsInternal(user.id);
+    const benefits = await getUserBenefits(user.id);
     if (benefits) {
       return actionResponse.success(benefits);
     }
