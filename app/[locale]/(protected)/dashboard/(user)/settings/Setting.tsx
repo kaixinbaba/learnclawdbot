@@ -23,10 +23,8 @@ import { toast } from "sonner";
 
 type User = typeof userSchema.$inferSelect;
 
-export default function Settings() {
+export default function Settings({ user }: { user: User }) {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
-  const user = session?.user as User | undefined;
 
   const [isLoading, setIsLoading] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -164,7 +162,7 @@ export default function Settings() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label>{t("form.emailLabel")}</Label>
-          <Input defaultValue={user?.email} disabled className="bg-muted" />
+          <Input defaultValue={user.email} disabled className="bg-muted" />
         </div>
 
         <div className="space-y-2">
@@ -185,10 +183,10 @@ export default function Settings() {
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20">
               <AvatarImage
-                src={previewUrl || user?.image || undefined}
-                alt={user?.name || "User avatar"}
+                src={previewUrl || user.image || undefined}
+                alt={user.name || "User avatar"}
               />
-              <AvatarFallback>{user?.email[0] || "U"}</AvatarFallback>
+              <AvatarFallback>{user.email[0] || ""}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-1">
               <Input
@@ -196,7 +194,6 @@ export default function Settings() {
                 accept={AVATAR_ACCEPT_ATTRIBUTE}
                 onChange={handleAvatarChange}
                 className="max-w-[300px] hover:cursor-pointer"
-                lang="en"
               />
               <p className="text-xs text-muted-foreground">
                 {t("form.avatarHint", {

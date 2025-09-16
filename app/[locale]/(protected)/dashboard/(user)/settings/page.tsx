@@ -1,8 +1,13 @@
+import { user as userSchema } from "@/drizzle/db/schema";
+import { getSession } from "@/lib/auth/server";
 import { constructMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 import { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
 import Settings from "./Setting";
+
+type User = typeof userSchema.$inferSelect;
 
 type Params = Promise<{ locale: string }>;
 
@@ -29,5 +34,10 @@ export async function generateMetadata({
 }
 
 export default async function SettingsPage() {
-  return <Settings />;
+  const session = await getSession();
+  if (!session) {
+    redirect("/login");
+  }
+
+  return <Settings user={session.user as User} />;
 }
