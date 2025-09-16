@@ -10,10 +10,12 @@ export async function AuthGuard({
 }) {
   const session = await getSession();
 
+  // dashboard/*
   if (!session) {
     redirect("/login");
   }
 
+  // dashboard/(admin)/*
   if (role && role === "admin" && session.user.role !== role) {
     redirect("/dashboard");
   }
