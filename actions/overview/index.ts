@@ -3,6 +3,7 @@
 import { db } from '@/drizzle/db';
 import { orders as ordersSchema, pricingPlans as pricingPlansSchema, user as userSchema } from '@/drizzle/db/schema';
 import { actionResponse, ActionResult } from '@/lib/action-response';
+import { isAdmin } from '@/lib/auth/server';
 import { getErrorMessage } from '@/lib/error-utils';
 import { and, count, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 
@@ -45,9 +46,9 @@ function calculateGrowthRate(today: number, yesterday: number): number {
 }
 
 export const getOverviewStats = async (): Promise<ActionResult<IOverviewStats>> => {
-  // if (!(await isAdmin())) {
-  //   return actionResponse.forbidden('Admin privileges required.');
-  // }
+  if (!(await isAdmin())) {
+    return actionResponse.forbidden('Admin privileges required.');
+  }
   try {
     const now = new Date();
     const todayStart = new Date(
@@ -102,7 +103,7 @@ export const getOverviewStats = async (): Promise<ActionResult<IOverviewStats>> 
               Number
             ),
           monthlyRevenue:
-            sql`COALESCE(SUM(${ordersSchema.amountTotal}) FILTER (WHERE ${ordersSchema.orderType} IN ('subscription_initial', 'subscription_renewal') AND ${pricingPlansSchema.recurringInterval} = 'month'), 0)`.mapWith(
+            sql`COALESCE(SUM(${ordersSchema.amountTotal}) FILTER (WHERE ${pricingPlansSchema.recurringInterval} = 'month'), 0)`.mapWith(
               Number
             ),
           yearlyCount:
@@ -110,7 +111,7 @@ export const getOverviewStats = async (): Promise<ActionResult<IOverviewStats>> 
               Number
             ),
           yearlyRevenue:
-            sql`COALESCE(SUM(${ordersSchema.amountTotal}) FILTER (WHERE ${ordersSchema.orderType} IN ('subscription_initial', 'subscription_renewal') AND ${pricingPlansSchema.recurringInterval} = 'year'), 0)`.mapWith(
+            sql`COALESCE(SUM(${ordersSchema.amountTotal}) FILTER (WHERE ${pricingPlansSchema.recurringInterval} = 'year'), 0)`.mapWith(
               Number
             ),
         })
@@ -218,9 +219,9 @@ export const getOverviewStats = async (): Promise<ActionResult<IOverviewStats>> 
 export const getDailyGrowthStats = async (
   period: '7d' | '30d' | '90d'
 ): Promise<ActionResult<IDailyGrowthStats[]>> => {
-  // if (!(await isAdmin())) {
-  //   return actionResponse.forbidden('Admin privileges required.');
-  // }
+  if (!(await isAdmin())) {
+    return actionResponse.forbidden('Admin privileges required.');
+  }
   try {
     const now = new Date();
     let startDate: Date;
@@ -261,7 +262,12 @@ export const getDailyGrowthStats = async (
       .where(
         and(
           gte(ordersSchema.createdAt, startDate),
-          inArray(ordersSchema.status, ['succeeded', 'active'])
+          inArray(ordersSchema.status, ['succeeded', 'active']),
+          inArray(ordersSchema.orderType, [
+            'one_time_purchase',
+            'subscription_initial',
+            'subscription_renewal',
+          ])
         )
       )
       .groupBy(orderDateTrunc)
