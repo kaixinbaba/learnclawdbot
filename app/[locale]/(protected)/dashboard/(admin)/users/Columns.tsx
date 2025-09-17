@@ -2,6 +2,7 @@
 
 import { banUser, unbanUser } from "@/actions/users/admin";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +21,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { user as userSchema } from "@/drizzle/db/schema";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
@@ -210,6 +217,39 @@ export const columns: ColumnDef<UserType>[] = [
     ),
   },
   {
+    id: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const { banned, banReason, emailVerified, isAnonymous } = row.original;
+      if (banned) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="destructive">Banned</Badge>
+              </TooltipTrigger>
+              {banReason && (
+                <TooltipContent>
+                  <p>{banReason}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+
+      if (isAnonymous) {
+        return <Badge variant="outline">Anonymous</Badge>;
+      }
+
+      if (emailVerified) {
+        return <Badge variant="secondary">Verified</Badge>;
+      } else {
+        return <Badge variant="outline">Unverified</Badge>;
+      }
+    },
+  },
+  {
     accessorKey: "stripeCustomerId",
     header: "Stripe Customer ID",
     cell: ({ row }) => (
@@ -223,6 +263,11 @@ export const columns: ColumnDef<UserType>[] = [
         {row.original.stripeCustomerId || "-"}
       </span>
     ),
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "Updated At",
+    cell: ({ row }) => dayjs(row.original.updatedAt).format("YYYY-MM-DD HH:mm"),
   },
   {
     accessorKey: "createdAt",
