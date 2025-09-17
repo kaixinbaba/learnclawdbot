@@ -11,7 +11,7 @@
  * https://vercel.com/docs/functions/configuring-functions/duration
  */
 
-export const runtime = "edge";
+// export const runtime = "edge"; // if deploy to vercel/netlify/cloudflare, use edge runtime
 
 import { IMAGE_TO_VIDEO_MODELS } from "@/config/models";
 import { apiResponse } from "@/lib/api-response";

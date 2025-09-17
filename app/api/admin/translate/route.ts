@@ -12,7 +12,7 @@
  * https://vercel.com/docs/functions/configuring-functions/duration
  */
 
-export const runtime = "edge"; // if deploy to vercel/netlify/cloudflare, use edge runtime
+// export const runtime = "edge"; // if deploy to vercel/netlify/cloudflare, use edge runtime
 
 import { apiResponse } from "@/lib/api-response";
 import { isAdmin } from "@/lib/auth/server";

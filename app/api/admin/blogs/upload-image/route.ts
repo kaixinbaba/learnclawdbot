@@ -14,7 +14,7 @@
  * 2、The file upload process typically goes from local to server, and then from server to R2. For the server-to-R2 leg of this journey, the Edge runtime offers better performance.
  */
 
-export const runtime = "edge";
+// export const runtime = "edge"; // if deploy to vercel/netlify/cloudflare, use edge runtime
 
 import { BLOGS_IMAGE_PATH } from '@/config/common';
 import { DEFAULT_LOCALE } from '@/i18n/routing';
