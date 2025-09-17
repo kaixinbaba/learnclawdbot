@@ -407,7 +407,8 @@ export async function sendInvoicePaymentFailedEmail({
         await sendEmail({
           email: userEmail,
           subject,
-          react: await InvoicePaymentFailedEmail(emailProps)
+          react: InvoicePaymentFailedEmail,
+          reactProps: emailProps
         })
       } catch (emailError) {
         console.error(`Failed to send payment failed email for invoice ${invoiceId} to ${userEmail}:`, emailError);
