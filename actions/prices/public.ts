@@ -1,7 +1,7 @@
 'use server';
 
 import { actionResponse, ActionResult } from '@/lib/action-response';
-import { db } from '@/lib/db';
+import { db, isDatabaseEnabled } from '@/lib/db';
 import { pricingPlans as pricingPlansSchema } from '@/lib/db/schema';
 import { getErrorMessage } from '@/lib/error-utils';
 import { and, asc, eq } from 'drizzle-orm';
@@ -15,6 +15,10 @@ type PricingPlan = typeof pricingPlansSchema.$inferSelect
 export async function getPublicPricingPlans(): Promise<
   ActionResult<PricingPlan[]>
 > {
+  if (!isDatabaseEnabled) {
+    return actionResponse.success([])
+  }
+
   const environment = process.env.NODE_ENV === 'production' ? 'live' : 'test'
 
   try {
