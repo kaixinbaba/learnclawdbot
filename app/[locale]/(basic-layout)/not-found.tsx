@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Link } from "@/i18n/routing";
+import { Link as I18nLink } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 
 export default function NotFound() {
@@ -20,9 +20,9 @@ export default function NotFound() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/">
+            <I18nLink href="/">
               <Button className="w-full sm:w-auto">{t("backToHome")}</Button>
-            </Link>
+            </I18nLink>
 
             <Button
               variant="outline"
