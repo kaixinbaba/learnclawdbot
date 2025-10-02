@@ -17,16 +17,6 @@ export function kebabToPascalCase(str: string): string {
     .join('');
 }
 
-export const getDomain = (url: string) => {
-  try {
-    const urlWithProtocol = url.startsWith('http') ? url : `https://${url}`;
-    const domain = new URL(urlWithProtocol).hostname;
-    return domain.replace(/^www\./, '');
-  } catch (error) {
-    return url;
-  }
-};
-
 export const formatCurrency = (
   amount: number | null | undefined,
   currency: string | null | undefined
@@ -45,17 +35,6 @@ export const formatCurrency = (
     return `${amount.toFixed(2)} ${effectiveCurrency.toUpperCase()}`;
   }
 };
-
-
-export const getURL = (path: string = '') => {
-  let url =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    'http://localhost:3000';
-  url = url.includes('http') ? url : `https://${url}`;
-  url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
-  url = `${url}${path}`;
-  return url;
-}
 
 export function formatBytes(bytes: number, decimals = 2): string {
   if (!+bytes) return '0 Bytes'
