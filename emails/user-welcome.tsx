@@ -177,7 +177,7 @@ export const UserWelcomeEmail: React.FC<UserWelcomeEmailProps> = ({
             )}
             {siteConfig.socialLinks?.email && (
               <a
-                href={siteConfig.socialLinks.email}
+                href={`mailto:${siteConfig.socialLinks.email}`}
                 target="_blank"
                 rel="noreferrer nofollow noopener"
                 style={commonStyles.socialLink}
