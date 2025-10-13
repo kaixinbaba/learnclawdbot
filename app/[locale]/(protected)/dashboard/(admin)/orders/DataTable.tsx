@@ -96,19 +96,10 @@ export function OrdersDataTable<TData, TValue>({
   );
 
   useEffect(() => {
-    if (!initialLoad) {
-      if (pagination.pageIndex !== 0) {
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-      }
-    }
-  }, [
-    debouncedGlobalFilter,
-    provider,
-    orderType,
-    status,
-    initialLoad,
-    pagination.pageIndex,
-  ]);
+    setPagination((prev) =>
+      prev.pageIndex !== 0 ? { ...prev, pageIndex: 0 } : prev
+    );
+  }, [debouncedGlobalFilter, provider, orderType, status]);
 
   useEffect(() => {
     if (initialLoad) {
