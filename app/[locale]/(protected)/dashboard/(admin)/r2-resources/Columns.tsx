@@ -73,7 +73,7 @@ const ActionsCell: React.FC<ActionsCellProps> = ({
   onDelete,
 }) => {
   const handleCopy = () => {
-    navigator.clipboard.writeText(file.key);
+    navigator.clipboard.writeText(`${r2PublicUrl}/${file.key}`);
     toast.success("Filename copied to clipboard");
   };
 
@@ -89,7 +89,7 @@ const ActionsCell: React.FC<ActionsCellProps> = ({
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuItem onClick={handleCopy}>
           <Copy className="mr-2 h-4 w-4" />
-          Copy Filename (Key)
+          Copy Public URL
         </DropdownMenuItem>
         {r2PublicUrl ? (
           <DropdownMenuItem asChild>
@@ -144,8 +144,8 @@ export const getColumns = (
             <img
               src={previewUrl}
               alt={`Preview of ${file.key}`}
-              width={64}
-              height={64}
+              width={48}
+              height={48}
               className="object-contain rounded border bg-muted"
             />
           </ImagePreview>
@@ -154,8 +154,8 @@ export const getColumns = (
         return (
           <video
             src={previewUrl}
-            width="80"
-            height="64"
+            width="64"
+            height="48"
             controls={false}
             muted
             preload="metadata"
