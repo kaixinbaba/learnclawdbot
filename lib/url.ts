@@ -57,3 +57,16 @@ export function universalSlugify(name: string, url: string) {
 
   return slug;
 }
+
+export const getDataFromDataUrl = (dataUrl: string): { buffer: Buffer; contentType: string } | null => {
+  const match = dataUrl.match(/^data:(.*?);base64,(.*)$/);
+
+  if (!match) {
+    console.error("Invalid data URL format");
+    return null;
+  }
+  const contentType = match[1];
+  const base64Data = match[2];
+  const buffer = Buffer.from(base64Data, 'base64');
+  return { buffer, contentType };
+}

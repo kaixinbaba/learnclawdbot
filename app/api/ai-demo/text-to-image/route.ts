@@ -5,7 +5,6 @@
  */
 
 import { apiResponse } from "@/lib/api-response";
-// import { generateR2Key, getDataFromDataUrl, serverUploadFile } from "@/lib/cloudflare/r2"; // Optional: Uncomment if you want to upload results to R2
 import { openai } from "@ai-sdk/openai";
 import { replicate } from "@ai-sdk/replicate";
 import { xai } from "@ai-sdk/xai";

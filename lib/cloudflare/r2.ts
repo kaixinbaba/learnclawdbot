@@ -1,13 +1,6 @@
-import { _Object, DeleteObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-
-export const createR2Client = () => new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
+import { createR2Client } from "@/lib/cloudflare/r2-client";
+import { _Object, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export interface UploadOptions {
   data: Buffer | string;
@@ -49,7 +42,7 @@ export const serverUploadFile = async ({
 
     const url = `${process.env.R2_PUBLIC_URL}/${finalKey}`;
 
-    return { url, key };
+    return { url, key: finalKey };
   } catch (error) {
     console.error('Failed to upload file to R2:', error);
     throw new Error('Failed to upload file to R2');
@@ -149,36 +142,51 @@ export const listR2Objects = async (
   }
 };
 
-export const generateR2Key = ({
-  fileName,
-  path = "",
-  prefix,
+export async function createPresignedUploadUrl({
+  key,
+  contentType,
+  expiresIn = 600,
 }: {
-  fileName: string;
-  path?: string;
-  prefix?: string;
-}): string => {
-  const originalFileExtension = fileName.split(".").pop();
-  const randomPart = `${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 8)}${originalFileExtension ? `.${originalFileExtension}` : ""}`;
-
-  const finalFileName = prefix
-    ? `${prefix}-${randomPart}`
-    : randomPart;
-  const cleanedPath = path.replace(/^\/+|\/+$/g, "");
-  return cleanedPath ? `${cleanedPath}/${finalFileName}` : finalFileName;
-};
-
-export const getDataFromDataUrl = (dataUrl: string): { buffer: Buffer; contentType: string } | null => {
-  const match = dataUrl.match(/^data:(.*?);base64,(.*)$/);
-
-  if (!match) {
-    console.error("Invalid data URL format");
-    return null;
+  key: string;
+  contentType: string;
+  expiresIn?: number;
+}): Promise<{ presignedUrl: string; publicObjectUrl: string }> {
+  if (!process.env.R2_BUCKET_NAME || !process.env.R2_PUBLIC_URL) {
+    throw new Error('R2 configuration is missing (bucket name or public URL)');
   }
-  const contentType = match[1];
-  const base64Data = match[2];
-  const buffer = Buffer.from(base64Data, 'base64');
-  return { buffer, contentType };
+
+  const s3Client = createR2Client();
+
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME,
+    Key: key,
+    ContentType: contentType,
+  });
+
+  const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+  const publicObjectUrl = `${process.env.R2_PUBLIC_URL.replace(/\/$/, '')}/${key}`;
+
+  return { presignedUrl, publicObjectUrl };
+}
+
+export async function createPresignedDownloadUrl({
+  key,
+  expiresIn = 300,
+}: {
+  key: string;
+  expiresIn?: number;
+}): Promise<string> {
+  if (!process.env.R2_BUCKET_NAME) {
+    throw new Error('R2 bucket name is not configured');
+  }
+
+  const s3Client = createR2Client();
+
+  const command = new GetObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME,
+    Key: key,
+  });
+
+  const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+  return presignedUrl;
 }
