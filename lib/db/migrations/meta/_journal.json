@@ -29,6 +29,13 @@
       "when": 1760201904771,
       "tag": "0003_special_proudstar",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1760801243418,
+      "tag": "0004_white_harrier",
+      "breakpoints": true
     }
   ]
 }

@@ -294,7 +294,9 @@ export const posts = pgTable(
     isPinned: boolean('is_pinned').default(false).notNull(),
     status: postStatusEnum('status').default('draft').notNull(),
     visibility: postVisibilityEnum('visibility').default('public').notNull(),
-    publishedAt: timestamp('published_at', { withTimezone: true }),
+    publishedAt: timestamp('published_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
