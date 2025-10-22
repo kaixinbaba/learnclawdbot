@@ -92,6 +92,50 @@ const ActionsCell: React.FC<ActionsCellProps> = ({ file, onDelete }) => {
   );
 };
 
+interface CopyUrlCellProps {
+  fileKey: string;
+  r2PublicUrl: string | undefined;
+}
+
+const CopyUrlCell: React.FC<CopyUrlCellProps> = ({ fileKey, r2PublicUrl }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    const fullUrl = `${r2PublicUrl}/${fileKey}`;
+    navigator.clipboard.writeText(fullUrl);
+    setCopied(true);
+    toast.success("Full URL copied to clipboard", {
+      description: fullUrl,
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="outline" size="sm" onClick={handleCopy}>
+            {copied ? (
+              <>
+                <Check className="mr-1 h-3 w-3" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="ml-1 h-3 w-3" />
+                Copy URL
+              </>
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {r2PublicUrl}/{fileKey}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 export const getColumns = (
   r2PublicUrl: string | undefined,
   onDelete: (key: string) => void
@@ -146,41 +190,7 @@ export const getColumns = (
     header: "File URL",
     cell: ({ row }) => {
       const key = row.getValue<string>("key");
-      const [copied, setCopied] = useState(false);
-
-      const handleCopy = () => {
-        const fullUrl = `${r2PublicUrl}/${key}`;
-        navigator.clipboard.writeText(fullUrl);
-        setCopied(true);
-        toast.success("Full URL copied to clipboard", {
-          description: fullUrl,
-        });
-        setTimeout(() => setCopied(false), 2000);
-      };
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={handleCopy}>
-                {copied ? (
-                  <>
-                    <Check className="mr-1 h-3 w-3" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="ml-1 h-3 w-3" />
-                    Copy URL
-                  </>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {r2PublicUrl}/{key}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
+      return <CopyUrlCell fileKey={key} r2PublicUrl={r2PublicUrl} />;
     },
   },
   {
