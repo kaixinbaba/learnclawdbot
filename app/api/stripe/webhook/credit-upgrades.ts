@@ -225,7 +225,8 @@ export async function upgradeSubscriptionCredits(userId: string, planId: string,
           attempts++;
           try {
             await db.transaction(async (tx) => {
-              const startDate = new Date(subscription.start_date * 1000);
+              // const startDate = new Date(subscription.start_date * 1000);
+              const startDate = new Date(subscription.items.data[0].current_period_start * 1000);
               const nextCreditDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate());
 
               const yearlyDetails = {
