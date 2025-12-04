@@ -28,6 +28,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ALL_ORDER_TYPES,
+  ORDER_PROVIDERS,
+} from "@/lib/payments/provider-utils";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -41,14 +45,13 @@ interface DataTableProps<TData, TValue> {
   totalCount: number;
 }
 
-const ORDER_PROVIDERS = ["stripe"];
-const ORDER_TYPES = [
-  "one_time_purchase",
-  "subscription_initial",
-  "subscription_renewal",
-  "refund",
+const ORDER_TYPES = ALL_ORDER_TYPES;
+const ORDER_STATUSES = [
+  "succeeded",
+  "refunded",
+  "partially_refunded",
+  "canceled",
 ];
-const ORDER_STATUSES = ["succeeded", "refunded"];
 
 export function MyOrdersDataTable<TData, TValue>({
   columns,
@@ -182,7 +185,7 @@ export function MyOrdersDataTable<TData, TValue>({
             <SelectContent>
               <SelectItem value="all">All Providers</SelectItem>
               {ORDER_PROVIDERS.map((p) => (
-                <SelectItem key={p} value={p}>
+                <SelectItem key={p} value={p} className="capitalize">
                   {p}
                 </SelectItem>
               ))}

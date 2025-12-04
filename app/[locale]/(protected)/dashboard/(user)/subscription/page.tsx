@@ -1,10 +1,15 @@
+import { createCreemPortalSession } from "@/actions/creem/portal";
 import { createStripePortalSession } from "@/actions/stripe";
 import { getUserBenefits } from "@/actions/usage/benefits";
 import CurrentUserBenefitsDisplay from "@/components/layout/CurrentUserBenefitsDisplay";
 import { Button } from "@/components/ui/button";
 import { Link as I18nLink } from "@/i18n/routing";
 import { getSession } from "@/lib/auth/server";
+import { db } from "@/lib/db";
+import { subscriptions as subscriptionsSchema } from "@/lib/db/schema";
+import { desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { PortalButton } from "./PortalButton";
 
 export default async function SubscriptionPage() {
   const session = await getSession();
@@ -12,6 +17,16 @@ export default async function SubscriptionPage() {
   if (!user) redirect("/login");
 
   const benefits = await getUserBenefits(user.id);
+
+  // Get the user's subscription provider
+  const subscriptionResults = await db
+    .select({ provider: subscriptionsSchema.provider })
+    .from(subscriptionsSchema)
+    .where(eq(subscriptionsSchema.userId, user.id))
+    .orderBy(desc(subscriptionsSchema.createdAt))
+    .limit(1);
+
+  const subscriptionProvider = subscriptionResults[0]?.provider || null;
 
   const isMember =
     benefits.subscriptionStatus === "active" ||
@@ -30,15 +45,34 @@ export default async function SubscriptionPage() {
         {isMember ? (
           <>
             <CurrentUserBenefitsDisplay />
-            <form action={createStripePortalSession}>
-              <Button type="submit" variant="outline">
-                Manage Subscription & Billing
-              </Button>
-            </form>
-            <p className="text-xs text-muted-foreground">
-              You will be redirected to Stripe to manage your subscription
-              details.
-            </p>
+            {subscriptionProvider === "stripe" && (
+              <>
+                <PortalButton
+                  provider="stripe"
+                  action={createStripePortalSession}
+                />
+                <p className="text-xs text-muted-foreground">
+                  You will be redirected to Stripe to manage your subscription
+                  details.
+                </p>
+              </>
+            )}
+            {subscriptionProvider === "creem" && (
+              <>
+                <PortalButton
+                  provider="creem"
+                  action={createCreemPortalSession}
+                />
+                <p className="text-xs text-muted-foreground">
+                  You will be redirected to manage your subscription details.
+                </p>
+              </>
+            )}
+            {!subscriptionProvider && (
+              <p className="text-sm text-muted-foreground">
+                Unable to load subscription management portal.
+              </p>
+            )}
           </>
         ) : (
           <>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { getOrderTypeLabel } from "@/lib/payments/provider-utils";
 import { OrderWithUser } from "@/types/admin/orders";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
@@ -102,7 +103,9 @@ export const columns: ColumnDef<OrderWithUser>[] = [
     accessorKey: "orderType",
     header: "Type",
     cell: ({ row }) => (
-      <Badge variant="outline">{row.original.orderType}</Badge>
+      <Badge variant="outline">
+        {getOrderTypeLabel(row.original.orderType)}
+      </Badge>
     ),
   },
   {
@@ -113,7 +116,7 @@ export const columns: ColumnDef<OrderWithUser>[] = [
       let variant: "secondary" | "destructive" | "outline" = "outline";
       if (status === "succeeded") {
         variant = "secondary";
-      } else if (status === "refunded") {
+      } else if (status === "refunded" || status === "partially_refunded") {
         variant = "destructive";
       } else {
         variant = "outline";

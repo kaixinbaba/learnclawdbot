@@ -21,36 +21,55 @@ export default function PricingCTA({ plan, localizedPlan }: Params) {
   const router = useRouter();
   const locale = useLocale();
 
+  const provider = plan.provider;
+  const isCreem = provider === "creem";
+  const isStripe = provider === "stripe";
+
   const handleCheckout = async (applyCoupon = true) => {
     const stripePriceId = plan.stripePriceId ?? null;
-    if (!stripePriceId) {
-      toast.error("Price ID is missing for this plan.");
+    if (isStripe && !stripePriceId) {
+      toast.error("Stripe price ID is missing for this plan.");
       return;
     }
 
-    const couponCode = plan.stripeCouponId;
+    const creemProductId = plan.creemProductId ?? null;
+    if (isCreem && !creemProductId) {
+      toast.error("Creem product ID is missing for this plan.");
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const toltReferral = (window as any).tolt_referral;
-
-      const requestBody: {
-        priceId: string;
+      let requestBody: {
+        provider: string;
         couponCode?: string;
+        // Stripe
+        stripePriceId?: string;
         referral?: string;
+
+        // Creem
+        creemProductId?: string;
       } = {
-        priceId: stripePriceId,
+        provider: provider || "stripe",
       };
 
-      if (applyCoupon && couponCode) {
-        requestBody.couponCode = couponCode;
+      if (isStripe) {
+        requestBody.stripePriceId = stripePriceId!;
+        requestBody.couponCode =
+          applyCoupon && plan.stripeCouponId ? plan.stripeCouponId : undefined;
+
+        const toltReferral = (window as any).tolt_referral;
+        requestBody.referral = toltReferral ?? undefined;
+      }
+      if (isCreem) {
+        requestBody.creemProductId = creemProductId!;
+        requestBody.couponCode =
+          applyCoupon && plan.creemDiscountCode
+            ? plan.creemDiscountCode
+            : undefined;
       }
 
-      if (toltReferral) {
-        requestBody.referral = toltReferral;
-      }
-
-      const response = await fetch("/api/stripe/checkout-session", {
+      const response = await fetch("/api/payment/checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -93,6 +112,16 @@ export default function PricingCTA({ plan, localizedPlan }: Params) {
     }
   };
 
+  let defaultCouponCode = null;
+  if (isCreem) {
+    defaultCouponCode = plan.creemDiscountCode;
+  } else if (isStripe) {
+    defaultCouponCode = plan.stripeCouponId;
+  }
+
+  const allowManualCoupon =
+    Boolean(defaultCouponCode) && plan.enableManualInputCoupon;
+
   return (
     <div>
       <Button
@@ -102,9 +131,7 @@ export default function PricingCTA({ plan, localizedPlan }: Params) {
           plan.isHighlighted
             ? "highlight-button"
             : "bg-gray-900 text-white dark:bg-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100"
-        } ${
-          plan.stripeCouponId && plan.enableManualInputCoupon ? "mb-2" : "mb-6"
-        }`}
+        } ${allowManualCoupon ? "mb-2" : "mb-6"}`}
         {...(!plan.buttonLink && {
           onClick: () => handleCheckout(),
         })}
@@ -133,7 +160,7 @@ export default function PricingCTA({ plan, localizedPlan }: Params) {
           </>
         )}
       </Button>
-      {plan.stripeCouponId && plan.enableManualInputCoupon && (
+      {allowManualCoupon && (
         <div className="text-center mb-2">
           <button
             onClick={() => handleCheckout(false)}

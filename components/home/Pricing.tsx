@@ -14,6 +14,12 @@ import FeatureBadge from "@/components/shared/FeatureBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_LOCALE } from "@/i18n/routing";
 import { pricingPlans as pricingPlansSchema } from "@/lib/db/schema";
+import {
+  isMonthlyInterval,
+  isOneTimePaymentType,
+  isRecurringPaymentType,
+  isYearlyInterval,
+} from "@/lib/payments/provider-utils";
 import { PricingPlanLangJsonb } from "@/types/pricing";
 import { Gift } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -36,16 +42,18 @@ export default async function Pricing() {
 
   const annualPlans = allPlans.filter(
     (plan) =>
-      plan.paymentType === "recurring" && plan.recurringInterval === "year"
+      isRecurringPaymentType(plan.paymentType) &&
+      isYearlyInterval(plan.recurringInterval)
   );
 
   const monthlyPlans = allPlans.filter(
     (plan) =>
-      plan.paymentType === "recurring" && plan.recurringInterval === "month"
+      isRecurringPaymentType(plan.paymentType) &&
+      isMonthlyInterval(plan.recurringInterval)
   );
 
-  const oneTimePlans = allPlans.filter(
-    (plan) => plan.paymentType === "one_time"
+  const oneTimePlans = allPlans.filter((plan) =>
+    isOneTimePaymentType(plan.paymentType)
   );
 
   // count the number of available plan types

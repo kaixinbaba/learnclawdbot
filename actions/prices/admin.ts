@@ -120,6 +120,17 @@ export async function createPricingPlanAction({
     }
   }
 
+  // Clean up fields based on provider
+  if (planData.provider === 'stripe') {
+    planData.creemProductId = null
+    planData.creemDiscountCode = null
+  } else if (planData.provider === 'creem') {
+    planData.stripePriceId = null
+    planData.stripeProductId = null
+    planData.stripeCouponId = null
+    planData.enableManualInputCoupon = false
+  }
+
   try {
     const [newPlan] = await db
       .insert(pricingPlansSchema)
@@ -127,15 +138,18 @@ export async function createPricingPlanAction({
         environment: planData.environment,
         cardTitle: planData.cardTitle,
         cardDescription: planData.cardDescription,
+        provider: planData.provider,
         stripePriceId: planData.stripePriceId,
         stripeProductId: planData.stripeProductId,
         stripeCouponId: planData.stripeCouponId,
+        creemProductId: planData.creemProductId,
+        creemDiscountCode: planData.creemDiscountCode,
         enableManualInputCoupon:
           planData.enableManualInputCoupon ?? false,
         paymentType: planData.paymentType,
         recurringInterval: planData.recurringInterval,
         price: planData.price?.toString(),
-        currency: planData.currency,
+        currency: planData.currency?.toUpperCase() || null,
         displayPrice: planData.displayPrice,
         originalPrice: planData.originalPrice,
         priceSuffix: planData.priceSuffix,
@@ -218,10 +232,23 @@ export async function updatePricingPlanAction({
     return actionResponse.badRequest(t('invalidBenefitsJsonFormat'))
   }
 
+  // Clean up fields based on provider
+  if (planData.provider === 'stripe') {
+    planData.creemProductId = null
+    planData.creemDiscountCode = null
+  } else if (planData.provider === 'creem') {
+    planData.stripePriceId = null
+    planData.stripeProductId = null
+    planData.stripeCouponId = null
+    planData.enableManualInputCoupon = false
+  }
+
   try {
     delete planData.id
     delete planData.createdAt
     delete planData.updatedAt
+
+    planData.currency = planData.currency?.toUpperCase() || null
 
     const dataToUpdate: { [key: string]: any } = { ...planData }
 
@@ -231,6 +258,12 @@ export async function updatePricingPlanAction({
 
     if (planData.features !== undefined) {
       dataToUpdate.features = (planData.features || [])
+    }
+    if (planData.creemProductId !== undefined) {
+      dataToUpdate.creemProductId = planData.creemProductId || null
+    }
+    if (planData.creemDiscountCode !== undefined) {
+      dataToUpdate.creemDiscountCode = planData.creemDiscountCode || null
     }
     if (planData.langJsonb !== undefined) {
       dataToUpdate.langJsonb = (planData.langJsonb || {})

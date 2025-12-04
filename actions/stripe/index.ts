@@ -14,7 +14,9 @@ import {
   user as userSchema,
 } from '@/lib/db/schema';
 import { getErrorMessage } from '@/lib/error-utils';
+import { isRecurringPaymentType } from '@/lib/payments/provider-utils';
 import { stripe } from '@/lib/stripe';
+import { getURL } from '@/lib/url';
 import { eq, InferInsertModel } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -24,7 +26,7 @@ export async function getOrCreateStripeCustomer(
   userId: string
 ): Promise<string> {
 
-  const userProfileResults = await db
+  const userData = await db
     .select({
       stripeCustomerId: userSchema.stripeCustomerId,
       email: userSchema.email,
@@ -32,7 +34,7 @@ export async function getOrCreateStripeCustomer(
     .from(userSchema)
     .where(eq(userSchema.id, userId))
     .limit(1);
-  const userProfile = userProfileResults[0];
+  const userProfile = userData[0];
 
   if (!userProfile) {
     throw new Error(`Could not fetch user profile for ${userId}`);
@@ -81,6 +83,102 @@ export async function getOrCreateStripeCustomer(
     const errorMessage = getErrorMessage(error);
     throw new Error(`Stripe customer creation/update failed: ${errorMessage}`);
   }
+}
+
+export async function createStripeCheckoutSession(params: {
+  userId: string;
+  priceId: string;
+  couponCode?: string;
+  referral?: string;
+}): Promise<{ sessionId: string; url?: string }> {
+  const { userId, priceId, couponCode, referral } = params;
+
+  const customerId = await getOrCreateStripeCustomer(userId);
+
+  const results = await db
+    .select({
+      id: pricingPlansSchema.id,
+      cardTitle: pricingPlansSchema.cardTitle,
+      paymentType: pricingPlansSchema.paymentType,
+      trialPeriodDays: pricingPlansSchema.trialPeriodDays,
+    })
+    .from(pricingPlansSchema)
+    .where(eq(pricingPlansSchema.stripePriceId, priceId))
+    .limit(1);
+
+  const plan = results[0];
+
+  if (!plan) {
+    console.error(`Plan not found for priceId ${priceId}`);
+    throw new Error(`Plan not found for priceId ${priceId}`);
+  }
+
+  const isSubscription = isRecurringPaymentType(plan.paymentType);
+  const mode: Stripe.Checkout.SessionCreateParams.Mode = isSubscription
+    ? 'subscription'
+    : 'payment';
+
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    customer: customerId,
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    mode,
+    success_url: getURL(
+      `payment/success?session_id={CHECKOUT_SESSION_ID}&provider=stripe`
+    ),
+    cancel_url: getURL(process.env.NEXT_PUBLIC_PRICING_PATH!),
+    metadata: {
+      userId,
+      planId: plan.id,
+      planName: plan.cardTitle,
+      priceId,
+      ...(referral && { tolt_referral: referral }),
+    },
+  };
+
+  if (couponCode) {
+    sessionParams.discounts = [{ coupon: couponCode }];
+  } else {
+    sessionParams.allow_promotion_codes = true;
+  }
+
+  if (isSubscription) {
+    sessionParams.subscription_data = {
+      trial_period_days: plan.trialPeriodDays ?? undefined,
+      metadata: {
+        userId,
+        planId: plan.id,
+        planName: plan.cardTitle,
+        priceId,
+      },
+    };
+  } else {
+    sessionParams.payment_intent_data = {
+      metadata: {
+        userId,
+        planId: plan.id,
+        planName: plan.cardTitle,
+        priceId,
+      },
+    };
+  }
+
+  if (!stripe) {
+    throw new Error(
+      'Stripe is not initialized. Please check your environment variables.'
+    );
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionParams);
+  if (!session.id) {
+    throw new Error('Stripe session creation failed (missing session ID)');
+  }
+
+  return { sessionId: session.id, url: session.url ?? undefined };
 }
 
 export async function createStripePortalSession(): Promise<void> {
@@ -153,12 +251,7 @@ export async function syncSubscriptionData(
   initialMetadata?: Record<string, any>
 ): Promise<void> {
   try {
-    if (!stripe) {
-      console.error('Stripe is not initialized. Please check your environment variables.');
-      throw new Error(`Stripe is not initialized. Please check your environment variables.`);
-    }
-
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    const subscription = await stripe?.subscriptions.retrieve(subscriptionId, {
       expand: ['default_payment_method', 'customer']
     });
 
@@ -195,13 +288,12 @@ export async function syncSubscriptionData(
 
     if (!userId) {
       console.warn(`User ID still missing for sub ${subscriptionId}. Trying DB lookup via customer ID ${customerId}.`);
-      const userProfileResults = await db
+      const userData = await db
         .select({ id: userSchema.id })
         .from(userSchema)
         .where(eq(userSchema.stripeCustomerId, customerId))
         .limit(1);
-      const userProfile = userProfileResults[0];
-
+      const userProfile = userData[0];
 
       if (!userProfile) {
         console.error(`DB lookup failed for customer ${customerId}:`);
@@ -233,8 +325,9 @@ export async function syncSubscriptionData(
     const subscriptionData: SubscriptionInsert = {
       userId: userId,
       planId: planId,
-      stripeSubscriptionId: subscription.id,
-      stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
+      provider: 'stripe',
+      subscriptionId: subscription.id,
+      customerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
       priceId: priceId,
       status: subscription.status,
       currentPeriodStart: subscription.items.data[0].current_period_start ? new Date(subscription.items.data[0].current_period_start * 1000) : null,
@@ -250,12 +343,12 @@ export async function syncSubscriptionData(
       },
     };
 
-    const { stripeSubscriptionId, ...updateData } = subscriptionData;
+    const { ...updateData } = subscriptionData;
     await db
       .insert(subscriptionsSchema)
       .values(subscriptionData)
       .onConflictDoUpdate({
-        target: subscriptionsSchema.stripeSubscriptionId,
+        target: subscriptionsSchema.subscriptionId,
         set: updateData,
       });
 

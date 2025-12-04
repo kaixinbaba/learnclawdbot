@@ -9,19 +9,26 @@ import { db } from '@/lib/db';
 import {
   orders as ordersSchema,
   pricingPlans as pricingPlansSchema,
+  user as userSchema,
 } from '@/lib/db/schema';
-import { stripe } from '@/lib/stripe';
-import { and, eq, inArray, InferInsertModel } from 'drizzle-orm';
-import Stripe from 'stripe';
 import {
   revokeOneTimeCredits,
   revokeRemainingSubscriptionCreditsOnEnd,
   revokeSubscriptionCredits,
-} from './credit-revokes';
-import {
   upgradeOneTimeCredits,
   upgradeSubscriptionCredits,
-} from './credit-upgrades';
+} from '@/lib/payments/credit-manager';
+import { ORDER_TYPES } from '@/lib/payments/provider-utils';
+import {
+  createOrderWithIdempotency,
+  findOriginalOrderForRefund,
+  refundOrderExists,
+  toCurrencyAmount,
+  updateOrderStatusAfterRefund,
+} from '@/lib/payments/webhook-helpers';
+import { stripe } from '@/lib/stripe';
+import { and, eq, InferInsertModel } from 'drizzle-orm';
+import Stripe from 'stripe';
 
 /**
  * Handles the `checkout.session.completed` event from Stripe.
@@ -50,24 +57,6 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
       paymentIntentId = session.id;
     }
 
-    /**
-     * Idempotency Check
-     * 幂等性检查
-     * 冪等性チェック
-     */
-    const existingOrderResults = await db
-      .select({ id: ordersSchema.id })
-      .from(ordersSchema)
-      .where(and(
-        eq(ordersSchema.provider, 'stripe'),
-        eq(ordersSchema.providerOrderId, paymentIntentId)
-      ))
-      .limit(1);
-
-    if (existingOrderResults.length > 0) {
-      return;
-    }
-
     const orderData: InferInsertModel<typeof ordersSchema> = {
       userId: userId,
       provider: 'stripe',
@@ -77,10 +66,10 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
       orderType: 'one_time_purchase',
       planId: planId,
       priceId: priceId,
-      amountSubtotal: session.amount_subtotal ? (session.amount_subtotal / 100).toString() : null,
-      amountDiscount: session.total_details?.amount_discount ? (session.total_details.amount_discount / 100).toString() : '0',
-      amountTax: session.total_details?.amount_tax ? (session.total_details.amount_tax / 100).toString() : '0',
-      amountTotal: session.amount_total ? (session.amount_total / 100).toString() : '0',
+      amountSubtotal: toCurrencyAmount(session.amount_subtotal),
+      amountDiscount: toCurrencyAmount(session.total_details?.amount_discount) || '0',
+      amountTax: toCurrencyAmount(session.total_details?.amount_tax) || '0',
+      amountTotal: toCurrencyAmount(session.amount_total) || '0',
       currency: session.currency || process.env.NEXT_PUBLIC_DEFAULT_CURRENCY || 'usd',
       metadata: {
         stripeCheckoutSessionId: session.id,
@@ -88,12 +77,15 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
       }
     };
 
-    const insertedOrderResults = await db
-      .insert(ordersSchema)
-      .values(orderData)
-      .returning({ id: ordersSchema.id });
+    const { order: insertedOrder, existed } = await createOrderWithIdempotency(
+      'stripe',
+      orderData,
+      paymentIntentId
+    );
 
-    const insertedOrder = insertedOrderResults[0];
+    if (existed) {
+      return;
+    }
 
     if (!insertedOrder) {
       console.error('Error inserting one-time purchase order');
@@ -132,11 +124,7 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
     return;
   }
 
-  /**
-   * Idempotency Check
-   * 幂等性检查
-   * 冪等性チェック
-   */
+  // Check if order already exists
   const existingOrderResults = await db
     .select({ id: ordersSchema.id })
     .from(ordersSchema)
@@ -164,7 +152,7 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
     try {
       subscription = await stripe.subscriptions.retrieve(subscriptionId);
       userId = subscription.metadata?.userId;
-      // planId = subscription.metadata?.planId;
+
       if (subscription.items.data.length > 0) {
         priceId = subscription.items.data[0].price.id;
         productId = typeof subscription.items.data[0].price.product === 'string'
@@ -211,7 +199,7 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
     const invoiceData = await stripe!.invoices.retrieve(invoice.id as string, { expand: ['payments'] });
     const paymentIntentId = invoiceData.payments?.data[0]?.payment.payment_intent as string | null;
 
-    const orderType = invoice.billing_reason === 'subscription_create' ? 'subscription_initial' : 'subscription_renewal';
+    const orderType = invoice.billing_reason === 'subscription_create' ? ORDER_TYPES.SUBSCRIPTION_INITIAL : ORDER_TYPES.SUBSCRIPTION_RENEWAL;
     const orderData: InferInsertModel<typeof ordersSchema> = {
       userId: userId,
       provider: 'stripe',
@@ -224,10 +212,10 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
       planId: planId,
       priceId: priceId,
       productId: productId,
-      amountSubtotal: (invoice.subtotal / 100).toString(),
-      amountDiscount: ((invoice.total_discount_amounts?.reduce((sum, disc) => sum + disc.amount, 0) ?? 0) / 100).toString(),
-      amountTax: ((invoice.total_taxes?.reduce((sum, tax) => sum + tax.amount, 0) ?? 0) / 100).toString(),
-      amountTotal: (invoice.amount_paid / 100).toString(),
+      amountSubtotal: toCurrencyAmount(invoice.subtotal),
+      amountDiscount: toCurrencyAmount(invoice.total_discount_amounts?.reduce((sum, disc) => sum + disc.amount, 0) ?? 0),
+      amountTax: toCurrencyAmount(invoice.total_taxes?.reduce((sum, tax) => sum + tax.amount, 0) ?? 0),
+      amountTotal: toCurrencyAmount(invoice.amount_paid),
       currency: invoice.currency,
       metadata: {
         stripeInvoiceId: invoice.id,
@@ -253,7 +241,8 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
       // --- [custom] Upgrade ---
       const orderId = insertedOrder.id;
       try {
-        await upgradeSubscriptionCredits(userId, planId, orderId, subscription);
+        const currentPeriodStart = subscription.items.data[0].current_period_start * 1000;
+        await upgradeSubscriptionCredits(userId, planId, orderId, currentPeriodStart);
       } catch (error) {
         console.error(`CRITICAL: Failed to upgrade subscription credits for user ${userId}, order ${orderId}:`, error);
         await sendCreditUpgradeFailedEmail({ userId, orderId, planId, error });
@@ -291,7 +280,20 @@ export async function handleSubscriptionUpdate(subscription: Stripe.Subscription
 
     if (isDeleted) {
       // --- [custom] Revoke the user's benefits---
-      revokeRemainingSubscriptionCreditsOnEnd(subscription);
+      let userId = subscription.metadata?.userId as string;
+      if (!userId) {
+        try {
+          const userData = await db
+            .select({ id: userSchema.id })
+            .from(userSchema)
+            .where(eq(userSchema.stripeCustomerId, customerId))
+            .limit(1);
+          userId = userData[0]?.id;
+        } catch (err) {
+          console.error(`Error retrieving customer ${customerId} for subscription ${subscription.id}:`, err);
+        }
+      }
+      revokeRemainingSubscriptionCreditsOnEnd('stripe', subscription.id, userId, subscription.metadata);
       // --- End: [custom] Revoke the user's benefits ---
     }
   } catch (error) {
@@ -363,44 +365,25 @@ export async function handleRefund(charge: Stripe.Charge) {
     return;
   }
 
-  const existingRefundOrderResults = await db
-    .select({ id: ordersSchema.id })
-    .from(ordersSchema)
-    .where(and(
-      eq(ordersSchema.provider, 'stripe'),
-      eq(ordersSchema.providerOrderId, chargeId),
-      eq(ordersSchema.orderType, 'refund')
-    ))
-    .limit(1);
-
-  if (existingRefundOrderResults.length > 0) {
-    // already refunded
+  // Check if refund already processed
+  const refundExists = await refundOrderExists('stripe', chargeId);
+  if (refundExists) {
     return;
   }
 
-  const originalOrderResults = await db
-    .select()
-    .from(ordersSchema)
-    .where(and(
-      eq(ordersSchema.provider, 'stripe'),
-      eq(ordersSchema.stripePaymentIntentId, paymentIntentId),
-      inArray(ordersSchema.orderType, ['one_time_purchase', 'subscription_initial', 'subscription_renewal'])
-    ))
-    .limit(1);
-  const originalOrder = originalOrderResults[0];
+  const originalOrder = await findOriginalOrderForRefund('stripe', paymentIntentId);
 
   if (!originalOrder) {
     console.error(`Original order for payment intent ${paymentIntentId} not found.`);
     return;
-  } else {
-    const isFullRefund =
-      Math.abs(charge.amount_refunded) === Math.round(parseFloat(originalOrder.amountTotal!) * 100);
-
-    await db
-      .update(ordersSchema)
-      .set({ status: isFullRefund ? 'refunded' : 'partially_refunded' })
-      .where(eq(ordersSchema.id, originalOrder.id));
   }
+
+  // Update original order status
+  await updateOrderStatusAfterRefund(
+    originalOrder.id,
+    charge.amount_refunded,
+    Math.round(parseFloat(originalOrder.amountTotal!) * 100)
+  );
 
   if (!stripe) {
     console.error('Stripe is not initialized. Please check your environment variables.');
@@ -418,7 +401,6 @@ export async function handleRefund(charge: Stripe.Charge) {
     return;
   }
 
-  const refundAmount = charge.amount_refunded / 100;
   const refundData: InferInsertModel<typeof ordersSchema> = {
     userId: originalOrder.userId ?? userId,
     provider: 'stripe',
@@ -433,7 +415,7 @@ export async function handleRefund(charge: Stripe.Charge) {
     amountSubtotal: null,
     amountDiscount: null,
     amountTax: null,
-    amountTotal: (-refundAmount).toString(),
+    amountTotal: (-toCurrencyAmount(charge.amount_refunded)).toString(),
     currency: charge.currency,
     subscriptionId: null,
     metadata: {
@@ -457,9 +439,10 @@ export async function handleRefund(charge: Stripe.Charge) {
 
   // --- [custom] Revoke the user's benefits  ---
   if (originalOrder.subscriptionId) {
-    revokeSubscriptionCredits(charge, originalOrder);
+    revokeSubscriptionCredits(originalOrder);
   } else {
-    revokeOneTimeCredits(charge, originalOrder, refundOrder.id);
+    const refundAmountCents = Math.abs(charge.amount_refunded);
+    revokeOneTimeCredits(refundAmountCents, originalOrder, refundOrder.id);
   }
   // --- End: [custom] Revoke the user's benefits ---
 }

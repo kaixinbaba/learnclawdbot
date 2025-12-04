@@ -90,19 +90,47 @@ export const pricingPlanEnvironmentEnum = pgEnum('pricing_plan_environment', [
   'live',
 ])
 
+export const providerEnum = pgEnum('provider', [
+  'none', // no payment feature
+  'stripe',
+  'creem',
+])
+export type PaymentProvider = (typeof providerEnum.enumValues)[number]
+
+export const paymentTypeEnum = pgEnum('payment_type', [
+  'one_time', // stripe
+  'onetime', // creem
+  'recurring', // stripe and creem
+])
+export type PaymentType = (typeof paymentTypeEnum.enumValues)[number]
+
+export const recurringIntervalEnum = pgEnum('recurring_interval', [
+  'month', // stripe
+  'year', // stripe
+  'every-month', // creem recurring
+  'every-year', // creem recurring
+  'once', // creem onetime
+])
+export type RecurringInterval = (typeof recurringIntervalEnum.enumValues)[number]
+
 export const pricingPlans = pgTable('pricing_plans', {
   id: uuid('id').primaryKey().defaultRandom(),
   environment: pricingPlanEnvironmentEnum('environment').notNull(),
   cardTitle: text('card_title').notNull(),
   cardDescription: text('card_description'),
+  provider: providerEnum('provider').default('none'),
   stripePriceId: varchar('stripe_price_id', { length: 255 }),
   stripeProductId: varchar('stripe_product_id', { length: 255 }),
   stripeCouponId: varchar('stripe_coupon_id', { length: 255 }),
+  creemProductId: varchar('creem_product_id', { length: 255 }),
+  creemDiscountCode: varchar('creem_discount_code', { length: 255 }),
   enableManualInputCoupon: boolean('enable_manual_input_coupon')
     .default(false)
     .notNull(),
-  paymentType: varchar('payment_type', { length: 50 }),
-  recurringInterval: varchar('recurring_interval', { length: 50 }),
+  // paymentType: varchar('payment_type', { length: 50 }),
+  paymentType: paymentTypeEnum('payment_type'),
+  // recurringInterval: varchar('recurring_interval', { length: 50 }),
+  recurringInterval: recurringIntervalEnum('recurring_interval'),
   trialPeriodDays: integer('trial_period_days'),
   price: numeric('price'),
   currency: varchar('currency', { length: 10 }),
@@ -183,9 +211,11 @@ export const subscriptions = pgTable(
     planId: uuid('plan_id')
       .references(() => pricingPlans.id, { onDelete: 'restrict' })
       .notNull(),
-    stripeSubscriptionId: text('stripe_subscription_id').notNull().unique(),
-    stripeCustomerId: text('stripe_customer_id').notNull(),
-    priceId: varchar('price_id', { length: 255 }).notNull(),
+    provider: providerEnum('provider').notNull(),
+    subscriptionId: text('subscription_id').notNull().unique(),
+    customerId: text('customer_id').notNull(),
+    productId: text('product_id'),
+    priceId: varchar('price_id'),
     status: text('status').notNull(),
     currentPeriodStart: timestamp('current_period_start', {
       withTimezone: true,
@@ -208,6 +238,7 @@ export const subscriptions = pgTable(
   (table) => {
     return {
       userIdx: index('idx_subscriptions_user_id').on(table.userId),
+      subscriptionIdIdx: index('idx_subscriptions_subscription_id').on(table.subscriptionId),
       statusIdx: index('idx_subscriptions_status').on(table.status),
       planIdIdx: index('idx_subscriptions_plan_id').on(table.planId),
     }

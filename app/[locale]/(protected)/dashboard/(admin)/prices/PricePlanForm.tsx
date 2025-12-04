@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ChoiceboxGroup } from "@/components/ui/choicebox-1";
 import {
   Form,
   FormControl,
@@ -52,7 +53,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -73,10 +74,13 @@ const pricingPlanFormSchema = z.object({
   }),
   cardTitle: z.string().min(1, "Card title is required."),
   cardDescription: z.string().optional().nullable(),
+  provider: z.enum(["none", "stripe", "creem"]),
   stripePriceId: z.string().optional().nullable(),
   stripeProductId: z.string().optional().nullable(),
   stripeCouponId: z.string().optional().nullable(),
   enableManualInputCoupon: z.boolean().optional().nullable(),
+  creemProductId: z.string().optional().nullable(),
+  creemDiscountCode: z.string().optional().nullable(),
   paymentType: z.string().optional().nullable(),
   recurringInterval: z.string().optional().nullable(),
   price: z.number().optional().nullable(),
@@ -120,6 +124,9 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifyingStripe, setIsVerifyingStripe] = useState(false);
+  const [isVerifyingCreem, setIsVerifyingCreem] = useState(false);
+  const [isVerifyingCreemDiscount, setIsVerifyingCreemDiscount] =
+    useState(false);
   const [isFetchingCoupons, setIsFetchingCoupons] = useState(false);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -134,10 +141,13 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
       environment: initialData?.environment ?? "test",
       cardTitle: initialData?.cardTitle ?? "",
       cardDescription: initialData?.cardDescription ?? "",
+      provider: initialData?.provider ?? "stripe",
       stripePriceId: initialData?.stripePriceId ?? "",
       stripeProductId: initialData?.stripeProductId ?? "",
       stripeCouponId: initialData?.stripeCouponId ?? "",
       enableManualInputCoupon: initialData?.enableManualInputCoupon ?? false,
+      creemProductId: initialData?.creemProductId ?? "",
+      creemDiscountCode: initialData?.creemDiscountCode ?? "",
       paymentType: initialData?.paymentType ?? "",
       recurringInterval: initialData?.recurringInterval ?? "",
       price: Number(initialData?.price) ?? undefined,
@@ -175,72 +185,32 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
   });
 
   const watchedValues = useWatch({ control: form.control });
+  const watchProvider = form.watch("provider");
   const watchStripePriceId = form.watch("stripePriceId");
+  const watchCreemProductId = form.watch("creemProductId");
+  const watchCreemDiscountCode = form.watch("creemDiscountCode");
   const watchEnvironment = form.watch("environment");
   const watchIsHighlighted = form.watch("isHighlighted");
   const watchStripeCouponId = form.watch("stripeCouponId");
 
-  useEffect(() => {
-    if (watchStripePriceId !== initialData?.stripePriceId) {
-      form.setValue("stripeProductId", "", { shouldValidate: true });
-      form.setValue("paymentType", "", { shouldValidate: true });
-      form.setValue("recurringInterval", "", { shouldValidate: true });
-      form.setValue("price", undefined, { shouldValidate: true });
-      form.setValue("currency", "", { shouldValidate: true });
-    }
-  }, [watchStripePriceId, initialData?.stripePriceId]);
+  // useEffect(() => {
+  //   if (watchStripePriceId !== initialData?.stripePriceId) {
+  //     form.setValue("stripeProductId", "", { shouldValidate: true });
+  //     form.setValue("paymentType", null, { shouldValidate: true });
+  //     form.setValue("recurringInterval", null, { shouldValidate: true });
+  //     form.setValue("price", undefined, { shouldValidate: true });
+  //     form.setValue("currency", "", { shouldValidate: true });
+  //   }
+  // }, [watchStripePriceId, initialData?.stripePriceId]);
 
-  useEffect(() => {
-    const calculateDisplayPrice = async () => {
-      const numericPrice = form.getValues("price");
-      const currency = form.getValues("currency");
-      const originalPrice = form.getValues("originalPrice");
-
-      if (
-        numericPrice === null ||
-        numericPrice === undefined ||
-        !currency ||
-        !originalPrice
-      ) {
-        return;
-      }
-
-      if (!watchStripeCouponId) {
-        form.setValue("displayPrice", originalPrice);
-        form.setValue("enableManualInputCoupon", false);
-        return;
-      }
-
-      const coupon = coupons.find((c) => c.id === watchStripeCouponId);
-      if (!coupon) {
-        form.setValue("displayPrice", originalPrice);
-        return;
-      }
-
-      let discountedPrice: number;
-
-      if (coupon.percent_off) {
-        discountedPrice = numericPrice * (1 - coupon.percent_off / 100);
-      } else if (coupon.amount_off) {
-        discountedPrice = numericPrice - coupon.amount_off / 100;
-      } else {
-        form.setValue("displayPrice", originalPrice);
-        return;
-      }
-
-      discountedPrice = Math.max(0, discountedPrice);
-
-      const formattedDiscountedPrice = await formatCurrency(
-        discountedPrice,
-        currency
-      );
-      form.setValue("displayPrice", formattedDiscountedPrice, {
-        shouldValidate: true,
-      });
-    };
-
-    calculateDisplayPrice();
-  }, [watchStripeCouponId, coupons]);
+  // useEffect(() => {
+  //   if (watchCreemProductId !== initialData?.creemProductId) {
+  //     form.setValue("paymentType", null, { shouldValidate: true });
+  //     form.setValue("recurringInterval", null, { shouldValidate: true });
+  //     form.setValue("price", undefined, { shouldValidate: true });
+  //     form.setValue("currency", "", { shouldValidate: true });
+  //   }
+  // }, [watchCreemProductId, initialData?.creemProductId]);
 
   const handleFetchCoupons = async () => {
     setIsFetchingCoupons(true);
@@ -264,8 +234,10 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
   };
 
   useEffect(() => {
-    handleFetchCoupons();
-  }, [watchEnvironment]);
+    if (watchProvider === "stripe") {
+      handleFetchCoupons();
+    }
+  }, [watchEnvironment, watchProvider]);
 
   const handleStripeVerify = async () => {
     const priceId = form.getValues("stripePriceId");
@@ -303,7 +275,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
       });
       form.setValue(
         "recurringInterval",
-        result.data.recurring?.interval || "-",
+        result.data.recurring?.interval || null,
         {
           shouldValidate: true,
         }
@@ -311,6 +283,77 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
 
       // Price from Stripe is usually in cents, adjust if your DB expects dollars
       // Assuming DB stores numeric/decimal directly (e.g., 99.99)
+      const priceInCorrectUnit =
+        result.data.price !== null && result.data.price !== undefined
+          ? result.data.price / 100
+          : undefined;
+      const currency = result.data.currency;
+      form.setValue("price", priceInCorrectUnit, { shouldValidate: true });
+      form.setValue("currency", currency, { shouldValidate: true });
+
+      if (!form.getValues("priceSuffix")) {
+        form.setValue("priceSuffix", result.data.recurring?.interval, {
+          shouldValidate: true,
+        });
+      }
+      form.setValue("buttonLink", "", { shouldValidate: true });
+
+      toast.success(t("stripePriceIdVerified"));
+    } catch (error: any) {
+      console.error("Stripe verification failed:", error);
+      toast.error(t("verifyStripeError"), {
+        description: error.message || error.props,
+      });
+      // Optional
+      // form.setValue("stripeProductId", "");
+      // form.setValue("paymentType", null);
+      // form.setValue("recurringInterval", null);
+      // form.setValue("price", undefined);
+      // form.setValue("currency", "");
+    } finally {
+      setIsVerifyingStripe(false);
+    }
+  };
+
+  const handleCreemVerify = async () => {
+    const productId = form.getValues("creemProductId");
+    const environment = form.getValues("environment");
+    if (!productId) {
+      toast.error("Creem Product ID is required");
+      return;
+    }
+    setIsVerifyingCreem(true);
+    try {
+      const response = await fetch("/api/admin/creem/verify-product", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept-Language": (locale || DEFAULT_LOCALE) as string,
+        },
+        body: JSON.stringify({ productId, environment }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to verify Creem product");
+      }
+
+      if (!result.success) {
+        throw new Error(result.error || "Creem product verification failed");
+      }
+
+      const paymentType = result.data.billingType;
+      const recurringInterval = result.data.billingPeriod;
+
+      form.setValue("paymentType", paymentType, {
+        shouldValidate: true,
+      });
+      form.setValue("recurringInterval", recurringInterval || null, {
+        shouldValidate: true,
+      });
+
+      // Price from Creem is in cents, convert to dollars
       const priceInCorrectUnit =
         result.data.price !== null && result.data.price !== undefined
           ? result.data.price / 100
@@ -328,27 +371,64 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
           shouldValidate: true,
         });
       }
-      if (!form.getValues("priceSuffix")) {
-        form.setValue("priceSuffix", result.data.recurring?.interval, {
+      if (!form.getValues("priceSuffix") && recurringInterval) {
+        form.setValue("priceSuffix", recurringInterval, {
           shouldValidate: true,
         });
       }
       form.setValue("buttonLink", "", { shouldValidate: true });
 
-      toast.success(t("stripePriceIdVerified"));
+      toast.success("Creem product verified successfully");
     } catch (error: any) {
-      console.error("Stripe verification failed:", error);
-      toast.error(t("verifyStripeError"), {
+      console.error("Creem verification failed:", error);
+      toast.error("Failed to verify Creem product", {
         description: error.message || error.props,
       });
-      // Optional
-      // form.setValue("stripeProductId", "");
-      // form.setValue("paymentType", "");
-      // form.setValue("recurringInterval", "");
-      // form.setValue("price", undefined);
-      // form.setValue("currency", "");
     } finally {
-      setIsVerifyingStripe(false);
+      setIsVerifyingCreem(false);
+    }
+  };
+
+  const handleCreemDiscountVerify = async () => {
+    const discountCode = form.getValues("creemDiscountCode");
+    const environment = form.getValues("environment");
+    if (!discountCode) {
+      toast.error("Creem Discount Code is required");
+      return;
+    }
+    setIsVerifyingCreemDiscount(true);
+    try {
+      const response = await fetch("/api/admin/creem/verify-discount", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept-Language": (locale || DEFAULT_LOCALE) as string,
+        },
+        body: JSON.stringify({ discountCode, environment }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to verify Creem discount code");
+      }
+
+      if (!result.success) {
+        throw new Error(
+          result.error || "Creem discount code verification failed"
+        );
+      }
+
+      toast.success("Creem discount code verified successfully", {
+        description: `Code: ${result.data.code} - ${result.data.type === "percentage" ? `${result.data.percentage}% off` : `${result.data.amount / 100} ${result.data.currency?.toUpperCase()} off`}`,
+      });
+    } catch (error: any) {
+      console.error("Creem discount verification failed:", error);
+      toast.error("Failed to verify Creem discount code", {
+        description: error.message || error.props,
+      });
+    } finally {
+      setIsVerifyingCreemDiscount(false);
     }
   };
 
@@ -530,6 +610,27 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
         ...values,
       };
 
+      // Clean up fields based on provider
+      if (payload.provider === "stripe") {
+        // Remove Creem fields when provider is Stripe
+        payload.creemProductId = null;
+        payload.creemDiscountCode = null;
+      } else if (payload.provider === "creem") {
+        // Remove Stripe fields when provider is Creem
+        payload.stripePriceId = null;
+        payload.stripeProductId = null;
+        payload.stripeCouponId = null;
+        payload.enableManualInputCoupon = false;
+      } else if (payload.provider === "none") {
+        // Remove all fields when provider is none
+        payload.stripePriceId = null;
+        payload.stripeProductId = null;
+        payload.stripeCouponId = null;
+        payload.creemProductId = null;
+        payload.creemDiscountCode = null;
+        payload.enableManualInputCoupon = false;
+      }
+
       let result;
       if (isEditMode && planId) {
         result = await updatePricingPlanAction({
@@ -586,13 +687,13 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                         disabled={isLoading}
                         className="flex flex-row gap-4"
                       >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormItem className="flex items-center">
                           <FormControl>
                             <RadioGroupItem value="test"></RadioGroupItem>
                           </FormControl>
                           <FormLabel htmlFor="r1">Test</FormLabel>
                         </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormItem className="flex items-center">
                           <FormControl>
                             <RadioGroupItem value="live">Live</RadioGroupItem>
                           </FormControl>
@@ -646,269 +747,413 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle>{t("stripeIntegration")}</CardTitle>
+                <CardTitle>Payment</CardTitle>
                 <FormDescription>
-                  {t("stripeIntegrationDescription")}
+                  Configure payment provider settings for this pricing plan
                 </FormDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="stripePriceId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stripe Price ID</FormLabel>
-                      <div className="flex items-center gap-2">
+                  name="provider"
+                  render={({ field }) => {
+                    const handleChange = (value: string | string[]) => {
+                      field.onChange(
+                        typeof value === "string" ? value : value[0]
+                      );
+                    };
+                    return (
+                      <FormItem>
                         <FormControl>
-                          <Input
-                            placeholder="price_..."
-                            {...field}
-                            value={field.value ?? ""}
-                            disabled={isLoading || isVerifyingStripe}
-                          />
+                          <ChoiceboxGroup
+                            direction="row"
+                            type="radio"
+                            value={field.value || "stripe"}
+                            onChange={
+                              handleChange as React.Dispatch<
+                                React.SetStateAction<string>
+                              >
+                            }
+                            disabled={isLoading}
+                          >
+                            <ChoiceboxGroup.Item
+                              value="none"
+                              title="No Payment"
+                            />
+                            <ChoiceboxGroup.Item
+                              value="stripe"
+                              title="Stripe"
+                            />
+                            <ChoiceboxGroup.Item value="creem" title="Creem" />
+                          </ChoiceboxGroup>
                         </FormControl>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleStripeVerify}
-                          disabled={
-                            !watchStripePriceId ||
-                            isVerifyingStripe ||
-                            isLoading
-                          }
-                        >
-                          {isVerifyingStripe ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : null}
-                          {t("verifyAndFetch")}
-                        </Button>
-                      </div>
-                      <FormDescription>
-                        {t("stripePriceIdDescription", {
-                          environment: watchEnvironment,
-                        })}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="stripeProductId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stripe Product ID</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          value={field.value ?? ""}
-                          readOnly={true}
-                          disabled={true}
-                          placeholder="Fetched from Stripe"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="paymentType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Type</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ?? ""}
-                            readOnly={true}
-                            disabled={true}
-                            placeholder="Fetched from Stripe"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="recurringInterval"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Recurring Interval</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ?? ""}
-                            readOnly={true}
-                            disabled={true}
-                            placeholder="Fetched from Stripe"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Required if payment type is &apos;recurring&apos;.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price (Numeric)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            {...field}
-                            value={
-                              Number.isNaN(field.value) ? 0 : (field.value ?? 0)
-                            }
-                            onChange={(event) =>
-                              field.onChange(
-                                event.target.value === ""
-                                  ? null
-                                  : Number(event.target.value)
-                              )
-                            }
-                            readOnly={true}
-                            disabled={true}
-                            placeholder="Fetched from Stripe"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="currency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Currency Code</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ?? ""}
-                            readOnly={true}
-                            disabled={true}
-                            placeholder="Fetched from Stripe"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="stripeCouponId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stripe Coupon</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value ?? ""}
-                          disabled={
-                            isLoading ||
-                            isFetchingCoupons ||
-                            coupons.length === 0
-                          }
-                        >
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a coupon (optional)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {/* <SelectItem value="">No Coupon</SelectItem> */}
-                            {coupons.map((coupon) => (
-                              <SelectItem key={coupon.id} value={coupon.id}>
-                                {coupon.name || coupon.id} (
-                                {coupon.percent_off
-                                  ? `${coupon.percent_off}% off`
-                                  : `${
-                                      (coupon.amount_off ?? 0) / 100
-                                    } ${coupon.currency?.toUpperCase()} off`}
-                                )
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={handleFetchCoupons}
-                          disabled={isFetchingCoupons || isLoading}
-                        >
-                          {isFetchingCoupons ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4" />
+                {watchProvider !== "none" && (
+                  <>
+                    {watchProvider === "stripe" && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="stripePriceId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Stripe Price ID</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <FormControl>
+                                  <Input
+                                    placeholder="price_..."
+                                    {...field}
+                                    value={field.value ?? ""}
+                                    disabled={isLoading || isVerifyingStripe}
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={handleStripeVerify}
+                                  disabled={
+                                    !watchStripePriceId ||
+                                    isVerifyingStripe ||
+                                    isLoading
+                                  }
+                                >
+                                  {isVerifyingStripe ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : null}
+                                  {t("verifyAndFetch")}
+                                </Button>
+                              </div>
+                              <FormDescription>
+                                {t("stripePriceIdDescription", {
+                                  environment: watchEnvironment,
+                                })}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </Button>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="stripeProductId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Stripe Product ID</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={field.value ?? ""}
+                                  readOnly={true}
+                                  disabled={true}
+                                  placeholder="Fetched from Stripe"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+                    {watchProvider === "creem" && (
+                      <FormField
+                        control={form.control}
+                        name="creemProductId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Creem Product ID</FormLabel>
+                            <div className="flex items-center gap-2">
+                              <FormControl>
+                                <Input
+                                  placeholder="prod_..."
+                                  {...field}
+                                  value={field.value ?? ""}
+                                  disabled={isLoading || isVerifyingCreem}
+                                />
+                              </FormControl>
                               <Button
                                 type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground"
-                                onClick={() =>
-                                  form.setValue("stripeCouponId", "", {
-                                    shouldValidate: true,
-                                  })
+                                variant="outline"
+                                onClick={handleCreemVerify}
+                                disabled={
+                                  !watchCreemProductId ||
+                                  isVerifyingCreem ||
+                                  isLoading
                                 }
-                                disabled={!field.value || isLoading}
                               >
-                                <XCircle className="h-4 w-4" />
+                                {isVerifyingCreem ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : null}
+                                Verify & Fetch
                               </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Clear selection</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {watchStripeCouponId && (
-                  <FormField
-                    control={form.control}
-                    name="enableManualInputCoupon"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            Allow manual coupon input
-                          </FormLabel>
-                          <FormDescription>
-                            If enabled, users can opt-out of the applied coupon
-                            and enter one manually at checkout.
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value ?? false}
-                            onCheckedChange={field.onChange}
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                      </FormItem>
+                            </div>
+                            <FormDescription>
+                              Enter the Creem product ID for {watchEnvironment}{" "}
+                              environment
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     )}
-                  />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="paymentType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Payment Type</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                readOnly={true}
+                                disabled={true}
+                                placeholder="Fetched from provider"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="recurringInterval"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Recurring Interval</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                readOnly={true}
+                                disabled={true}
+                                placeholder="Fetched from provider"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Price (Numeric)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                {...field}
+                                value={
+                                  Number.isNaN(field.value)
+                                    ? 0
+                                    : (field.value ?? 0)
+                                }
+                                onChange={(event) =>
+                                  field.onChange(
+                                    event.target.value === ""
+                                      ? null
+                                      : Number(event.target.value)
+                                  )
+                                }
+                                readOnly={true}
+                                disabled={true}
+                                placeholder="Fetched from provider"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="currency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Currency Code</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                readOnly={true}
+                                disabled={true}
+                                placeholder="Fetched from provider"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {watchProvider === "stripe" && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="stripeCouponId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Stripe Coupon</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <Select
+                                  onValueChange={field.onChange}
+                                  value={field.value ?? ""}
+                                  disabled={
+                                    isLoading ||
+                                    isFetchingCoupons ||
+                                    coupons.length === 0
+                                  }
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Select a coupon (optional)" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {/* <SelectItem value="">No Coupon</SelectItem> */}
+                                    {coupons.map((coupon) => (
+                                      <SelectItem
+                                        key={coupon.id}
+                                        value={coupon.id}
+                                      >
+                                        {coupon.name || coupon.id} (
+                                        {coupon.percent_off
+                                          ? `${coupon.percent_off}% off`
+                                          : `${
+                                              (coupon.amount_off ?? 0) / 100
+                                            } ${coupon.currency?.toUpperCase()} off`}
+                                        )
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={handleFetchCoupons}
+                                  disabled={isFetchingCoupons || isLoading}
+                                >
+                                  {isFetchingCoupons ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <RefreshCw className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-muted-foreground"
+                                        onClick={() =>
+                                          form.setValue("stripeCouponId", "", {
+                                            shouldValidate: true,
+                                          })
+                                        }
+                                        disabled={!field.value || isLoading}
+                                      >
+                                        <XCircle className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Clear selection</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {watchStripeCouponId && (
+                          <FormField
+                            control={form.control}
+                            name="enableManualInputCoupon"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">
+                                    Allow manual coupon input
+                                  </FormLabel>
+                                  <FormDescription>
+                                    If enabled, users can opt-out of the applied
+                                    coupon and enter one manually at checkout.
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value ?? false}
+                                    onCheckedChange={field.onChange}
+                                    disabled={isLoading}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </>
+                    )}
+                    {watchProvider === "creem" && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="creemDiscountCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Creem Discount Code</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <FormControl>
+                                  <Input
+                                    placeholder="Enter discount code (optional)"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                    onChange={(e) => {
+                                      // Auto-convert to uppercase
+                                      field.onChange(
+                                        e.target.value.toUpperCase()
+                                      );
+                                    }}
+                                    disabled={
+                                      isLoading || isVerifyingCreemDiscount
+                                    }
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={handleCreemDiscountVerify}
+                                  disabled={
+                                    !watchCreemDiscountCode ||
+                                    isVerifyingCreemDiscount ||
+                                    isLoading
+                                  }
+                                >
+                                  {isVerifyingCreemDiscount ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : null}
+                                  Verify
+                                </Button>
+                              </div>
+                              <FormDescription>
+                                Optional discount code for this Creem product
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -1182,7 +1427,11 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                           placeholder={t("buttonLinkPlaceholder")}
                           {...field}
                           value={field.value ?? ""}
-                          disabled={isLoading || !!watchStripePriceId}
+                          disabled={
+                            isLoading ||
+                            !!watchStripePriceId ||
+                            !!watchCreemProductId
+                          }
                         />
                       </FormControl>
                       <FormDescription>
@@ -1254,13 +1503,13 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                           placeholder={
                             isTranslating
                               ? "Translating..."
-                              : `{ "zh": { "cardTitle": "Nexty.dev 高级启动模板", ... }, "jp": { "cardTitle": "Nexty.dev 高級起動テンプレート", ... } }`
+                              : `{ "zh": { "cardTitle": "NEXTY.DEV 高级启动模板", ... }, "jp": { "cardTitle": "NEXTY.DEV 高級起動テンプレート", ... } }`
                           }
                           {...field}
                           value={field.value ?? ""}
                           rows={10}
                           disabled={isLoading || isTranslating}
-                          className="font-mono text-sm"
+                          className="font-mono text-sm min-h-[200px] max-h-[500px] overflow-y-auto"
                         />
                       </FormControl>
                       <FormDescription>
@@ -1308,7 +1557,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                           value={field.value ?? ""}
                           rows={8}
                           disabled={isLoading}
-                          className="font-mono text-sm"
+                          className="font-mono text-sm min-h-[200px] max-h-[500px] overflow-y-auto"
                         />
                       </FormControl>
                       <FormDescription>
@@ -1374,6 +1623,28 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                 />
               </CardContent>
             </Card>
+
+            {/* Action Buttons - Below form on mobile, below left column on desktop */}
+            <div className="flex justify-end gap-3 pt-6 pb-12 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isLoading}
+              >
+                {t("cancel")}
+              </Button>
+              <Button
+                type="submit"
+                variant="default"
+                disabled={isLoading || isVerifyingStripe}
+              >
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                {isEditMode ? t("saveChanges") : t("createPlan")}
+              </Button>
+            </div>
           </div>
 
           {/* Column 2: Preview - Sticky on desktop, below buttons on mobile */}
@@ -1400,28 +1671,6 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
               }
             />
           </div>
-        </div>
-
-        {/* Action Buttons - Below form on mobile, below left column on desktop */}
-        <div className="flex justify-end gap-3 py-6 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={isLoading}
-          >
-            {t("cancel")}
-          </Button>
-          <Button
-            type="submit"
-            variant="default"
-            disabled={isLoading || isVerifyingStripe}
-          >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            {isEditMode ? t("saveChanges") : t("createPlan")}
-          </Button>
         </div>
       </form>
     </Form>

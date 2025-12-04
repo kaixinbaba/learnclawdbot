@@ -24,7 +24,6 @@ import {
   ColumnFiltersState,
   ColumnPinningState,
   SortingState,
-  VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -52,7 +51,6 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({
     left: ["environment", "cardTitle"],
@@ -68,13 +66,11 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onColumnPinningChange: setColumnPinning,
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       rowSelection,
       columnPinning,
     },
@@ -117,9 +113,28 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
               <SelectValue placeholder="Filter Environment" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("allEnvironments")}</SelectItem>
-              <SelectItem value="test">{t("test")}</SelectItem>
-              <SelectItem value="live">{t("live")}</SelectItem>
+              <SelectItem value="all">All Environments</SelectItem>
+              <SelectItem value="test">Test</SelectItem>
+              <SelectItem value="live">Live</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={
+              (table.getColumn("provider")?.getFilterValue() as string) ?? "all"
+            }
+            onValueChange={(value) => {
+              const filterValue = value === "all" ? null : value;
+              table.getColumn("provider")?.setFilterValue(filterValue);
+            }}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Filter Provider" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Providers</SelectItem>
+              <SelectItem value="stripe">Stripe</SelectItem>
+              <SelectItem value="creem">Creem</SelectItem>
+              <SelectItem value="none">None</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -159,7 +174,7 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
                             ? `${header.column.getAfter("right")}px`
                             : undefined,
                         zIndex: header.column.getIsPinned() ? 20 : 1,
-                        backgroundColor: "hsl(var(--background))",
+                        backgroundColor: "var(--background)",
                         boxShadow:
                           header.column.getIsPinned() === "left" &&
                           header.column.getIsLastColumn("left")
@@ -208,7 +223,7 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
                             ? `${cell.column.getAfter("right")}px`
                             : undefined,
                         zIndex: cell.column.getIsPinned() ? 20 : 1,
-                        backgroundColor: "hsl(var(--background))",
+                        backgroundColor: "var(--background)",
                         boxShadow:
                           cell.column.getIsPinned() === "left" &&
                           cell.column.getIsLastColumn("left")

@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { getOrderTypeLabel } from "@/lib/payments/provider-utils";
 import dayjs from "dayjs";
 
 export const columns = [
@@ -54,7 +55,9 @@ export const columns = [
     accessorKey: "orderType",
     header: "Type",
     cell: ({ row }: any) => (
-      <Badge variant="outline">{row.original.orderType}</Badge>
+      <Badge variant="outline">
+        {getOrderTypeLabel(row.original.orderType)}
+      </Badge>
     ),
   },
   {
@@ -65,7 +68,7 @@ export const columns = [
       let variant: "secondary" | "destructive" | "outline" = "outline";
       if (status === "succeeded") {
         variant = "secondary";
-      } else if (status === "refunded") {
+      } else if (status === "refunded" || status === "partially_refunded") {
         variant = "destructive";
       } else {
         variant = "outline";

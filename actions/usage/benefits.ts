@@ -103,10 +103,8 @@ async function fetchSubscriptionData(
 }
 
 /**
- * Retrieves the user's current benefits including plan, status, and credit balances.
- *
- * @param userId The UUID of the user.
- * @returns A promise resolving to the UserBenefits object.
+ * Retrieves the user's current benefits
+ * Server-side action.
  */
 export async function getUserBenefits(userId: string): Promise<UserBenefits> {
   if (!userId) {
@@ -158,6 +156,26 @@ export async function getUserBenefits(userId: string): Promise<UserBenefits> {
   } catch (error) {
     console.error(`Unexpected error in getUserBenefits for user ${userId}:`, error);
     return defaultUserBenefits;
+  }
+}
+
+/**
+ * Retrieves the user's current benefits
+ * Client-side action.
+ */
+export async function getClientUserBenefits(): Promise<ActionResult<UserBenefits>> {
+  const session = await getSession()
+  const user = session?.user;
+  if (!user) return actionResponse.unauthorized();
+
+  try {
+    const benefits = await getUserBenefits(user.id);
+    return actionResponse.success(benefits);
+  } catch (error: any) {
+    console.error("Error fetching user benefits for client:", error);
+    return actionResponse.error(
+      error.message || "Failed to fetch user benefits."
+    );
   }
 }
 
@@ -263,20 +281,4 @@ async function processYearlySubscriptionCatchUp(
   }
 
   return finalUsageData;
-}
-
-export async function getClientUserBenefits(): Promise<ActionResult<UserBenefits>> {
-  const session = await getSession()
-  const user = session?.user;
-  if (!user) return actionResponse.unauthorized();
-
-  try {
-    const benefits = await getUserBenefits(user.id);
-    return actionResponse.success(benefits);
-  } catch (error: any) {
-    console.error("Error fetching user benefits for client:", error);
-    return actionResponse.error(
-      error.message || "Failed to fetch user benefits."
-    );
-  }
 }
