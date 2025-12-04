@@ -1537,7 +1537,14 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex justify-between items-center mb-1">
-                        <FormLabel>{t("benefitsJSON")}</FormLabel>
+                        <BenefitsTemplateButtons
+                          onSelectTemplate={(template) => {
+                            form.setValue("benefitsJsonb", template, {
+                              shouldValidate: true,
+                            });
+                          }}
+                          disabled={isLoading}
+                        />
                         <Button
                           type="button"
                           variant="outline"
@@ -1552,7 +1559,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                       </div>
                       <FormControl>
                         <Textarea
-                          placeholder={`{\n  "monthlyCredits": 500,\n  "oneTimeCredits": 0,\n  "otherFeature": true\n}`}
+                          placeholder={`{\n  "monthlyCredits": 1000,\n  "oneTimeCredits": 1000,\n  "totalMonths": 12\n}`}
                           {...field}
                           value={field.value ?? ""}
                           rows={8}
@@ -1561,7 +1568,8 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                         />
                       </FormControl>
                       <FormDescription>
-                        {t("benefitsJSONDescription")}
+                        {t("benefitsJSONDescription")} Use the quick insert
+                        buttons above for common credit patterns.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -1674,5 +1682,59 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
         </div>
       </form>
     </Form>
+  );
+}
+
+/**
+ * Benefits Template Buttons Component
+ * Provides quick template buttons for common benefits configurations
+ */
+interface BenefitsTemplateButtonsProps {
+  onSelectTemplate: (template: string) => void;
+  disabled?: boolean;
+}
+
+function BenefitsTemplateButtons({
+  onSelectTemplate,
+  disabled = false,
+}: BenefitsTemplateButtonsProps) {
+  const templates = [
+    {
+      label: "One-time Credits",
+      title: "One-time Credits Template",
+      data: { oneTimeCredits: 1000 },
+    },
+    {
+      label: "Monthly Credits",
+      title: "Monthly Credits Template",
+      data: { monthlyCredits: 1000 },
+    },
+    {
+      label: "Yearly Credits",
+      title: "Yearly Credits Template",
+      data: { totalMonths: 12, monthlyCredits: 1000 },
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {templates.map((template) => (
+        <Button
+          key={template.label}
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const jsonString = JSON.stringify(template.data, null, 2);
+            onSelectTemplate(jsonString);
+          }}
+          disabled={disabled}
+          title={template.title}
+        >
+          <Zap className="h-3 w-3 mr-1" />
+          {template.label}
+        </Button>
+      ))}
+    </div>
   );
 }

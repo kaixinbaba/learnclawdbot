@@ -129,6 +129,15 @@ export async function createPricingPlanAction({
     planData.stripeProductId = null
     planData.stripeCouponId = null
     planData.enableManualInputCoupon = false
+  } else if (planData.provider === 'none') {
+    planData.stripePriceId = null
+    planData.stripeProductId = null
+    planData.stripeCouponId = null
+    planData.creemProductId = null
+    planData.creemDiscountCode = null
+    planData.enableManualInputCoupon = false
+    planData.paymentType = null
+    planData.recurringInterval = null
   }
 
   try {
@@ -148,7 +157,7 @@ export async function createPricingPlanAction({
           planData.enableManualInputCoupon ?? false,
         paymentType: planData.paymentType,
         recurringInterval: planData.recurringInterval,
-        price: planData.price?.toString(),
+        price: planData.price?.toString() || null,
         currency: planData.currency?.toUpperCase() || null,
         displayPrice: planData.displayPrice,
         originalPrice: planData.originalPrice,
@@ -241,6 +250,15 @@ export async function updatePricingPlanAction({
     planData.stripeProductId = null
     planData.stripeCouponId = null
     planData.enableManualInputCoupon = false
+  } else if (planData.provider === 'none') {
+    planData.stripePriceId = null
+    planData.stripeProductId = null
+    planData.stripeCouponId = null
+    planData.creemProductId = null
+    planData.creemDiscountCode = null
+    planData.enableManualInputCoupon = false
+    planData.paymentType = null
+    planData.recurringInterval = null
   }
 
   try {
