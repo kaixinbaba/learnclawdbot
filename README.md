@@ -1,6 +1,6 @@
 # Nexty - Modern Full-Stack SaaS Boilerplate
 
-Nexty is a feature-rich, full-stack SaaS application boilerplate built with Next.js 15, React 19, and Supabase. It provides developers with a complete solution to quickly build and deploy SaaS applications.
+Nexty is a feature-rich, full-stack SaaS application boilerplate built with Next.js 16, React 19, and Supabase. It provides developers with a complete solution to quickly build and deploy SaaS applications.
 
 - 🚀 Get the boilerplate 👉: https://nexty.dev
 - 🚀 Roadmap 👉: https://nexty.dev/roadmap
@@ -13,7 +13,7 @@ Nexty is a feature-rich, full-stack SaaS application boilerplate built with Next
 
 ## ✨ Key Features
 
-- 🚀 **Next.js 15 & React 19** - Built on the latest tech stack
+- 🚀 **Next.js 16 & React 19** - Built on the latest tech stack
 - 💳 **Stripe Integration** - Complete subscription payment system
 - 🔒 **Supabase Authentication** - Secure and reliable user management
 - 🌍 **Internationalization (i18n) Ready** - Built-in support for English, Chinese, and Japanese

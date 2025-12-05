@@ -1,6 +1,6 @@
 # Nexty - 现代化全栈 SaaS 模板
 
-Nexty 是一个功能丰富的全栈 SaaS 应用模板，基于 Next.js 15、React 19 和 Supabase 构建，为开发者提供了快速构建和部署 SaaS 应用的完整解决方案。
+Nexty 是一个功能丰富的全栈 SaaS 应用模板，基于 Next.js 16、React 19 和 Supabase 构建，为开发者提供了快速构建和部署 SaaS 应用的完整解决方案。
 
 - 🚀 获取模板 👉：https://nexty.dev  
 - 🚀 Roadmap 👉: https://nexty.dev/zh/roadmap  
@@ -13,7 +13,7 @@ Nexty 是一个功能丰富的全栈 SaaS 应用模板，基于 Next.js 15、Rea
 
 ## ✨ 主要特性
 
-- 🚀 **Next.js 15 & React 19** - 基于最新技术栈构建
+- 🚀 **Next.js 16 & React 19** - 基于最新技术栈构建
 - 💳 **Stripe 集成** - 完整的订阅支付系统
 - 🔒 **Supabase 身份认证** - 安全可靠的用户管理
 - 🌍 **国际化支持** - 内置英文、中文和日文支持
