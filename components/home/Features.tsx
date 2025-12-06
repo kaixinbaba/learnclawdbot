@@ -7,7 +7,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Check, ExternalLink } from "lucide-react";
+import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
@@ -121,24 +121,6 @@ export default function Features() {
           {features.map((feature) => (
             <FeatureCard key={feature.title} feature={feature} />
           ))}
-        </div>
-
-        <div className="text-center mt-12 py-8 bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
-          <h3 className="text-xl font-semibold mb-3 text-primary">
-            {t("moreFeatures.title")}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-5 max-w-xl mx-auto text-sm">
-            {t("moreFeatures.description")}
-          </p>
-          <a
-            href="https://nexty.dev/roadmap"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="highlight-button inline-flex items-center"
-          >
-            {t("moreFeatures.button")}
-            <ExternalLink className="w-4 h-4 ml-2" />
-          </a>
         </div>
       </div>
     </section>

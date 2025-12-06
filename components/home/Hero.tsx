@@ -31,7 +31,7 @@ export default function Hero() {
           <div className="flex flex-row gap-2">
             <Button
               asChild
-              className="h-11 rounded-xl px-8 py-2 border-2 border-indigo-500"
+              className="h-11 rounded-xl px-8 py-2 text-white border-2 border-primary"
             >
               <I18nLink
                 href={t("getStartedLink") || "#"}

@@ -19,11 +19,6 @@
     },
     "title": "生产就绪的 Next.js SaaS 模板",
     "description": "这个 Next.js 模板包含现代 SaaS 应用程序所需的每一个核心功能，让您专注于独特的业务逻辑和客户价值。",
-    "moreFeatures": {
-      "title": "探索更多功能",
-      "description": "查看完整的功能路线图、详细文档以及即将推出的功能增强，这些将加速您的 SaaS 开发之旅。",
-      "button": "查看完整路线图"
-    },
     "items": [
       {
         "title": "3 套强大的模板",

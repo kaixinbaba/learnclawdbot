@@ -19,11 +19,6 @@
     },
     "title": "Production-ready Next.js SaaS Boilerplate",
     "description": "The Next.js boilerplate includes every essential feature modern SaaS applications require, letting you focus on your unique business logic and customer value.",
-    "moreFeatures": {
-      "title": "Explore More Features",
-      "description": "Discover our complete feature roadmap, detailed documentation, and upcoming enhancements that will accelerate your SaaS development journey.",
-      "button": "View Full Roadmap"
-    },
     "items": [
       {
         "title": "3 Powerful Boilerplates",
