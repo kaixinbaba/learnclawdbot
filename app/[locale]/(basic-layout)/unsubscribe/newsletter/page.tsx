@@ -1,3 +1,11 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Mail } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import UnsubscribeForm from "./UnsubscribeForm";
 
@@ -36,53 +44,57 @@ export default async function Page(props: { searchParams: SearchParams }) {
   }
 
   return (
-    <div className=" py-16 px-4">
-      <div className="max-w-md mx-auto">
-        <div className="bg-card border border-border rounded-xl shadow-xl overflow-hidden backdrop-blur-xs">
-          <div className="bg-linear-to-r from-indigo-500 to-cyan-500 p-6 text-center">
-            <h1 className="text-2xl font-bold text-white">
+    <div className="flex min-h-[60vh] items-center justify-center py-12 px-4">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center space-y-4 pb-2">
+          <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
+            <Mail className="w-8 h-8 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-bold">
               {t("unsubscribe.title")}
-            </h1>
+            </CardTitle>
+            <CardDescription className="text-base">
+              {tokenValidation.isValid
+                ? t("unsubscribe.confirmMessage")
+                : t("unsubscribe.errorGeneric")}
+            </CardDescription>
           </div>
+        </CardHeader>
 
-          <div className="p-6">
-            {tokenValidation.isValid ? (
-              <UnsubscribeForm
-                token={token}
-                email={tokenValidation.email}
-                locale={currentLocale}
-                adminEmail={process.env.ADMIN_EMAIL || ""}
-              />
-            ) : (
-              <div className="space-y-4">
-                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-4 rounded-lg">
-                  <p className="text-red-800 dark:text-red-300 font-medium">
-                    {tokenValidation.error}
-                  </p>
-                </div>
-
-                <p className="text-muted-foreground">
-                  {t("unsubscribe.errorMessage")}
+        <CardContent className="pt-6">
+          {tokenValidation.isValid ? (
+            <UnsubscribeForm
+              token={token}
+              email={tokenValidation.email}
+              locale={currentLocale}
+              adminEmail={process.env.ADMIN_EMAIL || ""}
+            />
+          ) : (
+            <div className="space-y-6">
+              <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg text-center">
+                <p className="text-destructive font-medium">
+                  {tokenValidation.error}
                 </p>
-
-                <div className="pt-4 mt-6 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
-                    {t("unsubscribe.contactPrefix")}
-                    <a
-                      href={`mailto:${process.env.ADMIN_EMAIL}`}
-                      title={process.env.ADMIN_EMAIL}
-                      className="text-primary hover:text-primary/80 ml-1 hover:underline transition-colors"
-                      target="_blank"
-                    >
-                      {process.env.ADMIN_EMAIL}
-                    </a>
-                  </p>
-                </div>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
+
+              <div className="pt-4 border-t border-border text-center">
+                <p className="text-sm text-muted-foreground">
+                  {t("unsubscribe.contactPrefix")}
+                  <a
+                    href={`mailto:${process.env.ADMIN_EMAIL}`}
+                    title={process.env.ADMIN_EMAIL}
+                    className="text-primary hover:text-primary/80 ml-1 hover:underline transition-colors"
+                    target="_blank"
+                  >
+                    {process.env.ADMIN_EMAIL}
+                  </a>
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
