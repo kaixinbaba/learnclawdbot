@@ -39,7 +39,11 @@ export function slugifyHostname(hostname: string) {
   return slug;
 }
 
-export function universalSlugify(name: string, url: string) {
+export function universalSlugify(name: string) {
+  if (!name) {
+    return '';
+  }
+
   const preparedText = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   let slug = slugify(preparedText, {
@@ -49,11 +53,6 @@ export function universalSlugify(name: string, url: string) {
     strict: true,
     trim: true
   });
-
-  if (!slug) {
-    const hostname = new URL(url).hostname;
-    slug = slugifyHostname(hostname);
-  }
 
   return slug;
 }
