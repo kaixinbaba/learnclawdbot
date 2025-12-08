@@ -14,7 +14,6 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { siteConfig } from "@/config/site";
 import { Link as I18nLink, usePathname } from "@/i18n/routing";
 import { authClient } from "@/lib/auth/auth-client";
 import { useTranslations } from "next-intl";
@@ -32,6 +31,7 @@ export function DashboardSidebar() {
   const user = session?.user as any | undefined;
   const pathname = usePathname();
   const t = useTranslations("Login");
+  const tHome = useTranslations("Home");
 
   const userMenus: Menu[] = t.raw("UserMenus");
   const adminMenus: Menu[] = t.raw("AdminMenus");
@@ -47,7 +47,7 @@ export function DashboardSidebar() {
       <SidebarHeader>
         <I18nLink
           href="/"
-          title={t("title")}
+          title={tHome("title")}
           prefetch={true}
           className="flex items-center space-x-1 px-2 py-1"
         >
@@ -58,7 +58,7 @@ export function DashboardSidebar() {
             height={24}
             className="rounded-md"
           />
-          {!isCollapsed && <h1 className="font-semibold">{siteConfig.name}</h1>}
+          {!isCollapsed && <h1 className="font-semibold">{tHome("title")}</h1>}
         </I18nLink>
       </SidebarHeader>
 

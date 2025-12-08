@@ -35,11 +35,11 @@ export default async function Footer() {
                   <div className="text-gray-50 text-xl font-medium flex items-center gap-2">
                     <Image
                       src="/logo.png"
-                      alt={siteConfig.name}
+                      alt={t("title")}
                       width={32}
                       height={32}
                     />
-                    {siteConfig.name}
+                    {t("title")}
                   </div>
                 </div>
 
