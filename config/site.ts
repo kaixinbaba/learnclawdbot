@@ -8,18 +8,18 @@ const YOUTUBE_URL = ''
 const INSTAGRAM_URL = ''
 const TIKTOK_URL = ''
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL
-const EMAIL_URL = 'hi@nexty.dev'
+const EMAIL_URL = ''
 
 export const siteConfig: SiteConfig = {
   name: "NEXTY.DEV",
   url: BASE_URL,
   authors: [
     {
-      name: "nexty.dev",
+      name: "your-name",
       url: BASE_URL,
     }
   ],
-  creator: '@judewei_dev',
+  creator: '@your-handle',
   socialLinks: {
     github: GITHUB_URL,
     twitter: TWITTER_URL,

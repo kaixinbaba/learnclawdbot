@@ -1,3 +1,5 @@
+import { siteConfig } from "@/config/site";
+
 interface CreditUpgradeFailedEmailProps {
   userId: string;
   orderId: string;
@@ -20,7 +22,6 @@ const CreditUpgradeFailedEmail = ({
       <div style={logo}>
         <img
           src={`${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`}
-          alt="Nexty"
           width={80}
           height={80}
         />
@@ -76,16 +77,18 @@ const CreditUpgradeFailedEmail = ({
         successful, manually insert the corresponding records into the{" "}
         <code>usage</code> and <code>credit_logs</code> tables.
       </p>
-      <p style={list}>
-        4. <strong>Seek Support:</strong> If you are unable to resolve the
-        issue, please contact the Nexty team on{" "}
-        <a href="https://discord.gg/asprPMf4">Discord</a> for assistance.
-      </p>
+      {siteConfig.socialLinks?.discord && (
+        <p style={list}>
+          4. <strong>Seek Support:</strong> If you are unable to resolve the
+          issue, please contact the {siteConfig.name} team on{" "}
+          <a href={siteConfig.socialLinks?.discord}>Discord</a> for assistance.
+        </p>
+      )}
     </div>
 
     <div style={footer}>
       <p style={footerText}>
-        © {new Date().getFullYear()} Nexty. All rights reserved.
+        © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
       </p>
     </div>
   </div>
