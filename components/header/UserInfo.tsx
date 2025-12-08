@@ -10,7 +10,7 @@ import {
 import { useRouter } from "@/i18n/routing";
 import { authClient } from "@/lib/auth/auth-client";
 import { user as userSchema } from "@/lib/db/schema";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, LogOutIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 type Menu = {
@@ -120,7 +120,7 @@ export function UserInfo({ renderContainer, user }: UserInfoProps) {
         onClick={() => signOut()}
         className="cursor-pointer text-red-600 dark:text-red-400"
       >
-        {t("Button.signOut")}
+        <LogOutIcon /> {t("Button.signOut")}
       </DropdownMenuItem>
     </>
   );
