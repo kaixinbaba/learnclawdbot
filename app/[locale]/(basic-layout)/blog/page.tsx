@@ -61,7 +61,7 @@ export default async function Page({ params }: { params: Params }) {
     );
   }
 
-  const tagsResult = await listTagsAction({});
+  const tagsResult = await listTagsAction({ postType: "blog" });
   let serverTags: Tag[] = [];
   if (tagsResult.success && tagsResult.data?.tags) {
     serverTags = tagsResult.data.tags;

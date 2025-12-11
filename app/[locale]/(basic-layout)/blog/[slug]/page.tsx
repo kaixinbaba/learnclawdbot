@@ -88,7 +88,7 @@ export default async function BlogPage({ params }: { params: Params }) {
   await incrementViewCountAction({ slug, postType: "blog", locale });
 
   // Option 2: Count unique visitors - same IP once per hour (uncomment line below, comment out line above)
-  // await incrementUniqueViewCountAction({ slug, locale });
+  // await incrementUniqueViewCountAction({ slug, locale, postType: "blog" });
 
   const viewCountResult = await getViewCountAction({
     slug,
