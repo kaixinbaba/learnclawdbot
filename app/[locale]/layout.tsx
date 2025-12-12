@@ -3,11 +3,12 @@ import { LanguageDetectionAlert } from "@/components/LanguageDetectionAlert";
 import ConsentBanner from "@/components/shared/CookieConsent/ConsentBanner";
 import ConsentGate from "@/components/shared/CookieConsent/ConsentGate";
 import { TailwindIndicator } from "@/components/TailwindIndicator";
-import BaiDuAnalytics from "@/components/tracking/BaiDuAnalytics";
 import GoogleAdsense from "@/components/tracking/GoogleAdsense";
 import GoogleAnalytics from "@/components/tracking/GoogleAnalytics";
 import PlausibleAnalytics from "@/components/tracking/PlausibleAnalytics";
+import RybbitScript from "@/components/tracking/RybbitScript";
 import ToltScript from "@/components/tracking/ToltScript";
+import UmamiScript from "@/components/tracking/UmamiScript";
 import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/config/site";
 import { DEFAULT_LOCALE, Locale, routing } from "@/i18n/routing";
@@ -105,9 +106,10 @@ export default async function LocaleLayout({
                 <>
                   {process.env.VERCEL_ENV ? <Analytics /> : <></>}
                   <PlausibleAnalytics />
+                  <RybbitScript />
+                  <UmamiScript />
                   <ConsentGate>
                     <GoogleAnalytics />
-                    <BaiDuAnalytics />
                     <GoogleAdsense />
                   </ConsentGate>
                 </>
@@ -121,8 +123,9 @@ export default async function LocaleLayout({
                   {process.env.VERCEL_ENV ? <Analytics /> : <></>}
                   <PlausibleAnalytics />
                   <GoogleAnalytics />
-                  <BaiDuAnalytics />
                   <GoogleAdsense />
+                  <RybbitScript />
+                  <UmamiScript />
                 </>
               )}
             </>
