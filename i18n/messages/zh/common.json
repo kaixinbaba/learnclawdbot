@@ -160,6 +160,8 @@
     "title": "欢迎回来",
     "description": "你可以通过以下方式登录",
     "Toast": {
+      "rateLimitTitle": "请求过于频繁",
+      "rateLimitDescription": "请稍等片刻后重试。",
       "Email": {
         "successTitle": "邮件已发送",
         "successDescription": "请检查你的邮箱获取登录链接。",

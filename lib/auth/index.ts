@@ -5,6 +5,7 @@ import OTPCodeEmail from '@/emails/otp-code-email';
 import { UserWelcomeEmail } from "@/emails/user-welcome";
 import { db } from "@/lib/db";
 import { account, session, user, verification } from "@/lib/db/schema";
+import { redis } from "@/lib/upstash";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
@@ -16,6 +17,48 @@ export const auth = betterAuth({
   appName: siteConfig.name,
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || process.env.NEXT_PUBLIC_SITE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  advanced: {
+    database: {
+      generateId: () => crypto.randomUUID(),
+    },
+    // Use Cloudflare IP header for accurate IP detection
+    ipAddress: {
+      ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for", "x-real-ip"],
+    },
+  },
+  // IP-based rate limiting configuration
+  rateLimit: {
+    enabled: true,
+    window: 60, // 60 seconds default window
+    max: 100, // 100 requests per window (global default)
+    customRules: {
+      "/sign-in/magic-link": {
+        window: 60, // 60 seconds
+        max: 3, // Max 3 magic link requests per 60 seconds
+      },
+      "/email-otp/send-verification-otp": {
+        window: 60,
+        max: 3,
+      },
+      "/sign-in/email-otp": {
+        window: 60,
+        max: 5,
+      },
+    },
+    // Use Upstash Redis for rate limit storage (works with serverless)
+    ...(redis && {
+      customStorage: {
+        get: async (key: string) => {
+          const data = await redis!.get<{ key: string; count: number; lastRequest: number }>(key);
+          return data || undefined;
+        },
+        set: async (key: string, value: { key: string; count: number; lastRequest: number }) => {
+          // TTL of 2 minutes (120 seconds) - enough for rate limit windows
+          await redis!.set(key, value, { ex: 120 });
+        },
+      },
+    }),
+  },
   session: {
     cookieCache: {
       enabled: true,
@@ -45,11 +88,6 @@ export const auth = betterAuth({
       verification: verification,
     },
   }),
-  advanced: {
-    database: {
-      generateId: () => crypto.randomUUID(),
-    }
-  },
   socialProviders: {
     github: {
       clientId: process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID!,

@@ -65,7 +65,7 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      await authClient.signIn.magicLink({
+      const { error } = await authClient.signIn.magicLink({
         email: email,
         name: "my-name",
         callbackURL: getCallbackUrl(),
@@ -76,6 +76,21 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
           },
         },
       });
+
+      if (error) {
+        // Handle rate limit error
+        if (error.status === 429) {
+          toast.error(t("Toast.rateLimitTitle"), {
+            description: t("Toast.rateLimitDescription"),
+          });
+          return;
+        }
+        toast.error(t("Toast.Email.errorTitle"), {
+          description: error.message || t("Toast.Email.errorDescription"),
+        });
+        return;
+      }
+
       toast.success(t("Toast.Email.successTitle"), {
         description: t("Toast.Email.successDescription"),
       });
@@ -107,6 +122,13 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
       });
 
       if (error) {
+        // Handle rate limit error
+        if (error.status === 429) {
+          toast.error(t("Toast.rateLimitTitle"), {
+            description: t("Toast.rateLimitDescription"),
+          });
+          return;
+        }
         toast.error(t("Toast.OTP.errorTitle"), {
           description: error.message || t("Toast.OTP.sendErrorDescription"),
         });
@@ -148,6 +170,13 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
       });
 
       if (error) {
+        // Handle rate limit error
+        if (error.status === 429) {
+          toast.error(t("Toast.rateLimitTitle"), {
+            description: t("Toast.rateLimitDescription"),
+          });
+          return;
+        }
         toast.error(t("Toast.OTP.errorTitle"), {
           description: error.message || t("Toast.OTP.verifyErrorDescription"),
         });

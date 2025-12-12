@@ -160,6 +160,8 @@
     "title": "Welcome back",
     "description": "Sign in with the following methods",
     "Toast": {
+      "rateLimitTitle": "Too many requests",
+      "rateLimitDescription": "Please wait a moment before trying again.",
       "Email": {
         "successTitle": "Magic link sent!",
         "successDescription": "Please check your email for the login link.",

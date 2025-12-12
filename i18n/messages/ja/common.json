@@ -161,6 +161,8 @@
     "title": "おかえりなさい",
     "description": "以下の方法でログインしていただけます",
     "Toast": {
+      "rateLimitTitle": "リクエストが多すぎます",
+      "rateLimitDescription": "しばらくしてから再度お試しください。",
       "Email": {
         "successTitle": "メールを送信しました",
         "successDescription": "ログインリンクをメールでお送りしましたので、ご確認ください。",
