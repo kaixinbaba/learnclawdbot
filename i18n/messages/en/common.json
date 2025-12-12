@@ -166,6 +166,15 @@
         "errorTitle": "Error",
         "errorDescription": "Failed to send magic link. Please try again."
       },
+      "OTP": {
+        "errorTitle": "Error",
+        "sendSuccessTitle": "Code sent!",
+        "sendSuccessDescription": "Please check your email for the verification code.",
+        "sendErrorDescription": "Failed to send verification code. Please try again.",
+        "verifySuccessTitle": "Success!",
+        "verifySuccessDescription": "You have been signed in successfully.",
+        "verifyErrorDescription": "Invalid or expired verification code. Please try again."
+      },
       "Google": {
         "errorTitle": "Error",
         "errorDescription": "Failed to sign in with Google. Please try again."
@@ -179,7 +188,14 @@
       "or": "Or continue with",
       "signInWithGoogle": "Continue with Google",
       "signInWithGithub": "Continue with Github",
-      "signInWithEmail": "Continue with Email"
+      "signInWithEmail": "Continue with Email",
+      "otpMethod": "Verification Code",
+      "magicLinkMethod": "Magic Link",
+      "sendOTP": "Send Code",
+      "verifyOTP": "Verify Code",
+      "resendOTP": "Didn't receive the code? Resend",
+      "backToEmail": "Back",
+      "otpSentTo": "We sent a verification code to"
     },
     "Button": {
       "signIn": "Sign In",

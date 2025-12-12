@@ -1,13 +1,14 @@
 import { sendEmail } from "@/actions/resend";
 import { siteConfig } from "@/config/site";
 import MagicLinkEmail from '@/emails/magic-link-email';
+import OTPCodeEmail from '@/emails/otp-code-email';
 import { UserWelcomeEmail } from "@/emails/user-welcome";
 import { db } from "@/lib/db";
 import { account, session, user, verification } from "@/lib/db/schema";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin, anonymous, captcha, lastLoginMethod, magicLink, oneTap } from "better-auth/plugins";
+import { admin, anonymous, captcha, emailOTP, lastLoginMethod, magicLink, oneTap } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 
@@ -124,6 +125,21 @@ export const auth = betterAuth({
         })
       },
       expiresIn: 60 * 5,
+    }),
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 60 * 10, // 10 minutes
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        await sendEmail({
+          email,
+          subject: `Your ${siteConfig.name} verification code: ${otp}`,
+          react: OTPCodeEmail,
+          reactProps: {
+            otp,
+            type
+          }
+        })
+      },
     }),
     lastLoginMethod(),
     admin(),

@@ -167,6 +167,15 @@
         "errorTitle": "エラーが発生しました",
         "errorDescription": "メールの送信に失敗しました。お手数ですが、再度お試しください。"
       },
+      "OTP": {
+        "errorTitle": "エラーが発生しました",
+        "sendSuccessTitle": "認証コードを送信しました！",
+        "sendSuccessDescription": "メールで認証コードをご確認ください。",
+        "sendErrorDescription": "認証コードの送信に失敗しました。再度お試しください。",
+        "verifySuccessTitle": "ログインに成功しました！",
+        "verifySuccessDescription": "おかえりなさい。",
+        "verifyErrorDescription": "認証コードが無効または期限切れです。再度お試しください。"
+      },
       "Google": {
         "errorTitle": "エラーが発生しました",
         "errorDescription": "Googleアカウントでのログインに失敗しました。お手数ですが、再度お試しください。"
@@ -180,7 +189,14 @@
       "or": "または",
       "signInWithGoogle": "Googleアカウントでログイン",
       "signInWithGithub": "GitHubアカウントでログイン",
-      "signInWithEmail": "メールアドレスでログイン"
+      "signInWithEmail": "メールアドレスでログイン",
+      "otpMethod": "認証コード",
+      "magicLinkMethod": "マジックリンク",
+      "sendOTP": "認証コードを送信",
+      "verifyOTP": "認証する",
+      "resendOTP": "コードが届かない場合は再送信",
+      "backToEmail": "戻る",
+      "otpSentTo": "認証コードを送信しました："
     },
     "Button": {
       "signIn": "ログイン",

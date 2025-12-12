@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { DEFAULT_LOCALE } from "@/i18n/routing";
 import { authClient } from "@/lib/auth/auth-client";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { Github, Loader2 } from "lucide-react";
+import { Github, Link as LinkIcon, Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,18 +17,27 @@ interface LoginFormProps {
   className?: string;
 }
 
+type LoginMode = "otp" | "magic-link";
+
 export default function LoginForm({ className = "" }: LoginFormProps) {
   const t = useTranslations("Login");
   const locale = useLocale();
 
   const [lastMethod, setLastMethod] = useState<string | null>(null);
 
+  const [mode, setMode] = useState<LoginMode>("otp");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGithubLoading, setIsGithubLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>("");
   const [showTurnstile, setShowTurnstile] = useState(false);
+
+  // OTP specific state
+  const [otpCode, setOtpCode] = useState("");
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
@@ -37,20 +46,29 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
     setLastMethod(authClient.getLastUsedLoginMethod());
   }, []);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
-    const callback = new URL(
+  const getCallbackUrl = () => {
+    return new URL(
       next || locale === DEFAULT_LOCALE ? "" : `/${locale}`,
       window.location.origin
-    );
+    ).toString();
+  };
+
+  const handleEmailLogin = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setIsLoading(true);
 
     try {
       await authClient.signIn.magicLink({
         email: email,
         name: "my-name",
-        callbackURL: callback.toString(),
+        callbackURL: getCallbackUrl(),
         errorCallbackURL: "/redirect-error",
         fetchOptions: {
           headers: {
@@ -67,6 +85,86 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsOtpLoading(true);
+
+    try {
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email: email,
+        type: "sign-in",
+        fetchOptions:
+          captchaToken && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+            ? {
+                headers: {
+                  "x-captcha-response": captchaToken,
+                },
+              }
+            : undefined,
+      });
+
+      if (error) {
+        toast.error(t("Toast.OTP.errorTitle"), {
+          description: error.message || t("Toast.OTP.sendErrorDescription"),
+        });
+        return;
+      }
+
+      toast.success(t("Toast.OTP.sendSuccessTitle"), {
+        description: t("Toast.OTP.sendSuccessDescription"),
+      });
+      setIsCodeSent(true);
+      setCountdown(60);
+    } catch (error) {
+      toast.error(t("Toast.OTP.errorTitle"), {
+        description: t("Toast.OTP.sendErrorDescription"),
+      });
+    } finally {
+      setIsOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) return;
+
+    setIsOtpLoading(true);
+
+    try {
+      const { error } = await authClient.signIn.emailOtp({
+        email: email,
+        otp: otpCode,
+        fetchOptions:
+          captchaToken && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+            ? {
+                headers: {
+                  "x-captcha-response": captchaToken,
+                },
+              }
+            : undefined,
+      });
+
+      if (error) {
+        toast.error(t("Toast.OTP.errorTitle"), {
+          description: error.message || t("Toast.OTP.verifyErrorDescription"),
+        });
+        return;
+      }
+
+      toast.success(t("Toast.OTP.verifySuccessTitle"), {
+        description: t("Toast.OTP.verifySuccessDescription"),
+      });
+
+      window.location.assign(getCallbackUrl());
+    } catch (error) {
+      toast.error(t("Toast.OTP.errorTitle"), {
+        description: t("Toast.OTP.verifyErrorDescription"),
+      });
+    } finally {
+      setIsOtpLoading(false);
     }
   };
 
@@ -110,6 +208,12 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
     );
   };
 
+  const toggleMode = () => {
+    setMode(mode === "otp" ? "magic-link" : "otp");
+    setOtpCode("");
+    setIsCodeSent(false);
+  };
+
   return (
     <div className={`grid gap-6 ${className}`}>
       <div className="grid gap-4">
@@ -117,30 +221,42 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
           variant="outline"
           onClick={() => signInSocial("google")}
           disabled={isGoogleLoading || isGithubLoading}
+          className="relative"
         >
           {isGoogleLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <GoogleIcon className="mr-2 h-4 w-4" />
+            <GoogleIcon className="h-4 w-4" />
           )}
           {t("signInMethods.signInWithGoogle")}
           {lastMethod === "google" && (
-            <Badge className="ml-2 text-xs">Last used</Badge>
+            <Badge
+              variant="secondary"
+              className="absolute right-2 text-[10px] px-1.5 py-0.5 pointer-events-none"
+            >
+              Last used
+            </Badge>
           )}
         </Button>
         <Button
           variant="outline"
           onClick={() => signInSocial("github")}
           disabled={isGoogleLoading || isGithubLoading}
+          className="relative"
         >
           {isGithubLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Github className="mr-2 h-4 w-4" />
+            <Github className="h-4 w-4" />
           )}
           {t("signInMethods.signInWithGithub")}
           {lastMethod === "github" && (
-            <Badge className="ml-2 text-xs">Last used</Badge>
+            <Badge
+              variant="secondary"
+              className="absolute right-2 text-[10px] px-1.5 py-0.5 pointer-events-none"
+            >
+              Last used
+            </Badge>
           )}
         </Button>
       </div>
@@ -156,41 +272,108 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
         </div>
       </div>
 
-      <form onSubmit={handleEmailLogin}>
-        <div className="grid gap-2">
-          <div className="grid gap-1 text-center">
-            <Input
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              onMouseEnter={() => setShowTurnstile(true)}
-            />
+      <div className="grid gap-2">
+        <div className="grid">
+          <div className="text-sm font-medium">Email</div>
+          <Input
+            type="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading || isOtpLoading}
+            onMouseEnter={() => setShowTurnstile(true)}
+          />
+        </div>
 
-            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && showTurnstile && (
-              <Turnstile
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-                onSuccess={(token) => {
-                  setCaptchaToken(token);
-                }}
-                onError={() => setCaptchaToken("")}
-                onExpire={() => setCaptchaToken("")}
+        {mode === "otp" && (
+          <div className="grid">
+            <div className="text-sm font-medium">
+              {t("signInMethods.otpMethod")}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                maxLength={6}
+                placeholder="123456"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                disabled={isLoading || isOtpLoading}
+                className="flex-1"
               />
-            )}
+              <Button
+                type="button"
+                variant="outline"
+                className="min-w-[120px]"
+                onClick={handleSendOTP}
+                disabled={
+                  !email ||
+                  isOtpLoading ||
+                  countdown > 0 ||
+                  (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
+                    !captchaToken)
+                }
+              >
+                {isOtpLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : countdown > 0 ? (
+                  `${countdown}s`
+                ) : (
+                  t("signInMethods.sendOTP")
+                )}
+              </Button>
+            </div>
           </div>
+        )}
+
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && showTurnstile && (
+          <Turnstile
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            onSuccess={(token: string) => {
+              setCaptchaToken(token);
+            }}
+            onError={() => setCaptchaToken("")}
+            onExpire={() => setCaptchaToken("")}
+            options={{
+              size: "flexible",
+            }}
+          />
+        )}
+
+        <Button
+          onClick={mode === "otp" ? handleVerifyOTP : handleEmailLogin}
+          disabled={
+            !email ||
+            isLoading ||
+            isOtpLoading ||
+            (mode === "otp" && otpCode.length !== 6) ||
+            (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken)
+          }
+          className="w-full bg-primary/90 hover:bg-primary"
+        >
+          {isLoading || isOtpLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : mode === "otp" ? (
+            t("Button.signIn")
+          ) : (
+            <>
+              <LinkIcon className="h-4 w-4" />
+              {t("signInMethods.magicLinkMethod")}
+            </>
+          )}
+        </Button>
+
+        <div className="text-center">
           <Button
-            disabled={
-              !email ||
-              isLoading ||
-              (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken)
-            }
+            variant="link"
+            className="text-xs font-normal text-muted-foreground hover:text-primary"
+            onClick={toggleMode}
           >
-            {isLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
-            {t("signInMethods.signInWithEmail")}
+            {mode === "otp"
+              ? `Or ${t("signInMethods.magicLinkMethod")}`
+              : `Or ${t("signInMethods.otpMethod")}`}
           </Button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

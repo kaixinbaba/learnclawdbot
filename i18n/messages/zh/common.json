@@ -166,6 +166,15 @@
         "errorTitle": "错误",
         "errorDescription": "发送邮件失败，请重试。"
       },
+      "OTP": {
+        "errorTitle": "错误",
+        "sendSuccessTitle": "验证码已发送！",
+        "sendSuccessDescription": "请检查你的邮箱获取验证码。",
+        "sendErrorDescription": "发送验证码失败，请重试。",
+        "verifySuccessTitle": "登录成功！",
+        "verifySuccessDescription": "欢迎回来。",
+        "verifyErrorDescription": "验证码无效或已过期，请重试。"
+      },
       "Google": {
         "errorTitle": "错误",
         "errorDescription": "使用 Google 登录失败，请重试。"
@@ -179,7 +188,14 @@
       "or": "或者",
       "signInWithGoogle": "使用 Google 登录",
       "signInWithGithub": "使用 GitHub 登录",
-      "signInWithEmail": "使用邮箱登录"
+      "signInWithEmail": "使用邮箱登录",
+      "otpMethod": "验证码",
+      "magicLinkMethod": "魔法链接",
+      "sendOTP": "发送验证码",
+      "verifyOTP": "验证",
+      "resendOTP": "没收到验证码？重新发送",
+      "backToEmail": "返回",
+      "otpSentTo": "验证码已发送至"
     },
     "Button": {
       "signIn": "登录",
