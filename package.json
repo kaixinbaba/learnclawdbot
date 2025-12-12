@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
-    "fix": "npx fix-react2shell-next",
+    "fix": "pnpm i fix-react2shell-next@latest && npx fix-react2shell-next",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
