@@ -1,9 +1,11 @@
 "use client";
 
 import { DynamicIcon } from "@/components/DynamicIcon";
+import { SidebarUserNav } from "@/components/header/SidebarUserNav";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -116,6 +118,10 @@ export function DashboardSidebar() {
           </>
         )}
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarUserNav />
+      </SidebarFooter>
     </Sidebar>
   );
 }
