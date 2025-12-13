@@ -4,16 +4,21 @@ import type { ActionResult } from '@/lib/action-response';
 import { actionResponse } from '@/lib/action-response';
 import { isAdmin } from '@/lib/auth/server';
 import { db } from '@/lib/db';
-import { session as sessionSchema, user as userSchema } from '@/lib/db/schema';
+import { session as sessionSchema, user as userSchema, userSource as userSourceSchema } from '@/lib/db/schema';
 import { getErrorMessage } from '@/lib/error-utils';
 import { count, desc, eq, ilike, or } from 'drizzle-orm';
 
 type UserType = typeof userSchema.$inferSelect;
 
+// Extended user type with referralCode from userSource
+export type UserWithSource = UserType & {
+  referralCode?: string | null;
+};
+
 export interface GetUsersResult {
   success: boolean;
   data?: {
-    users: UserType[];
+    users: UserWithSource[];
     totalCount: number;
   };
   error?: string;
@@ -45,9 +50,29 @@ export async function getUsers({
       );
     }
 
+    // Query users with left join to userSource for referralCode
     const usersQuery = db
-      .select()
+      .select({
+        // User fields
+        id: userSchema.id,
+        email: userSchema.email,
+        emailVerified: userSchema.emailVerified,
+        name: userSchema.name,
+        image: userSchema.image,
+        role: userSchema.role,
+        isAnonymous: userSchema.isAnonymous,
+        referral: userSchema.referral,
+        stripeCustomerId: userSchema.stripeCustomerId,
+        banned: userSchema.banned,
+        banReason: userSchema.banReason,
+        banExpires: userSchema.banExpires,
+        createdAt: userSchema.createdAt,
+        updatedAt: userSchema.updatedAt,
+        // UserSource referralCode
+        referralCode: userSourceSchema.referralCode,
+      })
       .from(userSchema)
+      .leftJoin(userSourceSchema, eq(userSchema.id, userSourceSchema.userId))
       .where(conditions.length > 0 ? or(...conditions) : undefined)
       .orderBy(desc(userSchema.createdAt))
       .offset(pageIndex * pageSize)
@@ -66,7 +91,7 @@ export async function getUsers({
     const totalCount = totalCountResult[0].value;
 
     return actionResponse.success({
-      users: results as unknown as UserType[] || [],
+      users: results as UserWithSource[] || [],
       totalCount: totalCount,
     });
   } catch (error) {

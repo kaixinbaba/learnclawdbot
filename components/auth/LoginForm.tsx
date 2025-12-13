@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DEFAULT_LOCALE } from "@/i18n/routing";
 import { authClient } from "@/lib/auth/auth-client";
+import { initializeTracking } from "@/lib/tracking/client";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Github, Link as LinkIcon, Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -44,6 +45,11 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
 
   useEffect(() => {
     setLastMethod(authClient.getLastUsedLoginMethod());
+  }, []);
+
+  // Initialize user tracking on component mount
+  useEffect(() => {
+    initializeTracking();
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { banUser, unbanUser } from "@/actions/users/admin";
+import { banUser, unbanUser, UserWithSource } from "@/actions/users/admin";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { user as userSchema } from "@/lib/db/schema";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import { MoreHorizontal } from "lucide-react";
@@ -35,7 +34,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-type UserType = typeof userSchema.$inferSelect;
+type UserType = UserWithSource;
 
 const BanUserDialog = ({
   open,
@@ -270,12 +269,14 @@ export const columns: ColumnDef<UserType>[] = [
     ),
   },
   {
-    accessorKey: "referral",
-    header: "Referral",
+    accessorKey: "referralCode",
+    header: "Referral Code",
     cell: ({ row }) => {
-      const referral = row.original.referral;
+      const referralCode = row.original.referralCode;
       return (
-        <span className="text-sm text-muted-foreground">{referral || "-"}</span>
+        <span className="text-sm text-muted-foreground">
+          {referralCode || "-"}
+        </span>
       );
     },
   },

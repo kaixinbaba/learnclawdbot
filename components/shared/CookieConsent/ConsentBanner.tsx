@@ -14,8 +14,11 @@ export default function ConsentBanner({
   description,
   learnMoreHref = "/privacy-policy",
 }: ConsentBannerProps) {
-  const { consented, mounted, acceptConsent } = useCookieConsent();
-  if (!mounted || consented) return null;
+  const { hasResponded, mounted, acceptConsent } = useCookieConsent();
+
+  // Only show banner if user hasn't responded yet
+  if (!mounted || hasResponded) return null;
+
   return (
     <CookieConsent
       variant={variant}

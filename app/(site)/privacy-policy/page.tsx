@@ -20,6 +20,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function PrivacyPolicyPage() {
+  const COOKIE_CONSENT_ENABLED =
+    process.env.NEXT_PUBLIC_COOKIE_CONSENT_ENABLED === "true";
+
   return (
     <div className="bg-secondary/20 py-8 sm:py-12">
       <div className="container mx-auto max-w-4xl px-4">
@@ -123,7 +126,7 @@ export default function PrivacyPolicyPage() {
                   <strong>Improving Services</strong>: Analyzing usage patterns,
                   optimizing user experience and features, and developing new
                   functionalities
-                  {process.env.NEXT_PUBLIC_COOKIE_CONSENT_ENABLED === "true" &&
+                  {COOKIE_CONSENT_ENABLED &&
                     " (only with your consent for analytics cookies)"}
                 </li>
                 <li>
@@ -138,11 +141,11 @@ export default function PrivacyPolicyPage() {
                   <strong>Marketing</strong>: Sending relevant product updates,
                   tutorials, and promotional information (if you have opted to
                   receive them)
-                  {process.env.NEXT_PUBLIC_COOKIE_CONSENT_ENABLED === "true" &&
+                  {COOKIE_CONSENT_ENABLED &&
                     ", and displaying relevant advertisements (only with your consent for advertising cookies)"}
                 </li>
               </ul>
-              {process.env.NEXT_PUBLIC_COOKIE_CONSENT_ENABLED === "true" && (
+              {COOKIE_CONSENT_ENABLED && (
                 <p className="mb-3 text-sm text-muted-foreground">
                   <strong>Note:</strong> When cookie consent is enabled, certain
                   data processing activities (such as analytics and advertising)
@@ -243,7 +246,7 @@ export default function PrivacyPolicyPage() {
                 on your device that help us provide a better user experience.
               </p>
 
-              {process.env.NEXT_PUBLIC_COOKIE_CONSENT_ENABLED === "true" ? (
+              {COOKIE_CONSENT_ENABLED ? (
                 <>
                   <p className="mb-3">
                     <strong>Cookie Consent Management:</strong> We have
@@ -328,7 +331,7 @@ export default function PrivacyPolicyPage() {
                 You can control or delete cookies by changing your browser
                 settings. Please note that disabling certain cookies may affect
                 your experience on our website.
-                {process.env.NEXT_PUBLIC_COOKIE_CONSENT_ENABLED === "true" &&
+                {COOKIE_CONSENT_ENABLED &&
                   " Additionally, you can use the Cookie Preferences section above to manage your consent for optional cookies."}
               </p>
             </section>

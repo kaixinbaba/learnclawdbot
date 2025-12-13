@@ -8,20 +8,20 @@ const referralParams = ['utm_source', 'ref', 'via', 'aff', 'referral', 'referral
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
 
-  let referralValue: string | null = null;
+  let referralCode: string | null = null;
 
   for (const param of referralParams) {
     const value = request.nextUrl.searchParams.get(param);
     if (value) {
-      referralValue = value;
+      referralCode = value;
       break;
     }
   }
 
   const intlResponse = intlMiddleware(request);
 
-  if (referralValue) {
-    intlResponse.cookies.set('referral_source', referralValue);
+  if (referralCode) {
+    intlResponse.cookies.set('referral_code', referralCode);
   }
 
   return intlResponse;

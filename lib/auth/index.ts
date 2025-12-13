@@ -5,12 +5,17 @@ import OTPCodeEmail from '@/emails/otp-code-email';
 import { UserWelcomeEmail } from "@/emails/user-welcome";
 import { db } from "@/lib/db";
 import { account, session, user, verification } from "@/lib/db/schema";
+import {
+  buildUserSourceData,
+  parseTrackingCookie,
+  saveUserSource,
+  TRACKING_COOKIE_NAME,
+} from "@/lib/tracking";
 import { redis } from "@/lib/upstash";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin, anonymous, captcha, emailOTP, lastLoginMethod, magicLink, oneTap } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 
 export const auth = betterAuth({
@@ -102,21 +107,27 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (createdUser) => {
+          const cookieStore = await cookies();
+
+          // Get referral code from cookie
+          const referralCookie = cookieStore.get('referral_code');
+          const referralCode = referralCookie?.value;
+
+          // Save user source/attribution data (includes referralCode)
           try {
-            // Update user with referral code from cookie
-            const cookieStore = await cookies();
-            const referralCookie = cookieStore.get('referral_source');
+            const trackingCookie = cookieStore.get(TRACKING_COOKIE_NAME);
+            const clientData = parseTrackingCookie(trackingCookie?.value);
 
-            if (referralCookie?.value && createdUser.id) {
-              await db.update(user)
-                .set({ referral: referralCookie.value })
-                .where(eq(user.id, createdUser.id));
+            const sourceData = await buildUserSourceData(createdUser.id, clientData || undefined, referralCode);
+            await saveUserSource(sourceData);
 
-              cookieStore.delete('referral_source');
-              console.log(`User ${createdUser.id} updated with referral: ${referralCookie.value}`);
+            // Clear cookies after saving
+            if (referralCode) {
+              cookieStore.delete('referral_code');
             }
+            cookieStore.delete(TRACKING_COOKIE_NAME);
           } catch (error) {
-            console.error('Failed to update user with referral code:', error);
+            console.error('Failed to save user source data:', error);
           }
 
           // Send welcome email

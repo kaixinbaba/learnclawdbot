@@ -85,6 +85,65 @@ export const verification = pgTable("verification", {
     .notNull(),
 });
 
+// User source/attribution tracking
+export const userSource = pgTable(
+  'user_source',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .references(() => user.id, { onDelete: 'cascade' })
+      .notNull(),
+
+    // Referral code (from URL params like ref, via, referral, etc.)
+    referralCode: text('referral_code'),
+
+    // Traffic Source (UTM parameters)
+    utmSource: text('utm_source'),
+    utmMedium: text('utm_medium'),
+    utmCampaign: text('utm_campaign'),
+    utmTerm: text('utm_term'),
+    utmContent: text('utm_content'),
+    referrer: text('referrer'),
+    referrerDomain: text('referrer_domain'),
+    landingPage: text('landing_page'),
+
+    // Device & Browser
+    userAgent: text('user_agent'),
+    browser: text('browser'),
+    browserVersion: text('browser_version'),
+    os: text('os'),
+    osVersion: text('os_version'),
+    deviceType: text('device_type'), // mobile, desktop, tablet
+    deviceBrand: text('device_brand'),
+    deviceModel: text('device_model'),
+    screenWidth: integer('screen_width'),
+    screenHeight: integer('screen_height'),
+    language: text('language'),
+    timezone: text('timezone'),
+
+    // Network & Location (from Cloudflare headers)
+    ipAddress: text('ip_address'),
+    country: text('country'),
+    countryCode: varchar('country_code', { length: 2 }),
+    region: text('region'),
+    city: text('city'),
+    continent: text('continent'),
+
+    // Extensibility
+    metadata: jsonb('metadata'),
+
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('idx_user_source_user_id').on(table.userId),
+    utmSourceIdx: index('idx_user_source_utm_source').on(table.utmSource),
+    countryCodeIdx: index('idx_user_source_country_code').on(table.countryCode),
+    createdAtIdx: index('idx_user_source_created_at').on(table.createdAt),
+  })
+)
+
 export const pricingPlanEnvironmentEnum = pgEnum('pricing_plan_environment', [
   'test',
   'live',
