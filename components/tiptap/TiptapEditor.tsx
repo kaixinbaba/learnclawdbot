@@ -75,6 +75,13 @@ interface TiptapEditorProps {
   };
   enableTranslation?: boolean;
   postType?: PostType;
+  /**
+   * Output format for the editor content.
+   * - "markdown": Returns Markdown formatted text (default, good for blog posts)
+   * - "text": Returns plain text without any formatting (good for prompts with special characters)
+   * - "html": Returns HTML formatted text
+   */
+  outputFormat?: "markdown" | "text" | "html";
 }
 
 export function TiptapEditor({
@@ -93,6 +100,7 @@ export function TiptapEditor({
   imageUploadConfig,
   enableTranslation = false,
   postType = "blog",
+  outputFormat = "markdown",
 }: TiptapEditorProps) {
   const [linkUrl, setLinkUrl] = useState("");
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
@@ -196,9 +204,21 @@ export function TiptapEditor({
     content,
     editable: !disabled,
     onUpdate: ({ editor }) => {
-      // @ts-ignore - Markdown extension storage
-      const markdown = editor.storage.markdown.getMarkdown();
-      onChange(markdown);
+      let output: string;
+      switch (outputFormat) {
+        case "text":
+          output = editor.getText();
+          break;
+        case "html":
+          output = editor.getHTML();
+          break;
+        case "markdown":
+        default:
+          // @ts-ignore - Markdown extension storage
+          output = editor.storage.markdown.getMarkdown();
+          break;
+      }
+      onChange(output);
     },
   });
 
