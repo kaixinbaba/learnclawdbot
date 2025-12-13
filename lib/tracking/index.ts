@@ -41,11 +41,7 @@ export interface ParsedUserAgent {
  */
 export interface GeoLocationData {
   ipAddress?: string
-  country?: string
   countryCode?: string
-  region?: string
-  city?: string
-  continent?: string
 }
 
 /**
@@ -80,11 +76,7 @@ export interface UserSourceData {
   timezone?: string
   // Network & Location
   ipAddress?: string
-  country?: string
   countryCode?: string
-  region?: string
-  city?: string
-  continent?: string
   // Extra
   metadata?: Record<string, unknown>
 }
@@ -128,18 +120,10 @@ export async function getCloudflareGeoHeaders(): Promise<GeoLocationData> {
 
   // Cloudflare geo headers
   const countryCode = headersList.get('cf-ipcountry') || undefined
-  const city = headersList.get('cf-ipcity') || undefined
-  const region = headersList.get('cf-region') || undefined
-  const continent = headersList.get('cf-ipcontinent') || undefined
-  const country = headersList.get('cf-ipcountry-name') || undefined
 
   return {
     ipAddress,
-    country,
     countryCode,
-    region,
-    city,
-    continent,
   }
 }
 
@@ -260,11 +244,7 @@ export async function saveUserSource(data: UserSourceData): Promise<void> {
       timezone: data.timezone,
       // Network & Location
       ipAddress: data.ipAddress,
-      country: data.country,
       countryCode: data.countryCode,
-      region: data.region,
-      city: data.city,
-      continent: data.continent,
       // Extra
       metadata: data.metadata,
     })

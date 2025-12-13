@@ -123,11 +123,7 @@ export const userSource = pgTable(
 
     // Network & Location (from Cloudflare headers)
     ipAddress: text('ip_address'),
-    country: text('country'),
     countryCode: varchar('country_code', { length: 2 }),
-    region: text('region'),
-    city: text('city'),
-    continent: text('continent'),
 
     // Extensibility
     metadata: jsonb('metadata'),
