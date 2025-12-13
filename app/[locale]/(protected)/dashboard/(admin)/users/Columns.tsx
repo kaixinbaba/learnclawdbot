@@ -2,7 +2,6 @@
 
 import { banUser, unbanUser, UserWithSource } from "@/actions/users/admin";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -222,95 +221,126 @@ const ActionsCell = ({ user }: { user: UserType }) => {
 
 export const columns: ColumnDef<UserType>[] = [
   {
-    accessorKey: "image",
-    header: "Avatar",
+    id: "user",
+    header: "User",
     cell: ({ row }) => {
-      const image = row.original.image;
-      const name = row.original.name || row.original.email;
+      const { image, name, email, role } = row.original;
+      const displayName = name || email;
       return (
-        <Avatar>
-          <AvatarImage src={image || undefined} alt={name} />
-          <AvatarFallback>{name[0].toUpperCase()}</AvatarFallback>
-        </Avatar>
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={image || undefined} alt={displayName} />
+            <AvatarFallback>{displayName[0].toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium">{name || "-"}</span>
+              <span
+                className={`text-xs capitalize ${
+                  role === "admin"
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground"
+                }`}
+              >
+                ({role})
+              </span>
+            </div>
+            <span
+              className="text-sm text-muted-foreground cursor-pointer hover:underline"
+              onClick={() => {
+                navigator.clipboard.writeText(email);
+                toast.success("Copied to clipboard");
+              }}
+            >
+              {email}
+            </span>
+          </div>
+        </div>
       );
     },
   },
   {
-    accessorKey: "email",
-    header: "Email",
-    cell: ({ row }) => (
-      <span
-        className="cursor-pointer"
-        onClick={() => {
-          navigator.clipboard.writeText(row.original.email);
-          toast.success("Copied to clipboard");
-        }}
-      >
-        {row.original.email}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => row.original.name || "-",
-  },
-  {
-    accessorKey: "role",
-    header: "Role",
-    cell: ({ row }) => (
-      <span
-        className={`capitalize ${
-          row.original.role === "admin" ? "text-primary font-medium" : ""
-        }`}
-      >
-        {row.original.role}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "referralCode",
-    header: "Referral Code",
+    accessorKey: "affCode",
+    header: "Affiliate Code",
     cell: ({ row }) => {
-      const referralCode = row.original.referralCode;
+      const affCode = row.original.affCode;
+      return (
+        <span className="text-sm text-muted-foreground">{affCode || "-"}</span>
+      );
+    },
+  },
+  {
+    id: "utm",
+    header: "UTM",
+    cell: ({ row }) => {
+      const { utmSource, utmMedium, utmCampaign, utmTerm, utmContent } =
+        row.original;
+
+      const utmParts: string[] = [];
+      if (utmSource) utmParts.push(`source: ${utmSource}`);
+      if (utmMedium) utmParts.push(`medium: ${utmMedium}`);
+      if (utmCampaign) utmParts.push(`campaign: ${utmCampaign}`);
+      if (utmTerm) utmParts.push(`term: ${utmTerm}`);
+      if (utmContent) utmParts.push(`content: ${utmContent}`);
+
+      if (utmParts.length === 0) {
+        return <span className="text-sm text-muted-foreground">-</span>;
+      }
+
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="text-sm max-w-[200px] truncate cursor-default">
+                {utmSource || utmMedium || utmCampaign || "-"}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <div className="space-y-1 text-xs">
+                {utmParts.map((part, idx) => (
+                  <div key={idx}>{part}</div>
+                ))}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    },
+  },
+  {
+    accessorKey: "referrer",
+    header: "Referrer",
+    cell: ({ row }) => {
+      const referrer = row.original.referrer;
+      if (!referrer) {
+        return <span className="text-sm text-muted-foreground">-</span>;
+      }
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-sm max-w-[150px] truncate block cursor-default">
+                {referrer}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-md break-all">
+              <p>{referrer}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    },
+  },
+  {
+    accessorKey: "countryCode",
+    header: "Country",
+    cell: ({ row }) => {
+      const countryCode = row.original.countryCode;
       return (
         <span className="text-sm text-muted-foreground">
-          {referralCode || "-"}
+          {countryCode || "-"}
         </span>
       );
-    },
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const { banned, banReason, emailVerified, isAnonymous } = row.original;
-      if (banned) {
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant="destructive">Banned</Badge>
-              </TooltipTrigger>
-              {banReason && (
-                <TooltipContent>
-                  <p>{banReason}</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        );
-      }
-
-      if (isAnonymous) {
-        return <Badge variant="outline">Anonymous</Badge>;
-      }
-
-      if (emailVerified) {
-        return <Badge variant="secondary">Verified</Badge>;
-      } else {
-        return <Badge variant="outline">Unverified</Badge>;
-      }
     },
   },
   {
@@ -327,11 +357,6 @@ export const columns: ColumnDef<UserType>[] = [
         {row.original.stripeCustomerId || "-"}
       </span>
     ),
-  },
-  {
-    accessorKey: "updatedAt",
-    header: "Updated At",
-    cell: ({ row }) => dayjs(row.original.updatedAt).format("YYYY-MM-DD HH:mm"),
   },
   {
     accessorKey: "createdAt",

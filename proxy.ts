@@ -4,25 +4,9 @@ import { routing } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-const referralParams = ['utm_source', 'ref', 'via', 'aff', 'referral', 'referral_code'];
-
 export async function proxy(request: NextRequest): Promise<NextResponse> {
 
-  let referralCode: string | null = null;
-
-  for (const param of referralParams) {
-    const value = request.nextUrl.searchParams.get(param);
-    if (value) {
-      referralCode = value;
-      break;
-    }
-  }
-
   const intlResponse = intlMiddleware(request);
-
-  if (referralCode) {
-    intlResponse.cookies.set('referral_code', referralCode);
-  }
 
   return intlResponse;
 }

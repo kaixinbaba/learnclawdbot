@@ -120,6 +120,13 @@
       "when": 1765612715749,
       "tag": "0016_solid_moon_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1765614482318,
+      "tag": "0017_soft_shen",
+      "breakpoints": true
     }
   ]
 }

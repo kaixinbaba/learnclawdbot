@@ -94,8 +94,8 @@ export const userSource = pgTable(
       .references(() => user.id, { onDelete: 'cascade' })
       .notNull(),
 
-    // Referral code (from URL params like ref, via, referral, etc.)
-    referralCode: text('referral_code'),
+    // aff code (from URL params like ref, via, aff.)
+    affCode: text('aff_code'),
 
     // Traffic Source (UTM parameters)
     utmSource: text('utm_source'),
@@ -134,6 +134,7 @@ export const userSource = pgTable(
   },
   (table) => ({
     userIdIdx: index('idx_user_source_user_id').on(table.userId),
+    affCodeIdx: index('idx_user_source_aff_code').on(table.affCode),
     utmSourceIdx: index('idx_user_source_utm_source').on(table.utmSource),
     countryCodeIdx: index('idx_user_source_country_code').on(table.countryCode),
     createdAtIdx: index('idx_user_source_created_at').on(table.createdAt),

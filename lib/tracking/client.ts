@@ -2,30 +2,11 @@
 
 import Cookies from 'js-cookie'
 
-/**
- * Client tracking data collected from the browser
- */
-export interface ClientTrackingData {
-  // UTM parameters
-  utmSource?: string
-  utmMedium?: string
-  utmCampaign?: string
-  utmTerm?: string
-  utmContent?: string
-  // Referrer
-  referrer?: string
-  landingPage?: string
-  // Device info
-  screenWidth?: number
-  screenHeight?: number
-  language?: string
-  timezone?: string
-}
+import { TRACKING_COOKIE_NAME, type ClientTrackingData } from './types'
 
-/**
- * Cookie name for storing client tracking data
- */
-export const TRACKING_COOKIE_NAME = 'user_tracking_data'
+// Re-export types for convenience
+export { TRACKING_COOKIE_NAME } from './types'
+export type { ClientTrackingData } from './types'
 
 /**
  * Cookie expiration in days
@@ -72,6 +53,17 @@ function extractUtmParams(): Partial<ClientTrackingData> {
 }
 
 /**
+ * Extract affiliate code from url params
+ */
+function getAffParams(): Partial<ClientTrackingData> {
+  if (typeof window === 'undefined') return {}
+  const params = new URLSearchParams(window.location.search)
+  return {
+    affCode: params.get('aff') || params.get('via') || params.get('ref') || undefined,
+  }
+}
+
+/**
  * Get device and browser information
  */
 function getDeviceInfo(): Partial<ClientTrackingData> {
@@ -102,16 +94,17 @@ function getReferrerInfo(): Partial<ClientTrackingData> {
  */
 export function collectClientTrackingData(): ClientTrackingData {
   const utmParams = extractUtmParams()
+  const affParams = getAffParams()
   const deviceInfo = getDeviceInfo()
   const referrerInfo = getReferrerInfo()
 
   return {
     ...utmParams,
+    ...affParams,
     ...deviceInfo,
     ...referrerInfo,
   }
 }
-
 
 /**
  * Save tracking data to cookie
@@ -152,6 +145,8 @@ export function saveTrackingDataToCookie(): void {
       screenHeight: newData.screenHeight,
       language: newData.language,
       timezone: newData.timezone,
+      // Affiliate code
+      ...(newData.affCode && { affCode: newData.affCode }),
       // Only update UTM if new ones exist
       ...(newData.utmSource && { utmSource: newData.utmSource }),
       ...(newData.utmMedium && { utmMedium: newData.utmMedium }),

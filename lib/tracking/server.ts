@@ -3,83 +3,16 @@ import { userSource } from '@/lib/db/schema'
 import Bowser from 'bowser'
 import { headers } from 'next/headers'
 
-/**
- * Client tracking data collected from the browser
- */
-export interface ClientTrackingData {
-  // UTM parameters
-  utmSource?: string
-  utmMedium?: string
-  utmCampaign?: string
-  utmTerm?: string
-  utmContent?: string
-  // Referrer
-  referrer?: string
-  landingPage?: string
-  // Device info
-  screenWidth?: number
-  screenHeight?: number
-  language?: string
-  timezone?: string
-}
+import {
+  type ClientTrackingData,
+  type GeoLocationData,
+  type ParsedUserAgent,
+  type UserSourceData
+} from './types'
 
-/**
- * Parsed user agent data
- */
-export interface ParsedUserAgent {
-  browser?: string
-  browserVersion?: string
-  os?: string
-  osVersion?: string
-  deviceType?: string
-  deviceBrand?: string
-  deviceModel?: string
-}
-
-/**
- * Geo location data from Cloudflare headers
- */
-export interface GeoLocationData {
-  ipAddress?: string
-  countryCode?: string
-}
-
-/**
- * Complete user source data
- */
-export interface UserSourceData {
-  userId: string
-  // Referral code (from URL params like ref, via, referral, etc.)
-  referralCode?: string
-  // UTM
-  utmSource?: string
-  utmMedium?: string
-  utmCampaign?: string
-  utmTerm?: string
-  utmContent?: string
-  // Referrer
-  referrer?: string
-  referrerDomain?: string
-  landingPage?: string
-  // Device & Browser
-  userAgent?: string
-  browser?: string
-  browserVersion?: string
-  os?: string
-  osVersion?: string
-  deviceType?: string
-  deviceBrand?: string
-  deviceModel?: string
-  screenWidth?: number
-  screenHeight?: number
-  language?: string
-  timezone?: string
-  // Network & Location
-  ipAddress?: string
-  countryCode?: string
-  // Extra
-  metadata?: Record<string, unknown>
-}
+// Re-export all types and utilities from types.ts
+export { parseTrackingCookie, TRACKING_COOKIE_NAME } from './types'
+export type { ClientTrackingData, GeoLocationData, ParsedUserAgent, UserSourceData } from './types'
 
 /**
  * Parse user agent string using bowser (MIT license)
@@ -142,24 +75,6 @@ export function extractReferrerDomain(referrer: string | undefined): string | un
 }
 
 /**
- * Extract UTM parameters from URL string
- */
-export function extractUtmParams(urlString: string): Partial<ClientTrackingData> {
-  try {
-    const url = new URL(urlString)
-    return {
-      utmSource: url.searchParams.get('utm_source') || undefined,
-      utmMedium: url.searchParams.get('utm_medium') || undefined,
-      utmCampaign: url.searchParams.get('utm_campaign') || undefined,
-      utmTerm: url.searchParams.get('utm_term') || undefined,
-      utmContent: url.searchParams.get('utm_content') || undefined,
-    }
-  } catch {
-    return {}
-  }
-}
-
-/**
  * Get user agent from headers
  */
 export async function getUserAgentFromHeaders(): Promise<string | undefined> {
@@ -173,7 +88,6 @@ export async function getUserAgentFromHeaders(): Promise<string | undefined> {
 export async function buildUserSourceData(
   userId: string,
   clientData?: ClientTrackingData,
-  referralCode?: string
 ): Promise<UserSourceData> {
   // Get server-side data
   const geoData = await getCloudflareGeoHeaders()
@@ -186,7 +100,7 @@ export async function buildUserSourceData(
   return {
     userId,
     // Referral code
-    referralCode,
+    affCode: clientData?.affCode,
     // UTM from client
     utmSource: clientData?.utmSource,
     utmMedium: clientData?.utmMedium,
@@ -217,8 +131,8 @@ export async function saveUserSource(data: UserSourceData): Promise<void> {
   try {
     await db.insert(userSource).values({
       userId: data.userId,
-      // Referral code
-      referralCode: data.referralCode,
+      // Affiliate code
+      affCode: data.affCode,
       // UTM
       utmSource: data.utmSource,
       utmMedium: data.utmMedium,
@@ -251,23 +165,5 @@ export async function saveUserSource(data: UserSourceData): Promise<void> {
     console.log(`User source saved for user ${data.userId}`)
   } catch (error) {
     console.error('Failed to save user source:', error)
-  }
-}
-
-/**
- * Cookie name for storing client tracking data
- */
-export const TRACKING_COOKIE_NAME = 'user_tracking_data'
-
-/**
- * Parse tracking data from cookie value
- */
-export function parseTrackingCookie(cookieValue: string | undefined): ClientTrackingData | null {
-  if (!cookieValue) return null
-
-  try {
-    return JSON.parse(decodeURIComponent(cookieValue))
-  } catch {
-    return null
   }
 }

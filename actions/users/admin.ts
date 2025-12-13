@@ -10,9 +10,16 @@ import { count, desc, eq, ilike, or } from 'drizzle-orm';
 
 type UserType = typeof userSchema.$inferSelect;
 
-// Extended user type with referralCode from userSource
+// Extended user type with fields from userSource
 export type UserWithSource = UserType & {
-  referralCode?: string | null;
+  affCode?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmTerm?: string | null;
+  utmContent?: string | null;
+  referrer?: string | null;
+  countryCode?: string | null;
 };
 
 export interface GetUsersResult {
@@ -50,7 +57,7 @@ export async function getUsers({
       );
     }
 
-    // Query users with left join to userSource for referralCode
+    // Query users with left join to userSource for source tracking fields
     const usersQuery = db
       .select({
         // User fields
@@ -68,8 +75,15 @@ export async function getUsers({
         banExpires: userSchema.banExpires,
         createdAt: userSchema.createdAt,
         updatedAt: userSchema.updatedAt,
-        // UserSource referralCode
-        referralCode: userSourceSchema.referralCode,
+        // UserSource fields
+        affCode: userSourceSchema.affCode,
+        utmSource: userSourceSchema.utmSource,
+        utmMedium: userSourceSchema.utmMedium,
+        utmCampaign: userSourceSchema.utmCampaign,
+        utmTerm: userSourceSchema.utmTerm,
+        utmContent: userSourceSchema.utmContent,
+        referrer: userSourceSchema.referrer,
+        countryCode: userSourceSchema.countryCode,
       })
       .from(userSchema)
       .leftJoin(userSourceSchema, eq(userSchema.id, userSourceSchema.userId))
