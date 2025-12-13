@@ -8,11 +8,11 @@ import {
   type GeoLocationData,
   type ParsedUserAgent,
   type UserSourceData
-} from './types'
+} from './shared'
 
 // Re-export all types and utilities from types.ts
-export { parseTrackingCookie, TRACKING_COOKIE_NAME } from './types'
-export type { ClientTrackingData, GeoLocationData, ParsedUserAgent, UserSourceData } from './types'
+export { parseTrackingCookie, TRACKING_COOKIE_NAME } from './shared'
+export type { ClientTrackingData, GeoLocationData, ParsedUserAgent, UserSourceData } from './shared'
 
 /**
  * Parse user agent string using bowser (MIT license)

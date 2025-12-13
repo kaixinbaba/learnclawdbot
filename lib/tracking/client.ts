@@ -2,11 +2,11 @@
 
 import Cookies from 'js-cookie'
 
-import { TRACKING_COOKIE_NAME, type ClientTrackingData } from './types'
+import { isTrackingEnabled, TRACKING_COOKIE_NAME, type ClientTrackingData } from './shared'
 
 // Re-export types for convenience
-export { TRACKING_COOKIE_NAME } from './types'
-export type { ClientTrackingData } from './types'
+export { TRACKING_COOKIE_NAME } from './shared'
+export type { ClientTrackingData } from './shared'
 
 /**
  * Cookie expiration in days
@@ -192,9 +192,13 @@ export function clearTrackingCookie(): void {
   Cookies.remove(TRACKING_COOKIE_NAME)
 }
 
+
 /**
  * Initialize tracking - should be called on app mount
  */
 export function initializeTracking(): void {
+  if (!isTrackingEnabled()) {
+    return
+  }
   saveTrackingDataToCookie()
 }

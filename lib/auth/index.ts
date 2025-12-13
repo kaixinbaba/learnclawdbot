@@ -11,6 +11,7 @@ import {
   saveUserSource,
   TRACKING_COOKIE_NAME,
 } from "@/lib/tracking/server";
+import { isTrackingEnabled } from "@/lib/tracking/shared";
 import { redis } from "@/lib/upstash";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -109,16 +110,20 @@ export const auth = betterAuth({
         after: async (createdUser) => {
           const cookieStore = await cookies();
 
-          try {
-            const trackingCookie = cookieStore.get(TRACKING_COOKIE_NAME);
-            const clientData = parseTrackingCookie(trackingCookie?.value);
+          // Only track user source if enabled via environment variable
+          const isTrackingEnabledValue = await isTrackingEnabled()
+          if (isTrackingEnabledValue) {
+            try {
+              const trackingCookie = cookieStore.get(TRACKING_COOKIE_NAME);
+              const clientData = parseTrackingCookie(trackingCookie?.value);
 
-            const sourceData = await buildUserSourceData(createdUser.id, clientData || undefined);
-            await saveUserSource(sourceData);
+              const sourceData = await buildUserSourceData(createdUser.id, clientData || undefined);
+              await saveUserSource(sourceData);
 
-            cookieStore.delete(TRACKING_COOKIE_NAME);
-          } catch (error) {
-            console.error('Failed to save user source data:', error);
+              cookieStore.delete(TRACKING_COOKIE_NAME);
+            } catch (error) {
+              console.error('Failed to save user source data:', error);
+            }
           }
 
           // Send welcome email

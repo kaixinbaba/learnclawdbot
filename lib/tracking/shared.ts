@@ -95,3 +95,10 @@ export function parseTrackingCookie(cookieValue: string | undefined): ClientTrac
     return null
   }
 }
+
+/**
+ * Check if user source tracking is enabled via environment variable
+ */
+export function isTrackingEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_USER_SOURCE_TRACKING_ENABLED === 'true'
+}
