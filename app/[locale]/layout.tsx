@@ -5,6 +5,7 @@ import ConsentGate from "@/components/shared/CookieConsent/ConsentGate";
 import { TailwindIndicator } from "@/components/TailwindIndicator";
 import GoogleAdsense from "@/components/tracking/GoogleAdsense";
 import GoogleAnalytics from "@/components/tracking/GoogleAnalytics";
+import MicrosoftClarity from "@/components/tracking/MicrosoftClarity";
 import PlausibleAnalytics from "@/components/tracking/PlausibleAnalytics";
 import RybbitScript from "@/components/tracking/RybbitScript";
 import ToltScript from "@/components/tracking/ToltScript";
@@ -111,6 +112,7 @@ export default async function LocaleLayout({
                   <ConsentGate>
                     <GoogleAnalytics />
                     <GoogleAdsense />
+                    <MicrosoftClarity />
                   </ConsentGate>
                 </>
               )}
@@ -124,6 +126,7 @@ export default async function LocaleLayout({
                   <PlausibleAnalytics />
                   <GoogleAnalytics />
                   <GoogleAdsense />
+                  <MicrosoftClarity />
                   <RybbitScript />
                   <UmamiScript />
                 </>
