@@ -4,8 +4,6 @@ import { actionResponse } from '@/lib/action-response';
 import resend from '@/lib/resend';
 import * as React from 'react';
 
-const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID!;
-
 interface SendEmailProps {
   email: string;
   subject: string;
@@ -30,7 +28,6 @@ export async function sendEmail({
 
     // add user to contacts
     await resend.contacts.create({
-      audienceId: AUDIENCE_ID,
       email,
     });
 
@@ -64,17 +61,9 @@ export async function removeUserFromContacts(email: string) {
     if (!email || !resend) {
       return;
     }
-
-    const list = await resend.contacts.list({ audienceId: AUDIENCE_ID });
-    const user = list.data?.data.find((item: any) => item.email === email);
-
-    if (!user) {
-      return;
-    }
-
+    console.log('123, email', email);
     await resend.contacts.remove({
-      audienceId: AUDIENCE_ID,
-      email: email,
+      email,
     });
   } catch (error) {
     console.error('Failed to remove user from Resend contacts:', error);
