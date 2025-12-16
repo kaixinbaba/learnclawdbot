@@ -180,18 +180,15 @@ export async function generateUserPresignedUploadUrl(
 export async function generatePublicPresignedUploadUrl(
   input: GeneratePresignedUploadUrlInput
 ): Promise<GeneratePresignedUploadUrlData> {
-  if (!(await isAdmin())) {
-    // Anonymous user: Use IP for rate limiting with stricter limits
-    const clientIP = await getClientIPFromHeaders();
-    const isAllowed = await checkRateLimit(clientIP, {
-      prefix: `${siteConfig.name.trim()}-anonymous-upload`,
-      maxRequests: parseInt(process.env.NEXT_PUBLIC_DAILY_IMAGE_UPLOAD_LIMIT || "100"),
-      window: "1 d"
-    });
+  const clientIP = await getClientIPFromHeaders();
+  const isAllowed = await checkRateLimit(clientIP, {
+    prefix: `${siteConfig.name.trim()}-anonymous-upload`,
+    maxRequests: parseInt(process.env.NEXT_PUBLIC_DAILY_IMAGE_UPLOAD_LIMIT || "100"),
+    window: "1 d"
+  });
 
-    if (!isAllowed) {
-      return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can upload up to ${process.env.NEXT_PUBLIC_DAILY_IMAGE_UPLOAD_LIMIT || "100"} images per day.`);
-    }
+  if (!isAllowed) {
+    return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can upload up to ${process.env.NEXT_PUBLIC_DAILY_IMAGE_UPLOAD_LIMIT || "100"} images per day.`);
   }
 
   return generatePresignedUploadUrl({ ...input });
@@ -253,18 +250,15 @@ export async function generateUserPresignedDownloadUrl(
 export async function generatePublicPresignedDownloadUrl(
   key: string
 ): Promise<GeneratePresignedDownloadUrlData> {
-  if (!(await isAdmin())) {
-    // Anonymous user: Use IP for rate limiting with stricter limits
-    const clientIP = await getClientIPFromHeaders();
-    const isAllowed = await checkRateLimit(clientIP, {
-      prefix: `${siteConfig.name.trim()}-anonymous-download`,
-      maxRequests: parseInt(process.env.NEXT_PUBLIC_DAILY_IMAGE_DOWNLOAD_LIMIT || "100"),
-      window: "1 d"
-    });
+  const clientIP = await getClientIPFromHeaders();
+  const isAllowed = await checkRateLimit(clientIP, {
+    prefix: `${siteConfig.name.trim()}-anonymous-download`,
+    maxRequests: parseInt(process.env.NEXT_PUBLIC_DAILY_IMAGE_DOWNLOAD_LIMIT || "100"),
+    window: "1 d"
+  });
 
-    if (!isAllowed) {
-      return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can download up to ${process.env.NEXT_PUBLIC_DAILY_IMAGE_DOWNLOAD_LIMIT || "100"} images per day.`);
-    }
+  if (!isAllowed) {
+    return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can download up to ${process.env.NEXT_PUBLIC_DAILY_IMAGE_DOWNLOAD_LIMIT || "100"} images per day.`);
   }
   return generatePresignedDownloadUrl(key);
 }
