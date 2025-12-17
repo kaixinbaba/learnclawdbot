@@ -184,7 +184,7 @@ export async function generatePublicPresignedUploadUrl(
   const isAllowed = await checkRateLimit(clientIP, REDIS_RATE_LIMIT_CONFIGS.anonymousUpload);
 
   if (!isAllowed) {
-    return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can upload up to ${process.env.NEXT_PUBLIC_DAILY_IMAGE_UPLOAD_LIMIT || "100"} images per day.`);
+    return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can upload up to ${REDIS_RATE_LIMIT_CONFIGS.anonymousUpload.maxRequests} images per day.`);
   }
 
   return generatePresignedUploadUrl({ ...input });
@@ -250,7 +250,7 @@ export async function generatePublicPresignedDownloadUrl(
   const isAllowed = await checkRateLimit(clientIP, REDIS_RATE_LIMIT_CONFIGS.anonymousDownload);
 
   if (!isAllowed) {
-    return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can download up to ${process.env.NEXT_PUBLIC_DAILY_IMAGE_DOWNLOAD_LIMIT || "100"} images per day.`);
+    return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can download up to ${REDIS_RATE_LIMIT_CONFIGS.anonymousDownload.maxRequests} images per day.`);
   }
   return generatePresignedDownloadUrl(key);
 }
