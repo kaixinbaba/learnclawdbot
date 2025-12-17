@@ -6,20 +6,15 @@ import { DEFAULT_LOCALE } from '@/i18n/routing';
 import { actionResponse, ActionResult } from '@/lib/action-response';
 import { normalizeEmail, validateEmail } from '@/lib/email';
 import { checkRateLimit, getClientIPFromHeaders } from '@/lib/upstash';
+import { REDIS_RATE_LIMIT_CONFIGS } from '@/lib/upstash/redis-rate-limit-configs';
 import { getTranslations } from 'next-intl/server';
-
-const NEWSLETTER_RATE_LIMIT = {
-  prefix: `${siteConfig.name.trim()}_newsletter_rate_limit`,
-  maxRequests: parseInt(process.env.DAY_MAX_SUBMISSIONS || '10'),
-  window: '1 d'
-};
 
 async function validateRateLimit(locale: string) {
   const t = await getTranslations({ locale, namespace: 'Footer.Newsletter' });
 
   const clientIP = await getClientIPFromHeaders();
 
-  const success = await checkRateLimit(clientIP, NEWSLETTER_RATE_LIMIT);
+  const success = await checkRateLimit(clientIP, REDIS_RATE_LIMIT_CONFIGS.newsletter);
   if (!success) {
     throw new Error(t('subscribe.multipleSubmissions'));
   }

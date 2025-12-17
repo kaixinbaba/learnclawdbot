@@ -1,6 +1,5 @@
 "use server";
 
-import { siteConfig } from "@/config/site";
 import { actionResponse } from "@/lib/action-response";
 import { getSession, isAdmin } from "@/lib/auth/server";
 import {
@@ -13,6 +12,7 @@ import {
 import { generateR2Key } from "@/lib/cloudflare/r2-utils";
 import { getErrorMessage } from "@/lib/error-utils";
 import { checkRateLimit, getClientIPFromHeaders } from "@/lib/upstash";
+import { REDIS_RATE_LIMIT_CONFIGS } from "@/lib/upstash/redis-rate-limit-configs";
 import { z } from "zod";
 
 const PRESIGNED_UPLOAD_EXPIRES_IN = 300; // 10 minutes
@@ -181,11 +181,7 @@ export async function generatePublicPresignedUploadUrl(
   input: GeneratePresignedUploadUrlInput
 ): Promise<GeneratePresignedUploadUrlData> {
   const clientIP = await getClientIPFromHeaders();
-  const isAllowed = await checkRateLimit(clientIP, {
-    prefix: `${siteConfig.name.trim()}-anonymous-upload`,
-    maxRequests: parseInt(process.env.NEXT_PUBLIC_DAILY_IMAGE_UPLOAD_LIMIT || "100"),
-    window: "1 d"
-  });
+  const isAllowed = await checkRateLimit(clientIP, REDIS_RATE_LIMIT_CONFIGS.anonymousUpload);
 
   if (!isAllowed) {
     return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can upload up to ${process.env.NEXT_PUBLIC_DAILY_IMAGE_UPLOAD_LIMIT || "100"} images per day.`);
@@ -251,11 +247,7 @@ export async function generatePublicPresignedDownloadUrl(
   key: string
 ): Promise<GeneratePresignedDownloadUrlData> {
   const clientIP = await getClientIPFromHeaders();
-  const isAllowed = await checkRateLimit(clientIP, {
-    prefix: `${siteConfig.name.trim()}-anonymous-download`,
-    maxRequests: parseInt(process.env.NEXT_PUBLIC_DAILY_IMAGE_DOWNLOAD_LIMIT || "100"),
-    window: "1 d"
-  });
+  const isAllowed = await checkRateLimit(clientIP, REDIS_RATE_LIMIT_CONFIGS.anonymousDownload);
 
   if (!isAllowed) {
     return actionResponse.badRequest(`Rate limit exceeded. Anonymous users can download up to ${process.env.NEXT_PUBLIC_DAILY_IMAGE_DOWNLOAD_LIMIT || "100"} images per day.`);

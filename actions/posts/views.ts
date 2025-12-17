@@ -5,7 +5,7 @@ import { actionResponse } from '@/lib/action-response'
 import { PostType } from '@/lib/db/schema'
 import { getErrorMessage } from '@/lib/error-utils'
 import { getClientIPFromHeaders, redis } from '@/lib/upstash'
-import { RedisKeys } from '@/lib/upstash/redis-keys'
+import { REDIS_KEYS_CONFIGS } from '@/lib/upstash/redis-keys'
 
 interface IncrementViewCountParams {
   slug: string
@@ -39,7 +39,7 @@ export async function incrementViewCountAction({
       return actionResponse.success({ count: 0 })
     }
 
-    const key = RedisKeys.post.viewCount(postType, slug, locale)
+    const key = REDIS_KEYS_CONFIGS.post.viewCount(postType, slug, locale)
     const count = await redis.incr(key)
 
     return actionResponse.success({ count })
@@ -72,21 +72,21 @@ export async function incrementUniqueViewCountAction({
     const clientIP = await getClientIPFromHeaders()
 
     // Check if this IP has already viewed this post in the last hour
-    const ipKey = RedisKeys.post.viewIpTracking(postType, slug, locale, clientIP)
+    const ipKey = REDIS_KEYS_CONFIGS.post.viewIpTracking(postType, slug, locale, clientIP)
     const hasViewed = await redis.get(ipKey)
 
     let count: number
 
     if (!hasViewed) {
       // IP hasn't viewed this post in the last hour, increment counter
-      const viewKey = RedisKeys.post.viewCount(postType, slug, locale)
+      const viewKey = REDIS_KEYS_CONFIGS.post.viewCount(postType, slug, locale)
       count = await redis.incr(viewKey)
 
       // Set IP tracking key with 1 hour expiration (3600 seconds)
       await redis.set(ipKey, '1', { ex: 3600 })
     } else {
       // IP has already viewed this post in the last hour, just return current count
-      const viewKey = RedisKeys.post.viewCount(postType, slug, locale)
+      const viewKey = REDIS_KEYS_CONFIGS.post.viewCount(postType, slug, locale)
       const currentCount = await redis.get<number>(viewKey)
       count = currentCount || 0
     }
@@ -123,7 +123,7 @@ export async function getViewCountAction({
       return actionResponse.success({ count: 0 })
     }
 
-    const key = RedisKeys.post.viewCount(postType, slug, locale)
+    const key = REDIS_KEYS_CONFIGS.post.viewCount(postType, slug, locale)
     const count = await redis.get<number>(key)
 
     return actionResponse.success({ count: count || 0 })
