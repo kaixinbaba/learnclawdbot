@@ -7,6 +7,8 @@ import GoogleAdsense from "@/components/tracking/GoogleAdsense";
 import GoogleAnalytics from "@/components/tracking/GoogleAnalytics";
 import MicrosoftClarity from "@/components/tracking/MicrosoftClarity";
 import PlausibleAnalytics from "@/components/tracking/PlausibleAnalytics";
+import PostHogPageView from "@/components/tracking/PostHogPageView";
+import PostHogProvider from "@/components/tracking/PostHogProvider";
 import RybbitScript from "@/components/tracking/RybbitScript";
 import ToltScript from "@/components/tracking/ToltScript";
 import UmamiScript from "@/components/tracking/UmamiScript";
@@ -92,9 +94,11 @@ export default async function LocaleLayout({
             defaultTheme={siteConfig.defaultNextTheme}
             enableSystem
           >
-            {messages.LanguageDetection && <LanguageDetectionAlert />}
+            <PostHogProvider>
+              {messages.LanguageDetection && <LanguageDetectionAlert />}
 
-            {children}
+              {children}
+            </PostHogProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
         <GoogleOneTap />
@@ -113,6 +117,7 @@ export default async function LocaleLayout({
                     <GoogleAnalytics />
                     <GoogleAdsense />
                     <MicrosoftClarity />
+                    <PostHogPageView />
                   </ConsentGate>
                 </>
               )}
@@ -129,6 +134,7 @@ export default async function LocaleLayout({
                   <MicrosoftClarity />
                   <RybbitScript />
                   <UmamiScript />
+                  <PostHogPageView />
                 </>
               )}
             </>
