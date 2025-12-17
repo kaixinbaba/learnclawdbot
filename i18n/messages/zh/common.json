@@ -1,156 +1,4 @@
 {
-  "LanguageDetection": {
-    "title": "语言建议",
-    "description": "检测到你的浏览器语言和当前语言不一样，你随时都可切换语言。",
-    "countdown": "将在 {countdown} 秒后关闭",
-    "switchTo": "切换到"
-  },
-  "Header": {
-    "links": [
-      {
-        "name": "功能特性",
-        "href": "/#features"
-      },
-      {
-        "id": "pricing",
-        "name": "定价",
-        "href": "/#pricing"
-      },
-      {
-        "name": "AI Demo",
-        "href": "/ai-demo"
-      },
-      {
-        "name": "博客",
-        "href": "/blog"
-      },
-      {
-        "name": "Demo",
-        "href": "#",
-        "items": [
-          {
-            "name": "Nexty Demo",
-            "href": "https://demo.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Next.js SaaS Boilerplate"
-          },
-          {
-            "name": "AI Image Generator Demo",
-            "href": "https://flux-kontext.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "AI Image Generator Demo Based on NEXTY.DEV"
-          },
-          {
-            "name": "Directory Boilerplate Demo",
-            "href": "https://dofollow.tools/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Directory Boilerplate Demo Based on NEXTY.DEV"
-          }
-        ]
-      }
-    ]
-  },
-  "Footer": {
-    "Copyright": "版权所有 © {year} {name} 保留所有权利。",
-    "About": "关于",
-    "PrivacyPolicy": "隐私政策",
-    "TermsOfService": "条款与条件",
-    "RefundPolicy": "退款政策",
-    "Newsletter": {
-      "title": "订阅我们的邮件",
-      "description": "获取最新的更新和教程",
-      "subscribe": {
-        "invalidEmail": "请输入有效的邮箱地址",
-        "defaultErrorMessage": "订阅失败，请稍后再试",
-        "successMessage": "订阅成功",
-        "multipleSubmissions": "你已多次提交，请明天再试再试"
-      },
-      "unsubscribe": {
-        "title": "退订邮件通知",
-        "success": "您已成功退订 Nexty 邮件通知。",
-        "emailPrefix": "邮箱：",
-        "regretMessage": "您随时可以重新订阅邮件，获取 Nexty 最新更新和教程。",
-        "errorGeneric": "处理您的退订请求时发生错误",
-        "errorNoToken": "未提供退订令牌",
-        "errorMessage": "请确保您使用了正确的退订链接。如果问题持续存在，请联系我们的客服团队获取帮助。",
-        "contactPrefix": "请发送邮件至：",
-        "contactPrefixSuccess": "如有任何问题，请随时联系我们：",
-        "backToHome": "返回主页",
-        "invalidEmail": "无效的邮箱地址",
-        "notInNewsletter": "该邮箱不在我们的订阅列表中",
-        "confirmTitle": "确认退订",
-        "confirmMessage": "您确定要退订我们的邮件通讯吗？您将不再收到有关新功能和内容的更新。",
-        "confirmButton": "确认退订",
-        "cancelButton": "取消",
-        "processing": "处理中...",
-        "finalWarning": "此操作无法撤销。您可以随时重新订阅。",
-        "errorInvalidToken": "无效的退订链接。链接可能已损坏或过期。"
-      }
-    },
-    "Links": {
-      "groups": [
-        {
-          "title": "产品",
-          "links": [
-            {
-              "href": "/#features",
-              "name": "功能特性"
-            },
-            {
-              "id": "pricing",
-              "href": "/#pricing",
-              "name": "定价"
-            },
-            {
-              "href": "/blog",
-              "name": "博客"
-            }
-          ]
-        },
-        {
-          "title": "支持",
-          "links": [
-            {
-              "name": "文档",
-              "href": "https://docs.nexty.dev/zh/docs",
-              "target": "_blank"
-            },
-            {
-              "name": "功能路线图",
-              "href": "https://nexty.dev/zh/roadmap"
-            },
-            {
-              "href": "mailto:hi@nexty.dev",
-              "name": "联系我们"
-            }
-          ]
-        },
-        {
-          "title": "语言",
-          "links": [
-            {
-              "href": "/en",
-              "name": "English",
-              "useA": true
-            },
-            {
-              "href": "/zh",
-              "name": "中文",
-              "useA": true
-            },
-            {
-              "href": "/ja",
-              "name": "日本語",
-              "useA": true
-            }
-          ]
-        }
-      ]
-    }
-  },
   "Home": {
     "title": "NEXTY.DEV",
     "tagLine": "多场景 Next.js 全栈 SaaS 开发模板",
@@ -340,6 +188,158 @@
       "goToDashboard": "返回仪表盘",
       "title": "Payment Portal Error",
       "description": "支付信息发生错误。"
+    }
+  },
+  "LanguageDetection": {
+    "title": "语言建议",
+    "description": "检测到你的浏览器语言和当前语言不一样，你随时都可切换语言。",
+    "countdown": "将在 {countdown} 秒后关闭",
+    "switchTo": "切换到"
+  },
+  "Header": {
+    "links": [
+      {
+        "name": "功能特性",
+        "href": "/#features"
+      },
+      {
+        "id": "pricing",
+        "name": "定价",
+        "href": "/#pricing"
+      },
+      {
+        "name": "AI Demo",
+        "href": "/ai-demo"
+      },
+      {
+        "name": "博客",
+        "href": "/blog"
+      },
+      {
+        "name": "Demo",
+        "href": "#",
+        "items": [
+          {
+            "name": "Nexty Demo",
+            "href": "https://demo.nexty.dev/",
+            "target": "_blank",
+            "rel": "noopener noreferrer nofollow",
+            "description": "Next.js SaaS Boilerplate"
+          },
+          {
+            "name": "AI Image Generator Demo",
+            "href": "https://flux-kontext.nexty.dev/",
+            "target": "_blank",
+            "rel": "noopener noreferrer nofollow",
+            "description": "AI Image Generator Demo Based on NEXTY.DEV"
+          },
+          {
+            "name": "Directory Boilerplate Demo",
+            "href": "https://dofollow.tools/",
+            "target": "_blank",
+            "rel": "noopener noreferrer nofollow",
+            "description": "Directory Boilerplate Demo Based on NEXTY.DEV"
+          }
+        ]
+      }
+    ]
+  },
+  "Footer": {
+    "Copyright": "版权所有 © {year} {name} 保留所有权利。",
+    "About": "关于",
+    "PrivacyPolicy": "隐私政策",
+    "TermsOfService": "条款与条件",
+    "RefundPolicy": "退款政策",
+    "Newsletter": {
+      "title": "订阅我们的邮件",
+      "description": "获取最新的更新和教程",
+      "subscribe": {
+        "invalidEmail": "请输入有效的邮箱地址",
+        "defaultErrorMessage": "订阅失败，请稍后再试",
+        "successMessage": "订阅成功",
+        "multipleSubmissions": "你已多次提交，请明天再试再试"
+      },
+      "unsubscribe": {
+        "title": "退订邮件通知",
+        "success": "您已成功退订 Nexty 邮件通知。",
+        "emailPrefix": "邮箱：",
+        "regretMessage": "您随时可以重新订阅邮件，获取 Nexty 最新更新和教程。",
+        "errorGeneric": "处理您的退订请求时发生错误",
+        "errorNoToken": "未提供退订令牌",
+        "errorMessage": "请确保您使用了正确的退订链接。如果问题持续存在，请联系我们的客服团队获取帮助。",
+        "contactPrefix": "请发送邮件至：",
+        "contactPrefixSuccess": "如有任何问题，请随时联系我们：",
+        "backToHome": "返回主页",
+        "invalidEmail": "无效的邮箱地址",
+        "notInNewsletter": "该邮箱不在我们的订阅列表中",
+        "confirmTitle": "确认退订",
+        "confirmMessage": "您确定要退订我们的邮件通讯吗？您将不再收到有关新功能和内容的更新。",
+        "confirmButton": "确认退订",
+        "cancelButton": "取消",
+        "processing": "处理中...",
+        "finalWarning": "此操作无法撤销。您可以随时重新订阅。",
+        "errorInvalidToken": "无效的退订链接。链接可能已损坏或过期。"
+      }
+    },
+    "Links": {
+      "groups": [
+        {
+          "title": "产品",
+          "links": [
+            {
+              "href": "/#features",
+              "name": "功能特性"
+            },
+            {
+              "id": "pricing",
+              "href": "/#pricing",
+              "name": "定价"
+            },
+            {
+              "href": "/blog",
+              "name": "博客"
+            }
+          ]
+        },
+        {
+          "title": "支持",
+          "links": [
+            {
+              "name": "文档",
+              "href": "https://docs.nexty.dev/zh/docs",
+              "target": "_blank"
+            },
+            {
+              "name": "功能路线图",
+              "href": "https://nexty.dev/zh/roadmap"
+            },
+            {
+              "href": "mailto:hi@nexty.dev",
+              "name": "联系我们"
+            }
+          ]
+        },
+        {
+          "title": "语言",
+          "links": [
+            {
+              "href": "/en",
+              "name": "English",
+              "useA": true
+            },
+            {
+              "href": "/zh",
+              "name": "中文",
+              "useA": true
+            },
+            {
+              "href": "/ja",
+              "name": "日本語",
+              "useA": true
+            }
+          ]
+        }
+      ]
     }
   }
 }

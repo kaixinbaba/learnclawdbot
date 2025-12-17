@@ -1,157 +1,4 @@
 {
-  "LanguageDetection": {
-    "title": "言語の提案",
-    "description": "ブラウザの言語設定が現在のサイト言語と異なっています。いつでも言語を切り替えることができます。",
-    "countdown": "閉じるまで {countdown} 秒",
-    "switchTo": "に切り替える"
-  },
-  "Header": {
-    "links": [
-      {
-        "name": "機能特性",
-        "href": "/#features"
-      },
-      {
-        "id": "pricing",
-        "name": "料金プラン",
-        "href": "/#pricing"
-      },
-      {
-        "name": "AI Demo",
-        "href": "/ai-demo"
-      },
-      {
-        "name": "ブログ",
-        "href": "/blog"
-      },
-      {
-        "id": "demo",
-        "name": "Demo",
-        "href": "#",
-        "items": [
-          {
-            "name": "Nexty Demo",
-            "href": "https://demo.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Next.js SaaS Boilerplate"
-          },
-          {
-            "name": "AI Image Generator Demo",
-            "href": "https://flux-kontext.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "AI Image Generator Demo Based on NEXTY.DEV"
-          },
-          {
-            "name": "Directory Boilerplate Demo",
-            "href": "https://dofollow.tools/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Directory Boilerplate Demo Based on NEXTY.DEV"
-          }
-        ]
-      }
-    ]
-  },
-  "Footer": {
-    "Copyright": "著作権所有 © {year} {name} 全著作権保有。",
-    "About": "サイトについて",
-    "PrivacyPolicy": "プライバシーポリシー",
-    "TermsOfService": "利用規約",
-    "RefundPolicy": "返金ポリシー",
-    "Newsletter": {
-      "title": "ニュースレターのご案内",
-      "description": "最新情報を定期的にお届けいたします",
-      "subscribe": {
-        "invalidEmail": "メールアドレスの形式が正しくありません",
-        "defaultErrorMessage": "登録処理に失敗しました。恐れ入りますが、時間をおいて再度お試しください",
-        "successMessage": "ニュースレターの登録が完了いたしました",
-        "multipleSubmissions": "アクセスが集中しております。24時間後に再度お試しください"
-      },
-      "unsubscribe": {
-        "title": "ニュースレター配信停止",
-        "success": "Nextyニュースレターの配信停止が完了しました。",
-        "emailPrefix": "メールアドレス：",
-        "regretMessage": "いつでも再登録して、Nextyの最新アップデートやチュートリアルを受け取ることができます。",
-        "errorGeneric": "配信停止の処理中にエラーが発生しました",
-        "errorNoToken": "配信停止トークンが提供されていません",
-        "errorMessage": "正しい配信停止リンクを使用していることをご確認ください。問題が解決しない場合は、サポートチームまでお問い合わせください。",
-        "contactPrefix": "お問い合わせ先：",
-        "contactPrefixSuccess": "ご質問がございましたら、お気軽にお問い合わせください：",
-        "backToHome": "ホームに戻る",
-        "invalidEmail": "無効なメールアドレスです",
-        "notInNewsletter": "このメールアドレスは配信リストに登録されていません",
-        "confirmTitle": "配信停止の確認",
-        "confirmMessage": "ニュースレターの配信を停止してもよろしいですか？新機能やコンテンツの更新情報が届かなくなります。",
-        "confirmButton": "配信停止する",
-        "cancelButton": "キャンセル",
-        "processing": "処理中...",
-        "finalWarning": "この操作は取り消すことができません。後でいつでも再登録できます。",
-        "errorInvalidToken": "無効な配信停止リンクです。リンクが破損しているか、期限切れの可能性があります。"
-      }
-    },
-    "Links": {
-      "groups": [
-        {
-          "title": "製品",
-          "links": [
-            {
-              "href": "/#features",
-              "name": "機能特性"
-            },
-            {
-              "id": "pricing",
-              "href": "/#pricing",
-              "name": "料金プラン"
-            },
-            {
-              "href": "/blog",
-              "name": "ブログ"
-            }
-          ]
-        },
-        {
-          "title": "サポート",
-          "links": [
-            {
-              "name": "Docs",
-              "href": "https://docs.nexty.dev/ja/docs",
-              "target": "_blank"
-            },
-            {
-              "name": "Roadmap",
-              "href": "https://nexty.dev/ja/roadmap"
-            },
-            {
-              "href": "mailto:hi@nexty.dev",
-              "name": "お問い合わせ"
-            }
-          ]
-        },
-        {
-          "title": "言語",
-          "links": [
-            {
-              "href": "/en",
-              "name": "English",
-              "useA": true
-            },
-            {
-              "href": "/zh",
-              "name": "中文",
-              "useA": true
-            },
-            {
-              "href": "/ja",
-              "name": "日本語",
-              "useA": true
-            }
-          ]
-        }
-      ]
-    }
-  },
   "Home": {
     "title": "NEXTY.DEV",
     "tagLine": "最新の Next.js フルスタック SaaS テンプレート",
@@ -341,6 +188,159 @@
       "goToDashboard": "ダッシュボードに戻る",
       "title": "Payment Portal Error",
       "description": "支払い情報にエラーが発生しました。"
+    }
+  },
+  "LanguageDetection": {
+    "title": "言語の提案",
+    "description": "ブラウザの言語設定が現在のサイト言語と異なっています。いつでも言語を切り替えることができます。",
+    "countdown": "閉じるまで {countdown} 秒",
+    "switchTo": "に切り替える"
+  },
+  "Header": {
+    "links": [
+      {
+        "name": "機能特性",
+        "href": "/#features"
+      },
+      {
+        "id": "pricing",
+        "name": "料金プラン",
+        "href": "/#pricing"
+      },
+      {
+        "name": "AI Demo",
+        "href": "/ai-demo"
+      },
+      {
+        "name": "ブログ",
+        "href": "/blog"
+      },
+      {
+        "id": "demo",
+        "name": "Demo",
+        "href": "#",
+        "items": [
+          {
+            "name": "Nexty Demo",
+            "href": "https://demo.nexty.dev/",
+            "target": "_blank",
+            "rel": "noopener noreferrer nofollow",
+            "description": "Next.js SaaS Boilerplate"
+          },
+          {
+            "name": "AI Image Generator Demo",
+            "href": "https://flux-kontext.nexty.dev/",
+            "target": "_blank",
+            "rel": "noopener noreferrer nofollow",
+            "description": "AI Image Generator Demo Based on NEXTY.DEV"
+          },
+          {
+            "name": "Directory Boilerplate Demo",
+            "href": "https://dofollow.tools/",
+            "target": "_blank",
+            "rel": "noopener noreferrer nofollow",
+            "description": "Directory Boilerplate Demo Based on NEXTY.DEV"
+          }
+        ]
+      }
+    ]
+  },
+  "Footer": {
+    "Copyright": "著作権所有 © {year} {name} 全著作権保有。",
+    "About": "サイトについて",
+    "PrivacyPolicy": "プライバシーポリシー",
+    "TermsOfService": "利用規約",
+    "RefundPolicy": "返金ポリシー",
+    "Newsletter": {
+      "title": "ニュースレターのご案内",
+      "description": "最新情報を定期的にお届けいたします",
+      "subscribe": {
+        "invalidEmail": "メールアドレスの形式が正しくありません",
+        "defaultErrorMessage": "登録処理に失敗しました。恐れ入りますが、時間をおいて再度お試しください",
+        "successMessage": "ニュースレターの登録が完了いたしました",
+        "multipleSubmissions": "アクセスが集中しております。24時間後に再度お試しください"
+      },
+      "unsubscribe": {
+        "title": "ニュースレター配信停止",
+        "success": "Nextyニュースレターの配信停止が完了しました。",
+        "emailPrefix": "メールアドレス：",
+        "regretMessage": "いつでも再登録して、Nextyの最新アップデートやチュートリアルを受け取ることができます。",
+        "errorGeneric": "配信停止の処理中にエラーが発生しました",
+        "errorNoToken": "配信停止トークンが提供されていません",
+        "errorMessage": "正しい配信停止リンクを使用していることをご確認ください。問題が解決しない場合は、サポートチームまでお問い合わせください。",
+        "contactPrefix": "お問い合わせ先：",
+        "contactPrefixSuccess": "ご質問がございましたら、お気軽にお問い合わせください：",
+        "backToHome": "ホームに戻る",
+        "invalidEmail": "無効なメールアドレスです",
+        "notInNewsletter": "このメールアドレスは配信リストに登録されていません",
+        "confirmTitle": "配信停止の確認",
+        "confirmMessage": "ニュースレターの配信を停止してもよろしいですか？新機能やコンテンツの更新情報が届かなくなります。",
+        "confirmButton": "配信停止する",
+        "cancelButton": "キャンセル",
+        "processing": "処理中...",
+        "finalWarning": "この操作は取り消すことができません。後でいつでも再登録できます。",
+        "errorInvalidToken": "無効な配信停止リンクです。リンクが破損しているか、期限切れの可能性があります。"
+      }
+    },
+    "Links": {
+      "groups": [
+        {
+          "title": "製品",
+          "links": [
+            {
+              "href": "/#features",
+              "name": "機能特性"
+            },
+            {
+              "id": "pricing",
+              "href": "/#pricing",
+              "name": "料金プラン"
+            },
+            {
+              "href": "/blog",
+              "name": "ブログ"
+            }
+          ]
+        },
+        {
+          "title": "サポート",
+          "links": [
+            {
+              "name": "Docs",
+              "href": "https://docs.nexty.dev/ja/docs",
+              "target": "_blank"
+            },
+            {
+              "name": "Roadmap",
+              "href": "https://nexty.dev/ja/roadmap"
+            },
+            {
+              "href": "mailto:hi@nexty.dev",
+              "name": "お問い合わせ"
+            }
+          ]
+        },
+        {
+          "title": "言語",
+          "links": [
+            {
+              "href": "/en",
+              "name": "English",
+              "useA": true
+            },
+            {
+              "href": "/zh",
+              "name": "中文",
+              "useA": true
+            },
+            {
+              "href": "/ja",
+              "name": "日本語",
+              "useA": true
+            }
+          ]
+        }
+      ]
     }
   }
 }
