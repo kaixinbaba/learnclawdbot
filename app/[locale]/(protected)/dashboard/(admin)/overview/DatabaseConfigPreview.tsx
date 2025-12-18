@@ -91,7 +91,7 @@ export const DatabaseConfigPreview = () => {
               Enabled
             </Badge>
           ) : (
-            <Badge variant="destructive" className="w-fit">
+            <Badge variant="secondary" className="w-fit">
               Disabled (Single Connection)
             </Badge>
           )}
