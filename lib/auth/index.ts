@@ -154,10 +154,10 @@ export const auth = betterAuth({
   trustedOrigins: process.env.NODE_ENV === 'development' ? [process.env.NEXT_PUBLIC_SITE_URL!, 'http://localhost:3000'] : [process.env.NEXT_PUBLIC_SITE_URL!],
   plugins: [
     oneTap(),
-    captcha({
+    ...(process.env.TURNSTILE_SECRET_KEY ? [captcha({
       provider: "cloudflare-turnstile",
-      secretKey: process.env.TURNSTILE_SECRET_KEY!,
-    }),
+      secretKey: process.env.TURNSTILE_SECRET_KEY,
+    })] : []),
     magicLink({
       sendMagicLink: async ({ email, url, token }) => {
         await sendEmail({
