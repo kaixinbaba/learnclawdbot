@@ -4,6 +4,8 @@ import { actionResponse } from '@/lib/action-response';
 import resend from '@/lib/resend';
 import * as React from 'react';
 
+const RESEND_SEGMENT_ID = process.env.RESEND_SEGMENT_ID!;
+
 interface SendEmailProps {
   email: string;
   subject: string;
@@ -27,9 +29,16 @@ export async function sendEmail({
     }
 
     // add user to contacts
-    await resend.contacts.create({
-      email,
-    });
+    if (RESEND_SEGMENT_ID) {
+      await resend.contacts.segments.add({
+        email,
+        segmentId: RESEND_SEGMENT_ID,
+      });
+    } else {
+      await resend.contacts.create({
+        email,
+      });
+    }
 
     // send email
     const from = `${process.env.ADMIN_NAME} <${process.env.ADMIN_EMAIL}>`
@@ -61,10 +70,18 @@ export async function removeUserFromContacts(email: string) {
     if (!email || !resend) {
       return;
     }
-    console.log('123, email', email);
-    await resend.contacts.remove({
-      email,
-    });
+
+    if (RESEND_SEGMENT_ID) {
+      await resend.contacts.segments.remove({
+        email,
+        segmentId: RESEND_SEGMENT_ID,
+      });
+    } else {
+      await resend.contacts.remove({
+        email,
+      });
+    }
+
   } catch (error) {
     console.error('Failed to remove user from Resend contacts:', error);
     // Silently fail - we don't care about the result
