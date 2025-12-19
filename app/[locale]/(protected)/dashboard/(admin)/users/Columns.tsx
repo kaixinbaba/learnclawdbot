@@ -234,16 +234,12 @@ export const columns: ColumnDef<UserType>[] = [
           </Avatar>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="font-medium">{name || "-"}</span>
-              <span
-                className={`text-xs capitalize ${
-                  role === "admin"
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground"
-                }`}
-              >
-                ({role})
-              </span>
+              <span className="font-medium">{name || ""}</span>
+              {role === "admin" && (
+                <span className="text-xs capitalize text-primary font-medium">
+                  ({role})
+                </span>
+              )}
             </div>
             <span
               className="text-sm text-muted-foreground cursor-pointer hover:underline"
