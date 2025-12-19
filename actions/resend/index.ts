@@ -29,14 +29,13 @@ export async function sendEmail({
     }
 
     // add user to contacts
+    await resend.contacts.create({
+      email,
+    });
     if (RESEND_SEGMENT_ID) {
       await resend.contacts.segments.add({
         email,
         segmentId: RESEND_SEGMENT_ID,
-      });
-    } else {
-      await resend.contacts.create({
-        email,
       });
     }
 
@@ -71,16 +70,9 @@ export async function removeUserFromContacts(email: string) {
       return;
     }
 
-    if (RESEND_SEGMENT_ID) {
-      await resend.contacts.segments.remove({
-        email,
-        segmentId: RESEND_SEGMENT_ID,
-      });
-    } else {
-      await resend.contacts.remove({
-        email,
-      });
-    }
+    await resend.contacts.remove({
+      email,
+    });
 
   } catch (error) {
     console.error('Failed to remove user from Resend contacts:', error);
