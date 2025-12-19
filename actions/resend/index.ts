@@ -4,13 +4,12 @@ import { actionResponse } from '@/lib/action-response';
 import resend from '@/lib/resend';
 import * as React from 'react';
 
-const RESEND_SEGMENT_ID = process.env.RESEND_SEGMENT_ID!;
-
 interface SendEmailProps {
   email: string;
   subject: string;
   react: React.ComponentType<any> | React.ReactElement;
   reactProps?: Record<string, any>;
+  isAddContacts?: boolean;
 }
 
 export async function sendEmail({
@@ -18,6 +17,7 @@ export async function sendEmail({
   subject,
   react,
   reactProps,
+  isAddContacts = false,
 }: SendEmailProps) {
   try {
     if (!email) {
@@ -29,13 +29,9 @@ export async function sendEmail({
     }
 
     // add user to contacts
-    await resend.contacts.create({
-      email,
-    });
-    if (RESEND_SEGMENT_ID) {
-      await resend.contacts.segments.add({
+    if (isAddContacts) {
+      await resend.contacts.create({
         email,
-        segmentId: RESEND_SEGMENT_ID,
       });
     }
 

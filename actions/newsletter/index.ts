@@ -44,7 +44,8 @@ export async function subscribeToNewsletter(email: string, locale = DEFAULT_LOCA
       reactProps: {
         email: normalizedEmail,
         unsubscribeLink: unsubscribeLink
-      }
+      },
+      isAddContacts: true
     })
 
     return actionResponse.success({ email: normalizedEmail });

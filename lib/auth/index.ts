@@ -141,6 +141,7 @@ export const auth = betterAuth({
                   email: createdUser.email,
                   unsubscribeLink: unsubscribeLink,
                 },
+                isAddContacts: true
               });
               console.log(`Welcome email sent to ${createdUser.email}`);
             } catch (error) {
