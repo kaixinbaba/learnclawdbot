@@ -38,6 +38,7 @@ export const auth = betterAuth({
     window: 60, // 60 seconds default window
     max: 100, // 100 requests per window (global default)
     customRules: {
+      "/get-session": false,
       "/sign-in/magic-link": {
         window: 60, // 60 seconds
         max: 3, // Max 3 magic link requests per 60 seconds
