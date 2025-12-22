@@ -340,6 +340,55 @@ export const columns: ColumnDef<UserType>[] = [
     },
   },
   {
+    accessorKey: "browser",
+    header: "Browser",
+    cell: ({ row }) => {
+      const browser = row.original.browser;
+      return (
+        <span className="text-sm text-muted-foreground">{browser || "-"}</span>
+      );
+    },
+  },
+  {
+    accessorKey: "os",
+    header: "OS",
+    cell: ({ row }) => {
+      const os = row.original.os;
+      return <span className="text-sm text-muted-foreground">{os || "-"}</span>;
+    },
+  },
+  {
+    id: "device",
+    header: "Device",
+    cell: ({ row }) => {
+      const { deviceType, deviceBrand, deviceModel } = row.original;
+
+      const deviceParts: string[] = [];
+      if (deviceType) deviceParts.push(deviceType);
+      if (deviceBrand) deviceParts.push(deviceBrand);
+      if (deviceModel) deviceParts.push(deviceModel);
+
+      if (deviceParts.length === 0) {
+        return <span className="text-sm text-muted-foreground">-</span>;
+      }
+
+      const displayText = deviceParts[0];
+      const fullText = deviceParts.join(" / ");
+
+      return <span className="text-sm text-muted-foreground">{fullText}</span>;
+    },
+  },
+  {
+    accessorKey: "language",
+    header: "Language",
+    cell: ({ row }) => {
+      const language = row.original.language;
+      return (
+        <span className="text-sm text-muted-foreground">{language || "-"}</span>
+      );
+    },
+  },
+  {
     accessorKey: "stripeCustomerId",
     header: "Stripe Customer ID",
     cell: ({ row }) => (

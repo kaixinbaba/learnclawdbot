@@ -20,6 +20,12 @@ export type UserWithSource = UserType & {
   utmContent?: string | null;
   referrer?: string | null;
   countryCode?: string | null;
+  browser?: string | null;
+  os?: string | null;
+  deviceType?: string | null;
+  deviceBrand?: string | null;
+  deviceModel?: string | null;
+  language?: string | null;
 };
 
 export interface GetUsersResult {
@@ -84,6 +90,12 @@ export async function getUsers({
         utmContent: userSourceSchema.utmContent,
         referrer: userSourceSchema.referrer,
         countryCode: userSourceSchema.countryCode,
+        browser: userSourceSchema.browser,
+        os: userSourceSchema.os,
+        deviceType: userSourceSchema.deviceType,
+        deviceBrand: userSourceSchema.deviceBrand,
+        deviceModel: userSourceSchema.deviceModel,
+        language: userSourceSchema.language,
       })
       .from(userSchema)
       .leftJoin(userSourceSchema, eq(userSchema.id, userSourceSchema.userId))
