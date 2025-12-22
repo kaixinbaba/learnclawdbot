@@ -17,12 +17,13 @@ import {
 } from "@/components/ui/sidebar";
 import { useRouter } from "@/i18n/routing";
 import { authClient } from "@/lib/auth/auth-client";
+import { user as userSchema } from "@/lib/db/schema";
 import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-export function SidebarUserNav() {
-  const { data: session } = authClient.useSession();
-  const user = session?.user as any | undefined;
+type User = typeof userSchema.$inferSelect;
+
+export function SidebarUserNav({ user }: { user: User }) {
   const router = useRouter();
   const t = useTranslations("Login");
   const { isMobile } = useSidebar();
