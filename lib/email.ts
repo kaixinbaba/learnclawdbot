@@ -39,6 +39,11 @@ export function normalizeEmail(email: string): string {
   if (!email) return '';
 
   let normalizedEmail = email.toLowerCase();
+
+  if (process.env.NEXT_PUBLIC_EMAIL_NORMALIZATION_ENABLED !== 'true') {
+    return normalizedEmail;
+  }
+
   const [localPart, domain] = normalizedEmail.split('@');
 
   switch (domain) {

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DEFAULT_LOCALE } from "@/i18n/routing";
 import { authClient } from "@/lib/auth/auth-client";
+import { normalizeEmail } from "@/lib/email";
 import { initializeTracking } from "@/lib/tracking/client";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Github, Link as LinkIcon, Loader2 } from "lucide-react";
@@ -72,7 +73,7 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
 
     try {
       const { error } = await authClient.signIn.magicLink({
-        email: email,
+        email: normalizeEmail(email),
         name: "my-name",
         callbackURL: getCallbackUrl(),
         errorCallbackURL: "/redirect-error",
@@ -115,7 +116,7 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
 
     try {
       const { error } = await authClient.emailOtp.sendVerificationOtp({
-        email: email,
+        email: normalizeEmail(email),
         type: "sign-in",
         fetchOptions:
           captchaToken && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -163,7 +164,7 @@ export default function LoginForm({ className = "" }: LoginFormProps) {
 
     try {
       const { error } = await authClient.signIn.emailOtp({
-        email: email,
+        email: normalizeEmail(email),
         otp: otpCode,
         fetchOptions:
           captchaToken && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
