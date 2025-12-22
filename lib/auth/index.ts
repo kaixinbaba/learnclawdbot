@@ -73,7 +73,7 @@ export const auth = betterAuth({
     },
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
-    freshAge: 0
+    // freshAge: 0
   },
   account: {
     accountLinking: {
