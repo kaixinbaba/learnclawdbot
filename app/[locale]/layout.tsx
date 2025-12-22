@@ -2,6 +2,7 @@ import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
 import { LanguageDetectionAlert } from "@/components/LanguageDetectionAlert";
 import ConsentBanner from "@/components/shared/CookieConsent/ConsentBanner";
 import ConsentGate from "@/components/shared/CookieConsent/ConsentGate";
+import CrispChat from "@/components/support/CrispChat";
 import { TailwindIndicator } from "@/components/TailwindIndicator";
 import GoogleAdsense from "@/components/tracking/GoogleAdsense";
 import GoogleAnalytics from "@/components/tracking/GoogleAnalytics";
@@ -102,6 +103,7 @@ export default async function LocaleLayout({
           </ThemeProvider>
         </NextIntlClientProvider>
         <GoogleOneTap />
+        <CrispChat />
         <Toaster richColors />
         <TailwindIndicator />
         <>

@@ -72,6 +72,9 @@ Analytics/Tracking (optional):
 - NEXT_PUBLIC_POSTHOG_HOST=
 - NEXT_PUBLIC_POSTHOG_KEY=
 
+Customer Support (optional):
+- NEXT_PUBLIC_CRISP_WEBSITE_ID=
+
 Pricing/Marketing:
 - NEXT_PUBLIC_PRICING_PATH (e.g. pricing)
 - NEXT_PUBLIC_DEFAULT_CURRENCY (e.g. usd)
