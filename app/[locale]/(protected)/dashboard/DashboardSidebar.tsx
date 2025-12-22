@@ -120,7 +120,7 @@ export function DashboardSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarUserNav />
+        <SidebarUserNav user={user} />
       </SidebarFooter>
     </Sidebar>
   );
