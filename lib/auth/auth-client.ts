@@ -4,8 +4,8 @@ import { createAuthClient } from "better-auth/react";
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || process.env.NEXT_PUBLIC_SITE_URL,
   plugins: [
-    oneTapClient({
-      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+    ...(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? [oneTapClient({
+      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
       // Optional client configuration:
       autoSelect: false,
       cancelOnTapOutside: true,
@@ -18,7 +18,7 @@ export const authClient = createAuthClient({
         baseDelay: 1000,   // Base delay in ms (default: 1000)
         maxAttempts: 5     // Maximum number of attempts before triggering onPromptNotification (default: 5)
       }
-    }),
+    })] : []),
     magicLinkClient(),
     emailOTPClient(),
     lastLoginMethodClient()
