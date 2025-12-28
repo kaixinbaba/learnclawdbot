@@ -1,5 +1,6 @@
 import {
   BLOGS_IMAGE_PATH,
+  GLOSSARY_IMAGE_PATH
 } from "@/config/common";
 import { PostType } from "@/lib/db/schema";
 import { z } from "zod";
@@ -32,12 +33,25 @@ export const postActionSchema = basePostSchema.extend({
   id: z.string().uuid().optional(),
 });
 
+export interface ViewCountConfig {
+  /** Enable view count tracking - default off */
+  enabled: boolean;
+  /** Counting mode: 'all' = count every page load, 'unique' = same IP counts once per hour */
+  mode: 'all' | 'unique';
+  /** Whether to display view count in the UI */
+  showInUI: boolean;
+}
+
 export interface PostConfig {
   postType: PostType;
   schema: z.ZodSchema;
   actionSchema: z.ZodSchema;
   imagePath: string;
   enableTags: boolean;
+  /** Local directory for markdown files (relative to project root), undefined if server-only */
+  localDirectory?: string;
+  /** View count configuration */
+  viewCount: ViewCountConfig;
   routes: {
     list: string;
     create: string;
@@ -52,10 +66,33 @@ export const POST_CONFIGS: Record<PostType, PostConfig> = {
     actionSchema: postActionSchema,
     imagePath: BLOGS_IMAGE_PATH,
     enableTags: true,
+    localDirectory: 'blogs',
+    viewCount: {
+      enabled: false, // Set to true to enable view count tracking
+      mode: 'all',
+      showInUI: true,
+    },
     routes: {
       list: "/dashboard/blogs",
       create: "/dashboard/blogs/new",
       edit: (id: string) => `/dashboard/blogs/${id}`,
+    },
+  },
+  glossary: {
+    postType: "glossary",
+    schema: basePostSchema,
+    actionSchema: postActionSchema,
+    imagePath: GLOSSARY_IMAGE_PATH,
+    enableTags: true,
+    viewCount: {
+      enabled: false, // Set to true to enable view count tracking
+      mode: 'all',
+      showInUI: true,
+    },
+    routes: {
+      list: "/dashboard/glossary",
+      create: "/dashboard/glossary/new",
+      edit: (id: string) => `/dashboard/glossary/${id}`,
     },
   },
 };

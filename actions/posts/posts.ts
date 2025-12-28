@@ -442,7 +442,7 @@ interface ListPublishedPostsParams {
   pageIndex?: number
   pageSize?: number
   tagId?: string | null
-  visibility?: 'public' // only public posts, for generateStaticParams
+  visibility?: 'public' | 'logged_in' | 'subscribers' | null
   postType: PostType
   locale: string
 }
@@ -461,12 +461,14 @@ export async function listPublishedPostsAction({
   pageSize = 60,
   tagId = null,
   postType = 'blog',
-  visibility = 'public',
+  visibility,
   locale = DEFAULT_LOCALE,
 }: ListPublishedPostsParams): Promise<ListPublishedPostsResult> {
   try {
     const conditions = [eq(postsSchema.status, 'published')]
-    conditions.push(eq(postsSchema.visibility, visibility))
+    if (visibility) {
+      conditions.push(eq(postsSchema.visibility, visibility))
+    }
     conditions.push(eq(postsSchema.postType, postType))
     if (locale) {
       conditions.push(eq(postsSchema.language, locale))
@@ -591,8 +593,7 @@ export async function getPublishedPostBySlugAction({
         finalContent = ''
         restrictionCustomCode = 'unauthorized'
       } else {
-        const userIsAdmin = await isAdmin()
-        if (!userIsAdmin && post.visibility === 'subscribers') {
+        if (post.visibility === 'subscribers') {
           // --- TODO: [custom] check user subscription or custom logic --- 
           const isSubscriber = await checkUserSubscription(user.id)
           if (!isSubscriber) {

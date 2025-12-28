@@ -12,7 +12,7 @@ import { TableOfContents } from "@/components/tiptap/TableOfContents";
 import { TiptapRenderer } from "@/components/tiptap/TiptapRenderer";
 import { Button } from "@/components/ui/button";
 import { Link as I18nLink, Locale, LOCALES } from "@/i18n/routing";
-import { blogCms } from "@/lib/cms";
+import { glossaryCms } from "@/lib/cms";
 import { constructMetadata } from "@/lib/metadata";
 import { PostBase } from "@/types/cms";
 import dayjs from "dayjs";
@@ -37,7 +37,7 @@ export async function generateMetadata({
   params,
 }: MetadataProps): Promise<Metadata> {
   const { locale, slug } = await params;
-  const { post, error, errorCode } = await blogCms.getBySlug(slug, locale);
+  const { post, error, errorCode } = await glossaryCms.getBySlug(slug, locale);
 
   if (!post) {
     return constructMetadata({
@@ -45,19 +45,19 @@ export async function generateMetadata({
       description: "Page not found",
       noIndex: true,
       locale: locale as Locale,
-      path: `/blog/${slug}`,
+      path: `/glossary/${slug}`,
     });
   }
 
   const isContentRestricted = !!errorCode;
 
   const metadataPath = post.slug.startsWith("/") ? post.slug : `/${post.slug}`;
-  const fullPath = `/blog${metadataPath}`;
+  const fullPath = `/glossary${metadataPath}`;
 
-  // Detect which locales have this blog post available
+  // Detect which locales have this glossary entry available
   const availableLocales: string[] = [];
   for (const checkLocale of LOCALES) {
-    const { post: localePost } = await blogCms.getBySlug(slug, checkLocale);
+    const { post: localePost } = await glossaryCms.getBySlug(slug, checkLocale);
     if (localePost) {
       availableLocales.push(checkLocale);
     }
@@ -75,32 +75,32 @@ export async function generateMetadata({
   });
 }
 
-export default async function BlogPage({ params }: { params: Params }) {
+export default async function GlossaryPage({ params }: { params: Params }) {
   const { slug, locale } = await params;
-  const t = await getTranslations("Blogs");
+  const t = await getTranslations("Glossary");
 
-  const { post, errorCode } = await blogCms.getBySlug(slug, locale);
+  const { post, errorCode } = await glossaryCms.getBySlug(slug, locale);
 
   if (!post) {
     notFound();
   }
 
   // View count tracking
-  const viewCountConfig = POST_CONFIGS.blog.viewCount;
+  const viewCountConfig = POST_CONFIGS.glossary.viewCount;
   let viewCount = 0;
 
   if (viewCountConfig.enabled) {
     // Choose counting mode based on config
     if (viewCountConfig.mode === 'unique') {
-      await incrementUniqueViewCountAction({ slug, postType: "blog", locale });
+      await incrementUniqueViewCountAction({ slug, postType: "glossary", locale });
     } else {
-      await incrementViewCountAction({ slug, postType: "blog", locale });
+      await incrementViewCountAction({ slug, postType: "glossary", locale });
     }
 
     // Get view count
     const viewCountResult = await getViewCountAction({
       slug,
-      postType: "blog",
+      postType: "glossary",
       locale,
     });
     viewCount = viewCountResult.success && viewCountResult.data?.count
@@ -116,17 +116,17 @@ export default async function BlogPage({ params }: { params: Params }) {
 
   if (errorCode) {
     showRestrictionMessageInsteadOfContent = true;
-    const redirectUrl = `/blog/${slug}`;
+    const redirectUrl = `/glossary/${slug}`;
 
     if (errorCode === "unauthorized") {
-      messageTitle = t("BlogDetail.accessRestricted");
-      messageContent = t("BlogDetail.unauthorized");
-      actionText = t("BlogDetail.signIn");
+      messageTitle = t("GlossaryDetail.accessRestricted");
+      messageContent = t("GlossaryDetail.unauthorized");
+      actionText = t("GlossaryDetail.signIn");
       actionLink = `/login?next=${encodeURIComponent(redirectUrl)}`;
     } else if (errorCode === "notSubscriber") {
-      messageTitle = t("BlogDetail.premium");
-      messageContent = t("BlogDetail.premiumContent");
-      actionText = t("BlogDetail.upgrade");
+      messageTitle = t("GlossaryDetail.premium");
+      messageContent = t("GlossaryDetail.premiumContent");
+      actionText = t("GlossaryDetail.upgrade");
       actionLink = process.env.NEXT_PUBLIC_PRICING_PATH!;
     }
   }
@@ -168,12 +168,12 @@ export default async function BlogPage({ params }: { params: Params }) {
           <div className="mb-8">
             <Button asChild variant="ghost" size="sm" className="group">
               <I18nLink
-                href="/blog"
-                title={t("BlogDetail.backToBlogs")}
+                href="/glossary"
+                title={t("GlossaryDetail.backToGlossary")}
                 prefetch={false}
               >
                 <ArrowLeftIcon className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                {t("BlogDetail.backToBlogs")}
+                {t("GlossaryDetail.backToGlossary")}
               </I18nLink>
             </Button>
           </div>
@@ -200,13 +200,13 @@ export default async function BlogPage({ params }: { params: Params }) {
               {viewCountConfig.enabled && viewCountConfig.showInUI && viewCount > 0 && (
                 <div className="flex items-center">
                   <EyeIcon className="mr-2 h-4 w-4" />
-                  {t("BlogDetail.viewCount", { count: viewCount })}
+                  {t("GlossaryDetail.viewCount", { count: viewCount })}
                 </div>
               )}
 
               {post.isPinned && (
                 <div className="flex items-center bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 px-2 py-0.5 rounded-md text-xs">
-                  {t("BlogDetail.featured")}
+                  {t("GlossaryDetail.featured")}
                 </div>
               )}
             </div>
@@ -257,8 +257,8 @@ export default async function BlogPage({ params }: { params: Params }) {
               message={messageContent}
               actionText={actionText}
               actionLink={actionLink}
-              backText={t("BlogDetail.backToBlogs")}
-              backLink={`/blog`}
+              backText={t("GlossaryDetail.backToGlossary")}
+              backLink={`/glossary`}
             />
           ) : (
             <article>
@@ -270,24 +270,24 @@ export default async function BlogPage({ params }: { params: Params }) {
           {post.id && (
             <RelatedPosts
               postId={post.id}
-              postType="blog"
+              postType="glossary"
               limit={10}
-              title="Related Posts"
+              title="Related Glossary Entries"
               locale={locale}
-              CardComponent={BlogPostCard}
+              CardComponent={GlossaryEntryCard}
             />
           )}
 
           <div className="mt-16 pt-8 border-t">
             <Button asChild variant="outline" size="sm">
               <I18nLink
-                href="/blog"
-                title={t("BlogDetail.backToBlogs")}
+                href="/glossary"
+                title={t("GlossaryDetail.backToGlossary")}
                 prefetch={false}
                 className="inline-flex items-center"
               >
                 <ArrowLeftIcon className="mr-2 h-4 w-4" />
-                {t("BlogDetail.backToBlogs")}
+                {t("GlossaryDetail.backToGlossary")}
               </I18nLink>
             </Button>
           </div>
@@ -306,35 +306,25 @@ export default async function BlogPage({ params }: { params: Params }) {
   );
 }
 
-const BlogPostCard = ({ post }: { post: PostBase }) => (
-  <PostCard post={post} baseUrl="/blog" />
+const GlossaryEntryCard = ({ post }: { post: PostBase }) => (
+  <PostCard post={post} baseUrl="/glossary" />
 );
 
 export async function generateStaticParams() {
   const allParams: { locale: string; slug: string }[] = [];
 
   for (const locale of LOCALES) {
-    const { posts: localPosts } = await blogCms.getLocalList(locale);
-    localPosts
-      .filter((post) => post.slug && post.status !== "draft")
-      .forEach((post) => {
-        const slugPart = post.slug.replace(/^\//, "").replace(/^blogs\//, "");
-        if (slugPart) {
-          allParams.push({ locale, slug: slugPart });
-        }
-      });
-  }
-
-  for (const locale of LOCALES) {
     const serverResult = await listPublishedPostsAction({
       locale: locale,
       pageSize: 1000,
       visibility: "public",
-      postType: "blog",
+      postType: "glossary",
     });
     if (serverResult.success && serverResult.data?.posts) {
       serverResult.data.posts.forEach((post) => {
-        const slugPart = post.slug?.replace(/^\//, "").replace(/^blogs\//, "");
+        const slugPart = post.slug
+          ?.replace(/^\//, "")
+          .replace(/^glossary\//, "");
         if (slugPart) {
           allParams.push({ locale, slug: slugPart });
         }
@@ -345,6 +335,5 @@ export async function generateStaticParams() {
   const uniqueParams = Array.from(
     new Map(allParams.map((p) => [`${p.locale}-${p.slug}`, p])).values()
   );
-  // console.log("Generated Static Params:", uniqueParams.slice(0, 10), "...");
   return uniqueParams;
 }

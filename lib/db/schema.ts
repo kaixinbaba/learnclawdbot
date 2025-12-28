@@ -355,6 +355,7 @@ export const creditLogs = pgTable(
 
 export const postTypeEnum = pgEnum('post_type', [
   'blog',
+  'glossary',
 ])
 export type PostType = (typeof postTypeEnum.enumValues)[number]
 
@@ -427,7 +428,7 @@ export const tags = pgTable(
   'tags',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    name: text('name').notNull().unique(),
+    name: text('name').notNull(),
     postType: postTypeEnum('post_type').default('blog'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
@@ -436,6 +437,10 @@ export const tags = pgTable(
   (table) => {
     return {
       nameIdx: index('idx_tags_name').on(table.name),
+      namePostTypeUnique: unique('tags_name_post_type_unique').on(
+        table.name,
+        table.postType
+      ),
     }
   }
 )

@@ -127,6 +127,20 @@
       "when": 1765614482318,
       "tag": "0017_soft_shen",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1766917826222,
+      "tag": "0018_exotic_talisman",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1766921476962,
+      "tag": "0019_shiny_stick",
+      "breakpoints": true
     }
   ]
 }

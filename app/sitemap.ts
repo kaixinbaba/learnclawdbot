@@ -1,7 +1,7 @@
 import { listPublishedPostsAction } from '@/actions/posts/posts'
 import { siteConfig } from '@/config/site'
 import { DEFAULT_LOCALE, LOCALES } from '@/i18n/routing'
-import { getPosts } from '@/lib/getBlogs'
+import { blogCms } from '@/lib/cms'
 import { MetadataRoute } from 'next'
 
 const siteUrl = siteConfig.url
@@ -26,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const allBlogSitemapEntries: MetadataRoute.Sitemap = [];
 
   for (const locale of LOCALES) {
-    const { posts: localPosts } = await getPosts(locale);
+    const { posts: localPosts } = await blogCms.getLocalList(locale);
     localPosts
       .filter((post) => post.slug && post.status !== "draft")
       .forEach((post) => {
@@ -68,8 +68,49 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     new Map(allBlogSitemapEntries.map((entry) => [entry.url, entry])).values()
   );
 
+  // Glossary entries (server-side only, no local file system access)
+  const allGlossarySitemapEntries: MetadataRoute.Sitemap = [];
+
+  // Add glossary list page
+  for (const locale of LOCALES) {
+    allGlossarySitemapEntries.push({
+      url: `${siteUrl}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/glossary`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as ChangeFrequency,
+      priority: 0.8,
+    });
+  }
+
+  // Add glossary entries
+  for (const locale of LOCALES) {
+    const serverResult = await listPublishedPostsAction({
+      locale: locale,
+      pageSize: 1000,
+      visibility: "public",
+      postType: "glossary",
+    });
+    if (serverResult.success && serverResult.data?.posts) {
+      serverResult.data.posts.forEach((post) => {
+        const slugPart = post.slug?.replace(/^\//, "").replace(/^glossary\//, "");
+        if (slugPart) {
+          allGlossarySitemapEntries.push({
+            url: `${siteUrl}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/glossary/${slugPart}`,
+            lastModified: post.publishedAt || new Date(),
+            changeFrequency: 'daily' as ChangeFrequency,
+            priority: 0.7,
+          });
+        }
+      });
+    }
+  }
+
+  const uniqueGlossaryEntries = Array.from(
+    new Map(allGlossarySitemapEntries.map((entry) => [entry.url, entry])).values()
+  );
+
   return [
     ...pages,
-    ...uniqueBlogPostEntries
+    ...uniqueBlogPostEntries,
+    ...uniqueGlossaryEntries
   ]
 }

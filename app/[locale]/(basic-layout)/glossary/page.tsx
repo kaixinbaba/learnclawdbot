@@ -2,7 +2,6 @@ import { listPublishedPostsAction } from "@/actions/posts/posts";
 import { listTagsAction } from "@/actions/posts/tags";
 import { PostList } from "@/components/cms/PostList";
 import { Locale } from "@/i18n/routing";
-import { blogCms } from "@/lib/cms";
 import { constructMetadata } from "@/lib/metadata";
 import { Tag } from "@/types/cms";
 import { TextSearch } from "lucide-react";
@@ -19,13 +18,13 @@ export async function generateMetadata({
   params,
 }: MetadataProps): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "Blogs" });
+  const t = await getTranslations({ locale, namespace: "Glossary" });
 
   return constructMetadata({
     title: t("title"),
     description: t("description"),
     locale: locale as Locale,
-    path: `/blog`,
+    path: `/glossary`,
   });
 }
 
@@ -33,14 +32,13 @@ const SERVER_POST_PAGE_SIZE = 48;
 
 export default async function Page({ params }: { params: Params }) {
   const { locale } = await params;
-  const t = await getTranslations("Blogs");
+  const t = await getTranslations("Glossary");
 
-  const { posts: localPosts } = await blogCms.getLocalList(locale);
-
+  // Only fetch from server (database), no local file system access
   const initialServerPostsResult = await listPublishedPostsAction({
     pageIndex: 0,
     pageSize: SERVER_POST_PAGE_SIZE,
-    postType: "blog",
+    postType: "glossary",
     locale: locale,
   });
 
@@ -55,19 +53,18 @@ export default async function Page({ params }: { params: Params }) {
 
   if (!initialServerPostsResult.success) {
     console.error(
-      "Failed to fetch initial server posts:",
+      "Failed to fetch initial server glossary entries:",
       initialServerPostsResult.error
     );
   }
 
-  const tagsResult = await listTagsAction({ postType: "blog" });
+  const tagsResult = await listTagsAction({ postType: "glossary" });
   let serverTags: Tag[] = [];
   if (tagsResult.success && tagsResult.data?.tags) {
     serverTags = tagsResult.data.tags;
   }
 
-  const noPostsFound =
-    localPosts.length === 0 && initialServerPosts.length === 0;
+  const noPostsFound = initialServerPosts.length === 0;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -77,7 +74,7 @@ export default async function Page({ params }: { params: Params }) {
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
           <TextSearch className="h-16 w-16 text-gray-400 mb-4" />
           <h2 className="text-2xl font-semibold mb-2">
-            {t("emptyState.title") || "No blog posts"}
+            {t("emptyState.title") || "No glossary entries"}
           </h2>
           <p className="text-gray-500 max-w-md">
             {t("emptyState.description") ||
@@ -86,16 +83,16 @@ export default async function Page({ params }: { params: Params }) {
         </div>
       ) : (
         <PostList
-          postType="blog"
-          baseUrl="/blog"
-          localPosts={localPosts}
+          postType="glossary"
+          baseUrl="/glossary"
+          localPosts={[]}
           initialPosts={initialServerPosts}
           initialTotal={totalServerPosts}
           serverTags={serverTags}
           locale={locale}
           pageSize={SERVER_POST_PAGE_SIZE}
           showTagSelector={true}
-          emptyMessage="No posts found for this tag."
+          emptyMessage="No glossary entries found for this tag."
         />
       )}
     </div>
