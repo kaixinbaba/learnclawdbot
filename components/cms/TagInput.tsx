@@ -1,13 +1,12 @@
 "use client";
 
-import { listTagsAction } from "@/actions/posts/tags";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PostType } from "@/lib/db/schema";
+import { useTagStore } from "@/stores/tagStore";
 import { Tag } from "@/types/cms";
 import { Tag as TagIcon, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { TagSelectDialog } from "./TagSelectDialog";
 
 export type FormTag = {
@@ -29,41 +28,29 @@ export function TagInput({
   postType,
 }: TagInputProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [allAvailableTags, setAllAvailableTags] = useState<Tag[]>([]);
-  const [isLoadingTags, setIsLoadingTags] = useState(true);
 
+  const { tags, isLoading, fetchTags, addTag } = useTagStore();
+  const availableTags = tags[postType] || [];
+  const isLoadingTags = isLoading[postType] ?? true;
+
+  // Initial load
   useEffect(() => {
-    const loadTags = async () => {
-      setIsLoadingTags(true);
-      try {
-        const result = await listTagsAction({ query: "", postType: postType });
-        if (result.success && result.data?.tags) {
-          setAllAvailableTags(result.data.tags);
-        } else {
-          toast.error("Failed to fetch tags.", {
-            description: result.error,
-          });
-          console.error("Failed to fetch initial tags:", result.error);
-        }
-      } catch (error) {
-        toast.error("Failed to fetch tags.");
-        console.error("Error fetching initial tags:", error);
-      } finally {
-        setIsLoadingTags(false);
-      }
-    };
-    loadTags();
-  }, []);
+    fetchTags(postType);
+  }, [postType]);
 
   const handleDeselectTag = (tagId: string) => {
     onChange(value.filter((t) => t.id !== tagId));
+  };
+
+  const handleTagCreated = (tag: Tag) => {
+    addTag(postType, tag);
   };
 
   return (
     <div className="w-full">
       <div className="flex flex-wrap gap-2 mb-2 min-h-[40px] items-center p-2 border rounded-md">
         {value?.map((tag) => (
-          <Badge key={tag.id} variant="secondary">
+          <Badge key={tag.id}>
             {tag.name}
             <button
               type="button"
@@ -72,7 +59,7 @@ export function TagInput({
               aria-label={`Remove ${tag.name}`}
               disabled={disabled}
             >
-              <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+              <X className="h-3 w-3" />
             </button>
           </Badge>
         ))}
@@ -94,9 +81,10 @@ export function TagInput({
         onOpenChange={setIsDialogOpen}
         selectedTags={value || []}
         onTagsChange={onChange}
-        initialAvailableTags={allAvailableTags}
+        initialAvailableTags={availableTags}
         isLoadingInitialTags={isLoadingTags}
         postType={postType}
+        onGlobalTagCreated={handleTagCreated}
       />
     </div>
   );
