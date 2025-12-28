@@ -74,7 +74,7 @@
       "featuredImageUrl": {
         "label": "Featured Image",
         "placeholder": "Select featured image",
-        "description": "Select a featured image."
+        "description": "Optional. If not uploaded, a dynamic OG image will be automatically generated based on the title."
       },
       "content": {
         "label": "Content",

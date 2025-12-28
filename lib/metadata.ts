@@ -7,7 +7,7 @@ type MetadataProps = {
   page?: string // legacy
   title?: string
   description?: string
-  images?: string[]
+  images?: string[] | undefined
   noIndex?: boolean
   locale?: Locale
   path?: string
@@ -19,7 +19,7 @@ type MetadataProps = {
 export async function constructMetadata({
   title,
   description,
-  images = [],
+  images,
   noIndex = false,
   locale,
   path,
@@ -60,16 +60,20 @@ export async function constructMetadata({
   alternateLanguages['x-default'] = `${siteConfig.url}${defaultPath}`
 
   // Open Graph
-  const imageUrls = images.length > 0
+  // If images is explicitly provided and not empty, use them
+  // If images is undefined/not provided and useDefaultOgImage is false, return undefined to let Next.js use opengraph-image.tsx
+  // If images is undefined/not provided and useDefaultOgImage is true, use default static OG image
+  const imageUrls = images && images.length > 0
     ? images.map(img => ({
       url: img.startsWith('http') ? img : `${siteConfig.url}/${img}`,
       alt: pageTitle,
     }))
-    :
-    useDefaultOgImage ? [{
-      url: `${siteConfig.url}/og${locale === DEFAULT_LOCALE ? '' : '_' + locale}.png`,
-      alt: pageTitle,
-    }] : undefined
+    : useDefaultOgImage
+      ? [{
+        url: `${siteConfig.url}/og${locale === DEFAULT_LOCALE ? '' : '_' + locale}.png`,
+        alt: pageTitle,
+      }]
+      : undefined
   const pageURL = `${locale === DEFAULT_LOCALE ? '' : `/${locale}`}${path}`
 
   return {

@@ -66,12 +66,13 @@ export async function generateMetadata({
   return constructMetadata({
     title: post.title,
     description: post.description,
-    images: post.featuredImageUrl ? [post.featuredImageUrl] : [],
+    images: post.featuredImageUrl ? [post.featuredImageUrl] : undefined,
     locale: locale as Locale,
     path: fullPath,
     noIndex: isContentRestricted,
     availableLocales:
       availableLocales.length > 0 ? availableLocales : undefined,
+    useDefaultOgImage: false, // Use dynamic opengraph-image.tsx when no featured image
   });
 }
 
@@ -91,7 +92,7 @@ export default async function BlogPage({ params }: { params: Params }) {
 
   if (viewCountConfig.enabled) {
     // Choose counting mode based on config
-    if (viewCountConfig.mode === 'unique') {
+    if (viewCountConfig.mode === "unique") {
       await incrementUniqueViewCountAction({ slug, postType: "blog", locale });
     } else {
       await incrementViewCountAction({ slug, postType: "blog", locale });
@@ -103,9 +104,10 @@ export default async function BlogPage({ params }: { params: Params }) {
       postType: "blog",
       locale,
     });
-    viewCount = viewCountResult.success && viewCountResult.data?.count
-      ? viewCountResult.data.count
-      : 0;
+    viewCount =
+      viewCountResult.success && viewCountResult.data?.count
+        ? viewCountResult.data.count
+        : 0;
   }
 
   let showRestrictionMessageInsteadOfContent = false;
@@ -133,9 +135,9 @@ export default async function BlogPage({ params }: { params: Params }) {
 
   const tagsArray = post.tags
     ? post.tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag)
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag)
     : [];
 
   const getVisibilityInfo = () => {
@@ -197,12 +199,14 @@ export default async function BlogPage({ params }: { params: Params }) {
                 {dayjs(post.publishedAt).format("MMMM D, YYYY")}
               </div>
 
-              {viewCountConfig.enabled && viewCountConfig.showInUI && viewCount > 0 && (
-                <div className="flex items-center">
-                  <EyeIcon className="mr-2 h-4 w-4" />
-                  {t("BlogDetail.viewCount", { count: viewCount })}
-                </div>
-              )}
+              {viewCountConfig.enabled &&
+                viewCountConfig.showInUI &&
+                viewCount > 0 && (
+                  <div className="flex items-center">
+                    <EyeIcon className="mr-2 h-4 w-4" />
+                    {t("BlogDetail.viewCount", { count: viewCount })}
+                  </div>
+                )}
 
               {post.isPinned && (
                 <div className="flex items-center bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 px-2 py-0.5 rounded-md text-xs">

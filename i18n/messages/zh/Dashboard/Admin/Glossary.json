@@ -73,7 +73,7 @@
       "featuredImageUrl": {
         "label": "封面图",
         "placeholder": "选择封面图",
-        "description": "选择封面图。"
+        "description": "可选。如未上传，将根据标题自动生成动态 OG 图片。"
       },
       "content": {
         "label": "内容",

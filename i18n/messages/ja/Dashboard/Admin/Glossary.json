@@ -73,7 +73,7 @@
       "featuredImageUrl": {
         "label": "アイキャッチ画像",
         "placeholder": "アイキャッチ画像を選択",
-        "description": "アイキャッチ画像を選択してください。"
+        "description": "任意。アップロードしない場合、タイトルに基づいて動的OG画像が自動生成されます。"
       },
       "content": {
         "label": "コンテンツ",
