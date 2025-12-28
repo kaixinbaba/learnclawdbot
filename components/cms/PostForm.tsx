@@ -256,8 +256,14 @@ export function PostForm({
                     onChange={field.onChange}
                     disabled={isSubmitting}
                     imagePath={imagePath}
+                    r2PublicUrl={r2PublicUrl}
+                    enableR2Selector={true}
                   />
                 </FormControl>
+                <FormDescription>
+                  Optional. If not uploaded, a dynamic OG image will be
+                  automatically generated based on the title.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

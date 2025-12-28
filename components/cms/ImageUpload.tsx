@@ -3,9 +3,10 @@
 import { generateAdminPresignedUploadUrl } from "@/actions/r2-resources";
 import { R2ResourceSelector } from "@/components/tiptap/R2ResourceSelector";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { BLOGS_IMAGE_PATH } from "@/config/common";
 import { getErrorMessage } from "@/lib/error-utils";
-import { Cloud, Loader2, UploadCloud, X } from "lucide-react";
+import { Cloud, Link, Loader2, Upload, UploadCloud, X } from "lucide-react";
 import Image from "next/image";
 import { ChangeEvent, useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -32,6 +33,8 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(value || null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlInputValue, setUrlInputValue] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelected = async (file: File | null) => {
@@ -151,6 +154,32 @@ export function ImageUpload({
     onChange("");
   };
 
+  const handleUrlSubmit = () => {
+    const url = urlInputValue.trim();
+    if (!url) {
+      toast.error("Please enter a URL");
+      return;
+    }
+
+    // Validate URL format
+    try {
+      const parsedUrl = new URL(url);
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        toast.error("Please enter a valid HTTP or HTTPS URL");
+        return;
+      }
+    } catch {
+      toast.error("Please enter a valid URL");
+      return;
+    }
+
+    setPreviewUrl(url);
+    onChange(url);
+    setShowUrlInput(false);
+    setUrlInputValue("");
+    toast.success("Image URL applied");
+  };
+
   return (
     <div className="w-full">
       <div
@@ -208,8 +237,8 @@ export function ImageUpload({
             <p className="text-xs text-gray-500">PNG, JPG, WEBP up to 5MB</p>
           </div>
         )}
-        {!isLoading && !previewUrl && (
-          <div className="flex gap-2">
+        {!isLoading && !previewUrl && !showUrlInput && (
+          <div className="flex flex-wrap gap-2 justify-center">
             <Button
               type="button"
               variant="outline"
@@ -220,6 +249,7 @@ export function ImageUpload({
               disabled={disabled || isLoading}
               className="mt-4"
             >
+              <Upload className="h-4 w-4" />
               Select Image
             </Button>
             {enableR2Selector && r2PublicUrl && (
@@ -240,15 +270,68 @@ export function ImageUpload({
                   className="mt-4"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Cloud className="h-4 w-4 mr-2" />
+                  <Cloud className="h-4 w-4" />
                   Select from R2
                 </Button>
               </R2ResourceSelector>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowUrlInput(true);
+              }}
+              disabled={disabled || isLoading}
+              className="mt-4"
+            >
+              <Link className="h-4 w-4" />
+              Enter URL
+            </Button>
           </div>
         )}
-        {!isLoading && previewUrl && (
-          <div className="flex gap-2">
+        {!isLoading && !previewUrl && showUrlInput && (
+          <div
+            className="flex flex-col gap-2 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Input
+              type="url"
+              placeholder="https://example.com/image.jpg"
+              value={urlInputValue}
+              onChange={(e) => setUrlInputValue(e.target.value)}
+              disabled={disabled}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleUrlSubmit();
+                }
+              }}
+            />
+            <div className="flex gap-2 justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowUrlInput(false);
+                  setUrlInputValue("");
+                }}
+                disabled={disabled}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleUrlSubmit}
+                disabled={disabled || !urlInputValue.trim()}
+              >
+                Apply URL
+              </Button>
+            </div>
+          </div>
+        )}
+        {!isLoading && previewUrl && !showUrlInput && (
+          <div className="flex flex-wrap gap-2 justify-center">
             <Button
               type="button"
               variant="outline"
@@ -284,6 +367,59 @@ export function ImageUpload({
                 </Button>
               </R2ResourceSelector>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowUrlInput(true);
+              }}
+              disabled={disabled || isLoading}
+              className="mt-4"
+            >
+              <Link className="h-4 w-4 mr-2" />
+              Enter URL
+            </Button>
+          </div>
+        )}
+        {!isLoading && previewUrl && showUrlInput && (
+          <div
+            className="flex flex-col gap-2 w-full max-w-md mt-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Input
+              type="url"
+              placeholder="https://example.com/image.jpg"
+              value={urlInputValue}
+              onChange={(e) => setUrlInputValue(e.target.value)}
+              disabled={disabled}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleUrlSubmit();
+                }
+              }}
+            />
+            <div className="flex gap-2 justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowUrlInput(false);
+                  setUrlInputValue("");
+                }}
+                disabled={disabled}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleUrlSubmit}
+                disabled={disabled || !urlInputValue.trim()}
+              >
+                Apply URL
+              </Button>
+            </div>
           </div>
         )}
       </div>

@@ -11,10 +11,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { R2_CATEGORIES } from "@/config/common";
 import { getFileType } from "@/lib/cloudflare/r2-utils";
-import { Check, FileIcon, Loader2, Video } from "lucide-react";
+import { formatBytes } from "@/lib/utils";
+import dayjs from "dayjs";
+import { Check, FileIcon, Search, Video, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
@@ -82,7 +85,7 @@ export function R2ResourceSelector({
       <DialogTrigger asChild>
         {children || <Button variant="outline">{buttonText}</Button>}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+      <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {title}
@@ -114,19 +117,29 @@ export function R2ResourceSelector({
               </TabsList>
             </div>
 
-            <div className="shrink-0 mb-2">
+            <div className="shrink-0 mb-4 relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Filter by filename..."
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
+                className="pl-9 pr-8"
               />
+              {filter && (
+                <button
+                  onClick={() => setFilter("")}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             {R2_CATEGORIES.map((cat) => (
               <TabsContent
                 key={cat.prefix}
                 value={cat.prefix}
-                className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=active]:flex-col"
+                className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=active]:flex-col min-h-0"
               >
                 <ResourceGrid
                   categoryPrefix={cat.prefix}
@@ -135,6 +148,7 @@ export function R2ResourceSelector({
                   onSelect={handleSelect}
                   selectedUrls={multiple ? selectedUrls : []}
                   fileTypeFilter={fileTypeFilter}
+                  onClearFilter={() => setFilter("")}
                 />
               </TabsContent>
             ))}
@@ -164,6 +178,87 @@ export function R2ResourceSelector({
   );
 }
 
+interface ResourceCardProps {
+  file: R2File;
+  r2PublicUrl: string;
+  isSelected: boolean;
+  onSelect: (file: R2File) => void;
+}
+
+function ResourceCard({
+  file,
+  r2PublicUrl,
+  isSelected,
+  onSelect,
+}: ResourceCardProps) {
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const fileType = getFileType(file.key);
+  const previewUrl = `${r2PublicUrl}/${file.key}`;
+  const fileName = file.key.split("/").pop();
+
+  return (
+    <div
+      className={`relative group cursor-pointer rounded-lg border overflow-hidden transition-all hover:border-primary/50 hover:shadow-sm ${
+        isSelected ? "border-primary ring-1 ring-primary" : "border-border"
+      }`}
+      onClick={() => onSelect(file)}
+    >
+      <div className="aspect-square bg-muted flex items-center justify-center relative overflow-hidden">
+        {fileType === "image" ? (
+          <>
+            {isImageLoading && (
+              <Skeleton className="absolute inset-0 w-full h-full" />
+            )}
+            <img
+              src={previewUrl}
+              alt={file.key}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                isImageLoading ? "opacity-0" : "opacity-100"
+              }`}
+              loading="lazy"
+              onLoad={() => setIsImageLoading(false)}
+            />
+          </>
+        ) : fileType === "video" ? (
+          <div className="relative w-full h-full bg-black/5">
+            <video
+              src={previewUrl}
+              className="w-full h-full object-contain"
+              muted
+              preload="metadata"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
+              <Video className="h-12 w-12 text-white/80 drop-shadow-md" />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-4 text-center">
+            <FileIcon className="h-10 w-10 text-muted-foreground/50 mb-2" />
+          </div>
+        )}
+      </div>
+
+      {isSelected && (
+        <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-sm z-10">
+          <Check className="h-3 w-3" />
+        </div>
+      )}
+
+      <div className="p-2 bg-background border-t text-xs">
+        <p className="font-medium truncate text-foreground/90" title={fileName}>
+          {fileName}
+        </p>
+        <div className="flex justify-between items-center text-muted-foreground mt-1">
+          <span>{file.size ? formatBytes(file.size, 0) : ""}</span>
+          {file.lastModified && (
+            <span>{dayjs(file.lastModified).format("MMM D")}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface ResourceGridProps {
   categoryPrefix: string;
   filterPrefix: string;
@@ -171,6 +266,7 @@ interface ResourceGridProps {
   onSelect: (url: string) => void;
   selectedUrls: string[];
   fileTypeFilter: "image" | "video" | "all";
+  onClearFilter?: () => void;
 }
 
 function ResourceGrid({
@@ -180,6 +276,7 @@ function ResourceGrid({
   onSelect,
   selectedUrls,
   fileTypeFilter,
+  onClearFilter,
 }: ResourceGridProps) {
   const [files, setFiles] = useState<R2File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -287,80 +384,63 @@ function ResourceGrid({
   return (
     <ScrollArea ref={scrollAreaRef} className="flex-1 -mr-6 pr-6">
       {files.length === 0 && !isLoading ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <FileIcon className="h-12 w-12 mb-2" />
-          <p>No files found</p>
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <div className="bg-muted/50 p-4 rounded-full mb-4">
+            <FileIcon className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <p className="text-lg font-medium text-foreground mb-1">
+            No files found
+          </p>
+          <p className="text-sm max-w-xs text-center mb-4">
+            {filterPrefix
+              ? `No files match "${filterPrefix}" in this category.`
+              : "This category is empty."}
+          </p>
+          {filterPrefix && onClearFilter && (
+            <Button variant="outline" onClick={onClearFilter}>
+              Clear Filter
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-4">
           {files.map((file) => {
-            const fileType = getFileType(file.key);
             const previewUrl = `${r2PublicUrl}/${file.key}`;
             const isSelected = selectedUrls.includes(previewUrl);
 
             return (
-              <div
+              <ResourceCard
                 key={file.key}
-                className={`relative group cursor-pointer rounded-lg border-2 overflow-hidden transition-all hover:border-primary ${
-                  isSelected ? "border-primary" : "border-transparent"
-                }`}
-                style={{ aspectRatio: "1/1" }}
-                onClick={() => handleSelect(file)}
-              >
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  {fileType === "image" ? (
-                    <img
-                      src={previewUrl}
-                      alt={file.key}
-                      className="w-full h-full object-contain"
-                      loading="lazy"
-                    />
-                  ) : fileType === "video" ? (
-                    <div className="relative w-full h-full">
-                      <video
-                        src={previewUrl}
-                        className="w-full h-full object-contain"
-                        muted
-                        preload="metadata"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <Video className="h-12 w-12 text-white" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center">
-                      <FileIcon className="h-8 w-8 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground mt-2 px-2 text-center break-all">
-                        {file.key.split("/").pop()}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                {isSelected && (
-                  <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
-                    <Check className="h-4 w-4" />
-                  </div>
-                )}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <p className="text-xs text-white truncate">
-                    {file.key.split("/").pop()}
-                  </p>
-                </div>
-              </div>
+                file={file}
+                r2PublicUrl={r2PublicUrl}
+                isSelected={isSelected}
+                onSelect={handleSelect}
+              />
             );
           })}
+
+          {/* Loading Skeletons */}
+          {isLoading &&
+            Array.from({ length: files.length > 0 ? 4 : 12 }).map((_, i) => (
+              <div
+                key={`skeleton-${i}`}
+                className="rounded-lg border overflow-hidden"
+              >
+                <Skeleton className="aspect-square w-full" />
+                <div className="p-2 border-t space-y-2">
+                  <Skeleton className="h-3 w-3/4" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-2 w-1/4" />
+                    <Skeleton className="h-2 w-1/4" />
+                  </div>
+                </div>
+              </div>
+            ))}
         </div>
       )}
 
-      {/* Infinite scroll trigger */}
-      {hasMore && (
-        <div
-          ref={observerTarget}
-          className="flex items-center justify-center py-4"
-        >
-          {isLoading && <Loader2 className="h-6 w-6 animate-spin" />}
-        </div>
-      )}
+      {/* Infinite scroll trigger - keep it at bottom to trigger load */}
+      <div ref={observerTarget} className="h-4 w-full" />
 
       {!hasMore && files.length > 0 && (
         <div className="text-center py-4 text-sm text-muted-foreground">
