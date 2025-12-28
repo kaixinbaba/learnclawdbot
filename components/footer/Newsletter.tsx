@@ -61,7 +61,7 @@ export function Newsletter() {
   };
   return (
     <div className="">
-      <h3 className="mb-3 font-semibold">{t("title")}</h3>
+      <div className="mb-3 font-semibold">{t("title")}</div>
       <p className="text-sm mb-3">{t("description")}</p>
       <form onSubmit={handleSubscribe} className="flex flex-col gap-2 max-w-64">
         <div className="flex">
