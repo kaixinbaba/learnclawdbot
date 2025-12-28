@@ -1,5 +1,6 @@
 import { listPublishedPostsAction } from "@/actions/posts/posts";
 import { listTagsAction } from "@/actions/posts/tags";
+import { POST_CONFIGS } from "@/components/cms/post-config";
 import { PostList } from "@/components/cms/PostList";
 import { Locale } from "@/i18n/routing";
 import { blogCms } from "@/lib/cms";
@@ -95,6 +96,7 @@ export default async function Page({ params }: { params: Params }) {
           locale={locale}
           pageSize={SERVER_POST_PAGE_SIZE}
           showTagSelector={true}
+          showCover={POST_CONFIGS.blog.showCoverInList}
           emptyMessage="No posts found for this tag."
         />
       )}

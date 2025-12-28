@@ -1,5 +1,6 @@
 import { listPublishedPostsAction } from "@/actions/posts/posts";
 import { listTagsAction } from "@/actions/posts/tags";
+import { POST_CONFIGS } from "@/components/cms/post-config";
 import { PostList } from "@/components/cms/PostList";
 import { Locale } from "@/i18n/routing";
 import { constructMetadata } from "@/lib/metadata";
@@ -92,6 +93,8 @@ export default async function Page({ params }: { params: Params }) {
           locale={locale}
           pageSize={SERVER_POST_PAGE_SIZE}
           showTagSelector={true}
+          showCover={POST_CONFIGS.glossary.showCoverInList}
+          gridClassName="grid grid-cols-1 md:grid-cols-2 gap-4"
           emptyMessage="No glossary entries found for this tag."
         />
       )}

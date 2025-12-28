@@ -52,6 +52,8 @@ export interface PostConfig {
   localDirectory?: string;
   /** View count configuration */
   viewCount: ViewCountConfig;
+  /** Whether to show cover image in list page - default true */
+  showCoverInList: boolean;
   routes: {
     list: string;
     create: string;
@@ -72,6 +74,7 @@ export const POST_CONFIGS: Record<PostType, PostConfig> = {
       mode: 'all',
       showInUI: true,
     },
+    showCoverInList: true,
     routes: {
       list: "/dashboard/blogs",
       create: "/dashboard/blogs/new",
@@ -89,6 +92,7 @@ export const POST_CONFIGS: Record<PostType, PostConfig> = {
       mode: 'all',
       showInUI: true,
     },
+    showCoverInList: false,
     routes: {
       list: "/dashboard/glossary",
       create: "/dashboard/glossary/new",

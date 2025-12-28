@@ -38,6 +38,7 @@ interface PostListProps {
   serverTags?: Tag[];
   pageSize: number;
   showTagSelector?: boolean;
+  showCover?: boolean;
   gridClassName?: string;
   emptyMessage?: string;
 }
@@ -52,7 +53,8 @@ export function PostList({
   locale,
   pageSize,
   showTagSelector = false,
-  gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8",
+  showCover = true,
+  gridClassName,
   emptyMessage = "No posts found.",
 }: PostListProps) {
   const [posts, setPosts] = useState<PublicPost[]>(initialPosts);
@@ -66,6 +68,16 @@ export function PostList({
     threshold: 0,
     triggerOnce: false,
   });
+
+  // Default grid class based on showCover if not provided
+  // When showCover is false, always use single column layout regardless of gridClassName
+  const defaultGridClass = showCover
+    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+    : "flex flex-col gap-1"; // List view for no cover
+
+  const finalGridClassName = showCover
+    ? gridClassName || defaultGridClass
+    : defaultGridClass;
 
   const loadMorePosts = useCallback(async () => {
     if (isLoading || !hasMore) return;
@@ -161,13 +173,14 @@ export function PostList({
         </div>
       ) : (
         <>
-          <div className={gridClassName}>
+          <div className={finalGridClassName}>
             {(!showTagSelector || selectedTagId === null) &&
               localPosts.map((post) => (
                 <PostCard
                   key={`local-${post.slug}`}
                   post={post}
                   baseUrl={baseUrl}
+                  showCover={showCover}
                 />
               ))}
 
@@ -176,6 +189,7 @@ export function PostList({
                 key={`server-${post.id}`}
                 post={mapServerPostToCard(post, locale)}
                 baseUrl={baseUrl}
+                showCover={showCover}
               />
             ))}
           </div>
