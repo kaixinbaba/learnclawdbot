@@ -71,13 +71,9 @@ export function PostList({
 
   // Default grid class based on showCover if not provided
   // When showCover is false, always use single column layout regardless of gridClassName
-  const defaultGridClass = showCover
+  const gridClass = showCover
     ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
     : "flex flex-col gap-1"; // List view for no cover
-
-  const finalGridClassName = showCover
-    ? gridClassName || defaultGridClass
-    : defaultGridClass;
 
   const loadMorePosts = useCallback(async () => {
     if (isLoading || !hasMore) return;
@@ -173,7 +169,7 @@ export function PostList({
         </div>
       ) : (
         <>
-          <div className={finalGridClassName}>
+          <div className={gridClass}>
             {(!showTagSelector || selectedTagId === null) &&
               localPosts.map((post) => (
                 <PostCard

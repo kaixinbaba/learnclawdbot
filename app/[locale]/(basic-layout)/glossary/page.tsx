@@ -94,7 +94,6 @@ export default async function Page({ params }: { params: Params }) {
           pageSize={SERVER_POST_PAGE_SIZE}
           showTagSelector={true}
           showCover={POST_CONFIGS.glossary.showCoverInList}
-          gridClassName="grid grid-cols-1 md:grid-cols-2 gap-4"
           emptyMessage="No glossary entries found for this tag."
         />
       )}
