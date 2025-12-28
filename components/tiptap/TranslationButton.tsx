@@ -122,8 +122,10 @@ export function TranslationButton({
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="h-4 w-4 text-muted-foreground" />
+          <TooltipTrigger asChild className="flex items-center justify-center">
+            <div>
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </div>
           </TooltipTrigger>
           <TooltipContent>
             <p>AI translation requires AI model configuration</p>

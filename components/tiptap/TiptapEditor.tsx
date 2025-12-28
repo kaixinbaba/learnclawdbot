@@ -544,7 +544,7 @@ export function TiptapEditor({
   return (
     <div className="border rounded-md">
       {/* Toolbar */}
-      <div className="border-b bg-muted/30 p-2 flex flex-wrap gap-1">
+      <div className="border-b bg-muted/30 p-2 flex items-center flex-wrap gap-1">
         <Button
           type="button"
           variant={editor.isActive("bold") ? "secondary" : "ghost"}
