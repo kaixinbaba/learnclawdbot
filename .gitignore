@@ -130,3 +130,5 @@ dist
 */robots.txt
 
 .pnpm-store
+
+.backup/
