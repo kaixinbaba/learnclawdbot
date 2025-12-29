@@ -120,6 +120,11 @@ export function PostEditorClient({
   }, [mode, searchParams, postType, config]);
 
   const handleSubmit = async (data: any) => {
+    data = {
+      ...data,
+      content: data.content.replace(/(\!\[.*?\]\(.*?\))(\S)/g, "$1\n\n$2"),
+    };
+
     if (mode === "edit" && initialData?.id) {
       const result = await updatePostAction({
         data: {
