@@ -4,7 +4,6 @@ import {
   createPricingPlanAction,
   updatePricingPlanAction,
 } from "@/actions/prices/admin";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -58,7 +57,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AlertCircle,
   Code,
   GripVertical,
   Info,
@@ -75,6 +73,9 @@ import React, { useEffect, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+import { EnvironmentAlert } from "./EnvironmentAlert";
+import { GroupSelectField } from "./GroupSelectField";
+import { LanguageDataAlert } from "./LanguageDataAlert";
 import { PricingCardPreview } from "./PricingCardPreview";
 
 type PricingPlan = typeof pricingPlansSchema.$inferSelect;
@@ -90,6 +91,7 @@ const pricingPlanFormSchema = z.object({
   environment: z.enum(["test", "live"], {
     required_error: "Environment is required.",
   }),
+  groupSlug: z.string().optional(),
   cardTitle: z.string().min(1, "Card title is required."),
   cardDescription: z.string().optional().nullable(),
   provider: z.enum(["none", "stripe", "creem"]),
@@ -157,6 +159,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
     resolver: zodResolver(pricingPlanFormSchema),
     defaultValues: {
       environment: initialData?.environment ?? "test",
+      groupSlug: initialData?.groupSlug ?? "default",
       cardTitle: initialData?.cardTitle ?? "",
       cardDescription: initialData?.cardDescription ?? "",
       provider: initialData?.provider ?? "stripe",
@@ -166,8 +169,8 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
       enableManualInputCoupon: initialData?.enableManualInputCoupon ?? false,
       creemProductId: initialData?.creemProductId ?? "",
       creemDiscountCode: initialData?.creemDiscountCode ?? "",
-      paymentType: initialData?.paymentType ?? "",
-      recurringInterval: initialData?.recurringInterval ?? "",
+      paymentType: initialData?.paymentType ?? null,
+      recurringInterval: initialData?.recurringInterval ?? null,
       price: Number(initialData?.price) ?? undefined,
       currency: initialData?.currency ?? "",
       displayPrice: initialData?.displayPrice ?? "",
@@ -718,38 +721,42 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                 <CardTitle>{t("coreInformation")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="environment"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Environment *</FormLabel>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={isLoading}
-                        className="flex flex-row gap-4"
-                      >
-                        <FormItem className="flex items-center">
-                          <FormControl>
-                            <RadioGroupItem value="test"></RadioGroupItem>
-                          </FormControl>
-                          <FormLabel htmlFor="r1">Test</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center">
-                          <FormControl>
-                            <RadioGroupItem value="live">Live</RadioGroupItem>
-                          </FormControl>
-                          <FormLabel htmlFor="r1">Live</FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                      <FormDescription>
-                        {t("environmentDescription")}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="environment"
+                    render={({ field }) => (
+                      <FormItem className="rounded-md border p-4">
+                        <FormLabel>Environment *</FormLabel>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          disabled={isLoading}
+                          className="flex flex-row gap-4"
+                        >
+                          <FormItem className="flex items-center">
+                            <FormControl>
+                              <RadioGroupItem value="test"></RadioGroupItem>
+                            </FormControl>
+                            <FormLabel htmlFor="r1">Test</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center">
+                            <FormControl>
+                              <RadioGroupItem value="live">Live</RadioGroupItem>
+                            </FormControl>
+                            <FormLabel htmlFor="r1">Live</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                        <FormDescription>
+                          {t("environmentDescription")}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <GroupSelectField form={form} disabled={isLoading} />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="cardTitle"
@@ -791,9 +798,6 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
             <Card>
               <CardHeader>
                 <CardTitle>Payment</CardTitle>
-                <FormDescription>
-                  Configure payment provider settings for this pricing plan
-                </FormDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -1123,7 +1127,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                             control={form.control}
                             name="enableManualInputCoupon"
                             render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                                 <div className="space-y-0.5">
                                   <FormLabel className="text-base">
                                     Allow manual coupon input
@@ -1328,7 +1332,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                   control={form.control}
                   name="isHighlighted"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base">
                           {t("highlightThisPlan")}
@@ -1564,7 +1568,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                   control={form.control}
                   name="displayOrder"
                   render={({ field }) => (
-                    <FormItem className="rounded-lg border p-4">
+                    <FormItem className="rounded-md border p-4">
                       <FormLabel>{t("displayOrder")}</FormLabel>
                       <FormControl>
                         <Input
@@ -1587,7 +1591,7 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
                   control={form.control}
                   name="isActive"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base">
                           {t("activeStatus")}
@@ -1634,18 +1638,12 @@ export function PricePlanForm({ initialData, planId }: PricePlanFormProps) {
 
           {/* Column 2: Preview - Sticky on desktop, below buttons on mobile */}
           <div className="lg:sticky lg:top-16 lg:self-start space-y-4">
-            <Alert
-              variant="default"
-              className="border-amber-500 bg-amber-50 dark:bg-amber-950/20"
-            >
-              <AlertCircle className="h-4 w-4 text-amber-500" />
-              <AlertTitle className="text-amber-600 dark:text-amber-400">
-                Note
-              </AlertTitle>
-              <AlertDescription className="text-amber-700 dark:text-amber-300">
-                {t("pleaseEnterLanguageData")}
-              </AlertDescription>
-            </Alert>
+            <div>
+              <EnvironmentAlert />
+            </div>
+            <div>
+              <LanguageDataAlert />
+            </div>
 
             {/* Pricing Card Preview */}
             <PricingCardPreview

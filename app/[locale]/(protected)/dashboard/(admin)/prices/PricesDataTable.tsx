@@ -35,6 +35,7 @@ import { PlusCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { columns } from "./Columns";
+import { GroupManagementDialog } from "./GroupManagementDialog";
 
 type PricingPlan = typeof pricingPlansSchema.$inferSelect;
 
@@ -139,15 +140,18 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
           </Select>
         </div>
 
-        <Button asChild className="highlight-button">
-          <I18nLink
-            href="/dashboard/prices/new"
-            title="Create New Plan"
-            prefetch={false}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> Create New Plan
-          </I18nLink>
-        </Button>
+        <div className="flex items-center gap-2">
+          <GroupManagementDialog plans={data} />
+          <Button asChild className="highlight-button">
+            <I18nLink
+              href="/dashboard/prices/new"
+              title="Create New Plan"
+              prefetch={false}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> Create New Plan
+            </I18nLink>
+          </Button>
+        </div>
       </div>
       <div className="relative min-h-[200px] max-h-[calc(100vh-200px)] overflow-auto rounded-md border">
         <Table>

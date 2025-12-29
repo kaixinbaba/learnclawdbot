@@ -49,6 +49,20 @@ export const columns: ColumnDef<PricingPlan>[] = [
     ),
   },
   {
+    accessorKey: "groupSlug",
+    header: "Group",
+    minSize: 100,
+    cell: ({ row }) => {
+      const groupSlug = row.getValue("groupSlug") as string;
+      return (
+        <Badge variant="outline" className="font-mono text-xs">
+          {groupSlug}
+        </Badge>
+      );
+    },
+    enableSorting: true,
+  },
+  {
     accessorKey: "isActive",
     header: "Status",
     cell: ({ row }) => {

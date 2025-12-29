@@ -141,6 +141,20 @@
       "when": 1766921476962,
       "tag": "0019_shiny_stick",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1766993499648,
+      "tag": "0020_clever_boomer",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1766994265274,
+      "tag": "0021_calm_excalibur",
+      "breakpoints": true
     }
   ]
 }

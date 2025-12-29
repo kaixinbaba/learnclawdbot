@@ -1,3 +1,6 @@
+import { pricingPlanGroups } from '@/lib/db/schema';
+
+export type PricingPlanGroup = typeof pricingPlanGroups.$inferSelect;
 
 export interface PricingPlanFeature {
   description: string;

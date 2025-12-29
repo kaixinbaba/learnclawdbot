@@ -169,9 +169,22 @@ export const recurringIntervalEnum = pgEnum('recurring_interval', [
 ])
 export type RecurringInterval = (typeof recurringIntervalEnum.enumValues)[number]
 
+// Pricing plan groups for organizing plans
+// Using slug as primary key for simplicity and easier querying
+export const pricingPlanGroups = pgTable('pricing_plan_groups', {
+  slug: varchar('slug', { length: 100 }).primaryKey(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+})
+
 export const pricingPlans = pgTable('pricing_plans', {
   id: uuid('id').primaryKey().defaultRandom(),
   environment: pricingPlanEnvironmentEnum('environment').notNull(),
+  groupSlug: varchar('group_slug', { length: 100 })
+    .references(() => pricingPlanGroups.slug, { onDelete: 'restrict' })
+    .default('default')
+    .notNull(),
   cardTitle: text('card_title').notNull(),
   cardDescription: text('card_description'),
   provider: providerEnum('provider').default('none'),

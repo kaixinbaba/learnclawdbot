@@ -145,6 +145,7 @@ export async function createPricingPlanAction({
       .insert(pricingPlansSchema)
       .values({
         environment: planData.environment,
+        groupSlug: planData.groupSlug || 'default',
         cardTitle: planData.cardTitle,
         cardDescription: planData.cardDescription,
         provider: planData.provider,
@@ -155,8 +156,8 @@ export async function createPricingPlanAction({
         creemDiscountCode: planData.creemDiscountCode,
         enableManualInputCoupon:
           planData.enableManualInputCoupon ?? false,
-        paymentType: planData.paymentType,
-        recurringInterval: planData.recurringInterval,
+        paymentType: planData.paymentType || null,
+        recurringInterval: planData.recurringInterval || null,
         price: planData.price?.toString() || null,
         currency: planData.currency?.toUpperCase() || null,
         displayPrice: planData.displayPrice,
@@ -268,7 +269,11 @@ export async function updatePricingPlanAction({
 
     planData.currency = planData.currency?.toUpperCase() || null
 
-    const dataToUpdate: { [key: string]: any } = { ...planData }
+    const dataToUpdate: { [key: string]: any } = {
+      ...planData,
+      paymentType: planData.paymentType || null,
+      recurringInterval: planData.recurringInterval || null,
+    }
 
     if (dataToUpdate.price) {
       dataToUpdate.price = dataToUpdate.price.toString()
@@ -289,6 +294,9 @@ export async function updatePricingPlanAction({
     if (planData.benefitsJsonb !== undefined) {
       dataToUpdate.benefitsJsonb =
         (planData.benefitsJsonb || {})
+    }
+    if (planData.groupSlug !== undefined) {
+      dataToUpdate.groupSlug = planData.groupSlug || 'default'
     }
 
     const [updatedPlan] = await db

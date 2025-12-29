@@ -10,11 +10,10 @@ import 'server-only';
 type PricingPlan = typeof pricingPlansSchema.$inferSelect
 
 /**
- * Public List
+ * Public List - Returns all active pricing plans for the current environment
+ * Filtering by groupSlug is handled on the frontend for better flexibility and caching
  */
-export async function getPublicPricingPlans(): Promise<
-  ActionResult<PricingPlan[]>
-> {
+export async function getPublicPricingPlans(): Promise<ActionResult<PricingPlan[]>> {
   if (!isDatabaseEnabled) {
     return actionResponse.success([])
   }
