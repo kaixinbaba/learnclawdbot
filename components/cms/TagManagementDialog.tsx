@@ -163,7 +163,7 @@ export function TagManagementDialog({ postType }: { postType: PostType }) {
             />
           </div>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0 overflow-hidden">
             {isLoading && tags.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-40 gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
