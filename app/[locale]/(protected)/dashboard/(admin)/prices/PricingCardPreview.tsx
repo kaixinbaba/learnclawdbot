@@ -1,6 +1,6 @@
 "use client";
 
-import { PricingCardDisplay } from "@/components/home/PricingCardDisplay";
+import { PricingCardDisplay } from "@/components/pricing";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

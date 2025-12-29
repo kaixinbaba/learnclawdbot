@@ -1,4 +1,4 @@
-import PricingCTA from "@/components/home/PricingCTA";
+import PricingCTA from "@/components/pricing/PricingCTA";
 import { pricingPlans as pricingPlansSchema } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
 import { PricingPlanFeature, PricingPlanTranslation } from "@/types/pricing";
@@ -97,3 +97,4 @@ export function PricingCardDisplay({
     </div>
   );
 }
+

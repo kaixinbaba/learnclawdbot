@@ -2,9 +2,9 @@ import CTA from "@/components/home/CTA";
 import FAQ from "@/components/home/FAQ";
 import Features from "@/components/home/Features";
 import Hero from "@/components/home/Hero";
-import Pricing from "@/components/home/Pricing";
 import Testimonials from "@/components/home/Testimonials";
 import UseCases from "@/components/home/UseCases";
+import { PricingByGroup } from "@/components/pricing";
 import { BG1 } from "@/components/shared/BGs";
 import { getMessages } from "next-intl/server";
 
@@ -21,7 +21,7 @@ export default async function HomeComponent() {
 
       {messages.Landing.UseCases && <UseCases />}
 
-      {messages.Landing.Pricing && <Pricing />}
+      {messages.Pricing && <PricingByGroup />}
 
       {messages.Landing.Testimonials && <Testimonials />}
 

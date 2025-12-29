@@ -174,3 +174,4 @@ export default function PricingCTA({ plan, localizedPlan }: Params) {
     </div>
   );
 }
+

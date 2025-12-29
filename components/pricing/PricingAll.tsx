@@ -1,14 +1,16 @@
 /**
  * Tips:
- * Use this component if you need to display all active pricing cards at once
- * If you want to display different pricing cards based on different payment types (monthly, annual, one_time), use Pricing.tsx
+ * 1. if you need to display all active pricing cards at once, use PricingAll.tsx
+ * 2. If you want to display pricing cards by group_slug, use PricingByGroup.tsx (recommended)
+ * 3. If you want to display different pricing cards based on different payment types (monthly, annual, one_time), use PricingByPaymentType.tsx
  *
  * 提示：
- * 如果你希望一次性展示所有定价卡片，请使用这个组件
- * 如果你希望根据不同的支付类型（monthly, annual, one_time）来展示不同的定价卡片，请使用 Pricing.tsx
+ * 1. 如果你希望一次性展示所有定价卡片，请使用 PricingAll.tsx (这个组件)
+ * 2. 如果你希望根据 group_slug 字段来分组展示定价卡片，请使用 PricingByGroup.tsx (推荐方式)
+ * 3. 如果你希望根据不同的支付类型（monthly, annual, one_time）来展示不同的定价卡片，请使用 PricingByPaymentType.tsx
  */
 import { getPublicPricingPlans } from "@/actions/prices/public";
-import { PricingCardDisplay } from "@/components/home/PricingCardDisplay";
+import { PricingCardDisplay } from "@/components/pricing/PricingCardDisplay";
 import FeatureBadge from "@/components/shared/FeatureBadge";
 import { DEFAULT_LOCALE } from "@/i18n/routing";
 import { pricingPlans as pricingPlansSchema } from "@/lib/db/schema";
@@ -18,7 +20,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 type PricingPlan = typeof pricingPlansSchema.$inferSelect;
 
 export default async function PricingAll() {
-  const t = await getTranslations("Landing.Pricing");
+  const t = await getTranslations("Pricing");
 
   const locale = await getLocale();
 
