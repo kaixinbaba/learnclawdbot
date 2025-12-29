@@ -3,7 +3,7 @@
 import Blockquote from "@tiptap/extension-blockquote";
 import Bold from "@tiptap/extension-bold";
 import BulletList from "@tiptap/extension-bullet-list";
-import CodeBlock from "@tiptap/extension-code-block";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Heading from "@tiptap/extension-heading";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import TiptapImage from "@tiptap/extension-image";
@@ -19,6 +19,7 @@ import Underline from "@tiptap/extension-underline";
 import Youtube from "@tiptap/extension-youtube";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { common, createLowlight } from "lowlight";
 import { useEffect } from "react";
 import { Markdown } from "tiptap-markdown";
 import { ImageGrid } from "./ImageGridExtension";
@@ -103,7 +104,13 @@ export function TiptapRenderer({ content }: TiptapRendererProps) {
           class: "border-l-4 border-primary pl-4 italic my-4",
         },
       }),
-      CodeBlock,
+      CodeBlockLowlight.configure({
+        lowlight: createLowlight(common),
+        defaultLanguage: "plaintext",
+        HTMLAttributes: {
+          class: "code-block-lowlight",
+        },
+      }),
       HorizontalRule.configure({
         HTMLAttributes: {
           class: "my-8 border-border",
@@ -127,7 +134,7 @@ export function TiptapRenderer({ content }: TiptapRendererProps) {
       }),
       TableCell.configure({
         HTMLAttributes: {
-          class: "border border-border p-3",
+          class: "border border-border p-2",
         },
       }),
       Markdown.configure({
@@ -151,7 +158,15 @@ export function TiptapRenderer({ content }: TiptapRendererProps) {
     editorProps: {
       attributes: {
         class:
-          "prose dark:prose-invert lg:prose-lg prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-img:rounded-xl prose-img:shadow-md max-w-none focus:outline-none",
+          "prose dark:prose-invert max-w-none focus:outline-none " +
+          "prose-p:leading-normal prose-p:my-2 " +
+          "prose-headings:font-semibold prose-headings:tracking-tight " +
+          "prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl " +
+          "prose-li:my-0.5 " +
+          "prose-blockquote:not-italic prose-blockquote:font-normal prose-blockquote:text-muted-foreground prose-blockquote:border-l-4 prose-blockquote:border-primary/50 " +
+          "[&_blockquote_p]:before:content-none [&_blockquote_p]:after:content-none " +
+          "[&_td_p]:my-0 [&_th_p]:my-0 " +
+          "lg:prose-lg",
       },
     },
   });

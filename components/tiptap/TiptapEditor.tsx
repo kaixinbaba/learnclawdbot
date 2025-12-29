@@ -7,7 +7,7 @@ import { getErrorMessage } from "@/lib/error-utils";
 import Blockquote from "@tiptap/extension-blockquote";
 import Bold from "@tiptap/extension-bold";
 import BulletList from "@tiptap/extension-bullet-list";
-import CodeBlock from "@tiptap/extension-code-block";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Heading from "@tiptap/extension-heading";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import TiptapImage from "@tiptap/extension-image";
@@ -24,6 +24,7 @@ import Underline from "@tiptap/extension-underline";
 import Youtube from "@tiptap/extension-youtube";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { common, createLowlight } from "lowlight";
 import {
   Bold as BoldIcon,
   Cloud,
@@ -157,7 +158,17 @@ export function TiptapEditor({
       OrderedList,
       ListItem,
       ...(enableBlockquote ? [Blockquote] : []),
-      ...(enableCodeBlock ? [CodeBlock] : []),
+      ...(enableCodeBlock
+        ? [
+            CodeBlockLowlight.configure({
+              lowlight: createLowlight(common),
+              defaultLanguage: "plaintext",
+              HTMLAttributes: {
+                class: "code-block-lowlight",
+              },
+            }),
+          ]
+        : []),
       ...(enableHorizontalRule ? [HorizontalRule] : []),
       ...(enableTable
         ? [
@@ -1183,7 +1194,16 @@ export function TiptapEditor({
       >
         <EditorContent
           editor={editor}
-          className="prose dark:prose-invert max-w-none focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[350px]"
+          className="prose dark:prose-invert max-w-none focus:outline-none 
+          [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[350px]
+          prose-p:leading-normal prose-p:my-2
+          prose-headings:font-semibold prose-headings:tracking-tight
+          prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl
+          prose-li:my-0.5
+          prose-blockquote:not-italic prose-blockquote:font-normal prose-blockquote:text-muted-foreground prose-blockquote:border-l-4 prose-blockquote:border-primary/50
+          [&_blockquote_p]:before:content-none [&_blockquote_p]:after:content-none
+          [&_td_p]:my-0 [&_th_p]:my-0
+          "
         />
         {enableTable && <TableMenu editor={editor} />}
       </div>
