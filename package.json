@@ -17,7 +17,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx lib/db/seed/index.ts"
+    "db:seed": "tsx lib/db/seed/index.ts",
+    "db:export-pricing": "tsx lib/db/seed/export.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.6",
