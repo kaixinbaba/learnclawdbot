@@ -1,13 +1,10 @@
 import { listPublishedPostsAction } from "@/actions/posts/posts";
-import {
-  getViewCountAction,
-  incrementUniqueViewCountAction,
-  incrementViewCountAction,
-} from "@/actions/posts/views";
+import { getViewCountAction } from "@/actions/posts/views";
 import { ContentRestrictionMessage } from "@/components/cms/ContentRestrictionMessage";
 import { POST_CONFIGS } from "@/components/cms/post-config";
 import { PostCard } from "@/components/cms/PostCard";
 import { RelatedPosts } from "@/components/cms/RelatedPosts";
+import { ViewCounter } from "@/components/cms/ViewCounter";
 import { TableOfContents } from "@/components/tiptap/TableOfContents";
 import { TiptapRenderer } from "@/components/tiptap/TiptapRenderer";
 import { Button } from "@/components/ui/button";
@@ -96,19 +93,8 @@ export default async function GlossaryPage({ params }: { params: Params }) {
   const viewCountConfig = POST_CONFIGS.glossary.viewCount;
   let viewCount = 0;
 
-  if (viewCountConfig.enabled) {
-    // Choose counting mode based on config
-    if (viewCountConfig.mode === "unique") {
-      await incrementUniqueViewCountAction({
-        slug,
-        postType: "glossary",
-        locale,
-      });
-    } else {
-      await incrementViewCountAction({ slug, postType: "glossary", locale });
-    }
-
-    // Get view count
+  if (viewCountConfig.enabled && viewCountConfig.showInUI) {
+    // Only get view count for display, incrementing is done in Client Component
     const viewCountResult = await getViewCountAction({
       slug,
       postType: "glossary",
@@ -174,6 +160,12 @@ export default async function GlossaryPage({ params }: { params: Params }) {
 
   return (
     <div className="container mx-auto px-4 py-12">
+      <ViewCounter
+        slug={slug}
+        postType="glossary"
+        trackView={viewCountConfig.enabled}
+        trackMode={viewCountConfig.mode}
+      />
       <div className="flex gap-8">
         {/* Main Content */}
         <div className="flex-1 min-w-0">
@@ -335,7 +327,7 @@ export async function generateStaticParams() {
       postType: "glossary",
     });
     if (serverResult.success && serverResult.data?.posts) {
-      serverResult.data.posts.forEach((post) => {
+      serverResult.data.posts.forEach((post: { slug: string | null }) => {
         const slugPart = post.slug
           ?.replace(/^\//, "")
           .replace(/^glossary\//, "");
