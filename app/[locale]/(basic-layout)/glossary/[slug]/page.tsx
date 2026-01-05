@@ -37,9 +37,12 @@ export async function generateMetadata({
   params,
 }: MetadataProps): Promise<Metadata> {
   const { locale, slug } = await params;
-  const { post, error, errorCode } = await glossaryCms.getBySlug(slug, locale);
+  const { metadata: postMetadata } = await glossaryCms.getPostMetadata(
+    slug,
+    locale
+  );
 
-  if (!post) {
+  if (!postMetadata) {
     return constructMetadata({
       title: "404",
       description: "Page not found",
@@ -49,27 +52,30 @@ export async function generateMetadata({
     });
   }
 
-  const isContentRestricted = !!errorCode;
-
-  const metadataPath = post.slug.startsWith("/") ? post.slug : `/${post.slug}`;
+  const metadataPath = slug.startsWith("/") ? slug : `/${slug}`;
   const fullPath = `/glossary${metadataPath}`;
 
   // Detect which locales have this glossary entry available
   const availableLocales: string[] = [];
   for (const checkLocale of LOCALES) {
-    const { post: localePost } = await glossaryCms.getBySlug(slug, checkLocale);
-    if (localePost) {
+    const { metadata: localeMetadata } = await glossaryCms.getPostMetadata(
+      slug,
+      checkLocale
+    );
+    if (localeMetadata) {
       availableLocales.push(checkLocale);
     }
   }
 
   return constructMetadata({
-    title: post.title,
-    description: post.description,
-    images: post.featuredImageUrl ? [post.featuredImageUrl] : undefined,
+    title: postMetadata.title,
+    description: postMetadata.description || undefined,
+    images: postMetadata.featuredImageUrl
+      ? [postMetadata.featuredImageUrl]
+      : undefined,
     locale: locale as Locale,
     path: fullPath,
-    noIndex: isContentRestricted,
+    noIndex: postMetadata.visibility !== "public",
     availableLocales:
       availableLocales.length > 0 ? availableLocales : undefined,
     useDefaultOgImage: false, // Use dynamic opengraph-image.tsx when no featured image

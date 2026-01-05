@@ -694,6 +694,8 @@ interface GetPostMetadataParams {
 interface PostMetadata {
   title: string
   description: string | null
+  featuredImageUrl: string | null
+  visibility: string
 }
 
 interface GetPostMetadataResult {
@@ -725,6 +727,8 @@ export async function getPostMetadataAction({
       .select({
         title: postsSchema.title,
         description: postsSchema.description,
+        featuredImageUrl: postsSchema.featuredImageUrl,
+        visibility: postsSchema.visibility,
       })
       .from(postsSchema)
       .where(and(...conditions))
@@ -738,6 +742,8 @@ export async function getPostMetadataAction({
       metadata: {
         title: postData[0].title,
         description: postData[0].description,
+        featuredImageUrl: postData[0].featuredImageUrl,
+        visibility: postData[0].visibility,
       }
     })
   } catch (error) {

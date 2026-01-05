@@ -70,6 +70,8 @@ export interface GetPublishedListResult {
 export interface PostMetadata {
   title: string;
   description: string | null;
+  featuredImageUrl: string | null;
+  visibility: string;
 }
 
 export interface GetMetadataResult {
@@ -244,6 +246,8 @@ export function createCmsModule(postType: PostType) {
                 metadata: {
                   title: data.title,
                   description: data.description || null,
+                  featuredImageUrl: data.featuredImageUrl || null,
+                  visibility: data.visibility || 'public',
                 },
               };
             }
