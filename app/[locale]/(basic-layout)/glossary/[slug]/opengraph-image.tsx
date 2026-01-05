@@ -18,9 +18,9 @@ type Props = {
 
 export default async function Image({ params }: Props) {
   const { locale, slug } = await params;
-  const { post } = await glossaryCms.getBySlug(slug, locale);
+  const { metadata } = await glossaryCms.getPostMetadata(slug, locale);
 
-  if (!post) {
+  if (!metadata) {
     // Return a default image if post not found
     return new ImageResponse(
       (
@@ -52,7 +52,9 @@ export default async function Image({ params }: Props) {
 
   // Truncate title if too long (max 2 lines)
   const title =
-    post.title.length > 60 ? post.title.substring(0, 60) + "..." : post.title;
+    metadata.title.length > 60
+      ? metadata.title.substring(0, 60) + "..."
+      : metadata.title;
 
   return new ImageResponse(
     (

@@ -681,6 +681,75 @@ interface GetRelatedPostsResult {
   error?: string
 }
 
+/**
+ * Get post metadata (title and description) for OpenGraph images
+ * No authentication required - only fetches public metadata
+ */
+interface GetPostMetadataParams {
+  slug: string
+  postType: PostType
+  locale?: string
+}
+
+interface PostMetadata {
+  title: string
+  description: string | null
+}
+
+interface GetPostMetadataResult {
+  success: boolean
+  data?: {
+    metadata?: PostMetadata
+  }
+  error?: string
+}
+
+export async function getPostMetadataAction({
+  slug,
+  postType,
+  locale = 'en',
+}: GetPostMetadataParams): Promise<GetPostMetadataResult> {
+  if (!slug) {
+    return actionResponse.badRequest('Slug is required.')
+  }
+
+  try {
+    const conditions = [
+      eq(postsSchema.slug, slug),
+      eq(postsSchema.language, locale),
+      eq(postsSchema.status, 'published'),
+      eq(postsSchema.postType, postType)
+    ]
+
+    const postData = await db
+      .select({
+        title: postsSchema.title,
+        description: postsSchema.description,
+      })
+      .from(postsSchema)
+      .where(and(...conditions))
+      .limit(1)
+
+    if (!postData || postData.length === 0) {
+      return actionResponse.notFound('Post not found.')
+    }
+
+    return actionResponse.success({
+      metadata: {
+        title: postData[0].title,
+        description: postData[0].description,
+      }
+    })
+  } catch (error) {
+    console.error(
+      `Get Post Metadata Action Failed for slug ${slug}, locale ${locale}:`,
+      error
+    )
+    const errorMessage = getErrorMessage(error)
+    return actionResponse.error(errorMessage)
+  }
+}
+
 export async function getRelatedPostsAction({
   postId,
   postType,

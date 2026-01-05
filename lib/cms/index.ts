@@ -1,4 +1,4 @@
-import { getPublishedPostBySlugAction, listPublishedPostsAction } from '@/actions/posts/posts';
+import { getPostMetadataAction, getPublishedPostBySlugAction, listPublishedPostsAction } from '@/actions/posts/posts';
 import { POST_CONFIGS } from '@/components/cms/post-config';
 import { DEFAULT_LOCALE } from '@/i18n/routing';
 import { PostType } from '@/lib/db/schema';
@@ -65,6 +65,15 @@ export interface GetListResult {
 export interface GetPublishedListResult {
   posts: PublicPost[];
   count: number;
+}
+
+export interface PostMetadata {
+  title: string;
+  description: string | null;
+}
+
+export interface GetMetadataResult {
+  metadata: PostMetadata | null;
 }
 
 /**
@@ -208,10 +217,60 @@ export function createCmsModule(postType: PostType) {
     return { posts: [], count: 0 };
   }
 
+  /**
+   * Get post metadata (title and description) for OpenGraph images
+   * No authentication required - lightweight query for OG image generation
+   */
+  async function getPostMetadata(
+    slug: string,
+    locale: string = DEFAULT_LOCALE
+  ): Promise<GetMetadataResult> {
+    // Try local filesystem first if localDirectory is configured
+    if (localDirectory) {
+      const postsDirectory = path.join(process.cwd(), localDirectory, locale);
+      if (fs.existsSync(postsDirectory)) {
+        const filenames = await fs.promises.readdir(postsDirectory);
+        for (const filename of filenames) {
+          const fullPath = path.join(postsDirectory, filename);
+          try {
+            const fileContents = await fs.promises.readFile(fullPath, 'utf8');
+            const { data } = matter(fileContents);
+
+            const localSlug = (data.slug || '').replace(/^\//, '').replace(/\/$/, '');
+            const targetSlug = slug.replace(/^\//, '').replace(/\/$/, '');
+
+            if (localSlug === targetSlug && data.status !== 'draft') {
+              return {
+                metadata: {
+                  title: data.title,
+                  description: data.description || null,
+                },
+              };
+            }
+          } catch (error) {
+            console.error(`Error processing local file ${filename}:`, error);
+          }
+        }
+      }
+    }
+
+    // Fall back to server
+    const serverResult = await getPostMetadataAction({ slug, locale, postType });
+
+    if (serverResult.success && serverResult.data?.metadata) {
+      return {
+        metadata: serverResult.data.metadata,
+      };
+    }
+
+    return { metadata: null };
+  }
+
   return {
     getBySlug,
     getLocalList,
     getPublishedList,
+    getPostMetadata,
   };
 }
 
