@@ -335,7 +335,6 @@ export async function generateStaticParams() {
     const serverResult = await listPublishedPostsAction({
       locale: locale,
       pageSize: 1000,
-      visibility: "public",
       postType: "blog",
     });
     if (serverResult.success && serverResult.data?.posts) {
