@@ -24,8 +24,8 @@ type Feature = {
 const FeatureCard = ({ feature }: { feature: Feature }) => {
   return (
     <div key={feature.title} className="w-full py-4">
-      <div className="container mx-auto">
-        <div className="grid container p-8 grid-cols-1 gap-8 items-center lg:grid-cols-2">
+      <div className=" mx-auto">
+        <div className="grid  px-8 py-4 md:py-8 grid-cols-1 gap-8 items-center lg:grid-cols-2">
           <div className="flex gap-10 flex-col">
             <div className="flex gap-4 flex-col">
               <div className="flex gap-2 flex-col">
