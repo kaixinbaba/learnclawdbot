@@ -1,5 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import * as schema from './schema';
 
 interface DBConfig {
   connectionString: string;
@@ -35,32 +36,32 @@ export function createDatabaseConfig(config: DBConfig) {
   const platformConfigs = {
     // Serverless platform configuration
     vercel: {
-      max: 1,
+      max: 3,
       prepare: false,
-      idle_timeout: 0,
-      max_lifetime: 0,
-      connect_timeout: 10,
+      idle_timeout: 20,
+      max_lifetime: 60 * 30,
+      connect_timeout: 15,
     },
     netlify: {
-      max: 1,
+      max: 3,
       prepare: false,
-      idle_timeout: 0,
-      max_lifetime: 0,
-      connect_timeout: 10,
+      idle_timeout: 20,
+      max_lifetime: 60 * 30,
+      connect_timeout: 15,
     },
     lambda: {
-      max: 1,
+      max: 3,
       prepare: false,
-      idle_timeout: 0,
-      max_lifetime: 0,
-      connect_timeout: 15,
+      idle_timeout: 20,
+      max_lifetime: 60 * 30,
+      connect_timeout: 30,
     },
     // long running server
     server: {
       max: 30,
       prepare: true,
-      idle_timeout: 600,
-      max_lifetime: 7200,
+      idle_timeout: 300,
+      max_lifetime: 3600,
       connect_timeout: 30,
     },
   };
@@ -70,20 +71,28 @@ export function createDatabaseConfig(config: DBConfig) {
     supabase: {
       ssl: 'require' as const,
       application_name: 'drizzle-supabase',
+      // PostgreSQL connection parameters
+      // See: https://www.postgresql.org/docs/current/runtime-config-client.html
+      connection: {
+        statement_timeout: 30000,
+      },
     },
     neon: {
       ssl: 'require' as const,
       application_name: 'drizzle-neon',
-      // Neon special optimization
-      ...(platform === 'vercel' && { prepare: false }),
+      prepare: false,
+      connect_timeout: 20,
     },
     'aws-rds': {
       ssl: 'require' as const,
       application_name: 'drizzle-aws',
+      keepalive: true,
+      idle_timeout: 60,
     },
     'gcp-sql': {
       ssl: 'require' as const,
       application_name: 'drizzle-gcp',
+      keepalive: true,
     },
     'self-hosted': {
       ssl: false,
@@ -126,7 +135,7 @@ export function createDatabase(config: DBConfig) {
   // console.log(`   Prepare statements: ${connectionConfig.prepare}`);
   // console.log(`   SSL: ${connectionConfig.ssl}`);
 
-  return drizzle(client);
+  return drizzle(client, { schema });
 }
 
 export function previewConfig(config: DBConfig) {
