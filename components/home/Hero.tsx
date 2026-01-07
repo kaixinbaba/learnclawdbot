@@ -28,7 +28,7 @@ export default function Hero() {
               {t("description")}
             </p>
           </div>
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button
               asChild
               className="h-11 rounded-xl px-8 py-2 text-white border-2 border-primary"
