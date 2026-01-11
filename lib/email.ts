@@ -4,12 +4,20 @@ export type EmailValidationError =
   | 'disposable_email_not_allowed'
   | 'invalid_characters';
 
-const EMAIL_REGEX = /^(?=[a-zA-Z0-9@._%+-]{6,254}$)[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,8}[a-zA-Z]{2,63}$/;
+// Allows: letters, numbers, and special chars: .!#$%&'*+/=?^_`{|}~-
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
 export function validateEmail(email: string): {
   isValid: boolean;
   error?: EmailValidationError;
 } {
+  if (!email || email.length < 3 || email.length > 254) {
+    return {
+      isValid: false,
+      error: 'invalid_email_format'
+    };
+  }
+
   if (!EMAIL_REGEX.test(email)) {
     return {
       isValid: false,
@@ -18,14 +26,15 @@ export function validateEmail(email: string): {
   }
 
   const [localPart, domain] = email.split('@');
-  if (domain.length > 255 || localPart.length > 64) {
+  if (!localPart || !domain || localPart.length > 64 || domain.length > 255) {
     return {
       isValid: false,
       error: 'email_part_too_long'
     };
   }
 
-  if (/[<>()[\]\\.,;:\s@"]+/.test(localPart)) {
+  // Only block truly dangerous characters that should never be in emails
+  if (/[<>()[\]\\\s]/.test(localPart)) {
     return {
       isValid: false,
       error: 'invalid_characters'
