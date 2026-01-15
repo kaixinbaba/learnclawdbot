@@ -27,13 +27,14 @@ import { and, eq, inArray } from 'drizzle-orm';
 /**
  * Converts an amount from cents/smallest unit to currency string.
  * Handles null/undefined values gracefully.
+ * Uses toFixed(2) to ensure consistent decimal formatting and avoid floating-point display issues.
  * 
  * @param amount - Amount in smallest currency unit (e.g., cents for USD)
  * @returns Currency amount as string (e.g., "10.00" for 1000 cents)
  */
 export function toCurrencyAmount(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return '0';
-  return (amount / 100).toString();
+  if (amount === null || amount === undefined) return '0.00';
+  return (amount / 100).toFixed(2);
 }
 
 /**
