@@ -298,9 +298,9 @@ sql`...`                    // Raw SQL
 ## Checklist
 
 1. Define table in `lib/db/schema.ts`
-2. Add appropriate indexes for query patterns
+2. **Index assessment**: Evaluate indexes for foreign keys, WHERE/ORDER BY columns to prevent full table scans
 3. Run `pnpm db:generate` to create migration
-4. Run `pnpm db:migrate` to apply migration
+4. Run `pnpm db:migrate` to apply migration (**manual execution required, may affect production**)
 5. Use typed imports from schema
 6. Use transactions for multi-step operations
 7. Handle errors and log appropriately

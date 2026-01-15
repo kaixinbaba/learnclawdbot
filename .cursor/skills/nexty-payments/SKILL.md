@@ -347,6 +347,18 @@ CREEM_WEBHOOK_SECRET
 CREEM_API_BASE_URL
 ```
 
+## Money Calculation
+
+⚠️ **Use integers (cents) for all calculations** - JS floats lose precision (`19.99 * 3 = 59.97000000000001`)
+
+```typescript
+import { toCurrencyAmount, toCents } from '@/lib/payments/webhook-helpers';
+toCurrencyAmount(1999); // "19.99"
+toCents("19.99");       // 1999
+```
+
+> See `./money-calculation.md` for details
+
 ## Checklist
 
 1. Store `userId` and `planId` in checkout metadata
@@ -356,4 +368,5 @@ CREEM_API_BASE_URL
 5. Log errors with context (userId, orderId)
 6. Test webhooks locally with CLI tools
 7. Verify webhook signatures before processing
+8. Use integers (cents) for money calculations
 

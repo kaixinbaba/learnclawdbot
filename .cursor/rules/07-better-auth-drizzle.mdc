@@ -15,3 +15,4 @@ alwaysApply: false
 - Magic link emails must go through `actions/resend` with existing emails (`emails/magic-link-email.tsx`).
 - Trusted origins: update `trustedOrigins` in `lib/auth/index.ts` if adding domains.
 - Keep `generateId` as `crypto.randomUUID()` for consistency with existing schema.
+- **Index Impact Assessment**: Every schema modification (new tables, new columns, new queries) MUST evaluate index requirements. Missing indexes cause full table scans that degrade performance at scale. Always index: foreign keys, columns in WHERE/JOIN conditions, columns used for ORDER BY. Run `EXPLAIN ANALYZE` on critical queries after deployment to verify index usage.

@@ -239,6 +239,25 @@ CREEM_API_BASE_URL  # Optional: defaults to https://api.creem.io/v1
 
 ## Best Practices
 
+### Money Calculation Safety ⚠️
+
+**JavaScript float precision issues cause monetary calculation errors. Always follow these rules:**
+
+1. **Always use integers (cents)** for internal calculations and storage
+2. **Use `Math.round()`** when converting to eliminate float errors
+3. **Use `.toFixed(2)`** for display formatting
+4. **Use project utilities**: `toCents()`, `toCurrencyAmount()`
+
+```typescript
+// ❌ Wrong: direct float calculation
+const total = 19.99 * 3; // 59.97000000000001
+
+// ✅ Correct: integer calculation
+const totalCents = 1999 * 3; // 5997
+```
+
+> See `15-money-calculation.mdc` for details
+
 ### Metadata Usage
 Always store `userId` and `planId` in metadata when creating checkout sessions or subscriptions:
 - **Stripe**: Pass in `metadata` parameter when creating checkout sessions
