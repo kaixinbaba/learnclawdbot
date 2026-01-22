@@ -37,7 +37,7 @@ export default async function ForbiddenPage({ params }: { params: Params }) {
         <h1 className="text-2xl font-bold text-red-600 mb-4">{t("title")}</h1>
         <p className="mb-6">{t("description")}</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button asChild className="px-4 py-2 highlight-button">
+          <Button asChild className="px-4 py-2">
             <I18nLink href={t("button.href")} title={t("button.name")}>
               {t("button.name")}
             </I18nLink>

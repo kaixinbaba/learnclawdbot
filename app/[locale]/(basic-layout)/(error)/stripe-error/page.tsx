@@ -46,7 +46,7 @@ export default async function StripeErrorPage({
         <h1 className="text-2xl font-bold text-red-600 mb-4">{t("title")}</h1>
         <p className="mb-6">{message}</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button asChild className="px-4 py-2 highlight-button">
+          <Button asChild className="px-4 py-2">
             <I18nLink href="/" title={t("goToHome")}>
               {t("goToHome")}
             </I18nLink>

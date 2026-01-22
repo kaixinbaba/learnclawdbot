@@ -29,7 +29,7 @@ const Header = async () => {
             <Image src="/logo.png" alt="Logo" width={28} height={28} />
             <span
               className={cn(
-                "text-xl font-semibold highlight-text font-science-gothic"
+                "text-xl font-semibold text-primary font-science-gothic"
               )}
             >
               {t("title")}

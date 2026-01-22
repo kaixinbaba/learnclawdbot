@@ -142,7 +142,7 @@ export function PricesDataTable<TData extends PricingPlan, TValue>({
 
         <div className="flex items-center gap-2">
           <GroupManagementDialog plans={data} />
-          <Button asChild className="highlight-button">
+          <Button asChild>
             <I18nLink
               href="/dashboard/prices/new"
               title="Create New Plan"

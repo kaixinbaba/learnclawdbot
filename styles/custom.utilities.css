@@ -54,16 +54,6 @@
     @apply bg-clip-text bg-linear-to-b from-foreground to-muted-foreground text-transparent;
   }
 }
-@utility highlight-text {
-  @apply text-primary dark:text-primary;
-}
-@utility highlight-bg {
-  @apply bg-primary dark:bg-primary text-white;
-}
-@utility highlight-button {
-  @apply text-white dark:text-white px-8 py-3 rounded-lg font-medium text-center shadow-lg transition-all duration-200;
-  @apply bg-primary dark:bg-primary;
-}
 @utility theme {
   --animate-rainbow: rainbow var(--speed, 2s) infinite linear;
 }

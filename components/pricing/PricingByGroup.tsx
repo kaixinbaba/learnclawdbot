@@ -147,7 +147,7 @@ export default async function PricingByGroup() {
               >
                 <span className="flex items-center gap-2">
                   {t("annual")}
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold highlight-text">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
                     <Gift className="w-4 h-4" />
                     {t("saveTip")}
                   </span>

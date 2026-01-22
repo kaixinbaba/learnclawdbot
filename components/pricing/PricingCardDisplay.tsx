@@ -44,7 +44,7 @@ export function PricingCardDisplay({
       {plan.isHighlighted && highlightText && (
         <div
           className={cn(
-            "absolute -top-px right-0 highlight-bg text-xs px-3 py-1 rounded-bl-lg rounded-tr-lg font-medium"
+            "absolute -top-px right-0 bg-primary text-primary-foreground text-xs px-3 py-1 rounded-bl-lg rounded-tr-lg font-medium"
           )}
         >
           {highlightText}
@@ -97,4 +97,3 @@ export function PricingCardDisplay({
     </div>
   );
 }
-

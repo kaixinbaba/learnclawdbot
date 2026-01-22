@@ -129,7 +129,7 @@ export default function PricingCTA({ plan, localizedPlan }: Params) {
         disabled={isLoading}
         className={`w-full flex items-center justify-center gap-2 py-5 font-medium ${
           plan.isHighlighted
-            ? "highlight-button"
+            ? ""
             : "bg-gray-900 text-white dark:bg-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100"
         } ${allowManualCoupon ? "mb-2" : "mb-6"}`}
         {...(!plan.buttonLink && {
@@ -174,4 +174,3 @@ export default function PricingCTA({ plan, localizedPlan }: Params) {
     </div>
   );
 }
-

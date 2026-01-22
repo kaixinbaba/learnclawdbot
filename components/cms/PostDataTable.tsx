@@ -162,7 +162,7 @@ export function PostDataTable<TData, TValue>({
         />
         <div className="flex space-x-2">
           {enableTags && <TagManagementDialog postType={postType} />}
-          <Button asChild className="highlight-button">
+          <Button asChild>
             <I18nLink href={createUrl} title="Create New Post" prefetch={false}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Create New Post

@@ -257,7 +257,7 @@ function SuccessContent() {
           className="flex flex-col sm:flex-row gap-3 w-full"
         >
           <Button
-            className="flex-1 highlight-button shadow-md hover:shadow-lg transition-all"
+            className="flex-1 shadow-md hover:shadow-lg transition-all"
             asChild
             size="lg"
           >

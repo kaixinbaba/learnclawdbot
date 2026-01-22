@@ -28,11 +28,7 @@ export default function LoginButton() {
 
   return (
     <>
-      <Button
-        onClick={handleLogin}
-        variant="default"
-        className={`highlight-button shadow-lg`}
-      >
+      <Button onClick={handleLogin} variant="default" className={`shadow-lg`}>
         {t("Button.signIn")}
       </Button>
 
