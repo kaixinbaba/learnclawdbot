@@ -9,9 +9,17 @@ const siteUrl = siteConfig.url
 type ChangeFrequency = 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never' | undefined
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static pages
+  // Static pages with locale
   const staticPages = [
     '',
+    '/moltbot',
+    '/about',
+  ]
+
+  // Non-localized pages
+  const nonLocalizedPages = [
+    '/privacy-policy',
+    '/terms-of-service',
   ]
 
   const pages = LOCALES.flatMap(locale => {
@@ -22,6 +30,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: page === '' ? 1.0 : 0.8,
     }))
   })
+
+  // Add non-localized pages
+  const nonLocalizedPageEntries = nonLocalizedPages.map(page => ({
+    url: `${siteUrl}${page}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as ChangeFrequency,
+    priority: 0.5,
+  }))
 
   const allBlogSitemapEntries: MetadataRoute.Sitemap = [];
 
@@ -110,6 +126,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...pages,
+    ...nonLocalizedPageEntries,
     ...uniqueBlogPostEntries,
     ...uniqueGlossaryEntries
   ]

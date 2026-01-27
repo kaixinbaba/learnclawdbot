@@ -4,6 +4,7 @@ import ConsentBanner from "@/components/shared/CookieConsent/ConsentBanner";
 import ConsentGate from "@/components/shared/CookieConsent/ConsentGate";
 import CrispChat from "@/components/support/CrispChat";
 import { TailwindIndicator } from "@/components/TailwindIndicator";
+import AhrefsAnalytics from "@/components/tracking/AhrefsAnalytics";
 import GoogleAdsense from "@/components/tracking/GoogleAdsense";
 import GoogleAnalytics from "@/components/tracking/GoogleAnalytics";
 import MicrosoftClarity from "@/components/tracking/MicrosoftClarity";
@@ -92,8 +93,8 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider
             attribute="class"
-            defaultTheme={siteConfig.defaultNextTheme}
-            enableSystem
+            defaultTheme="dark"
+            forcedTheme="dark"
           >
             <PostHogProvider>
               {messages.LanguageDetection && <LanguageDetectionAlert />}
@@ -115,6 +116,7 @@ export default async function LocaleLayout({
                   <PlausibleAnalytics />
                   <RybbitScript />
                   <UmamiScript />
+                  <AhrefsAnalytics />
                   <ConsentGate>
                     <GoogleAnalytics />
                     <GoogleAdsense />
@@ -134,6 +136,7 @@ export default async function LocaleLayout({
                   <GoogleAnalytics />
                   <GoogleAdsense />
                   <MicrosoftClarity />
+                  <AhrefsAnalytics />
                   <RybbitScript />
                   <UmamiScript />
                   <PostHogPageView />

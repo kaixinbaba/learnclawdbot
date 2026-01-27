@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "Learn Moltbot",
-    "tagLine": "A Beginner-Friendly Guide to Moltbot",
-    "description": "Learn Moltbot is a beginner-friendly, third-party guide to help you understand and use Moltbot effectively."
+    "title": "Moltbot Guide: Email & Calendar Automation",
+    "tagLine": "Learn WhatsApp & Telegram AI Automation",
+    "description": "Master Moltbot (previously Clawdbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
   },
   "Login": {
     "title": "Welcome back",
@@ -137,12 +137,12 @@
     }
   },
   "About": {
-    "title": "About",
-    "description": "About Learn Moltbot"
+    "title": "About Moltbot: AI Automation Tool",
+    "description": "Master Moltbot (previously Clawdbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
   },
   "Moltbot": {
-    "title": "What is Moltbot?",
-    "description": "Learn about Moltbot - a new AI agent tool designed to perform tasks"
+    "title": "What is Moltbot: AI Automation Guide",
+    "description": "Master Moltbot (previously Clawdbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
   },
   "AIDemo": {
     "title": "AI Capabilities Demo",
@@ -226,7 +226,6 @@
     "About": "About",
     "PrivacyPolicy": "Privacy Policy",
     "TermsOfService": "Terms of Service",
-    "RefundPolicy": "Refund Policy",
     "Newsletter": {
       "title": "Subscribe to our newsletter",
       "description": "Stay up to date with our latest news.",

@@ -217,14 +217,6 @@ export default async function Footer() {
               >
                 {tFooter("TermsOfService")}
               </Link>
-              <Link
-                href="/refund-policy"
-                title={tFooter("RefundPolicy")}
-                prefetch={false}
-                className="text-gray-400 hover:text-white text-sm"
-              >
-                {tFooter("RefundPolicy")}
-              </Link>
             </div>
           </div>
         </div>

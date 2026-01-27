@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "Learn Moltbot",
-    "tagLine": "初心者向け Moltbot ガイド",
-    "description": "Learn Moltbot は、Moltbot を理解し効果的に使用するための初心者向けサードパーティガイドです。"
+    "title": "Moltbot ガイド：メールと予定の自動化",
+    "tagLine": "WhatsApp と Telegram で使える AI ツール",
+    "description": "Moltbot（旧名 Clawdbot）を完全に使いこなそう。WhatsAppやTelegramを使ってメール、カレンダー、フライト予約を自動化する方法を、ステップバイステップで解説します。"
   },
   "Login": {
     "title": "おかえりなさい",
@@ -137,12 +137,12 @@
     }
   },
   "About": {
-    "title": "概要",
-    "description": "Learn Moltbot について"
+    "title": "Moltbot について：AI 自動化ツール",
+    "description": "Moltbot（旧名 Clawdbot）を完全に使いこなそう。WhatsAppやTelegramを使ってメール、カレンダー、フライト予約を自動化する方法を、ステップバイステップで解説します。"
   },
   "Moltbot": {
-    "title": "Moltbot とは？",
-    "description": "Moltbot について学ぶ - タスクを実行するために設計された新しい AI エージェントツール"
+    "title": "Moltbot とは：AI 自動化ガイド",
+    "description": "Moltbot（旧名 Clawdbot）を完全に使いこなそう。WhatsAppやTelegramを使ってメール、カレンダー、フライト予約を自動化する方法を、ステップバイステップで解説します。"
   },
   "AIDemo": {
     "title": "AI機能デモ",
@@ -226,7 +226,6 @@
     "About": "サイトについて",
     "PrivacyPolicy": "プライバシーポリシー",
     "TermsOfService": "利用規約",
-    "RefundPolicy": "返金ポリシー",
     "Newsletter": {
       "title": "ニュースレターのご案内",
       "description": "最新情報を定期的にお届けいたします",

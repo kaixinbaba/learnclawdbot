@@ -1,7 +1,6 @@
 import HeaderLinks from "@/components/header/HeaderLinks";
 import MobileMenu from "@/components/header/MobileMenu";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link as I18nLink } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { getTranslations } from "next-intl/server";
@@ -37,7 +36,6 @@ const Header = async () => {
           {/* PC */}
           <div className="hidden lg:flex items-center gap-x-2">
             <LocaleSwitcher />
-            <ThemeToggle />
           </div>
 
           {/* Mobile */}
