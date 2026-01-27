@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "Moltbot ガイド：メールと予定の自動化",
-    "tagLine": "WhatsApp と Telegram で使える AI ツール",
-    "description": "Moltbot（旧名 Clawdbot）を完全に使いこなそう。WhatsAppやTelegramを使ってメール、カレンダー、フライト予約を自動化する方法を、ステップバイステップで解説します。"
+    "title": "Moltbot（旧 Clawdbot）学習ガイド",
+    "tagLine": "初心者向け完全ガイド",
+    "description": "Moltbot（旧 Clawdbot）の完全ガイド。お使いのチャットアプリを、複雑なワークフローや日常業務を自動処理する強力なAIアシスタントに変身させましょう。"
   },
   "Login": {
     "title": "おかえりなさい",
