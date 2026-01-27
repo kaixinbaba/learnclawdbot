@@ -2,7 +2,7 @@
 
 import { actionResponse } from '@/lib/action-response'
 import { isAdmin } from '@/lib/auth/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseEnabled } from '@/lib/db'
 import { PostType, tags as tagsSchema } from '@/lib/db/schema'
 import { getErrorMessage } from '@/lib/error-utils'
 import { Tag } from '@/types/cms'
@@ -38,6 +38,10 @@ export async function listTagsAction({
   query?: string
   postType?: PostType
 }): Promise<ListTagsResponse> {
+  if (!isDatabaseEnabled) {
+    return actionResponse.success({ tags: [] })
+  }
+
   try {
     const conditions = []
 

@@ -4,7 +4,7 @@ import { postActionSchema } from '@/components/cms/post-config'
 import { DEFAULT_LOCALE } from '@/i18n/routing'
 import { actionResponse } from '@/lib/action-response'
 import { getSession, isAdmin } from '@/lib/auth/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseEnabled } from '@/lib/db'
 import { posts as postsSchema, PostStatus, postTags as postTagsSchema, PostType, subscriptions as subscriptionsSchema, tags as tagsSchema } from '@/lib/db/schema'
 import { getErrorMessage } from '@/lib/error-utils'
 import { PostWithTags, PublicPost, PublicPostWithContent } from '@/types/cms'
@@ -464,6 +464,10 @@ export async function listPublishedPostsAction({
   visibility,
   locale = DEFAULT_LOCALE,
 }: ListPublishedPostsParams): Promise<ListPublishedPostsResult> {
+  if (!isDatabaseEnabled) {
+    return actionResponse.success({ posts: [], count: 0 })
+  }
+
   try {
     const conditions = [eq(postsSchema.status, 'published')]
     if (visibility) {

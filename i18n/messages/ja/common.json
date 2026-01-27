@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "NEXTY.DEV",
-    "tagLine": "最新の Next.js フルスタック SaaS テンプレート",
-    "description": "Next.js と Supabase を活用した本格的な SaaS 開発キット。コンテンツ配信、AI ツール、サブスクリプションサービスを迅速に構築できます。"
+    "title": "Learn Moltbot",
+    "tagLine": "初心者向け Moltbot ガイド",
+    "description": "Learn Moltbot は、Moltbot を理解し効果的に使用するための初心者向けサードパーティガイドです。"
   },
   "Login": {
     "title": "おかえりなさい",
@@ -113,7 +113,7 @@
   },
   "Blogs": {
     "title": "ブログ記事",
-    "description": "Next.jsエコシステムとNexty.devテンプレートの最新情報をお届けします。",
+    "description": "Moltbot に関するヒント、チュートリアル、インサイト。",
     "emptyState": {
       "title": "記事がありません",
       "description": "現在コンテンツを作成中です。もうしばらくお待ちください！"
@@ -137,8 +137,12 @@
     }
   },
   "About": {
-    "title": "About",
-    "description": "About the site"
+    "title": "概要",
+    "description": "Learn Moltbot について"
+  },
+  "Moltbot": {
+    "title": "Moltbot とは？",
+    "description": "Moltbot について学ぶ - タスクを実行するために設計された新しい AI エージェントツール"
   },
   "AIDemo": {
     "title": "AI機能デモ",
@@ -204,49 +208,16 @@
   "Header": {
     "links": [
       {
-        "name": "機能特性",
-        "href": "/#features"
-      },
-      {
-        "id": "pricing",
-        "name": "料金プラン",
-        "href": "/#pricing"
-      },
-      {
-        "name": "AI Demo",
-        "href": "/ai-demo"
+        "name": "Moltbot とは？",
+        "href": "/moltbot"
       },
       {
         "name": "ブログ",
         "href": "/blog"
       },
       {
-        "id": "demo",
-        "name": "Demo",
-        "href": "#",
-        "items": [
-          {
-            "name": "Nexty Demo",
-            "href": "https://demo.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Next.js SaaS Boilerplate"
-          },
-          {
-            "name": "AI Image Generator Demo",
-            "href": "https://flux-kontext.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "AI Image Generator Demo Based on NEXTY.DEV"
-          },
-          {
-            "name": "Directory Boilerplate Demo",
-            "href": "https://dofollow.tools/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Directory Boilerplate Demo Based on NEXTY.DEV"
-          }
-        ]
+        "name": "概要",
+        "href": "/about"
       }
     ]
   },
@@ -267,9 +238,9 @@
       },
       "unsubscribe": {
         "title": "ニュースレター配信停止",
-        "success": "Nextyニュースレターの配信停止が完了しました。",
+        "success": "Learn Moltbot ニュースレターの配信停止が完了しました。",
         "emailPrefix": "メールアドレス：",
-        "regretMessage": "いつでも再登録して、Nextyの最新アップデートやチュートリアルを受け取ることができます。",
+        "regretMessage": "いつでも再登録して、Learn Moltbot の最新アップデートやチュートリアルを受け取ることができます。",
         "errorGeneric": "配信停止の処理中にエラーが発生しました",
         "errorNoToken": "配信停止トークンが提供されていません",
         "errorMessage": "正しい配信停止リンクを使用していることをご確認ください。問題が解決しない場合は、サポートチームまでお問い合わせください。",
@@ -290,58 +261,28 @@
     "Links": {
       "groups": [
         {
-          "title": "製品",
+          "title": "学ぶ",
           "links": [
             {
-              "href": "/#features",
-              "name": "機能特性"
-            },
-            {
-              "id": "pricing",
-              "href": "/#pricing",
-              "name": "料金プラン"
+              "href": "/moltbot",
+              "name": "Moltbot とは？"
             },
             {
               "href": "/blog",
               "name": "ブログ"
-            },
-            {
-              "href": "/glossary",
-              "name": "用語集"
             }
           ]
         },
         {
-          "title": "サポート",
+          "title": "概要",
           "links": [
             {
-              "name": "Docs",
-              "href": "https://docs.nexty.dev/ja/docs",
-              "target": "_blank"
+              "href": "/about",
+              "name": "私たちについて"
             },
             {
-              "name": "Roadmap",
-              "href": "https://nexty.dev/ja/roadmap"
-            }
-          ]
-        },
-        {
-          "title": "言語",
-          "links": [
-            {
-              "href": "/en",
-              "name": "English",
-              "useA": true
-            },
-            {
-              "href": "/zh",
-              "name": "中文",
-              "useA": true
-            },
-            {
-              "href": "/ja",
-              "name": "日本語",
-              "useA": true
+              "href": "/privacy-policy",
+              "name": "プライバシーポリシー"
             }
           ]
         }

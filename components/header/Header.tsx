@@ -1,20 +1,14 @@
 import HeaderLinks from "@/components/header/HeaderLinks";
 import MobileMenu from "@/components/header/MobileMenu";
-import { UserAvatar } from "@/components/header/UserAvatar";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link as I18nLink } from "@/i18n/routing";
-import { getSession } from "@/lib/auth/server";
-import { user as userSchema } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
-type User = typeof userSchema.$inferSelect;
 
 const Header = async () => {
   const t = await getTranslations("Home");
-  const session = await getSession();
-  const user = session?.user;
 
   return (
     <header className="py-2 backdrop-blur-md sticky top-0 z-50">
@@ -44,12 +38,10 @@ const Header = async () => {
           <div className="hidden lg:flex items-center gap-x-2">
             <LocaleSwitcher />
             <ThemeToggle />
-            <UserAvatar user={user as User} />
           </div>
 
           {/* Mobile */}
           <div className="flex lg:hidden items-center gap-x-2">
-            <UserAvatar user={user as User} />
             <MobileMenu />
           </div>
         </div>

@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "NEXTY.DEV",
-    "tagLine": "A Modern Next.js Full-Stack SaaS Template",
-    "description": "A production-ready Next.js and Supabase starter template for building modern SaaS applications. Launch your content, AI, or subscription service faster."
+    "title": "Learn Moltbot",
+    "tagLine": "A Beginner-Friendly Guide to Moltbot",
+    "description": "Learn Moltbot is a beginner-friendly, third-party guide to help you understand and use Moltbot effectively."
   },
   "Login": {
     "title": "Welcome back",
@@ -113,7 +113,7 @@
   },
   "Blogs": {
     "title": "Blog Posts",
-    "description": "Insights on Next.js ecosystem and NEXTY.DEV template updates.",
+    "description": "Tips, tutorials, and insights about Moltbot.",
     "emptyState": {
       "title": "No blog posts",
       "description": "We are creating exciting content, please stay tuned!"
@@ -138,7 +138,11 @@
   },
   "About": {
     "title": "About",
-    "description": "About the site"
+    "description": "About Learn Moltbot"
+  },
+  "Moltbot": {
+    "title": "What is Moltbot?",
+    "description": "Learn about Moltbot - a new AI agent tool designed to perform tasks"
   },
   "AIDemo": {
     "title": "AI Capabilities Demo",
@@ -204,48 +208,16 @@
   "Header": {
     "links": [
       {
-        "name": "Features",
-        "href": "/#features"
-      },
-      {
-        "id": "pricing",
-        "name": "Pricing",
-        "href": "/#pricing"
-      },
-      {
-        "name": "AI Demo",
-        "href": "/ai-demo"
+        "name": "What is Moltbot?",
+        "href": "/moltbot"
       },
       {
         "name": "Blog",
         "href": "/blog"
       },
       {
-        "name": "Demo",
-        "href": "#",
-        "items": [
-          {
-            "name": "Nexty Demo",
-            "href": "https://demo.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Next.js SaaS Boilerplate"
-          },
-          {
-            "name": "AI Image Generator Demo",
-            "href": "https://flux-kontext.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "AI Image Generator Demo Based on NEXTY.DEV"
-          },
-          {
-            "name": "Directory Boilerplate Demo",
-            "href": "https://dofollow.tools/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Directory Boilerplate Demo Based on NEXTY.DEV"
-          }
-        ]
+        "name": "About",
+        "href": "/about"
       }
     ]
   },
@@ -266,9 +238,9 @@
       },
       "unsubscribe": {
         "title": "Newsletter Unsubscription",
-        "success": "You have successfully unsubscribed from Nexty newsletters.",
+        "success": "You have successfully unsubscribed from Learn Moltbot newsletters.",
         "emailPrefix": "Email:",
-        "regretMessage": "You can resubscribe anytime to receive the latest Nexty updates and tutorials.",
+        "regretMessage": "You can resubscribe anytime to receive the latest Learn Moltbot updates and tutorials.",
         "errorGeneric": "An error occurred while processing your unsubscribe request",
         "errorNoToken": "No unsubscribe token provided",
         "errorMessage": "Please make sure you're using the correct unsubscribe link. If the problem persists, contact our support team for assistance.",
@@ -289,58 +261,28 @@
     "Links": {
       "groups": [
         {
-          "title": "Products",
+          "title": "Learn",
           "links": [
             {
-              "href": "/#features",
-              "name": "Features"
-            },
-            {
-              "id": "pricing",
-              "href": "/#pricing",
-              "name": "Pricing"
+              "href": "/moltbot",
+              "name": "What is Moltbot?"
             },
             {
               "href": "/blog",
               "name": "Blog"
-            },
-            {
-              "href": "/glossary",
-              "name": "Glossary"
             }
           ]
         },
         {
-          "title": "Support",
+          "title": "About",
           "links": [
             {
-              "name": "Docs",
-              "href": "https://docs.nexty.dev/docs",
-              "target": "_blank"
+              "href": "/about",
+              "name": "About Us"
             },
             {
-              "name": "Roadmap",
-              "href": "https://nexty.dev/roadmap"
-            }
-          ]
-        },
-        {
-          "title": "Languages",
-          "links": [
-            {
-              "href": "/en",
-              "name": "English",
-              "useA": true
-            },
-            {
-              "href": "/zh",
-              "name": "中文",
-              "useA": true
-            },
-            {
-              "href": "/ja",
-              "name": "日本語",
-              "useA": true
+              "href": "/privacy-policy",
+              "name": "Privacy Policy"
             }
           ]
         }

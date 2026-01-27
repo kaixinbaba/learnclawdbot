@@ -1,11 +1,8 @@
 import FeatureBadge from "@/components/shared/FeatureBadge";
 import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/config/site";
 import { Link as I18nLink } from "@/i18n/routing";
-import { MousePointerClick } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
-import { SiDiscord } from "react-icons/si";
 
 export default function Hero() {
   const t = useTranslations("Landing.Hero");
@@ -34,32 +31,25 @@ export default function Hero() {
               className="h-11 rounded-xl px-8 py-2 text-white border-2 border-primary"
             >
               <I18nLink
-                href={t("getStartedLink") || "#"}
+                href={t("getStartedLink") || "/moltbot"}
                 className="flex items-center gap-2"
               >
-                <MousePointerClick className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4" />
                 {t("getStarted")}
               </I18nLink>
             </Button>
             <Button
-              className="h-11 rounded-xl px-8 py-2 bg-white hover:bg-background text-indigo-500 hover:text-indigo-600 border-2"
+              className="h-11 rounded-xl px-8 py-2 bg-white hover:bg-background text-primary hover:text-primary/80 border-2"
               variant="outline"
               asChild
             >
-              <Link
-                href={
-                  siteConfig.socialLinks?.discord ||
-                  "https://discord.com/invite/R7bUxWKRqZ"
-                }
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                title="Join Discord"
-                prefetch={false}
+              <I18nLink
+                href={t("viewDocsLink") || "/blog"}
                 className="flex items-center gap-2"
               >
-                <SiDiscord className="w-4 h-4 text-indigo-500" />
-                Join Discord
-              </Link>
+                <BookOpen className="w-4 h-4" />
+                {t("viewDocs")}
+              </I18nLink>
             </Button>
           </div>
         </div>

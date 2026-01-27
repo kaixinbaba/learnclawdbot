@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "NEXTY.DEV",
-    "tagLine": "多场景 Next.js 全栈 SaaS 开发模板",
-    "description": "Nexty 是一个功能齐全的 Next.js SaaS 全栈模板，让你能够快速构建各种商业网站，无论是内容站、工具站还是集成 AI 能力的付费网站。"
+    "title": "Learn Moltbot",
+    "tagLine": "新手友好的 Moltbot 指南",
+    "description": "Learn Moltbot 是一个新手友好的第三方指南，帮助您理解和有效使用 Moltbot。"
   },
   "Login": {
     "title": "欢迎回来",
@@ -113,7 +113,7 @@
   },
   "Blogs": {
     "title": "博客列表",
-    "description": "分享 Next.js 生态圈和 NEXTY.DEV 模板动态。",
+    "description": "关于 Moltbot 的技巧、教程和见解。",
     "emptyState": {
       "title": "暂无博客文章",
       "description": "我们正在创作精彩内容，敬请期待！"
@@ -138,7 +138,11 @@
   },
   "About": {
     "title": "关于我们",
-    "description": "关于我们"
+    "description": "关于 Learn Moltbot"
+  },
+  "Moltbot": {
+    "title": "什么是 Moltbot？",
+    "description": "了解 Moltbot - 一款专为执行任务设计的新型 AI 代理工具"
   },
   "AIDemo": {
     "title": "AI 能力演示",
@@ -204,48 +208,16 @@
   "Header": {
     "links": [
       {
-        "name": "功能特性",
-        "href": "/#features"
-      },
-      {
-        "id": "pricing",
-        "name": "定价",
-        "href": "/#pricing"
-      },
-      {
-        "name": "AI Demo",
-        "href": "/ai-demo"
+        "name": "什么是 Moltbot？",
+        "href": "/moltbot"
       },
       {
         "name": "博客",
         "href": "/blog"
       },
       {
-        "name": "Demo",
-        "href": "#",
-        "items": [
-          {
-            "name": "Nexty Demo",
-            "href": "https://demo.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Next.js SaaS Boilerplate"
-          },
-          {
-            "name": "AI Image Generator Demo",
-            "href": "https://flux-kontext.nexty.dev/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "AI Image Generator Demo Based on NEXTY.DEV"
-          },
-          {
-            "name": "Directory Boilerplate Demo",
-            "href": "https://dofollow.tools/",
-            "target": "_blank",
-            "rel": "noopener noreferrer nofollow",
-            "description": "Directory Boilerplate Demo Based on NEXTY.DEV"
-          }
-        ]
+        "name": "关于",
+        "href": "/about"
       }
     ]
   },
@@ -266,9 +238,9 @@
       },
       "unsubscribe": {
         "title": "退订邮件通知",
-        "success": "您已成功退订 Nexty 邮件通知。",
+        "success": "您已成功退订 Learn Moltbot 邮件通知。",
         "emailPrefix": "邮箱：",
-        "regretMessage": "您随时可以重新订阅邮件，获取 Nexty 最新更新和教程。",
+        "regretMessage": "您随时可以重新订阅邮件，获取 Learn Moltbot 最新更新和教程。",
         "errorGeneric": "处理您的退订请求时发生错误",
         "errorNoToken": "未提供退订令牌",
         "errorMessage": "请确保您使用了正确的退订链接。如果问题持续存在，请联系我们的客服团队获取帮助。",
@@ -289,58 +261,28 @@
     "Links": {
       "groups": [
         {
-          "title": "产品",
+          "title": "学习",
           "links": [
             {
-              "href": "/#features",
-              "name": "功能特性"
-            },
-            {
-              "id": "pricing",
-              "href": "/#pricing",
-              "name": "定价"
+              "href": "/moltbot",
+              "name": "什么是 Moltbot？"
             },
             {
               "href": "/blog",
               "name": "博客"
-            },
-            {
-              "href": "/glossary",
-              "name": "术语表"
             }
           ]
         },
         {
-          "title": "支持",
+          "title": "关于",
           "links": [
             {
-              "name": "文档",
-              "href": "https://docs.nexty.dev/zh/docs",
-              "target": "_blank"
+              "href": "/about",
+              "name": "关于我们"
             },
             {
-              "name": "功能路线图",
-              "href": "https://nexty.dev/zh/roadmap"
-            }
-          ]
-        },
-        {
-          "title": "语言",
-          "links": [
-            {
-              "href": "/en",
-              "name": "English",
-              "useA": true
-            },
-            {
-              "href": "/zh",
-              "name": "中文",
-              "useA": true
-            },
-            {
-              "href": "/ja",
-              "name": "日本語",
-              "useA": true
+              "href": "/privacy-policy",
+              "name": "隐私政策"
             }
           ]
         }
