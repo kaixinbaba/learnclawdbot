@@ -23,8 +23,8 @@ function getVisibilityInfo(visibility: string) {
       return {
         label: "Subscribers",
         icon: <LockIcon className="h-3 w-3" />,
-        bgColor: "bg-purple-600/90",
-        borderColor: "from-purple-500 to-purple-600",
+        bgColor: "bg-red-600/90",
+        borderColor: "from-red-500 to-red-600",
       };
     case "logged_in":
       return {

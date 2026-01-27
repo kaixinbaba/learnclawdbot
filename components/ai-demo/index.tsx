@@ -44,9 +44,9 @@ const navItems = [
     id: "image-to-image",
     name: "Image to Image",
     icon: ImageDown,
-    color: "text-purple-500",
-    bgColor: "bg-purple-50 dark:bg-purple-950/30",
-    borderColor: "border-purple-200 dark:border-purple-800",
+    color: "text-red-500",
+    bgColor: "bg-red-50 dark:bg-red-950/30",
+    borderColor: "border-red-200 dark:border-red-800",
   },
   {
     id: "image-to-video",

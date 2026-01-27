@@ -141,7 +141,7 @@ export default async function GlossaryPage({ params }: { params: Params }) {
       case "subscribers":
         return {
           label: "Subscribers Only",
-          bgColor: "bg-purple-600",
+          bgColor: "bg-red-600",
         };
       case "logged_in":
         return {

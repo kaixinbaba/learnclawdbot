@@ -29,11 +29,11 @@ export const colors = {
     border: "border-emerald-300 dark:border-emerald-700",
   },
   violet: {
-    bg: "bg-violet-100 dark:bg-violet-950/40",
-    iconBg: "bg-violet-100 dark:bg-violet-900/40",
-    tagBg: "bg-violet-100 dark:bg-violet-900/50",
-    text: "text-violet-800 dark:text-violet-300",
-    border: "border-violet-300 dark:border-violet-700",
+    bg: "bg-red-100 dark:bg-red-950/40",
+    iconBg: "bg-red-100 dark:bg-red-900/40",
+    tagBg: "bg-red-100 dark:bg-red-900/50",
+    text: "text-red-800 dark:text-red-300",
+    border: "border-red-300 dark:border-red-700",
   },
   green: {
     bg: "bg-green-100 dark:bg-green-950/40",
@@ -57,10 +57,10 @@ export const colors = {
     border: "border-cyan-300 dark:border-cyan-700",
   },
   purple: {
-    bg: "bg-purple-100 dark:bg-purple-950/40",
-    iconBg: "bg-purple-100 dark:bg-purple-900/40",
-    tagBg: "bg-purple-100 dark:bg-purple-900/50",
-    text: "text-purple-800 dark:text-purple-300",
-    border: "border-purple-300 dark:border-purple-700",
+    bg: "bg-red-100 dark:bg-red-950/40",
+    iconBg: "bg-red-100 dark:bg-red-900/40",
+    tagBg: "bg-red-100 dark:bg-red-900/50",
+    text: "text-red-800 dark:text-red-300",
+    border: "border-red-300 dark:border-red-700",
   },
 };
