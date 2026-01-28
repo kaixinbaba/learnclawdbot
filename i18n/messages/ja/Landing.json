@@ -1,13 +1,13 @@
 {
   "Hero": {
     "badge": {
-      "label": "ガイド",
-      "text": "初心者向け Moltbot ガイド",
+      "label": "",
+      "text": "Moltbot とは？",
       "href": "/moltbot"
     },
     "title": "Moltbot を学ぶ",
     "description": "Learn Moltbot は、Moltbot を理解し効果的に使用するための初心者向けサードパーティガイドです。この強力な AI エージェントツールを使い始めるための、わかりやすいチュートリアル、ヒント、リソースを提供しています。",
-    "getStarted": "Moltbot とは？",
+    "getStarted": "学習開始",
     "getStartedLink": "/moltbot",
     "viewDocs": "ブログを読む",
     "viewDocsLink": "/blog"

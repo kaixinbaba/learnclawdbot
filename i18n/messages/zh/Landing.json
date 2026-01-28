@@ -1,13 +1,13 @@
 {
   "Hero": {
     "badge": {
-      "label": "指南",
-      "text": "Moltbot 新手入门指南",
+      "label": "",
+      "text": "什么是 Moltbot？",
       "href": "/moltbot"
     },
     "title": "学习 Moltbot",
     "description": "Learn Moltbot 是一个新手友好的第三方指南，帮助您理解和有效使用 Moltbot。我们提供易于跟随的教程、技巧和资源，帮助您开始使用这个强大的 AI 代理工具。",
-    "getStarted": "什么是 Moltbot？",
+    "getStarted": "开始学习",
     "getStartedLink": "/moltbot",
     "viewDocs": "阅读博客",
     "viewDocsLink": "/blog"

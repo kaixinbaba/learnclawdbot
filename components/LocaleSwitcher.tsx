@@ -28,21 +28,13 @@ export default function LocaleSwitcher() {
   const { dismissLanguageAlert } = useLocaleStore();
   const [, startTransition] = useTransition();
 
-  function onSelectChange(nextLocale: Locale) {
+  function onSelectChange(value: string) {
+    const nextLocale = value as Locale;
     dismissLanguageAlert();
 
-    const { ...restParams } = params; // Copy params to avoid mutation if it's read-only
-    
-    // params usually contains 'locale' from next/navigation, which we don't want to pass back
-    // as it might confuse next-intl's path generation or be redundant.
-    // However, for dynamic routes, we do need the other params.
-    // If we just pass pathname string, next-intl handles static routes fine.
-    
     startTransition(() => {
-      router.replace(
-        pathname,
-        { locale: nextLocale }
-      );
+      // @ts-expect-error -- TypeScript might complain about params not matching
+      router.replace({ pathname, params }, { locale: nextLocale });
     });
   }
 
