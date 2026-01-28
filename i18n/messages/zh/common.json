@@ -144,6 +144,18 @@
     "title": "什么是 Moltbot：AI 自动化指南",
     "description": "全面掌握 Moltbot（原名 Clawdbot）。通过详细的分步教程，学习如何利用 WhatsApp 和 Telegram 自动化管理邮件、日历和航班行程。"
   },
+  "Clawdbot": {
+    "metaTitle": "什么是 Clawdbot？(现更名为 Moltbot) - WhatsApp 和 Telegram 的 AI 助手",
+    "metaDescription": "Clawdbot 现已更名为 Moltbot。它依然是你喜爱的那个强大 AI 助手，在聊天应用中直接管理邮件、日历和任务。",
+    "importantUpdate": "重要更新",
+    "title": "Clawdbot 现已更名为 Moltbot",
+    "subtitle": "我们进化了！Clawdbot 有了新名字和新面貌，但依然是你喜爱的那个强大 AI 助手。",
+    "cta": "了解 Moltbot",
+    "whatWasClawdbot": "什么是 Clawdbot？",
+    "whatWasClawdbotDesc": "Clawdbot 是我们 AI 助手的曾用名，旨在让用户无需离开 WhatsApp 和 Telegram 即可管理邮件、日历事件和任务。",
+    "whyChange": "为什么要更名？",
+    "imageAlt": "Moltbot 品牌重塑公告推文"
+  },
   "AIDemo": {
     "title": "AI 能力演示",
     "description": "本页面非公开功能，仅用于购买模板的用户学习和测试 AI 模型调用流程。在本地启动模板后，环境变量填写自己的 API Key 即可使用。AI Demo 包括单轮对话、多轮对话、文本转图像、图像转图像、文本/图像转视频的转换，通过 Demo 你可以快速理解 AI 调用流程，以加速你的AI应用构建之旅。",
@@ -208,8 +220,8 @@
   "Header": {
     "links": [
       {
-        "name": "什么是 Moltbot？",
-        "href": "/moltbot"
+        "name": "什么是 Clawdbot?",
+        "href": "/what-is-clawdbot"
       },
       {
         "name": "博客",

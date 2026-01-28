@@ -25,9 +25,9 @@ import { Analytics } from "@vercel/analytics/react";
 import { Metadata, Viewport } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import {
-  getMessages,
-  getTranslations,
-  setRequestLocale,
+    getMessages,
+    getTranslations,
+    setRequestLocale,
 } from "next-intl/server";
 import { ThemeProvider } from "next-themes";
 import { Inter as FontSans } from "next/font/google";
@@ -76,8 +76,9 @@ export default async function LocaleLayout({
     notFound();
   }
   setRequestLocale(locale);
-
-  const messages = await getMessages();
+  
+  // Explicitly pass locale to sure we get messages for the current locale
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale || DEFAULT_LOCALE} suppressHydrationWarning>
@@ -90,7 +91,7 @@ export default async function LocaleLayout({
           fontSans.variable
         )}
       >
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={messages} locale={locale}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"

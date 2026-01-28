@@ -144,6 +144,18 @@
     "title": "What is Moltbot: AI Automation Guide",
     "description": "Master Moltbot (previously Clawdbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
   },
+  "Clawdbot": {
+    "metaTitle": "What Is Clawdbot? (Now Moltbot) - AI Assistant for WhatsApp & Telegram",
+    "metaDescription": "Clawdbot has been rebranded to Moltbot. It's the same powerful AI assistant for managing emails, calendars, and tasks from your chat app.",
+    "importantUpdate": "Important Update",
+    "title": "Clawdbot Is Now Moltbot",
+    "subtitle": "We've evolved! Clawdbot has a new name and a fresh look, but it's still the same powerful AI assistant you love.",
+    "cta": "Check Out Moltbot",
+    "whatWasClawdbot": "What Was Clawdbot?",
+    "whatWasClawdbotDesc": "Clawdbot was the original name of our AI assistant designed to live inside WhatsApp and Telegram. It helped users manage emails, calendar events, and tasks without leaving their chat app.",
+    "whyChange": "Why the Change?",
+    "imageAlt": "Moltbot Rebranding Announcement Tweet"
+  },
   "AIDemo": {
     "title": "AI Capabilities Demo",
     "description": "This page showcases non-public features and is exclusively for users who have purchased the template. It's designed for learning and testing the AI model invocation process. To use it, simply launch the template locally and input your API key in the environment variables. The AI demo includes functionalities like single-turn and multi-turn conversations, text-to-image, image-to-image, and text/image-to-video conversions. Through this demo, you can quickly grasp the AI invocation workflow, accelerating your journey in building AI applications.",
@@ -208,8 +220,8 @@
   "Header": {
     "links": [
       {
-        "name": "What is Moltbot?",
-        "href": "/moltbot"
+        "name": "What is Clawdbot?",
+        "href": "/what-is-clawdbot"
       },
       {
         "name": "Blog",
