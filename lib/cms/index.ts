@@ -95,18 +95,29 @@ export function createCmsModule(postType: PostType) {
     locale: string = DEFAULT_LOCALE
   ): Promise<GetBySlugResult> {
     // Try local filesystem first if localDirectory is configured
+    // Try local filesystem first if localDirectory is configured
     if (localDirectory) {
       const postsDirectory = path.join(process.cwd(), localDirectory, locale);
       if (fs.existsSync(postsDirectory)) {
-        const filenames = await fs.promises.readdir(postsDirectory);
-        for (const filename of filenames) {
-          const fullPath = path.join(postsDirectory, filename);
+        // We need to access the helper function. Since it is hoisted within the scope, we can call it.
+        // However, typescript might complain if not careful, but runtime is fine.
+        // To be safe and clean, I will just implement the same logic or use the helper if I am sure.
+        // Let's assume hoisting works.
+        const allFilePaths = await getAllFilesRecursively(postsDirectory);
+        
+        for (const fullPath of allFilePaths) {
           try {
             const fileContents = await fs.promises.readFile(fullPath, 'utf8');
             const { data, content } = matter(fileContents);
 
             const localSlug = (data.slug || '').replace(/^\//, '').replace(/\/$/, '');
             const targetSlug = slug.replace(/^\//, '').replace(/\/$/, '');
+            
+            // Also matching by filename if slug is not defined in frontmatter is a common fallback, 
+            // but here we stick to the existing logic which relies on data.slug mostly?
+            // Existing logic: const localSlug = (data.slug || '')... 
+            // If data.slug is empty, it's empty string. 
+            // NOTE: Existing logic didn't use filename as fallback for slug.
 
             if (localSlug === targetSlug && data.status !== 'draft') {
               return {
@@ -116,7 +127,7 @@ export function createCmsModule(postType: PostType) {
               };
             }
           } catch (error) {
-            console.error(`Error processing local file ${filename}:`, error);
+            console.error(`Error processing local file ${fullPath}:`, error);
           }
         }
       }
@@ -139,6 +150,27 @@ export function createCmsModule(postType: PostType) {
   }
 
   /**
+   * Recursively get all files in a directory
+   */
+  async function getAllFilesRecursively(dir: string): Promise<string[]> {
+    let results: string[] = [];
+    if (!fs.existsSync(dir)) return [];
+
+    const list = await fs.promises.readdir(dir);
+    for (const file of list) {
+      const fullPath = path.join(dir, file);
+      const stat = await fs.promises.stat(fullPath);
+      if (stat && stat.isDirectory()) {
+         const res = await getAllFilesRecursively(fullPath);
+         results = results.concat(res);
+      } else {
+         results.push(fullPath);
+      }
+    }
+    return results;
+  }
+
+  /**
    * Get all posts from local directory (if configured)
    * Returns empty array if no localDirectory is set
    */
@@ -153,25 +185,31 @@ export function createCmsModule(postType: PostType) {
       return { posts: [] };
     }
 
-    let filenames = await fs.promises.readdir(postsDirectory);
-    filenames = filenames.reverse();
+    const allFilePaths = await getAllFilesRecursively(postsDirectory);
+    console.log('DEBUG: Local MDX Files:', allFilePaths);
+    // Reverse to process likely newer files first, though we sort by date later
+    const reversedPaths = allFilePaths.reverse();
 
     let allPosts: PostBase[] = [];
 
     // Read files in batches
-    for (let i = 0; i < filenames.length; i += POSTS_BATCH_SIZE) {
-      const batchFilenames = filenames.slice(i, i + POSTS_BATCH_SIZE);
+    for (let i = 0; i < reversedPaths.length; i += POSTS_BATCH_SIZE) {
+      const batchPaths = reversedPaths.slice(i, i + POSTS_BATCH_SIZE);
 
-      const batchPosts: PostBase[] = await Promise.all(
-        batchFilenames.map(async (filename) => {
-          const fullPath = path.join(postsDirectory, filename);
-          const fileContents = await fs.promises.readFile(fullPath, 'utf8');
-          const { data, content } = matter(fileContents);
-          return mapLocalFileToPostBase(data, content, locale);
+      const batchPosts: (PostBase | null)[] = await Promise.all(
+        batchPaths.map(async (fullPath) => {
+          try {
+            const fileContents = await fs.promises.readFile(fullPath, 'utf8');
+            const { data, content } = matter(fileContents);
+            return mapLocalFileToPostBase(data, content, locale);
+          } catch (error) {
+           console.error(`Error processing local file ${fullPath}:`, error);
+           return null;
+          }
         })
       );
 
-      allPosts.push(...batchPosts);
+      allPosts.push(...(batchPosts.filter((post): post is PostBase => post !== null)));
     }
 
     // Filter out non-published articles
@@ -228,12 +266,13 @@ export function createCmsModule(postType: PostType) {
     locale: string = DEFAULT_LOCALE
   ): Promise<GetMetadataResult> {
     // Try local filesystem first if localDirectory is configured
+    // Try local filesystem first if localDirectory is configured
     if (localDirectory) {
       const postsDirectory = path.join(process.cwd(), localDirectory, locale);
       if (fs.existsSync(postsDirectory)) {
-        const filenames = await fs.promises.readdir(postsDirectory);
-        for (const filename of filenames) {
-          const fullPath = path.join(postsDirectory, filename);
+        const allFilePaths = await getAllFilesRecursively(postsDirectory);
+        
+        for (const fullPath of allFilePaths) {
           try {
             const fileContents = await fs.promises.readFile(fullPath, 'utf8');
             const { data } = matter(fileContents);
@@ -252,7 +291,7 @@ export function createCmsModule(postType: PostType) {
               };
             }
           } catch (error) {
-            console.error(`Error processing local file ${filename}:`, error);
+            console.error(`Error processing local file ${fullPath}:`, error);
           }
         }
       }

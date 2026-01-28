@@ -1,5 +1,6 @@
 "use client";
 
+import { Node, mergeAttributes } from "@tiptap/core";
 import Blockquote from "@tiptap/extension-blockquote";
 import Bold from "@tiptap/extension-bold";
 import BulletList from "@tiptap/extension-bullet-list";
@@ -23,6 +24,41 @@ import { common, createLowlight } from "lowlight";
 import { useEffect } from "react";
 import { Markdown } from "tiptap-markdown";
 import { ImageGrid } from "./ImageGridExtension";
+
+const Div = Node.create({
+  name: "div",
+  group: "block",
+  content: "block+",
+  addAttributes() {
+    return {
+      class: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("class"),
+        renderHTML: (attributes) => {
+          if (!attributes.class) {
+            return {};
+          }
+          return { class: attributes.class };
+        },
+      },
+      className: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("class"), // map className to class
+      },
+      style: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("style"),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["div", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
+  },
+});
+
 
 interface TiptapRendererProps {
   content: string;
@@ -90,10 +126,27 @@ export function TiptapRenderer({ content }: TiptapRendererProps) {
           rel: "noopener noreferrer",
         },
       }),
-      TiptapImage.configure({
+      TiptapImage.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            class: {
+              default: null,
+              parseHTML: (element) => element.getAttribute("class"),
+            },
+            className: {
+              default: null,
+              parseHTML: (element) => element.getAttribute("class"),
+            },
+            style: {
+              default: null,
+              parseHTML: (element) => element.getAttribute("style"),
+            },
+          };
+        },
+      }).configure({
         HTMLAttributes: {
-          class:
-            "rounded-md max-w-full h-auto my-4 border border-4 border-primary/10",
+          class: "rounded-md my-4",
         },
       }),
       BulletList,
@@ -152,6 +205,7 @@ export function TiptapRenderer({ content }: TiptapRendererProps) {
       ImageGrid.configure({
         readOnly: true,
       }),
+      Div,
     ],
     content,
     editable: false,

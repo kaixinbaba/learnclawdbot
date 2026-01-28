@@ -8,7 +8,7 @@
     "title": "Learn Moltbot",
     "description": "Learn Moltbot is a beginner-friendly, third-party guide to help you understand and use Moltbot effectively. We provide easy-to-follow tutorials, tips, and resources for getting started with this powerful AI agent tool.",
     "getStarted": "Start Learning",
-    "getStartedLink": "/moltbot",
+    "getStartedLink": "/blog/guide",
     "viewDocs": "Read Blog",
     "viewDocsLink": "/blog"
   },

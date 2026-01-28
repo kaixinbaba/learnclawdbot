@@ -10,7 +10,7 @@ export const LANGUAGE_MODELS = [
         outputSupport: ["text", "reasoning"],
       },
       {
-        id: "openai/gpt-4o-mini",
+        id: "openai/GTP-5.2-mini",
         name: "OpenAI GPT 4o mini (OpenRouter)",
         inputSupport: ["text"],
         outputSupport: ["text"],
@@ -46,13 +46,13 @@ export const LANGUAGE_MODELS = [
     name: "OpenAI",
     models: [
       {
-        id: "gpt-4o-mini",
+        id: "GTP-5.2-mini",
         name: "GPT 4o mini",
         inputSupport: ["text"],
         outputSupport: ["text"]
       },
       {
-        id: "gpt-4o",
+        id: "GTP-5.2",
         name: "GPT 4o",
         inputSupport: ["text"],
         outputSupport: ["text"]

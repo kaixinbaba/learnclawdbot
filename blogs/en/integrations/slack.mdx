@@ -1,0 +1,105 @@
+---
+title: What is Slack Integration?
+description: "Moltbot (formerly Clawdbot): Your AI workplace assistant, handling workflows and document retrieval."
+slug: /integrations/slack
+tags: chat, integrations
+publishedAt: 2026-01-28
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/slack_head.png
+---
+
+# What is Slack Integration? (Enterprise-Grade Office Assistant)
+
+> Slack Integration is a **workflow enhancement tool** used to **embed AI into team collaboration processes**, helping **knowledge-based teams** to **reduce repetitive communication and information retrieval time** in **office scenarios**.
+
+---
+
+## In a Nutshell
+
+- **The Problem It Solves**: Quickly find documents, summarize meetings, create tasks without leaving the office software.
+- **Its Core Value**: Enterprise-grade security, Knowledge Base Retrieval (RAG), Inter-app automation.
+- **Typical Use Cases**: New employee onboarding Q&A, automatic summary of daily stand-ups, troubleshooting assistant.
+
+---
+
+## 1. What is Slack Integration?
+
+Slack integration is essentially **a virtual colleague who understands the business**.
+
+You can understand it as **an administrative + technical support on standby 24 hours a day**:
+- When you @ it in a channel and ask "What is our reimbursement policy?"
+- It won't make things up, but check the company's Notion or Google Drive, and then give an accurate answer with citations.
+
+---
+
+## 2. What Can It Do?
+
+Typically, Slack integration can be used for:
+
+1.  **Knowledge Q&A** (One sentence): Connect company Wiki, answer questions like "What is the Wifi password", "How to apply for annual leave".
+2.  **Thread Summary**: A discussion thread has 50 replies, too many to read? Let it summarize the conclusion with one click.
+3.  **Ticket Creation**: Turn customer feedback in Slack into a Jira or Linear Ticket with one click.
+
+In actual products, common usages include:
+-   **SQL Assistant**: In the data channel, ask directly in natural language "How many new users last week", it generates SQL and runs the data (requires connecting database).
+-   **Ops Duty**: When PagerDuty alarm is sent to Slack, AI automatically analyzes logs and gives possible causes.
+-   **Cross-language Communication**: Automatically translate Japanese messages from the Japan branch office into Chinese and send to the public channel.
+
+---
+
+## 3. How to Use?
+
+Generally, using Slack integration involves 3 steps:
+
+1.  **Step 1: Workspace Installation**
+    The workspace administrator clicks "Add to Slack" in the Moltbot backend and authorizes OAuth access.
+
+2.  **Step 2: Invite to Channel**
+    Bot cannot see channel messages by default after installation. You need to type `/invite @Moltbot` in a specific channel to pull it in.
+
+3.  **Step 3: Question and Interaction**
+    Directly `@Moltbot` to ask questions in the channel, or find it individually in the private chat window.
+
+If you are using it for the first time:
+-   **Recommend starting with [Bot Private Chat]**: Test its knowledge boundaries and see what internal company information it knows.
+-   **Don't [Grant All Permissions] at first**: Only invite it to channels where AI intervention is needed (such as #help-desk).
+
+---
+
+## 4. Why Use Slack Integration Like This?
+
+The main reasons for recommending using in Slack are:
+
+-   **Reason 1: Context Retention**: Slack's Thread mechanism fits perfectly with AI's multi-turn dialogue without disrupting the main group timeline.
+-   **Reason 2: Information Source**: Work-related information is mostly generated in Slack, AI can process information "on the spot".
+-   **Reason 3: Enterprise Compliance**: Slack integration usually supports compliance standards like SOC2, which is safer than letting employees secretly use ChatGPT.
+
+If you choose to let employees switch out to use web version AI themselves:
+-   Extremely easy to cause enterprise data leakage (pasting code to public network).
+-   Cannot share context, everyone is repeatedly asking the same questions.
+
+---
+
+## 5. Who is it For? Who is it Not For?
+
+**Suitable for:**
+-   **Tech Internet Companies**: Accustomed to asynchronous communication, good documentation culture.
+-   **Customer Service/IT Support Teams**: Facing a large number of repetitive questions to answer.
+-   **Multinational Teams**: Need real-time translation and time zone management.
+
+**Not suitable for:**
+-   **Traditional Enterprises**: If you mainly communicate via WeChat or Email, Slack integration is useless.
+-   **Extremely Sensitive Industries**: Such as military industry, confidential units, usually prohibit any third-party Bot from reading messages.
+
+---
+
+## 6. Further Reading and Related Resources
+
+-   **Official Documentation**: [Slack API Quickstart](https://api.slack.com/start)
+-   **Related Terms**:
+    -   **Thread**: Slack's unique discussion thread mechanism
+    -   **RAG**: Retrieval-Augmented Generation (Technology letting AI read enterprise documents)
+-   **Other Integrations**:
+    -   [What is Discord Integration?](/integrations/discord)
+    -   [What is GitHub Integration?](/integrations/github)

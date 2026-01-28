@@ -1,7 +1,7 @@
-@import './custom.utilities.css';
-@import './code-highlight.css';
+@import "./custom.utilities.css";
+@import "./code-highlight.css";
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @plugin 'tailwindcss-animate';
 @plugin '@tailwindcss/typography';
@@ -155,32 +155,32 @@
 :root {
   --background: oklch(0.9842 0.0034 25);
   --foreground: oklch(0.2795 0.0368 25);
-  --card: oklch(1.0000 0 0);
+  --card: oklch(1 0 0);
   --card-foreground: oklch(0.2795 0.0368 25);
-  --popover: oklch(1.0000 0 0);
+  --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2795 0.0368 25);
   --primary: oklch(0.65 0.18 25);
-  --primary-foreground: oklch(1.0000 0 0);
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.9576 0.0158 25);
   --secondary-foreground: oklch(0.3729 0.0306 25);
-  --muted: oklch(0.9670 0.0129 25);
-  --muted-foreground: oklch(0.5510 0.0234 25);
+  --muted: oklch(0.967 0.0129 25);
+  --muted-foreground: oklch(0.551 0.0234 25);
   --accent: oklch(0.9499 0.0434 25);
   --accent-foreground: oklch(0.3729 0.0306 25);
   --destructive: oklch(0.6368 0.2078 25.3313);
-  --destructive-foreground: oklch(1.0000 0 0);
+  --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.9017 0.0193 25);
   --input: oklch(0.9017 0.0193 25);
   --ring: oklch(0.65 0.18 25);
   --chart-1: oklch(0.65 0.18 25);
-  --chart-2: oklch(0.58 0.20 25);
-  --chart-3: oklch(0.50 0.18 25);
+  --chart-2: oklch(0.58 0.2 25);
+  --chart-3: oklch(0.5 0.18 25);
   --chart-4: oklch(0.42 0.15 25);
   --chart-5: oklch(0.35 0.12 25);
-  --sidebar: oklch(0.9770 0.0129 25);
+  --sidebar: oklch(0.977 0.0129 25);
   --sidebar-foreground: oklch(0.2795 0.0368 25);
   --sidebar-primary: oklch(0.65 0.18 25);
-  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.9499 0.0434 25);
   --sidebar-accent-foreground: oklch(0.3729 0.0306 25);
   --sidebar-border: oklch(0.9017 0.0193 25);
@@ -197,11 +197,16 @@
   --shadow-color: hsl(0 0% 0%);
   --shadow-2xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
-  --shadow: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
-  --shadow-md: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 2px 4px -2px hsl(0 0% 0% / 0.10);
-  --shadow-lg: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 4px 6px -2px hsl(0 0% 0% / 0.10);
-  --shadow-xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 8px 10px -2px hsl(0 0% 0% / 0.10);
+  --shadow-sm:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 1px 2px -2px hsl(0 0% 0% / 0.1);
+  --shadow:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 1px 2px -2px hsl(0 0% 0% / 0.1);
+  --shadow-md:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-lg:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 4px 6px -2px hsl(0 0% 0% / 0.1);
+  --shadow-xl:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 8px 10px -2px hsl(0 0% 0% / 0.1);
   --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
@@ -214,7 +219,7 @@
   --card-foreground: oklch(0.9288 0.0126 25);
   --popover: oklch(0.2795 0.0268 25);
   --popover-foreground: oklch(0.9288 0.0126 25);
-  --primary: oklch(0.70 0.16 25);
+  --primary: oklch(0.7 0.16 25);
   --primary-foreground: oklch(0.2077 0.0298 25);
   --secondary: oklch(0.3351 0.0331 25);
   --secondary-foreground: oklch(0.8717 0.0093 25);
@@ -226,20 +231,20 @@
   --destructive-foreground: oklch(0.2077 0.0298 25);
   --border: oklch(0.4461 0.0363 25);
   --input: oklch(0.4461 0.0363 25);
-  --ring: oklch(0.70 0.16 25);
-  --chart-1: oklch(0.70 0.16 25);
+  --ring: oklch(0.7 0.16 25);
+  --chart-1: oklch(0.7 0.16 25);
   --chart-2: oklch(0.65 0.18 25);
-  --chart-3: oklch(0.58 0.20 25);
-  --chart-4: oklch(0.50 0.18 25);
+  --chart-3: oklch(0.58 0.2 25);
+  --chart-4: oklch(0.5 0.18 25);
   --chart-5: oklch(0.42 0.15 25);
   --sidebar: oklch(0.2795 0.0268 25);
   --sidebar-foreground: oklch(0.9288 0.0126 25);
-  --sidebar-primary: oklch(0.70 0.16 25);
+  --sidebar-primary: oklch(0.7 0.16 25);
   --sidebar-primary-foreground: oklch(0.2077 0.0298 25);
   --sidebar-accent: oklch(0.3729 0.0406 25);
   --sidebar-accent-foreground: oklch(0.8717 0.0093 25);
   --sidebar-border: oklch(0.4461 0.0363 25);
-  --sidebar-ring: oklch(0.70 0.16 25);
+  --sidebar-ring: oklch(0.7 0.16 25);
   --font-sans: Inter, sans-serif;
   --font-serif: Merriweather, serif;
   --font-mono: JetBrains Mono, monospace;
@@ -252,11 +257,16 @@
   --shadow-color: hsl(0 0% 0%);
   --shadow-2xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
-  --shadow: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
-  --shadow-md: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 2px 4px -2px hsl(0 0% 0% / 0.10);
-  --shadow-lg: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 4px 6px -2px hsl(0 0% 0% / 0.10);
-  --shadow-xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 8px 10px -2px hsl(0 0% 0% / 0.10);
+  --shadow-sm:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 1px 2px -2px hsl(0 0% 0% / 0.1);
+  --shadow:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 1px 2px -2px hsl(0 0% 0% / 0.1);
+  --shadow-md:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-lg:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 4px 6px -2px hsl(0 0% 0% / 0.1);
+  --shadow-xl:
+    0px 4px 8px -1px hsl(0 0% 0% / 0.1), 0px 8px 10px -2px hsl(0 0% 0% / 0.1);
   --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
 }
 
@@ -324,4 +334,26 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+/* Fix: 让 prose 中带有固定尺寸容器的图片遵循容器尺寸 */
+.prose div[class*="w-["] img,
+.prose div[style*="width"] img {
+  max-width: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  object-fit: contain;
 }

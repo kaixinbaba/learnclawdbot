@@ -719,6 +719,10 @@ export async function getPostMetadataAction({
     return actionResponse.badRequest('Slug is required.')
   }
 
+  if (!isDatabaseEnabled) {
+    return actionResponse.notFound('Database is disabled.')
+  }
+
   try {
     const conditions = [
       eq(postsSchema.slug, slug),

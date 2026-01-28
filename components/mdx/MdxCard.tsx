@@ -17,25 +17,22 @@ export function MdxCard({
   return (
     <div
       className={cn(
-        "group relative rounded-lg border p-6 shadow-md transition-shadow hover:shadow-lg",
+        "group relative rounded-xl border bg-card text-card-foreground p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/50",
         disabled && "cursor-not-allowed opacity-60",
         className
       )}
       {...props}
     >
-      <div className="flex flex-col justify-between space-y-4">
-        <div className="space-y-2 [&>h3]:mt-0! [&>h4]:mt-0! [&>p]:text-muted-foreground">
-          {children}
-        </div>
+      <div className="flex flex-col items-center text-center space-y-4 h-full">
+        {children}
       </div>
       {href && (
         <Link
           href={disabled ? "#" : href}
           className="absolute inset-0"
-          title="View"
           prefetch={false}
         >
-          <span className="sr-only">View</span>
+          <span className="sr-only">View Integration</span>
         </Link>
       )}
     </div>

@@ -14,15 +14,15 @@ description: Integrate AI providers in NEXTY.DEV using ai-sdk. Use when adding c
 
 ## Supported Providers
 
-| Provider | Package | Env Variable |
-|----------|---------|--------------|
-| OpenAI | `@ai-sdk/openai` | `OPENAI_API_KEY` |
-| Anthropic | `@ai-sdk/anthropic` | `ANTHROPIC_API_KEY` |
-| Google | `@ai-sdk/google` | `GOOGLE_GENERATIVE_AI_API_KEY` |
-| DeepSeek | `@ai-sdk/deepseek` | `DEEPSEEK_API_KEY` |
-| XAI | `@ai-sdk/xai` | `XAI_API_KEY` |
-| OpenRouter | `@ai-sdk/openrouter` | `OPENROUTER_API_KEY` |
-| Replicate | `@ai-sdk/replicate` | `REPLICATE_API_TOKEN` |
+| Provider   | Package              | Env Variable                   |
+| ---------- | -------------------- | ------------------------------ |
+| OpenAI     | `@ai-sdk/openai`     | `OPENAI_API_KEY`               |
+| Anthropic  | `@ai-sdk/anthropic`  | `ANTHROPIC_API_KEY`            |
+| Google     | `@ai-sdk/google`     | `GOOGLE_GENERATIVE_AI_API_KEY` |
+| DeepSeek   | `@ai-sdk/deepseek`   | `DEEPSEEK_API_KEY`             |
+| XAI        | `@ai-sdk/xai`        | `XAI_API_KEY`                  |
+| OpenRouter | `@ai-sdk/openrouter` | `OPENROUTER_API_KEY`           |
+| Replicate  | `@ai-sdk/replicate`  | `REPLICATE_API_TOKEN`          |
 
 ## Text Generation (Chat)
 
@@ -30,22 +30,22 @@ description: Integrate AI providers in NEXTY.DEV using ai-sdk. Use when adding c
 
 ```typescript
 // app/api/ai/chat/route.ts
-import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
-import { getSession } from '@/lib/auth/server';
+import { openai } from "@ai-sdk/openai";
+import { streamText } from "ai";
+import { getSession } from "@/lib/auth/server";
 
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const { messages } = await request.json();
 
   const result = streamText({
-    model: openai('gpt-4o'),
+    model: openai("GTP-5.2"),
     messages,
-    system: 'You are a helpful assistant.',
+    system: "You are a helpful assistant.",
   });
 
   return result.toDataStreamResponse();
@@ -120,15 +120,15 @@ export function ChatDemo() {
 
 ```typescript
 // API Route
-import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
-import { apiResponse } from '@/lib/api-response';
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "ai";
+import { apiResponse } from "@/lib/api-response";
 
 export async function POST(request: Request) {
   const { prompt } = await request.json();
 
   const { text } = await generateText({
-    model: openai('gpt-4o'),
+    model: openai("GTP-5.2"),
     prompt,
   });
 
@@ -142,17 +142,17 @@ export async function POST(request: Request) {
 
 ```typescript
 // app/api/ai/text-to-image/route.ts
-import { experimental_generateImage as generateImage } from 'ai';
-import { openai } from '@ai-sdk/openai';
-import { apiResponse } from '@/lib/api-response';
+import { experimental_generateImage as generateImage } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { apiResponse } from "@/lib/api-response";
 
 export async function POST(request: Request) {
   const { prompt } = await request.json();
 
   const { image } = await generateImage({
-    model: openai.image('dall-e-3'),
+    model: openai.image("dall-e-3"),
     prompt,
-    size: '1024x1024',
+    size: "1024x1024",
   });
 
   // image.base64 contains the generated image
@@ -165,7 +165,7 @@ export async function POST(request: Request) {
 ### Using Replicate for Images
 
 ```typescript
-import Replicate from 'replicate';
+import Replicate from "replicate";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -174,16 +174,13 @@ const replicate = new Replicate({
 export async function POST(request: Request) {
   const { prompt } = await request.json();
 
-  const output = await replicate.run(
-    'stability-ai/sdxl:latest',
-    {
-      input: {
-        prompt,
-        width: 1024,
-        height: 1024,
-      },
-    }
-  );
+  const output = await replicate.run("stability-ai/sdxl:latest", {
+    input: {
+      prompt,
+      width: 1024,
+      height: 1024,
+    },
+  });
 
   return apiResponse.success({ imageUrl: output[0] });
 }
@@ -193,8 +190,8 @@ export async function POST(request: Request) {
 
 ```typescript
 // app/api/ai/image-to-image/route.ts
-import Replicate from 'replicate';
-import { apiResponse } from '@/lib/api-response';
+import Replicate from "replicate";
+import { apiResponse } from "@/lib/api-response";
 
 const replicate = new Replicate();
 
@@ -202,14 +199,14 @@ export async function POST(request: Request) {
   const { imageUrl, prompt } = await request.json();
 
   const output = await replicate.run(
-    'stability-ai/stable-diffusion-img2img:latest',
+    "stability-ai/stable-diffusion-img2img:latest",
     {
       input: {
         image: imageUrl,
         prompt,
         strength: 0.7,
       },
-    }
+    },
   );
 
   return apiResponse.success({ imageUrl: output[0] });
@@ -219,9 +216,9 @@ export async function POST(request: Request) {
 ## Structured Output (JSON)
 
 ```typescript
-import { openai } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
-import { z } from 'zod';
+import { openai } from "@ai-sdk/openai";
+import { generateObject } from "ai";
+import { z } from "zod";
 
 const productSchema = z.object({
   name: z.string(),
@@ -234,7 +231,7 @@ export async function POST(request: Request) {
   const { prompt } = await request.json();
 
   const { object } = await generateObject({
-    model: openai('gpt-4o'),
+    model: openai("GTP-5.2"),
     schema: productSchema,
     prompt,
   });
@@ -247,49 +244,49 @@ export async function POST(request: Request) {
 
 ```typescript
 // OpenAI
-import { openai } from '@ai-sdk/openai';
-const model = openai('gpt-4o');
+import { openai } from "@ai-sdk/openai";
+const model = openai("GTP-5.2");
 
 // Anthropic
-import { anthropic } from '@ai-sdk/anthropic';
-const model = anthropic('claude-3-5-sonnet-20241022');
+import { anthropic } from "@ai-sdk/anthropic";
+const model = anthropic("claude-3-5-sonnet-20241022");
 
 // Google
-import { google } from '@ai-sdk/google';
-const model = google('gemini-1.5-pro');
+import { google } from "@ai-sdk/google";
+const model = google("gemini-1.5-pro");
 
 // DeepSeek
-import { deepseek } from '@ai-sdk/deepseek';
-const model = deepseek('deepseek-chat');
+import { deepseek } from "@ai-sdk/deepseek";
+const model = deepseek("deepseek-chat");
 
 // XAI
-import { xai } from '@ai-sdk/xai';
-const model = xai('grok-beta');
+import { xai } from "@ai-sdk/xai";
+const model = xai("grok-beta");
 
 // OpenRouter (access multiple models)
-import { openrouter } from '@ai-sdk/openrouter';
-const model = openrouter('anthropic/claude-3.5-sonnet');
+import { openrouter } from "@ai-sdk/openrouter";
+const model = openrouter("anthropic/claude-3.5-sonnet");
 ```
 
 ## Credit Deduction Pattern
 
 ```typescript
 // Integrate with credit system
-import { deductCredits } from '@/actions/usage/deduct';
+import { deductCredits } from "@/actions/usage/deduct";
 
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) return apiResponse.unauthorized();
 
   // Check and deduct credits first
-  const creditResult = await deductCredits(10, 'AI chat generation');
+  const creditResult = await deductCredits(10, "AI chat generation");
   if (!creditResult.success) {
     return apiResponse.badRequest(creditResult.error);
   }
 
   // Then proceed with AI generation
   const result = streamText({
-    model: openai('gpt-4o'),
+    model: openai("GTP-5.2"),
     messages,
   });
 
@@ -339,4 +336,3 @@ NEXT_PUBLIC_AI_PROVIDER
 6. Add stop/cancel control for streaming
 7. Keep API keys server-side only
 8. Consider rate limiting for production
-
