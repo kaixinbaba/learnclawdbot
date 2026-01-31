@@ -2,67 +2,67 @@
   "Hero": {
     "badge": {
       "label": "",
-      "text": "Moltbot とは？",
-      "href": "/moltbot"
+      "text": "OpenClaw とは？",
+      "href": "/what-is-openclaw"
     },
-    "title": "Moltbot を学ぶ",
-    "description": "Learn Moltbot は、Moltbot を理解し効果的に使用するための初心者向けサードパーティガイドです。この強力な AI エージェントツールを使い始めるための、わかりやすいチュートリアル、ヒント、リソースを提供しています。",
-    "getStarted": "学習開始",
+    "title": "OpenClaw を学ぶ",
+    "description": "Learn OpenClaw は、OpenClaw を理解し効果的に使用するための初心者向けサードパーティガイドです。この強力な AI エージェントツール（旧 Clawbot / Moltbot）を使い始めるための、わかりやすいチュートリアル、ヒント、リソースを提供しています。",
+    "getStarted": "学習を開始",
     "getStartedLink": "/blog/guide",
     "viewDocs": "ブログを読む",
     "viewDocsLink": "/blog"
   },
   "Features": {
     "badge": {
-      "label": "リソース",
-      "text": "Moltbot 公式リソース"
+      "label": "公式",
+      "text": "OpenClaw 公式リソース"
     },
-    "title": "Moltbot 公式リソース",
-    "description": "これらの公式リソースを使って Moltbot を始めましょう。ドキュメントからスキルマーケットプレイスまで、必要なすべてがここにあります。",
+    "title": "OpenClaw 公式リソース",
+    "description": "これらの公式リソースを使って OpenClaw を始めましょう。ドキュメントからスキルマーケットプレイスまで、必要なすべてがここにあります。",
     "items": [
       {
-        "title": "公式ウェブサイト",
-        "description": "Moltbot 公式ウェブサイトを訪問して、この強力な AI エージェントツールについて詳しく学びましょう。",
+        "title": "公式サイト",
+        "description": "OpenClaw 公式ウェブサイトを訪問して、この強力な AI エージェントツールについて詳しく学びましょう。",
         "details": [
           {
-            "title": "Moltbot 公式サイト",
-            "description": "最新ニュースとアップデートを含む Moltbot の公式ホームページ。",
-            "href": "https://www.molt.bot/"
+            "title": "OpenClaw 公式サイト",
+            "description": "最新ニュースとアップデートを含む OpenClaw の公式ホームページ。",
+            "href": "https://openclaw.ai/"
           }
         ],
         "images": []
       },
       {
-        "title": "ドキュメント",
-        "description": "Moltbot を始めてマスターするための包括的な公式ドキュメント。",
+        "title": "公式ドキュメント",
+        "description": "包括的な公式ドキュメントで OpenClaw を始めてマスターしましょう。",
         "details": [
           {
             "title": "入門ガイド",
-            "description": "Moltbot のセットアップと使用開始を支援する公式ガイド。",
-            "href": "https://docs.molt.bot/start/getting-started"
+            "description": "OpenClaw のセットアップと使用開始を支援する公式ガイド。",
+            "href": "https://docs.openclaw.ai/"
           }
         ],
         "images": []
       },
       {
         "title": "GitHub リポジトリ",
-        "description": "ソースコードを探索し、貢献し、最新の開発状況を把握しましょう。",
+        "description": "ソースコードを探索し、貢献し、最新の開発状況を追跡しましょう。",
         "details": [
           {
-            "title": "GitHub の Moltbot",
-            "description": "Moltbot の公式 GitHub リポジトリ。",
-            "href": "https://github.com/moltbot/clawdbot"
+            "title": "GitHub の OpenClaw",
+            "description": "OpenClaw の公式 GitHub リポジトリ。",
+            "href": "https://github.com/openclaw/openclaw"
           }
         ],
         "images": []
       },
       {
-        "title": "ClawdHub - スキルマーケットプレイス",
-        "description": "Moltbot の機能を拡張するスキルを発見してインストールしましょう。",
+        "title": "ClawdHub - スキルマーケット",
+        "description": "OpenClaw の機能を拡張するスキルを発見してインストールしましょう。",
         "details": [
           {
             "title": "スキルを探す",
-            "description": "Moltbot 用の AgentSkills バンドルを見つけてインストール。",
+            "description": "OpenClaw 用の AgentSkills バンドルを見つけてインストール。",
             "href": "https://clawdhub.com/"
           }
         ],
@@ -72,33 +72,33 @@
   },
   "UseCases": {
     "badge": {
-      "label": "使用事例",
-      "text": "Moltbot でできること"
+      "label": "ユースケース",
+      "text": "OpenClaw でできること"
     },
     "title": "強力な AI エージェント機能",
-    "description": "Moltbot は様々なタスクをサポートする多機能な AI エージェントツールです。一般的な使用事例をご紹介します。",
+    "description": "OpenClaw は様々なタスクをサポートする多機能な AI エージェントツールです。一般的な使用事例をご紹介します。",
     "cases": [
       {
         "title": "コード開発",
-        "description": "AI の支援でコードを書き、レビューし、リファクタリング。Moltbot はコードベースを理解し、より速く、より良い開発を支援します。",
+        "description": "AI の支援でコードを書き、レビューし、リファクタリング。OpenClaw はコードベースを理解し、より速く、より良い開発を支援します。",
         "image": "/placeholder.webp",
         "icon": "Code"
       },
       {
         "title": "タスク自動化",
-        "description": "反復的なタスクとワークフローを自動化。Moltbot はコマンドを実行し、ファイルを管理し、開発環境と統合できます。",
+        "description": "反復的なタスクとワークフローを自動化。OpenClaw はコマンドを実行し、ファイルを管理し、開発環境と統合できます。",
         "image": "/placeholder.webp",
         "icon": "Bot"
       },
       {
-        "title": "リサーチ・分析",
-        "description": "トピックを調査し、データを分析し、ウェブから情報を収集。Moltbot は迅速かつ効率的に回答を見つけるお手伝いをします。",
+        "title": "リサーチと分析",
+        "description": "トピックを調査し、データを分析し、ウェブから情報を収集。OpenClaw は迅速かつ効率的に回答を見つけるお手伝いをします。",
         "image": "/placeholder.webp",
         "icon": "Search"
       },
       {
-        "title": "ドキュメント作成",
-        "description": "プロジェクトのドキュメントを生成・維持。Moltbot は README、API ドキュメント、技術仕様を作成できます。",
+        "title": "ドキュメント",
+        "description": "プロジェクトのドキュメントを生成・維持。OpenClaw は README、API ドキュメント、技術仕様を作成できます。",
         "image": "/placeholder.webp",
         "icon": "FileText"
       }
@@ -108,42 +108,42 @@
     "badge": {
       "label": "コミュニティ"
     },
-    "title": "Moltbot コミュニティに参加",
-    "description": "他の Moltbot ユーザーとつながり、経験を共有しましょう"
+    "title": "OpenClaw コミュニティに参加",
+    "description": "他の OpenClaw ユーザーとつながり、経験を共有しましょう"
   },
   "FAQ": {
     "title": "よくある質問",
-    "description": "Moltbot とこの AI エージェントツールを最大限に活用する方法についてのよくある質問",
+    "description": "OpenClaw とこの AI エージェントツールを最大限に活用する方法についてのよくある質問",
     "items": [
       {
-        "question": "Moltbot とは何ですか？",
-        "answer": "Moltbot は、開発者やユーザーが自然言語の対話を通じて様々なタスクを実行できるよう設計された強力な AI エージェントツールです。コードを書いたり、ワークフローを自動化したり、トピックを調査したりできます。"
+        "question": "OpenClaw とは何ですか？",
+        "answer": "OpenClaw は、開発者やユーザーが自然言語の対話を通じて様々なタスクを実行できるよう設計された強力な AI エージェントツールです。コードを書いたり、ワークフローを自動化したり、トピックを調査したりできます。"
       },
       {
-        "question": "Moltbot は無料で使えますか？",
-        "answer": "最新の価格とライセンス情報については、Moltbot 公式ウェブサイトをご参照ください。詳細は https://www.molt.bot/ をご覧ください。"
+        "question": "OpenClaw は無料で使えますか？",
+        "answer": "最新の価格とライセンス情報については、OpenClaw 公式ウェブサイトをご参照ください。詳細は https://openclaw.ai/ をご覧ください。"
       },
       {
-        "question": "Moltbot をインストールするには？",
-        "answer": "公式ドキュメント https://docs.molt.bot/start/getting-started で詳細なインストール手順を確認できます。ガイドには様々なプラットフォームでのインストール方法が記載されています。"
+        "question": "OpenClaw をインストールするには？",
+        "answer": "公式ドキュメント https://docs.openclaw.ai/ で詳細なインストール手順を確認できます。ガイドには様々なプラットフォームでのインストール方法が記載されています。"
       },
       {
-        "question": "Moltbot のスキルとは何ですか？",
-        "answer": "スキルは Moltbot に新しい機能を追加する拡張機能です。https://clawdhub.com/ でスキルを閲覧してインストールし、Moltbot の機能を拡張できます。"
+        "question": "OpenClaw のスキルとは何ですか？",
+        "answer": "スキルは OpenClaw に新しい機能を追加する拡張機能です。https://clawdhub.com/ でスキルを閲覧してインストールし、OpenClaw の機能を拡張できます。"
       },
       {
-        "question": "Learn Moltbot は公式リソースですか？",
-        "answer": "いいえ、Learn Moltbot はサードパーティのコミュニティ主導リソースです。公式ドキュメントとサポートについては、Moltbot 公式ウェブサイト https://www.molt.bot/ をご覧ください。"
+        "question": "Learn OpenClaw は公式リソースですか？",
+        "answer": "いいえ、Learn OpenClaw はサードパーティのコミュニティ主導リソースです。公式ドキュメントとサポートについては、OpenClaw 公式ウェブサイト https://openclaw.ai/ をご覧ください。"
       },
       {
-        "question": "Moltbot に貢献するには？",
-        "answer": "GitHub リポジトリ https://github.com/moltbot/clawdbot を通じて Moltbot に貢献できます。詳細は貢献ガイドラインをご確認ください。"
+        "question": "OpenClaw に貢献するには？",
+        "answer": "GitHub リポジトリ https://github.com/openclaw/openclaw を通じて OpenClaw に貢献できます。詳細は貢献ガイドラインをご確認ください。"
       }
     ]
   },
   "CTA": {
-    "title": "今日から Moltbot を学び始めましょう",
-    "description": "チュートリアルとガイドを探索して Moltbot をマスターし、AI パワードアシスタンスで生産性を向上させましょう。",
+    "title": "今日から OpenClaw を学び始めましょう",
+    "description": "チュートリアルとガイドを探索して OpenClaw をマスターし、AI パワードアシスタンスで生産性を向上させましょう。",
     "button": "始める",
     "trustText": "無料コミュニティリソース",
     "features": {

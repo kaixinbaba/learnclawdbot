@@ -2,11 +2,11 @@
   "Hero": {
     "badge": {
       "label": "",
-      "text": "What is Moltbot?",
-      "href": "/moltbot"
+      "text": "What is OpenClaw?",
+      "href": "/what-is-openclaw"
     },
-    "title": "Learn Moltbot",
-    "description": "Learn Moltbot is a beginner-friendly, third-party guide to help you understand and use Moltbot effectively. We provide easy-to-follow tutorials, tips, and resources for getting started with this powerful AI agent tool.",
+    "title": "Learn OpenClaw",
+    "description": "Learn OpenClaw is a beginner-friendly, third-party guide to help you understand and use OpenClaw effectively. We provide easy-to-follow tutorials, tips, and resources for getting started with this powerful AI agent tool (formerly Clawbot and Moltbot).",
     "getStarted": "Start Learning",
     "getStartedLink": "/blog/guide",
     "viewDocs": "Read Blog",
@@ -15,31 +15,31 @@
   "Features": {
     "badge": {
       "label": "RESOURCES",
-      "text": "Official Moltbot Resources"
+      "text": "Official OpenClaw Resources"
     },
-    "title": "Moltbot Official Resources",
-    "description": "Get started with Moltbot using these official resources. From documentation to skills marketplace, everything you need is here.",
+    "title": "OpenClaw Official Resources",
+    "description": "Get started with OpenClaw using these official resources. From documentation to skills marketplace, everything you need is here.",
     "items": [
       {
         "title": "Official Website",
-        "description": "Visit the official Moltbot website to learn more about this powerful AI agent tool.",
+        "description": "Visit the official OpenClaw website to learn more about this powerful AI agent tool.",
         "details": [
           {
-            "title": "Moltbot Official Site",
-            "description": "The official homepage of Moltbot with latest news and updates.",
-            "href": "https://www.molt.bot/"
+            "title": "OpenClaw Official Site",
+            "description": "The official homepage of OpenClaw with latest news and updates.",
+            "href": "https://openclaw.ai/"
           }
         ],
         "images": []
       },
       {
         "title": "Documentation",
-        "description": "Comprehensive official documentation to help you get started and master Moltbot.",
+        "description": "Comprehensive official documentation to help you get started and master OpenClaw.",
         "details": [
           {
             "title": "Getting Started Guide",
-            "description": "Official guide to help you set up and start using Moltbot.",
-            "href": "https://docs.molt.bot/start/getting-started"
+            "description": "Official guide to help you set up and start using OpenClaw.",
+            "href": "https://docs.openclaw.ai/"
           }
         ],
         "images": []
@@ -49,20 +49,20 @@
         "description": "Explore the source code, contribute, and stay updated with the latest developments.",
         "details": [
           {
-            "title": "Moltbot on GitHub",
-            "description": "Official GitHub repository for Moltbot.",
-            "href": "https://github.com/moltbot/clawdbot"
+            "title": "OpenClaw on GitHub",
+            "description": "Official GitHub repository for OpenClaw.",
+            "href": "https://github.com/openclaw/openclaw"
           }
         ],
         "images": []
       },
       {
         "title": "ClawdHub - Skills Marketplace",
-        "description": "Discover and install skills to extend Moltbot's capabilities.",
+        "description": "Discover and install skills to extend OpenClaw's capabilities.",
         "details": [
           {
             "title": "Browse Skills",
-            "description": "Find and install AgentSkills bundles for Moltbot.",
+            "description": "Find and install AgentSkills bundles for OpenClaw.",
             "href": "https://clawdhub.com/"
           }
         ],
@@ -73,32 +73,32 @@
   "UseCases": {
     "badge": {
       "label": "USE CASES",
-      "text": "What Can Moltbot Do"
+      "text": "What Can OpenClaw Do"
     },
     "title": "Powerful AI Agent Capabilities",
-    "description": "Moltbot is a versatile AI agent tool that can help you with various tasks. Here are some common use cases.",
+    "description": "OpenClaw is a versatile AI agent tool that can help you with various tasks. Here are some common use cases.",
     "cases": [
       {
         "title": "Code Development",
-        "description": "Write, review, and refactor code with AI assistance. Moltbot understands your codebase and helps you develop faster and better.",
+        "description": "Write, review, and refactor code with AI assistance. OpenClaw understands your codebase and helps you develop faster and better.",
         "image": "/placeholder.webp",
         "icon": "Code"
       },
       {
         "title": "Task Automation",
-        "description": "Automate repetitive tasks and workflows. Moltbot can execute commands, manage files, and integrate with your development environment.",
+        "description": "Automate repetitive tasks and workflows. OpenClaw can execute commands, manage files, and integrate with your development environment.",
         "image": "/placeholder.webp",
         "icon": "Bot"
       },
       {
         "title": "Research & Analysis",
-        "description": "Research topics, analyze data, and gather information from the web. Moltbot helps you find answers quickly and efficiently.",
+        "description": "Research topics, analyze data, and gather information from the web. OpenClaw helps you find answers quickly and efficiently.",
         "image": "/placeholder.webp",
         "icon": "Search"
       },
       {
         "title": "Documentation",
-        "description": "Generate and maintain documentation for your projects. Moltbot can write READMEs, API docs, and technical specifications.",
+        "description": "Generate and maintain documentation for your projects. OpenClaw can write READMEs, API docs, and technical specifications.",
         "image": "/placeholder.webp",
         "icon": "FileText"
       }
@@ -108,42 +108,42 @@
     "badge": {
       "label": "COMMUNITY"
     },
-    "title": "Join the Moltbot Community",
-    "description": "Connect with other Moltbot users and share your experiences"
+    "title": "Join the OpenClaw Community",
+    "description": "Connect with other OpenClaw users and share your experiences"
   },
   "FAQ": {
     "title": "Frequently Asked Questions",
-    "description": "Common questions about Moltbot and how to get the most out of this AI agent tool",
+    "description": "Common questions about OpenClaw and how to get the most out of this AI agent tool",
     "items": [
       {
-        "question": "What is Moltbot?",
-        "answer": "Moltbot is a powerful AI agent tool designed to help developers and users perform various tasks through natural language interaction. It can write code, automate workflows, research topics, and much more."
+        "question": "What is OpenClaw?",
+        "answer": "OpenClaw is a powerful AI agent tool designed to help developers and users perform various tasks through natural language interaction. It can write code, automate workflows, research topics, and much more."
       },
       {
-        "question": "Is Moltbot free to use?",
-        "answer": "Please refer to the official Moltbot website for the latest pricing and licensing information. Visit https://www.molt.bot/ for details."
+        "question": "Is OpenClaw free to use?",
+        "answer": "Please refer to the official OpenClaw website for the latest pricing and licensing information. Visit https://openclaw.ai/ for details."
       },
       {
-        "question": "How do I install Moltbot?",
-        "answer": "You can find detailed installation instructions in the official documentation at https://docs.molt.bot/start/getting-started. The guide covers installation on various platforms."
+        "question": "How do I install OpenClaw?",
+        "answer": "You can find detailed installation instructions in the official documentation at https://docs.openclaw.ai/. The guide covers installation on various platforms."
       },
       {
-        "question": "What are Skills in Moltbot?",
-        "answer": "Skills are extensions that add new capabilities to Moltbot. You can browse and install skills from ClawdHub at https://clawdhub.com/ to extend Moltbot's functionality."
+        "question": "What are Skills in OpenClaw?",
+        "answer": "Skills are extensions that add new capabilities to OpenClaw. You can browse and install skills from ClawdHub at https://clawdhub.com/ to extend OpenClaw's functionality."
       },
       {
-        "question": "Is Learn Moltbot an official resource?",
-        "answer": "No, Learn Moltbot is a third-party, community-driven resource. For official documentation and support, please visit the official Moltbot website at https://www.molt.bot/."
+        "question": "Is Learn OpenClaw an official resource?",
+        "answer": "No, Learn OpenClaw is a third-party, community-driven resource. For official documentation and support, please visit the official OpenClaw website at https://openclaw.ai/."
       },
       {
-        "question": "How can I contribute to Moltbot?",
-        "answer": "You can contribute to Moltbot through the GitHub repository at https://github.com/moltbot/clawdbot. Check the contribution guidelines for more information."
+        "question": "How can I contribute to OpenClaw?",
+        "answer": "You can contribute to OpenClaw through the GitHub repository at https://github.com/openclaw/openclaw. Check the contribution guidelines for more information."
       }
     ]
   },
   "CTA": {
-    "title": "Start Learning Moltbot Today",
-    "description": "Explore our tutorials and guides to master Moltbot and boost your productivity with AI-powered assistance.",
+    "title": "Start Learning OpenClaw Today",
+    "description": "Explore our tutorials and guides to master OpenClaw and boost your productivity with AI-powered assistance.",
     "button": "Get Started",
     "trustText": "Free community resource",
     "features": {

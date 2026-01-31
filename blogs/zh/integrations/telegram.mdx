@@ -1,6 +1,6 @@
 ---
-title: Telegram 集成是什么？
-description: Moltbot (原 Clawdbot) - 功能最强大的聊天机器人集成，支持群组、频道和超大文件。
+title: 如何将 OpenClaw 连接到 Telegram
+description: 手把手教你配置 OpenClaw 的 Telegram 集成：创建 Bot、配置网关、开始和 AI 助手聊天。
 slug: /integrations/telegram
 tags: chat, integrations
 publishedAt: 2026-01-28
@@ -9,97 +9,327 @@ visibility: public
 featuredImageUrl: /images/integrations/telegram_head.png
 ---
 
-# Telegram 集成是什么？（全能型 AI 交互界面）
+# 如何将 OpenClaw 连接到 Telegram
 
-> Telegram 集成是一种【富媒体交互接口】，用于【在高度可定制的聊天环境中运行 AI】，可以帮助【极客和群组管理员】在【复杂交互场景】下【实现自动化管理和信息处理】。
-
----
-
-## 一句话先懂
-
-- **它解决的问题**：在支持 API 最完善的聊天软件中，获得比官方 App 更强大的 AI 能力。
-- **它的核心价值**：支持大文件（2GB+）、自定义键盘按钮、群组管理。
-- **典型使用场景**：在群里让 AI 总结聊天记录、作为“下载器”使用、自动化运维报警。
+> 这篇教程带你从零开始，把 OpenClaw 接入 Telegram——从创建 Bot 到发出第一条消息，大约 10 分钟搞定。
 
 ---
 
-## 一、Telegram 集成是什么？
+## 概述
 
-Telegram 集成本质上是**一个运行在 Telegram 平台上的超级 Bot**。
+OpenClaw 的 Telegram 集成可以把一个 Telegram Bot 变成功能完整的 AI 助手。连接之后，你可以：
 
-你可以把它理解成**一个住在云端的系统管理员**：
-- 当你把文件扔给它
-- 它不仅能看懂，还能帮你转存、重命名或者提取内容
-
----
-
-## 二、它能做什么？
-
-通常，Telegram 集成可以用来：
-
-1. **群组助手**（一句话）：拉进群里，只要有人 @它，它就能回答问题，或者每天只有早报总结。
-2. **万能下载器**：发送一个 YouTube 或 Twitter 链接，它直接把视频下载下来发给你。
-3. **服务器监控**：配合 Webhook，当服务器报警时，直接在 TG 里通知你并提供“重启”按钮。
-
-在实际产品中，常见的用法包括：
-- **隐私阅读**：把长文章链接发给它，它给你生成即时预览（Instant View）摘要，无需跳出 App。
-- **文件格式转换**：发一个 `.docx` 文件，让它转成 `.pdf` 发回来。
-- **沉浸式翻译**：在通过 Inline 模式，在任何聊天窗口输入 `@Moltbot hello` 直接翻译内容。
+- 在私聊或群聊中和 AI 对话
+- 收发文件、图片、语音消息
+- 让 AI 帮你总结群聊、回答问题、自动执行任务
+- 在任何安装了 Telegram 的设备上使用 OpenClaw
 
 ---
 
-## 三、怎么用？
+## 前置条件
 
-一般来说，使用 Telegram 集成可以分为 3 步：
+开始之前，确认以下几点：
 
-1. **第一步：寻找 Bot**
-   在 Telegram 搜索栏输入 `@Moltbot`（或其他指定 ID）。
-
-2. **第二步：点击 Start**
-   进入对话框，点击底部的 `Start` 按钮，系统会自动引导你绑定账户。
-
-3. **第三步：玩转指令**
-   输入 `/` 符号，你会看到一个命令列表菜单，选择你需要的功能（如 `/settings` 或 `/mode`）。
-
-如果你是第一次使用：
-- **建议从【私聊】开始**：先别急着拉群，先在私聊里测试它的回复速度和能力。
-- **试着发送一个链接**：看看它如何解析并总结链接内容。
+- **OpenClaw 已安装**并正常运行（运行 `openclaw --version` 检查）
+- **有 Telegram 账号**（没有的话去 [telegram.org](https://telegram.org) 下载注册）
+- **能访问 Telegram API** —— 如果你在国内，需要配置代理（见下方[代理设置](#代理设置)）
 
 ---
 
-## 四、为什么要这样用 Telegram 集成？
+## 第一步：创建 Telegram Bot
 
-之所以推荐 Telegram 作为 AI 的首选载体，主要有几个原因：
+所有 Telegram 集成都从创建 Bot 开始，通过官方的 [@BotFather](https://t.me/BotFather) 完成。
 
-- **原因 1：交互最强**：Telegram 支持按钮（Inline Buttons）、菜单、表单，交互体验接近原生 App。
-- **原因 2：文件能力**：它支持发送和接收 2GB 的文件，是处理文档和视频的最佳选择。
-- **原因 3：跨平台同步**：TG 的云端同步极快，手机上发出的指令，电脑端毫秒级同步结果。
+### 1.1 打开 BotFather
 
-如果你选择 WhatsApp 或微信，可能会遇到：
-- 文件大小受限（通常限制在 100MB 以内）
-- 无法使用快捷按钮，只能傻傻地打字输入指令
+在 Telegram 中搜索 `@BotFather`，或直接点击 [这个链接](https://t.me/BotFather)。发送：
+
+```
+/newbot
+```
+
+### 1.2 设置名字和用户名
+
+BotFather 会依次问你两个问题：
+
+1. **显示名称** —— 随便起，比如 `我的 OpenClaw 助手`
+2. **用户名** —— 必须以 `bot` 结尾，比如 `my_openclaw_bot`
+
+### 1.3 复制 Token
+
+创建成功后，BotFather 会发给你一个 **Bot Token**，格式大概长这样：
+
+```
+7123456789:AAH1234567890abcdefghijklmnopqrstuv
+```
+
+> ⚠️ **妥善保管这个 Token。** 拿到 Token 的人可以完全控制你的 Bot。如果泄露了，在 BotFather 里用 `/revoke` 重新生成。
+
+### 1.4 可选设置
+
+趁还在 BotFather 里，可以顺便配置：
+
+- `/setjoingroups` → 允许 Bot 加入群聊（如果需要群组功能就**开启**）
+- `/setprivacy` → 关闭隐私模式，让 Bot 能看到群里的所有消息（不仅是命令和 @提及）
+- `/setdescription` → 设置 Bot 描述（用户第一次打开时看到）
+- `/setcommands` → 定义斜杠命令（如 `/ask`、`/summarize`）
 
 ---
 
-## 五、它适合谁？不适合谁？
+## 第二步：配置 OpenClaw
 
-**适合：**
-- **极客/开发者**：喜欢折腾自动化，需要 API 和 Webhook 支持的人。
-- **社群运营者**：需要 AI 帮忙管理活跃的群组。
-- **重度媒体消费者**：经常需要下载、转存、总结视频和文章的人。
+有两种方式把 Token 传给 OpenClaw。
 
-**不太适合：**
-- **不仅互联网的普通用户**：如果连 VPN 或网络环境都搞不定，就别折腾 TG 了。
-- **纯办公场景**：如果是公司强制用 Slack/钉钉，TG 很难融入工作流。
+### 方式一：环境变量（快速上手）
+
+启动网关前设置环境变量：
+
+```bash
+export TELEGRAM_BOT_TOKEN="7123456789:AAH1234567890abcdefghijklmnopqrstuv"
+```
+
+测试阶段用这个最简单。
+
+### 方式二：配置文件（推荐）
+
+把 Token 写入 OpenClaw 配置文件（`~/.openclaw/config.json5`）：
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "7123456789:AAH1234567890abcdefghijklmnopqrstuv",
+      dmPolicy: "pairing",  // 私聊需要先配对
+    }
+  }
+}
+```
+
+### 关于 `dmPolicy: "pairing"`
+
+默认情况下，私聊使用 `pairing`（配对）模式：
+
+- 有人第一次给你的 Bot 发消息时，会收到一个**配对码**
+- 你需要在 OpenClaw 终端中批准这个配对码，Bot 才会开始响应
+- 这样可以防止陌生人随意使用你的 AI
+
+其他选项：
+- `"open"` —— 任何人都能和 Bot 聊天（适合公开服务）
+- `"deny"` —— 完全禁用私聊
 
 ---
 
-## 六、延伸阅读与相关资源
+## 第三步：启动并验证
 
-- **官方文档**：[Telegram Bots 官方文档](https://core.telegram.org/bots)
-- **相关术语**：
-  - **Inline Mode**：Telegram 的一种内联搜索模式
-  - **Webhook**：让 AI 主动给你发消息的技术
-- **其他集成**：
-  - [WhatsApp 集成是什么？](/integrations/whatsapp)
-  - [Discord 集成是什么？](/integrations/discord)
+### 3.1 启动网关
+
+```bash
+openclaw gateway start
+```
+
+看到类似这样的输出说明连接成功：
+
+```
+✓ Telegram bot connected: @my_openclaw_bot
+```
+
+### 3.2 发送第一条消息
+
+打开 Telegram，给你的 Bot 发一条消息：
+
+```
+你好！
+```
+
+### 3.3 完成配对
+
+如果用的是 `dmPolicy: "pairing"`（默认），Bot 会回复一个配对码：
+
+```
+🔐 需要配对。你的配对码：ABC-123
+请在 OpenClaw 终端中批准此设备。
+```
+
+在终端里执行：
+
+```bash
+openclaw pair approve ABC-123
+```
+
+### 3.4 确认连接
+
+配对完成后再发一条消息，应该就能收到 AI 的回复了。恭喜，OpenClaw 已成功接入 Telegram！🎉
+
+---
+
+## 进阶配置
+
+### 群组配置
+
+要在群聊中使用 Bot，在配置里加上 `groups` 部分：
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "YOUR_TOKEN",
+      dmPolicy: "pairing",
+      groupPolicy: "open",                  // 群内所有人都能发消息
+      groups: {
+        "-1001234567890": {                  // 群组的 chat ID
+          requireMention: true,              // 只有 @Bot 时才响应
+        }
+      }
+    }
+  }
+}
+```
+
+**常用选项：**
+- `requireMention: true` —— 只在被 @提及时响应（活跃群推荐）
+- `requireMention: false` —— 响应所有消息
+- `groupPolicy: "open"` —— 群内所有人都能发消息
+- `groupPolicy: "allowlist"` —— 只有 `groupAllowFrom` 里的用户才能发消息（默认）
+- `groupPolicy: "disabled"` —— 完全禁用群组消息
+
+### 怎么获取 Chat ID
+
+最简单的方法：
+
+1. 把 Bot 拉进群
+2. 在群里发条消息
+3. 查看 OpenClaw 网关日志，chat ID 会打印出来
+
+也可以把群消息转发给 [@userinfobot](https://t.me/userinfobot) 获取。
+
+### Privacy Mode（隐私模式）
+
+Telegram Bot 默认开启**隐私模式**。在这个模式下，群聊中的 Bot 只能看到：
+
+- 以 `/` 开头的命令
+- @提及 Bot 的消息
+- 回复 Bot 消息的内容
+- 服务消息（成员加入/退出等）
+
+如果你希望 Bot 能看到群里的**所有消息**（比如做聊天总结），需要关闭隐私模式：
+
+1. 打开 `@BotFather`
+2. 发送 `/setprivacy`
+3. 选择你的 Bot
+4. 选择 **Disable**
+
+> ⚠️ 改完之后必须把 Bot **移出群组再重新拉入**，设置才会生效。
+
+### 自定义命令
+
+在配置中添加自定义命令，会出现在 Telegram 的 `/` 菜单里：
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "YOUR_TOKEN",
+      customCommands: [
+        { command: "summarize", description: "总结群里最近的聊天" },
+        { command: "translate", description: "把回复的消息翻译成英文" }
+      ]
+    }
+  }
+}
+```
+
+> **注意：** 自定义命令**只是菜单入口** —— 它们会显示在 Telegram 的 `/` 菜单中，但 OpenClaw 本身不会自动处理这些命令，需要你在其他地方实现逻辑。命令名只能用小写字母 `a-z`、数字 `0-9`、下划线 `_`（1-32 字符），且不能覆盖内置命令（如 `/status`、`/reset`）。
+
+### Webhook 模式 vs 长轮询
+
+默认情况下，OpenClaw 使用**长轮询**接收消息，不需要任何额外配置。
+
+生产环境建议用 **Webhook 模式**，性能更好：
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "YOUR_TOKEN",
+      webhookUrl: "https://your-domain.com/telegram-webhook",
+      webhookSecret: "your-random-secret",   // 可选但推荐
+      // webhookPath: "/telegram-webhook",    // 本地路径，默认 /telegram-webhook
+    }
+  }
+}
+```
+
+本地监听默认绑定 `0.0.0.0:8787`，服务 `POST /telegram-webhook`。如果公网 URL 不同，用反向代理转发即可。
+
+**Webhook 要求：**
+- 公网可访问的 HTTPS 地址
+- 有效的 SSL 证书（Let's Encrypt 就行）
+
+### 代理设置
+
+在国内访问 Telegram API 需要配置代理：
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "YOUR_TOKEN",
+      proxy: "socks5://127.0.0.1:7890"    // SOCKS5 或 HTTP 代理 URL
+      // proxy: "http://user:pass@127.0.0.1:7890"  // 带认证的写法
+    }
+  }
+}
+```
+
+也可以用环境变量：
+
+```bash
+export HTTPS_PROXY="socks5://127.0.0.1:7890"
+openclaw gateway start
+```
+
+> 💡 **国内用户提示：** 如果你用 Clash/V2Ray 等代理工具，确保代理规则中放行了 `api.telegram.org`。常用的本地端口是 7890（HTTP）或 7891（SOCKS5），具体看你的代理配置。
+
+---
+
+## 常见问题排查
+
+### Bot 不响应
+
+1. 检查网关是否在运行：`openclaw gateway status`
+2. 确认 Token 正确 —— 在 BotFather 中用 `/token` 查看现有 Token
+3. 查看日志：`openclaw gateway logs`
+4. 如果用的是配对模式，确认配对已完成
+
+### 群组消息收不到
+
+1. 检查隐私模式是否阻拦了消息（见上方[隐私模式](#privacy-mode隐私模式)）
+2. 确认配置文件中写了正确的群组 chat ID
+3. 确认 Bot 已经加入了群组
+4. 改过隐私模式设置后，记得重新拉 Bot 入群
+
+### IPv6 问题
+
+部分网络环境下，通过 IPv6 连接 Telegram API 会出问题。可以强制使用 IPv4：
+
+```bash
+export NODE_OPTIONS="--dns-result-order=ipv4first"
+openclaw gateway start
+```
+
+### 409 Conflict 错误
+
+说明有另一个进程正在用同一个 Token 做长轮询，同一时间只能有一个。
+
+**解决方法：**
+1. 停掉所有使用这个 Token 的其他实例
+2. 如果之前设置过 Webhook，网关启动时会自动清除
+3. 等几秒再重启：`openclaw gateway restart`
+
+---
+
+## 延伸阅读
+
+- [Discord 集成](/blog/integrations/discord) —— 把 OpenClaw 连接到 Discord
+- [WhatsApp 集成](/blog/integrations/whatsapp) —— 把 OpenClaw 连接到 WhatsApp
+- [OpenClaw 文档](https://docs.openclaw.ai) —— 完整参考文档

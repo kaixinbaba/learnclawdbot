@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "Moltbot (原 Clawdbot) 学习指南",
+    "title": "OpenClaw（原 Clawbot / Moltbot）学习指南",
     "tagLine": "新手入门全方位教程",
-    "description": "Moltbot（原 Clawdbot）终极指南。将你的聊天软件变身为强大的 AI 助手，为你处理复杂的工作流和日常操作。"
+    "description": "OpenClaw（原 Clawbot / Moltbot）终极指南。将你的聊天软件变身为强大的 AI 助手，为你处理复杂的工作流和日常操作。"
   },
   "Login": {
     "title": "欢迎回来",
@@ -113,7 +113,7 @@
   },
   "Blogs": {
     "title": "博客列表",
-    "description": "关于 Moltbot 的技巧、教程和见解。",
+    "description": "关于 OpenClaw 的技巧、教程和见解。",
     "emptyState": {
       "title": "暂无博客文章",
       "description": "我们正在创作精彩内容，敬请期待！"
@@ -137,24 +137,29 @@
     }
   },
   "About": {
-    "title": "关于 Moltbot：AI 自动化工具",
-    "description": "全面掌握 Moltbot（原名 Clawdbot）。通过详细的分步教程，学习如何利用 WhatsApp 和 Telegram 自动化管理邮件、日历和航班行程。"
+    "title": "关于 OpenClaw：AI 自动化工具",
+    "description": "全面掌握 OpenClaw（原名 Clawbot / Moltbot）。通过详细的分步教程，学习如何利用 WhatsApp 和 Telegram 自动化管理邮件、日历和航班行程。"
   },
   "Moltbot": {
-    "title": "什么是 Moltbot：AI 自动化指南",
-    "description": "全面掌握 Moltbot（原名 Clawdbot）。通过详细的分步教程，学习如何利用 WhatsApp 和 Telegram 自动化管理邮件、日历和航班行程。"
+    "title": "Moltbot 是什么？（现为 OpenClaw）",
+    "description": "Moltbot 是 OpenClaw 的旧名称（前身为 Clawbot）。本页保留历史信息，并指向最新的 OpenClaw 资源。"
+  },
+  "OpenClaw": {
+    "title": "什么是 OpenClaw：AI 自动化指南",
+    "description": "全面掌握 OpenClaw（原名 Clawbot / Moltbot）。通过详细的分步教程，学习如何利用 WhatsApp 和 Telegram 自动化管理邮件、日历和航班行程。"
   },
   "Clawdbot": {
-    "metaTitle": "什么是 Clawdbot？(现更名为 Moltbot) - WhatsApp 和 Telegram 的 AI 助手",
-    "metaDescription": "Clawdbot 现已更名为 Moltbot。它依然是你喜爱的那个强大 AI 助手，在聊天应用中直接管理邮件、日历和任务。",
+    "metaTitle": "什么是 Clawbot？(现为 OpenClaw) - WhatsApp 和 Telegram 的 AI 助手",
+    "metaDescription": "Clawbot 是 OpenClaw 的早期名称，后来曾更名为 Moltbot，如今为 OpenClaw。",
     "importantUpdate": "重要更新",
-    "title": "Clawdbot 现已更名为 Moltbot",
-    "subtitle": "我们进化了！Clawdbot 有了新名字和新面貌，但依然是你喜爱的那个强大 AI 助手。",
-    "cta": "了解 Moltbot",
-    "whatWasClawdbot": "什么是 Clawdbot？",
-    "whatWasClawdbotDesc": "Clawdbot 是我们 AI 助手的曾用名，旨在让用户无需离开 WhatsApp 和 Telegram 即可管理邮件、日历事件和任务。",
+    "title": "Clawbot 现已更名为 OpenClaw",
+    "description": "Clawbot 是这款 AI 助手的最早名称，后来更名为 Moltbot，如今为 OpenClaw。本页保留历史信息，并指向最新的 OpenClaw 资源。",
+    "subtitle": "我们进化了！Clawbot 曾更名为 Moltbot，如今为 OpenClaw，但依然是你喜爱的那个强大 AI 助手。",
+    "cta": "了解 OpenClaw",
+    "whatWasClawdbot": "什么是 Clawbot？",
+    "whatWasClawdbotDesc": "Clawbot 是我们 AI 助手的早期名称，旨在让用户无需离开 WhatsApp 和 Telegram 即可管理邮件、日历事件和任务。",
     "whyChange": "为什么要更名？",
-    "imageAlt": "Moltbot 品牌重塑公告推文"
+    "imageAlt": "OpenClaw 品牌更名公告"
   },
   "AIDemo": {
     "title": "AI 能力演示",
@@ -220,8 +225,8 @@
   "Header": {
     "links": [
       {
-        "name": "什么是 Clawdbot?",
-        "href": "/what-is-clawdbot"
+        "name": "什么是 OpenClaw？",
+        "href": "/what-is-openclaw"
       },
       {
         "name": "博客",
@@ -249,9 +254,9 @@
       },
       "unsubscribe": {
         "title": "退订邮件通知",
-        "success": "您已成功退订 Learn Moltbot 邮件通知。",
+        "success": "您已成功退订 Learn OpenClaw 邮件通知。",
         "emailPrefix": "邮箱：",
-        "regretMessage": "您随时可以重新订阅邮件，获取 Learn Moltbot 最新更新和教程。",
+        "regretMessage": "您随时可以重新订阅邮件，获取 Learn OpenClaw 最新更新和教程。",
         "errorGeneric": "处理您的退订请求时发生错误",
         "errorNoToken": "未提供退订令牌",
         "errorMessage": "请确保您使用了正确的退订链接。如果问题持续存在，请联系我们的客服团队获取帮助。",
@@ -275,8 +280,8 @@
           "title": "学习",
           "links": [
             {
-              "href": "/moltbot",
-              "name": "什么是 Moltbot？"
+              "href": "/openclaw",
+              "name": "什么是 OpenClaw？"
             },
             {
               "href": "/blog",

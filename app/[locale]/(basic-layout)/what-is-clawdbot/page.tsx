@@ -45,7 +45,7 @@ export default async function WhatIsClawdbotPage({ params }: Props) {
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
             <Button asChild size="lg" className="text-lg px-8">
-              <Link href="/what-is-moltbot">{t("cta")}</Link>
+              <Link href="/what-is-openclaw">{t("cta")}</Link>
             </Button>
           </div>
 

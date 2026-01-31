@@ -31,7 +31,7 @@ export default function Hero() {
               className="h-11 rounded-xl px-8 py-2 text-white border-2 border-primary"
             >
               <I18nLink
-                href={t("getStartedLink") || "/moltbot"}
+                href={t("getStartedLink") || "/openclaw"}
                 className="flex items-center gap-2"
               >
                 <ArrowRight className="w-4 h-4" />

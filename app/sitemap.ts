@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages with locale
   const staticPages = [
     '',
+    '/what-is-openclaw',
     '/what-is-moltbot',
     '/what-is-clawdbot',
     '/about',

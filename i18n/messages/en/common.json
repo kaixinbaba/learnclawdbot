@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "Learn Moltbot (Formerly Clawdbot)",
+    "title": "Learn OpenClaw (Formerly Clawbot and Moltbot)",
     "tagLine": "The Ultimate Beginner's Guide",
-    "description": "Your ultimate guide to Moltbot (formerly Clawdbot). Transform your chat app into a powerful AI assistant that handles complex workflows and daily operations for you."
+    "description": "Your ultimate guide to OpenClaw (formerly Clawbot and Moltbot). Transform your chat app into a powerful AI assistant that handles complex workflows and daily operations for you."
   },
   "Login": {
     "title": "Welcome back",
@@ -113,7 +113,7 @@
   },
   "Blogs": {
     "title": "Blog Posts",
-    "description": "Tips, tutorials, and insights about Moltbot.",
+    "description": "Tips, tutorials, and insights about OpenClaw.",
     "emptyState": {
       "title": "No blog posts",
       "description": "We are creating exciting content, please stay tuned!"
@@ -137,24 +137,29 @@
     }
   },
   "About": {
-    "title": "About Moltbot: AI Automation Tool",
-    "description": "Master Moltbot (previously Clawdbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
+    "title": "About OpenClaw: AI Automation Tool",
+    "description": "Master OpenClaw (formerly Clawbot and Moltbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
   },
   "Moltbot": {
-    "title": "What is Moltbot: AI Automation Guide",
-    "description": "Master Moltbot (previously Clawdbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
+    "title": "What Was Moltbot? (Now OpenClaw)",
+    "description": "Moltbot was an earlier name for OpenClaw (formerly Clawbot). This page preserves historical context and points to the latest OpenClaw resources."
+  },
+  "OpenClaw": {
+    "title": "What is OpenClaw: AI Automation Guide",
+    "description": "Master OpenClaw (formerly Clawbot and Moltbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
   },
   "Clawdbot": {
-    "metaTitle": "What Is Clawdbot? (Now Moltbot) - AI Assistant for WhatsApp & Telegram",
-    "metaDescription": "Clawdbot has been rebranded to Moltbot. It's the same powerful AI assistant for managing emails, calendars, and tasks from your chat app.",
+    "metaTitle": "What Is Clawbot? (Now OpenClaw) - AI Assistant for WhatsApp & Telegram",
+    "metaDescription": "Clawbot was an early name for OpenClaw. The product was later known as Moltbot and is now OpenClaw.",
     "importantUpdate": "Important Update",
-    "title": "Clawdbot Is Now Moltbot",
-    "subtitle": "We've evolved! Clawdbot has a new name and a fresh look, but it's still the same powerful AI assistant you love.",
-    "cta": "Check Out Moltbot",
-    "whatWasClawdbot": "What Was Clawdbot?",
-    "whatWasClawdbotDesc": "Clawdbot was the original name of our AI assistant designed to live inside WhatsApp and Telegram. It helped users manage emails, calendar events, and tasks without leaving their chat app.",
+    "title": "Clawbot Is Now OpenClaw",
+    "description": "Clawbot was the original name of the AI assistant now known as OpenClaw (formerly Moltbot). This page preserves the history and points to the latest OpenClaw resources.",
+    "subtitle": "We've evolved! Clawbot became Moltbot and is now OpenClaw, but it's still the same powerful AI assistant you love.",
+    "cta": "Check Out OpenClaw",
+    "whatWasClawdbot": "What Was Clawbot?",
+    "whatWasClawdbotDesc": "Clawbot was the original name of our AI assistant designed to live inside WhatsApp and Telegram. It helped users manage emails, calendar events, and tasks without leaving their chat app.",
     "whyChange": "Why the Change?",
-    "imageAlt": "Moltbot Rebranding Announcement Tweet"
+    "imageAlt": "OpenClaw Rebranding Announcement"
   },
   "AIDemo": {
     "title": "AI Capabilities Demo",
@@ -220,8 +225,8 @@
   "Header": {
     "links": [
       {
-        "name": "What is Clawdbot?",
-        "href": "/what-is-clawdbot"
+        "name": "What is OpenClaw?",
+        "href": "/what-is-openclaw"
       },
       {
         "name": "Blog",
@@ -249,9 +254,9 @@
       },
       "unsubscribe": {
         "title": "Newsletter Unsubscription",
-        "success": "You have successfully unsubscribed from Learn Moltbot newsletters.",
+        "success": "You have successfully unsubscribed from Learn OpenClaw newsletters.",
         "emailPrefix": "Email:",
-        "regretMessage": "You can resubscribe anytime to receive the latest Learn Moltbot updates and tutorials.",
+        "regretMessage": "You can resubscribe anytime to receive the latest Learn OpenClaw updates and tutorials.",
         "errorGeneric": "An error occurred while processing your unsubscribe request",
         "errorNoToken": "No unsubscribe token provided",
         "errorMessage": "Please make sure you're using the correct unsubscribe link. If the problem persists, contact our support team for assistance.",
@@ -275,8 +280,8 @@
           "title": "Learn",
           "links": [
             {
-              "href": "/moltbot",
-              "name": "What is Moltbot?"
+              "href": "/openclaw",
+              "name": "What is OpenClaw?"
             },
             {
               "href": "/blog",

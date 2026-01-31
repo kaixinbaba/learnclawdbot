@@ -20,7 +20,7 @@ async function getMDXContent(locale: string) {
   const filePath = path.join(
     process.cwd(),
     "content",
-    "moltbot",
+    "openclaw",
     `${locale}.mdx`
   );
   try {
@@ -44,14 +44,14 @@ export async function generateMetadata({
   params,
 }: MetadataProps): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "Moltbot" });
+  const t = await getTranslations({ locale, namespace: "OpenClaw" });
 
   return constructMetadata({
-    page: "Moltbot",
-    title: "What Was Moltbot? (Now OpenClaw)",
+    page: "OpenClaw",
+    title: t("title"),
     description: t("description"),
     locale: locale as Locale,
-    path: `/what-is-moltbot`, // Updated path
+    path: `/what-is-openclaw`,
   });
 }
 

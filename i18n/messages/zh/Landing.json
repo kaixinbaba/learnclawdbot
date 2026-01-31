@@ -2,11 +2,11 @@
   "Hero": {
     "badge": {
       "label": "",
-      "text": "什么是 Moltbot？",
-      "href": "/moltbot"
+      "text": "什么是 OpenClaw？",
+      "href": "/what-is-openclaw"
     },
-    "title": "学习 Moltbot",
-    "description": "Learn Moltbot 是一个新手友好的第三方指南，帮助您理解和有效使用 Moltbot。我们提供易于跟随的教程、技巧和资源，帮助您开始使用这个强大的 AI 代理工具。",
+    "title": "学习 OpenClaw",
+    "description": "Learn OpenClaw 是一个新手友好的第三方指南，帮助您理解和有效使用 OpenClaw。我们提供易于跟随的教程、技巧和资源，帮助您开始使用这个强大的 AI 代理工具（原名 Clawbot / Moltbot）。",
     "getStarted": "开始学习",
     "getStartedLink": "/blog/guide",
     "viewDocs": "阅读博客",
@@ -15,31 +15,31 @@
   "Features": {
     "badge": {
       "label": "资源",
-      "text": "Moltbot 官方资源"
+      "text": "OpenClaw 官方资源"
     },
-    "title": "Moltbot 官方资源",
-    "description": "使用这些官方资源开始使用 Moltbot。从文档到技能市场，您需要的一切都在这里。",
+    "title": "OpenClaw 官方资源",
+    "description": "使用这些官方资源开始使用 OpenClaw。从文档到技能市场，您需要的一切都在这里。",
     "items": [
       {
         "title": "官方网站",
-        "description": "访问 Moltbot 官方网站，了解更多关于这个强大的 AI 代理工具。",
+        "description": "访问 OpenClaw 官方网站，了解更多关于这个强大的 AI 代理工具。",
         "details": [
           {
-            "title": "Moltbot 官网",
-            "description": "Moltbot 官方主页，包含最新新闻和更新。",
-            "href": "https://www.molt.bot/"
+            "title": "OpenClaw 官网",
+            "description": "OpenClaw 官方主页，包含最新新闻和更新。",
+            "href": "https://openclaw.ai/"
           }
         ],
         "images": []
       },
       {
         "title": "官方文档",
-        "description": "全面的官方文档帮助您入门并掌握 Moltbot。",
+        "description": "全面的官方文档帮助您入门并掌握 OpenClaw。",
         "details": [
           {
             "title": "入门指南",
-            "description": "官方指南帮助您设置和开始使用 Moltbot。",
-            "href": "https://docs.molt.bot/start/getting-started"
+            "description": "官方指南帮助您设置和开始使用 OpenClaw。",
+            "href": "https://docs.openclaw.ai/"
           }
         ],
         "images": []
@@ -49,20 +49,20 @@
         "description": "探索源代码，贡献代码，并了解最新开发动态。",
         "details": [
           {
-            "title": "GitHub 上的 Moltbot",
-            "description": "Moltbot 的官方 GitHub 仓库。",
-            "href": "https://github.com/moltbot/clawdbot"
+            "title": "GitHub 上的 OpenClaw",
+            "description": "OpenClaw 的官方 GitHub 仓库。",
+            "href": "https://github.com/openclaw/openclaw"
           }
         ],
         "images": []
       },
       {
         "title": "ClawdHub - 技能市场",
-        "description": "发现并安装技能来扩展 Moltbot 的功能。",
+        "description": "发现并安装技能来扩展 OpenClaw 的功能。",
         "details": [
           {
             "title": "浏览技能",
-            "description": "查找并安装 Moltbot 的 AgentSkills 包。",
+            "description": "查找并安装 OpenClaw 的 AgentSkills 包。",
             "href": "https://clawdhub.com/"
           }
         ],
@@ -73,32 +73,32 @@
   "UseCases": {
     "badge": {
       "label": "使用场景",
-      "text": "Moltbot 能做什么"
+      "text": "OpenClaw 能做什么"
     },
     "title": "强大的 AI 代理能力",
-    "description": "Moltbot 是一个多功能的 AI 代理工具，可以帮助您完成各种任务。以下是一些常见的使用场景。",
+    "description": "OpenClaw 是一个多功能的 AI 代理工具，可以帮助您完成各种任务。以下是一些常见的使用场景。",
     "cases": [
       {
         "title": "代码开发",
-        "description": "在 AI 辅助下编写、审查和重构代码。Moltbot 理解您的代码库，帮助您更快更好地开发。",
+        "description": "在 AI 辅助下编写、审查和重构代码。OpenClaw 理解您的代码库，帮助您更快更好地开发。",
         "image": "/placeholder.webp",
         "icon": "Code"
       },
       {
         "title": "任务自动化",
-        "description": "自动化重复性任务和工作流程。Moltbot 可以执行命令、管理文件，并与您的开发环境集成。",
+        "description": "自动化重复性任务和工作流程。OpenClaw 可以执行命令、管理文件，并与您的开发环境集成。",
         "image": "/placeholder.webp",
         "icon": "Bot"
       },
       {
         "title": "研究与分析",
-        "description": "研究主题、分析数据，并从网络收集信息。Moltbot 帮助您快速高效地找到答案。",
+        "description": "研究主题、分析数据，并从网络收集信息。OpenClaw 帮助您快速高效地找到答案。",
         "image": "/placeholder.webp",
         "icon": "Search"
       },
       {
         "title": "文档编写",
-        "description": "为您的项目生成和维护文档。Moltbot 可以编写 README、API 文档和技术规范。",
+        "description": "为您的项目生成和维护文档。OpenClaw 可以编写 README、API 文档和技术规范。",
         "image": "/placeholder.webp",
         "icon": "FileText"
       }
@@ -108,42 +108,42 @@
     "badge": {
       "label": "社区"
     },
-    "title": "加入 Moltbot 社区",
-    "description": "与其他 Moltbot 用户联系，分享您的经验"
+    "title": "加入 OpenClaw 社区",
+    "description": "与其他 OpenClaw 用户联系，分享您的经验"
   },
   "FAQ": {
     "title": "常见问题",
-    "description": "关于 Moltbot 以及如何充分利用这个 AI 代理工具的常见问题",
+    "description": "关于 OpenClaw 以及如何充分利用这个 AI 代理工具的常见问题",
     "items": [
       {
-        "question": "什么是 Moltbot？",
-        "answer": "Moltbot 是一个强大的 AI 代理工具，旨在帮助开发者和用户通过自然语言交互执行各种任务。它可以编写代码、自动化工作流程、研究主题等。"
+        "question": "什么是 OpenClaw？",
+        "answer": "OpenClaw 是一个强大的 AI 代理工具，旨在帮助开发者和用户通过自然语言交互执行各种任务。它可以编写代码、自动化工作流程、研究主题等。"
       },
       {
-        "question": "Moltbot 免费使用吗？",
-        "answer": "请参阅 Moltbot 官方网站了解最新的定价和许可信息。访问 https://www.molt.bot/ 获取详情。"
+        "question": "OpenClaw 免费使用吗？",
+        "answer": "请参阅 OpenClaw 官方网站了解最新的定价和许可信息。访问 https://openclaw.ai/ 获取详情。"
       },
       {
-        "question": "如何安装 Moltbot？",
-        "answer": "您可以在官方文档 https://docs.molt.bot/start/getting-started 中找到详细的安装说明。该指南涵盖了在各种平台上的安装。"
+        "question": "如何安装 OpenClaw？",
+        "answer": "您可以在官方文档 https://docs.openclaw.ai/ 中找到详细的安装说明。该指南涵盖了在各种平台上的安装。"
       },
       {
-        "question": "Moltbot 中的技能是什么？",
-        "answer": "技能是为 Moltbot 添加新功能的扩展。您可以在 https://clawdhub.com/ 浏览和安装技能来扩展 Moltbot 的功能。"
+        "question": "OpenClaw 中的技能是什么？",
+        "answer": "技能是为 OpenClaw 添加新功能的扩展。您可以在 https://clawdhub.com/ 浏览和安装技能来扩展 OpenClaw 的功能。"
       },
       {
-        "question": "Learn Moltbot 是官方资源吗？",
-        "answer": "不是，Learn Moltbot 是一个第三方的社区驱动资源。如需官方文档和支持，请访问 Moltbot 官方网站 https://www.molt.bot/。"
+        "question": "Learn OpenClaw 是官方资源吗？",
+        "answer": "不是，Learn OpenClaw 是一个第三方的社区驱动资源。如需官方文档和支持，请访问 OpenClaw 官方网站 https://openclaw.ai/。"
       },
       {
-        "question": "如何为 Moltbot 做贡献？",
-        "answer": "您可以通过 GitHub 仓库 https://github.com/moltbot/clawdbot 为 Moltbot 做贡献。请查看贡献指南了解更多信息。"
+        "question": "如何为 OpenClaw 做贡献？",
+        "answer": "您可以通过 GitHub 仓库 https://github.com/openclaw/openclaw 为 OpenClaw 做贡献。请查看贡献指南了解更多信息。"
       }
     ]
   },
   "CTA": {
-    "title": "今天就开始学习 Moltbot",
-    "description": "探索我们的教程和指南，掌握 Moltbot，通过 AI 驱动的辅助提升您的生产力。",
+    "title": "今天就开始学习 OpenClaw",
+    "description": "探索我们的教程和指南，掌握 OpenClaw，通过 AI 驱动的辅助提升您的生产力。",
     "button": "开始学习",
     "trustText": "免费社区资源",
     "features": {

@@ -4,17 +4,17 @@ export const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://learnclawdbot.org";
 
 export const siteConfig: SiteConfig = {
-  name: "Learn Moltbot",
+  name: "Learn OpenClaw",
   url: BASE_URL,
   authors: [
     {
-      name: "Learn Moltbot Team",
+      name: "Learn OpenClaw Team",
       url: BASE_URL,
     },
   ],
-  creator: "@learnclawdbot",
+  creator: "@learnopenclaw",
   socialLinks: {
-    github: "https://github.com/moltbot/clawdbot",
+    github: "https://github.com/openclaw/openclaw",
   },
   themeColors: [
     { media: "(prefers-color-scheme: light)", color: "white" },

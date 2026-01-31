@@ -1,8 +1,8 @@
 {
   "Home": {
-    "title": "Moltbot（旧 Clawdbot）学習ガイド",
+    "title": "OpenClaw（旧 Clawbot / Moltbot）学習ガイド",
     "tagLine": "初心者向け完全ガイド",
-    "description": "Moltbot（旧 Clawdbot）の完全ガイド。お使いのチャットアプリを、複雑なワークフローや日常業務を自動処理する強力なAIアシスタントに変身させましょう。"
+    "description": "OpenClaw（旧 Clawbot / Moltbot）の完全ガイド。お使いのチャットアプリを、複雑なワークフローや日常業務を自動処理する強力なAIアシスタントに変身させましょう。"
   },
   "Login": {
     "title": "おかえりなさい",
@@ -113,7 +113,7 @@
   },
   "Blogs": {
     "title": "ブログ記事",
-    "description": "Moltbot に関するヒント、チュートリアル、インサイト。",
+    "description": "OpenClaw に関するヒント、チュートリアル、インサイト。",
     "emptyState": {
       "title": "記事がありません",
       "description": "現在コンテンツを作成中です。もうしばらくお待ちください！"
@@ -137,24 +137,29 @@
     }
   },
   "About": {
-    "title": "Moltbot について：AI 自動化ツール",
-    "description": "Moltbot（旧名 Clawdbot）を完全に使いこなそう。WhatsAppやTelegramを使ってメール、カレンダー、フライト予約を自動化する方法を、ステップバイステップで解説します。"
+    "title": "OpenClaw について：AI 自動化ツール",
+    "description": "OpenClaw（旧 Clawbot / Moltbot）を完全に使いこなそう。WhatsAppやTelegramを使ってメール、カレンダー、フライト予約を自動化する方法を、ステップバイステップで解説します。"
   },
   "Moltbot": {
-    "title": "Moltbot とは：AI 自動化ガイド",
-    "description": "Moltbot（旧名 Clawdbot）を完全に使いこなそう。WhatsAppやTelegramを使ってメール、カレンダー、フライト予約を自動化する方法を、ステップバイステップで解説します。"
+    "title": "Moltbot とは？（現在は OpenClaw）",
+    "description": "Moltbot は OpenClaw の旧名称（以前は Clawbot）。本ページは歴史的な説明と最新の OpenClaw リソースへの案内です。"
+  },
+  "OpenClaw": {
+    "title": "OpenClaw とは：AI 自動化ガイド",
+    "description": "OpenClaw（旧 Clawbot / Moltbot）を完全に使いこなそう。WhatsAppやTelegramを使ってメール、カレンダー、フライト予約を自動化する方法を、ステップバイステップで解説します。"
   },
   "Clawdbot": {
-    "metaTitle": "Clawdbotとは？ (現 Moltbot) - WhatsApp & Telegram 用 AI アシスタント",
-    "metaDescription": "Clawdbot は Moltbot に生まれ変わりました。メール、カレンダー、タスク管理をチャットアプリから直接行える、強力な AI アシスタント機能はそのままです。",
+    "metaTitle": "Clawbotとは？（現在は OpenClaw）- WhatsApp & Telegram 用 AI アシスタント",
+    "metaDescription": "Clawbot は OpenClaw の初期名称で、後に Moltbot と呼ばれ、現在は OpenClaw です。",
     "importantUpdate": "重要なお知らせ",
-    "title": "Clawdbot は Moltbot になりました",
-    "subtitle": "進化しました！Clawdbot は新しい名前と外観になりましたが、愛され続けている強力な AI アシスタント機能は変わりません。",
-    "cta": "Moltbot をチェック",
-    "whatWasClawdbot": "Clawdbot とは？",
-    "whatWasClawdbotDesc": "Clawdbot は、WhatsApp や Telegram 内で動作するように設計された AI アシスタントの当初の名前でした。ユーザーはチャットアプリを離れることなく、メール、カレンダーの予定、タスクを管理できました。",
+    "title": "Clawbot は OpenClaw になりました",
+    "description": "Clawbot はこの AI アシスタントの最初の名称で、後に Moltbot を経て、現在は OpenClaw です。本ページは歴史的な説明と最新の OpenClaw リソースへの案内です。",
+    "subtitle": "Clawbot は Moltbot を経て OpenClaw へ。名前と外観は変わっても、愛され続けている強力な AI アシスタント機能は変わりません。",
+    "cta": "OpenClaw をチェック",
+    "whatWasClawdbot": "Clawbot とは？",
+    "whatWasClawdbotDesc": "Clawbot は、WhatsApp や Telegram 内で動作するように設計された AI アシスタントの初期名称でした。ユーザーはチャットアプリを離れることなく、メール、カレンダーの予定、タスクを管理できました。",
     "whyChange": "なぜ変更したのですか？",
-    "imageAlt": "Moltbot ブランド変更のお知らせツイート"
+    "imageAlt": "OpenClaw ブランド変更のお知らせ"
   },
   "AIDemo": {
     "title": "AI機能デモ",
@@ -220,8 +225,8 @@
   "Header": {
     "links": [
       {
-        "name": "Clawdbotとは？",
-        "href": "/what-is-clawdbot"
+        "name": "OpenClaw とは？",
+        "href": "/what-is-openclaw"
       },
       {
         "name": "ブログ",
@@ -249,9 +254,9 @@
       },
       "unsubscribe": {
         "title": "ニュースレター配信停止",
-        "success": "Learn Moltbot ニュースレターの配信停止が完了しました。",
+        "success": "Learn OpenClaw ニュースレターの配信停止が完了しました。",
         "emailPrefix": "メールアドレス：",
-        "regretMessage": "いつでも再登録して、Learn Moltbot の最新アップデートやチュートリアルを受け取ることができます。",
+        "regretMessage": "いつでも再登録して、Learn OpenClaw の最新アップデートやチュートリアルを受け取ることができます。",
         "errorGeneric": "配信停止の処理中にエラーが発生しました",
         "errorNoToken": "配信停止トークンが提供されていません",
         "errorMessage": "正しい配信停止リンクを使用していることをご確認ください。問題が解決しない場合は、サポートチームまでお問い合わせください。",
@@ -275,8 +280,8 @@
           "title": "学ぶ",
           "links": [
             {
-              "href": "/moltbot",
-              "name": "Moltbot とは？"
+              "href": "/openclaw",
+              "name": "OpenClaw とは？"
             },
             {
               "href": "/blog",
