@@ -1,0 +1,109 @@
+---
+summary: "OpenClaw 如何构建 prompt context 并报告 token 使用和成本"
+read_when:
+  - 解释 token 使用、成本或 context windows
+  - 调试 context 增长或压缩行为
+---
+# Token use & costs (Token 使用和成本)
+
+OpenClaw 跟踪 **tokens (令牌)**,而不是字符。Tokens 是特定于模型的,但大多数
+OpenAI 风格的模型对于英文文本平均每个 token 约 4 个字符。
+
+## System prompt (系统提示) 如何构建
+
+OpenClaw 在每次运行时组装自己的 system prompt。它包括:
+
+- Tool 列表 + 简短描述
+- Skills 列表(仅元数据;指令在需要时通过 `read` 加载)
+- 自我更新指令
+- Workspace + bootstrap 文件(`AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`, 新时的 `BOOTSTRAP.md`)。大文件会被 `agents.defaults.bootstrapMaxChars` 截断(默认: 20000)。
+- 时间(UTC + 用户时区)
+- Reply tags (回复标签) + heartbeat 行为
+- Runtime 元数据(host/OS/model/thinking)
+
+查看 [System Prompt](/concepts/system-prompt) 中的完整分解。
+
+## Context window 中计入的内容
+
+模型接收的所有内容都计入 context 限制:
+
+- System prompt (上面列出的所有部分)
+- Conversation history (对话历史) (用户 + 助手消息)
+- Tool calls (工具调用) 和 tool results (工具结果)
+- Attachments/transcripts (附件/转录) (images, audio, files)
+- Compaction summaries (压缩摘要) 和 pruning artifacts (修剪产物)
+- Provider wrappers (提供商包装器) 或 safety headers (安全头) (不可见,但仍被计数)
+
+有关实际分解(每个注入的文件、tools、skills 和 system prompt 大小),使用 `/context list` 或 `/context detail`。查看 [Context](/concepts/context)。
+
+## 如何查看当前 token 使用
+
+在聊天中使用这些:
+
+- `/status` → **emoji 丰富的状态卡**,包含会话模型、context 使用、
+  最后响应的 input/output tokens 和 **估计成本**(仅 API key)。
+- `/usage off|tokens|full` → 为每个回复附加 **per-response usage footer (每响应使用页脚)**。
+  - 每个会话持久化(存储为 `responseUsage`)。
+  - OAuth auth **隐藏成本**(仅 tokens)。
+- `/usage cost` → 显示来自 OpenClaw 会话日志的本地成本摘要。
+
+其他界面:
+
+- **TUI/Web TUI:** 支持 `/status` + `/usage`。
+- **CLI:** `openclaw status --usage` 和 `openclaw channels list` 显示
+  provider quota windows (配额窗口) (不是每响应成本)。
+
+## Cost estimation (成本估算) (显示时)
+
+成本根据你的模型定价配置估算:
+
+```
+models.providers.<provider>.models[].cost
+```
+
+这些是每 1M tokens 的 **USD**,用于 `input`, `output`, `cacheRead` 和
+`cacheWrite`。如果缺少定价,OpenClaw 仅显示 tokens。OAuth tokens
+从不显示美元成本。
+
+## Cache TTL 和 pruning 影响
+
+Provider prompt caching (提示缓存) 仅在 cache TTL window 内适用。OpenClaw 可以
+选择性地运行 **cache-ttl pruning (缓存 TTL 修剪)**: 一旦 cache TTL
+过期,它会修剪会话,然后重置 cache window,以便后续请求可以重新使用
+新缓存的 context,而不是重新缓存完整历史。这在会话空闲超过 TTL 时保持 cache
+write 成本更低。
+
+在 [Gateway configuration](/gateway/configuration) 中配置它,并在 [Session pruning](/concepts/session-pruning) 中查看行为详细信息。
+
+Heartbeat 可以在空闲间隙保持 cache **warm (温暖)**。如果你的模型 cache TTL
+是 `1h`,将 heartbeat interval 设置为稍低于此(例如 `55m`)可以避免
+重新缓存完整 prompt,减少 cache write 成本。
+
+对于 Anthropic API 定价,cache reads 明显比 input
+tokens 便宜,而 cache writes 按更高的倍数计费。查看 Anthropic 的
+prompt caching 定价以获取最新费率和 TTL 倍数:
+https://docs.anthropic.com/docs/build-with-claude/prompt-caching
+
+### 示例: 使用 heartbeat 保持 1h cache warm
+
+```yaml
+agents:
+  defaults:
+    model:
+      primary: "anthropic/claude-opus-4-5"
+    models:
+      "anthropic/claude-opus-4-5":
+        params:
+          cacheControlTtl: "1h"
+    heartbeat:
+      every: "55m"
+```
+
+## 减少 token 压力的技巧
+
+- 使用 `/compact` 来总结长会话。
+- 在你的工作流中修剪大的 tool 输出。
+- 保持 skill 描述简短(skill 列表注入到 prompt 中)。
+- 对于冗长的探索性工作,优先使用较小的模型。
+
+查看 [Skills](/tools/skills) 了解确切的 skill 列表开销公式。

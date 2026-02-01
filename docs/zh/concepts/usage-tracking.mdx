@@ -1,0 +1,30 @@
+---
+summary: "使用追踪表面和凭证要求"
+read_when:
+  - 你正在连接提供商使用/配额表面
+  - 你需要解释使用追踪行为或认证要求
+---
+# Usage tracking（使用追踪）
+
+## 它是什么
+- 直接从提供商的使用端点拉取提供商使用/配额。
+- 无估算成本；仅提供商报告的窗口。
+
+## 它出现在哪里
+- 聊天中的 `/status`：带表情符号的丰富状态卡，包含会话 token + 估算成本（仅 API 密钥）。当可用时，提供商使用显示**当前模型提供商**。
+- 聊天中的 `/usage off|tokens|full`：每响应使用页脚（OAuth 仅显示 token）。
+- 聊天中的 `/usage cost`：从 OpenClaw 会话日志聚合的本地成本摘要。
+- CLI：`openclaw status --usage` 打印完整的每提供商分解。
+- CLI：`openclaw channels list` 在提供商配置旁打印相同的使用快照（使用 `--no-usage` 跳过）。
+- macOS 菜单栏：Context 下的 "Usage" 部分（仅在可用时）。
+
+## 提供商 + 凭证
+- **Anthropic (Claude)**：auth profiles（认证配置文件）中的 OAuth token。
+- **GitHub Copilot**：auth profiles 中的 OAuth token。
+- **Gemini CLI**：auth profiles 中的 OAuth token。
+- **Antigravity**：auth profiles 中的 OAuth token。
+- **OpenAI Codex**：auth profiles 中的 OAuth token（存在时使用 accountId）。
+- **MiniMax**：API 密钥（coding plan 密钥；`MINIMAX_CODE_PLAN_KEY` 或 `MINIMAX_API_KEY`）；使用 5 小时 coding plan 窗口。
+- **z.ai**：通过 env/config/auth store 的 API 密钥。
+
+如果不存在匹配的 OAuth/API 凭证，则隐藏使用情况。

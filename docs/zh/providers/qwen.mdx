@@ -1,0 +1,50 @@
+---
+summary: "在 OpenClaw 中使用 Qwen OAuth (免费层级)"
+read_when:
+  - 你想在 OpenClaw 中使用 Qwen
+  - 你想要免费层级的 OAuth 访问 Qwen Coder
+---
+# Qwen
+
+Qwen 为 Qwen Coder 和 Qwen Vision 模型提供免费层级的 OAuth 流程
+(每天 2,000 次请求,受 Qwen 速率限制约束)。
+
+## 启用插件
+
+```bash
+openclaw plugins enable qwen-portal-auth
+```
+
+启用后重启 Gateway。
+
+## 认证
+
+```bash
+openclaw models auth login --provider qwen-portal --set-default
+```
+
+这会运行 Qwen 设备代码 OAuth 流程,并将 provider 条目写入你的
+`models.json`(加上一个 `qwen` 别名用于快速切换)。
+
+## 模型 ID
+
+- `qwen-portal/coder-model`
+- `qwen-portal/vision-model`
+
+切换模型:
+
+```bash
+openclaw models set qwen-portal/coder-model
+```
+
+## 复用 Qwen Code CLI 登录
+
+如果你已经使用 Qwen Code CLI 登录,OpenClaw 会在加载认证存储时从 `~/.qwen/oauth_creds.json` 同步凭证。你仍然需要一个
+`models.providers.qwen-portal` 条目(使用上面的 login 命令创建)。
+
+## 注意事项
+
+- Token (令牌) 会自动刷新;如果刷新失败或访问被撤销,重新运行 login 命令。
+- 默认 base URL: `https://portal.qwen.ai/v1`(如果 Qwen 提供不同的端点,通过
+  `models.providers.qwen-portal.baseUrl` 覆盖)。
+- 查看 [Model providers](/concepts/model-providers) 了解 provider 级别的规则。

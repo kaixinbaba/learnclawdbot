@@ -225,6 +225,10 @@
   "Header": {
     "links": [
       {
+        "name": "文档",
+        "href": "/docs"
+      },
+      {
         "name": "什么是 OpenClaw？",
         "href": "/what-is-openclaw"
       },

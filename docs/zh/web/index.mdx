@@ -1,0 +1,110 @@
+---
+summary: "Gateway web 界面: Control UI, bind 模式和安全性"
+read_when:
+  - 你想通过 Tailscale 访问 Gateway
+  - 你想要浏览器 Control UI 和配置编辑
+---
+# Web (Gateway)
+
+Gateway 从与 Gateway WebSocket 相同的端口提供一个小的 **浏览器 Control UI** (Vite + Lit):
+
+- 默认: `http://<host>:18789/`
+- 可选前缀: 设置 `gateway.controlUi.basePath`(例如 `/openclaw`)
+
+能力位于 [Control UI](/web/control-ui)。
+此页面专注于 bind 模式、安全性和 web 界面。
+
+## Webhooks
+
+当 `hooks.enabled=true` 时,Gateway 还在同一 HTTP 服务器上暴露一个小的 webhook 端点。
+查看 [Gateway configuration](/gateway/configuration) → `hooks` 了解 auth + payloads。
+
+## 配置(默认开启)
+
+当资产存在(`dist/control-ui`)时,Control UI **默认启用**。
+你可以通过配置控制它:
+
+```json5
+{
+  gateway: {
+    controlUi: { enabled: true, basePath: "/openclaw" } // basePath 可选
+  }
+}
+```
+
+## Tailscale 访问
+
+### 集成 Serve (推荐)
+
+将 Gateway 保持在 loopback 上,让 Tailscale Serve 代理它:
+
+```json5
+{
+  gateway: {
+    bind: "loopback",
+    tailscale: { mode: "serve" }
+  }
+}
+```
+
+然后启动 gateway:
+
+```bash
+openclaw gateway
+```
+
+打开:
+- `https://<magicdns>/` (或你配置的 `gateway.controlUi.basePath`)
+
+### Tailnet bind + token
+
+```json5
+{
+  gateway: {
+    bind: "tailnet",
+    controlUi: { enabled: true },
+    auth: { mode: "token", token: "your-token" }
+  }
+}
+```
+
+然后启动 gateway (非 loopback binds 需要 token):
+
+```bash
+openclaw gateway
+```
+
+打开:
+- `http://<tailscale-ip>:18789/` (或你配置的 `gateway.controlUi.basePath`)
+
+### 公网(Funnel)
+
+```json5
+{
+  gateway: {
+    bind: "loopback",
+    tailscale: { mode: "funnel" },
+    auth: { mode: "password" } // 或 OPENCLAW_GATEWAY_PASSWORD
+  }
+}
+```
+
+## 安全注意事项
+
+- 默认需要 Gateway auth (token/password 或 Tailscale identity headers)。
+- 非 loopback binds 仍然**需要**共享 token/password (`gateway.auth` 或 env)。
+- 向导默认生成 gateway token (即使在 loopback 上)。
+- UI 发送 `connect.params.auth.token` 或 `connect.params.auth.password`。
+- 使用 Serve 时,当
+  `gateway.auth.allowTailscale` 为 `true` 时,Tailscale identity headers 可以满足 auth (不需要 token/password)。设置
+  `gateway.auth.allowTailscale: false` 以要求显式凭据。查看
+  [Tailscale](/gateway/tailscale) 和 [Security](/gateway/security)。
+- `gateway.tailscale.mode: "funnel"` 需要 `gateway.auth.mode: "password"` (共享密码)。
+
+## 构建 UI
+
+Gateway 从 `dist/control-ui` 提供静态文件。使用以下命令构建它们:
+
+```bash
+pnpm ui:build # 首次运行时自动安装 UI deps
+```

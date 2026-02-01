@@ -1,0 +1,20 @@
+---
+summary: "跨渠道共享的 reaction 语义"
+read_when:
+  - 在任何渠道处理 reactions
+---
+# Reaction 工具
+
+跨渠道共享的 reaction 语义:
+
+- 添加 reaction 时需要 `emoji`。
+- `emoji=""` 在支持时移除 bot 的 reaction(s)。
+- `remove: true` 在支持时移除指定的 emoji(需要 `emoji`)。
+
+渠道注意事项:
+
+- **Discord/Slack**: 空 `emoji` 移除消息上 bot 的所有 reactions; `remove: true` 只移除该 emoji。
+- **Google Chat**: 空 `emoji` 移除消息上应用的 reactions; `remove: true` 只移除该 emoji。
+- **Telegram**: 空 `emoji` 移除 bot 的 reactions; `remove: true` 也移除 reactions 但工具验证仍需要非空的 `emoji`。
+- **WhatsApp**: 空 `emoji` 移除 bot reaction; `remove: true` 映射到空 emoji(仍需要 `emoji`)。
+- **Signal**: 当启用 `channels.signal.reactionNotifications` 时,入站 reaction 通知会发出系统事件。

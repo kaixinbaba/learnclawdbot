@@ -1,0 +1,114 @@
+---
+summary: "用于工作流的纯 JSON LLM 任务(可选插件工具)"
+read_when:
+  - 你想在工作流中使用纯 JSON 的 LLM 步骤
+  - 你需要 schema 验证的 LLM 输出用于自动化
+---
+
+# LLM Task
+
+`llm-task` 是一个**可选插件工具**,运行纯 JSON 的 LLM 任务并
+返回结构化输出(可选地对照 JSON Schema 验证)。
+
+这非常适合像 Lobster 这样的工作流引擎: 你可以添加单个 LLM 步骤
+而无需为每个工作流编写自定义 OpenClaw 代码。
+
+## 启用插件
+
+1) 启用插件:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "llm-task": { "enabled": true }
+    }
+  }
+}
+```
+
+2) Allowlist (允许列表) 该工具(它注册时 `optional: true`):
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "main",
+        "tools": { "allow": ["llm-task"] }
+      }
+    ]
+  }
+}
+```
+
+## 配置(可选)
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "llm-task": {
+        "enabled": true,
+        "config": {
+          "defaultProvider": "openai-codex",
+          "defaultModel": "gpt-5.2",
+          "defaultAuthProfileId": "main",
+          "allowedModels": ["openai-codex/gpt-5.2"],
+          "maxTokens": 800,
+          "timeoutMs": 30000
+        }
+      }
+    }
+  }
+}
+```
+
+`allowedModels` 是 `provider/model` 字符串的 allowlist。如果设置,列表外的任何请求
+都会被拒绝。
+
+## Tool 参数
+
+- `prompt` (string, 必需)
+- `input` (any, 可选)
+- `schema` (object, 可选 JSON Schema)
+- `provider` (string, 可选)
+- `model` (string, 可选)
+- `authProfileId` (string, 可选)
+- `temperature` (number, 可选)
+- `maxTokens` (number, 可选)
+- `timeoutMs` (number, 可选)
+
+## 输出
+
+返回 `details.json`,包含解析的 JSON (并在
+提供 `schema` 时对照其验证)。
+
+## 示例: Lobster 工作流步骤
+
+```lobster
+openclaw.invoke --tool llm-task --action json --args-json '{
+  "prompt": "Given the input email, return intent and draft.",
+  "input": {
+    "subject": "Hello",
+    "body": "Can you help?"
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "intent": { "type": "string" },
+      "draft": { "type": "string" }
+    },
+    "required": ["intent", "draft"],
+    "additionalProperties": false
+  }
+}'
+```
+
+## 安全注意事项
+
+- 该工具是 **纯 JSON** 的,并指示模型仅输出 JSON (无
+  代码围栏,无注释)。
+- 此运行不向模型暴露工具。
+- 将输出视为不受信任,除非你使用 `schema` 验证。
+- 在任何有副作用的步骤(send, post, exec)之前放置 approvals。
