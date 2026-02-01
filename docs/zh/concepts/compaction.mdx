@@ -1,0 +1,48 @@
+---
+summary: "上下文窗口 + 压缩：OpenClaw 如何将会话保持在模型限制之内"
+read_when:
+  - 你想了解自动压缩和 /compact
+  - 你正在调试达到上下文限制的长会话
+---
+# 上下文窗口与压缩（Context Window & Compaction）
+
+每个模型都有一个**上下文窗口**（它可以看到的最大令牌数）。长时间运行的聊天会累积消息和工具结果；一旦窗口紧张，OpenClaw 会**压缩**旧历史记录以保持在限制之内。
+
+## 什么是压缩
+压缩将**旧对话总结**为紧凑的摘要条目，并保持最近的消息完整。摘要存储在会话历史中，因此未来的请求使用：
+- 压缩摘要
+- 压缩点之后的最近消息
+
+压缩在会话的 JSONL 历史中**持久化**。
+
+## 配置
+参见 [压缩配置和模式（Compaction config & modes）](/concepts/compaction) 了解 `agents.defaults.compaction` 设置。
+
+## 自动压缩（默认开启）
+当会话接近或超过模型的上下文窗口时，OpenClaw 触发自动压缩，并可能使用压缩的上下文重试原始请求。
+
+你会看到：
+- 详细模式下的 `🧹 Auto-compaction complete`
+- `/status` 显示 `🧹 Compactions: <count>`
+
+在压缩之前，OpenClaw 可以运行**静默记忆刷新**轮次以将持久笔记存储到磁盘。参见 [记忆（Memory）](/concepts/memory) 了解详情和配置。
+
+## 手动压缩
+使用 `/compact`（可选择带有指令）强制压缩：
+```
+/compact 专注于决策和未解决的问题
+```
+
+## 上下文窗口来源
+上下文窗口是特定于模型的。OpenClaw 使用配置的提供商目录中的模型定义来确定限制。
+
+## 压缩 vs 修剪
+- **压缩（Compaction）**：总结并在 JSONL 中**持久化**。
+- **会话修剪（Session pruning）**：仅修剪旧的**工具结果**，**内存中**，每个请求。
+
+参见 [/concepts/session-pruning](/concepts/session-pruning) 了解修剪详情。
+
+## 提示
+- 当会话感觉陈旧或上下文膨胀时使用 `/compact`。
+- 大型工具输出已被截断；修剪可以进一步减少工具结果的积累。
+- 如果需要全新的开始，`/new` 或 `/reset` 会启动一个新的会话 ID。

@@ -1,0 +1,24 @@
+---
+summary: "`openclaw status` 的 CLI 参考（诊断、探测、使用快照）"
+read_when:
+  - 您想要快速诊断频道健康状况 + 最近的会话接收者
+  - 您想要一个可粘贴的"全部"状态用于调试
+---
+
+# `openclaw status`
+
+频道 + 会话的诊断。
+
+```bash
+openclaw status
+openclaw status --all
+openclaw status --deep
+openclaw status --usage
+```
+
+注意：
+- `--deep` 运行实时探测（WhatsApp Web + Telegram + Discord + Google Chat + Slack + Signal）。
+- 当配置了多个代理时，输出包括每个代理的会话存储。
+- 概览包括网关 + 节点主机服务安装/运行时状态（如果可用）。
+- 概览包括更新频道 + git SHA（用于源代码检出）。
+- 更新信息在概览中显示；如果有可用更新，状态会打印提示运行 `openclaw update`（参见[更新](/install/updating)）。

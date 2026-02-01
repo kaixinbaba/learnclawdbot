@@ -1,0 +1,123 @@
+---
+title: "修复：LLM Request Rejected - Unexpected tool_use_id in tool_result Blocks"
+description: "如何通过清除损坏的会话文件来解决 OpenClaw 中 'unexpected tool_use_id found in tool_result blocks' 错误"
+slug: /troubleshooting/fix-tool-use-id-error
+tags: troubleshooting, error, session, fix
+publishedAt: 2026-02-01
+status: published
+visibility: public
+isPinned: false
+featuredImageUrl: /images/features/fix_tool_use_id_head.jpg
+---
+
+# 修复：LLM Request Rejected — Unexpected tool_use_id in tool_result Blocks
+
+如果你在使用 OpenClaw 时突然遇到这个错误：
+
+```
+LLM request rejected: messages.58.content.1: unexpected tool_use_id found
+in tool_result blocks: toolu_01BuEWGgvuHAY9iAXdbCpCEw.
+Each tool_result block must have a corresponding tool_use block in the
+previous message.
+```
+
+别慌。这是一个**会话文件损坏**的问题，修复起来很简单。
+
+## 错误原因
+
+当 OpenClaw 与 LLM（如 Claude）通信时，会以一系列消息的形式发送对话历史。每个 `tool_result` 块必须引用上一条消息中的 `tool_use` 块——它们是成对出现的。
+
+当会话历史失去同步时就会出现这个错误：
+
+- **会话压缩（Compaction）** 删除了 `tool_use` 块但保留了 `tool_result`
+- 进程在**对话中途被中断**（崩溃、强制退出、网络超时）
+- **手动编辑**会话文件导致消息链断裂
+
+LLM API 会严格验证消息结构。如果发现一个 `tool_result` 引用了上一条消息中不存在的 `tool_use_id`，就会拒绝整个请求。
+
+## 修复方法：删除损坏的会话文件
+
+### 第一步：找到会话目录
+
+OpenClaw 将会话记录存储为 `.jsonl` 文件。位置取决于你的配置：
+
+```bash
+# macOS/Linux 默认位置
+~/.openclaw/agents/main/sessions/
+
+# 查看你的工作区
+ls -lt ~/.openclaw/agents/main/sessions/*.jsonl | head -5
+```
+
+### 第二步：识别损坏的文件
+
+最近修改的 `.jsonl` 文件很可能就是问题所在：
+
+```bash
+# 按修改时间排序（最新的在前）
+ls -lt ~/.openclaw/agents/main/sessions/*.jsonl | head -5
+```
+
+你会看到类似这样的输出：
+
+```
+-rw-r--r--  1 user  staff  245632 Feb  1 12:30 abc123-def456.jsonl
+-rw-r--r--  1 user  staff  189421 Feb  1 10:15 789ghi-012jkl.jsonl
+```
+
+### 第三步：删除损坏的会话
+
+```bash
+# 删除最近的会话文件
+rm ~/.openclaw/agents/main/sessions/<损坏的文件>.jsonl
+```
+
+或者更安全的做法：
+
+```bash
+# 移动而不是删除
+mv ~/.openclaw/agents/main/sessions/<损坏的文件>.jsonl /tmp/
+```
+
+### 第四步：重启网关（Gateway）
+
+```bash
+openclaw gateway restart
+```
+
+就这样。OpenClaw 会开始一个新的会话，错误应该就消失了。
+
+## 预防建议
+
+1. **不要在工具执行期间强制退出 OpenClaw** — 等待完成或使用 `/abort` 命令
+2. **避免手动编辑 `.jsonl` 文件** — 这些是机器生成的会话记录
+3. **定期重启网关** 有助于清除过期的会话状态
+4. 如果频繁遇到压缩问题，考虑在网关配置中调整 `compaction` 设置
+
+## 理解错误信息
+
+让我们拆解一下这个错误：
+
+| 部分 | 含义 |
+|------|------|
+| `messages.58.content.1` | 第 59 条消息（从 0 开始计数），第 2 个内容块 |
+| `unexpected tool_use_id` | 发现一个 tool_result 引用了不存在的 tool_use |
+| `toolu_01BuEWGgvuHAY9iAXdbCpCEw` | 孤立的工具调用 ID |
+| `Each tool_result block must have a corresponding tool_use block` | API 的验证规则 |
+
+## 相关问题
+
+- **"All models failed"** — 可能是另一个问题。检查你的 API 密钥和模型配置。
+- **"Session too large"** — 你的会话历史可能太长了。OpenClaw 通过自动压缩来处理这个问题。
+- **网关无法启动** — 尝试运行 `openclaw doctor` 来诊断问题。
+
+## 总结
+
+| 问题 | 损坏的会话文件包含孤立的 tool_result 块 |
+|------|----------------------------------------|
+| 原因 | 会话压缩、崩溃或工具执行期间的中断 |
+| 修复 | 删除 sessions 目录中最近的 `.jsonl` 文件 |
+| 修复时间 | 30 秒 |
+| 预防 | 不要在工具执行期间强制退出 |
+
+这是那种看起来很吓人但修复起来很简单的错误。如果遇到了，清除会话然后继续就好。Happy automating! 🚀

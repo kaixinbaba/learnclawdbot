@@ -1,0 +1,114 @@
+---
+summary: "流式传输 + 分块行为（块回复、草稿流式传输、限制）"
+read_when:
+  - 解释流式传输或分块在频道上的工作原理
+  - 更改块流式传输或频道分块行为
+  - 调试重复/提前块回复或草稿流式传输
+---
+# 流式传输 + 分块（Streaming + chunking）
+
+OpenClaw 有两个独立的"流式传输"层：
+- **块流式传输（频道）：** 随着助手写入，发出已完成的**块**。这些是正常的频道消息（而不是令牌增量）。
+- **类令牌流式传输（仅 Telegram）：** 在生成时使用部分文本更新**草稿气泡**；最终消息在结束时发送。
+
+今天**没有真正的令牌流式传输**到外部频道消息。Telegram 草稿流式传输是唯一的部分流表面。
+
+## 块流式传输（频道消息）
+
+块流式传输在助手输出可用时以粗粒度块发送。
+
+```
+模型输出
+  └─ text_delta/events
+       ├─ (blockStreamingBreak=text_end)
+       │    └─ 分块器在缓冲区增长时发出块
+       └─ (blockStreamingBreak=message_end)
+            └─ 分块器在 message_end 时刷新
+                   └─ 频道发送（块回复）
+```
+图例：
+- `text_delta/events`：模型流事件（对于非流式传输模型可能稀疏）。
+- `chunker`：`EmbeddedBlockChunker` 应用最小/最大边界 + 中断偏好。
+- `channel send`：实际的出站消息（块回复）。
+
+**控制：**
+- `agents.defaults.blockStreamingDefault`：`"on"`/`"off"`（默认关闭）。
+- 频道覆盖：`*.blockStreaming`（和每个账户变体）以强制每个频道 `"on"`/`"off"`。
+- `agents.defaults.blockStreamingBreak`：`"text_end"` 或 `"message_end"`。
+- `agents.defaults.blockStreamingChunk`：`{ minChars, maxChars, breakPreference? }`。
+- `agents.defaults.blockStreamingCoalesce`：`{ minChars?, maxChars?, idleMs? }`（在发送之前合并流式块）。
+- 频道硬上限：`*.textChunkLimit`（例如，`channels.whatsapp.textChunkLimit`）。
+- 频道分块模式：`*.chunkMode`（`length` 默认，`newline` 在长度分块之前在空行（段落边界）上分割）。
+- Discord 软上限：`channels.discord.maxLinesPerMessage`（默认 17）分割高回复以避免 UI 裁剪。
+
+**边界语义：**
+- `text_end`：一旦分块器发出就流式传输块；在每个 `text_end` 上刷新。
+- `message_end`：等待助手消息完成，然后刷新缓冲输出。
+
+`message_end` 如果缓冲文本超过 `maxChars`，仍然使用分块器，因此它可以在结束时发出多个块。
+
+## 分块算法（低/高界限）
+
+块分块由 `EmbeddedBlockChunker` 实现：
+- **低界限：** 在缓冲区 >= `minChars` 之前不发出（除非强制）。
+- **高界限：** 偏好在 `maxChars` 之前分割；如果强制，在 `maxChars` 处分割。
+- **中断偏好：** `paragraph` → `newline` → `sentence` → `whitespace` → 硬中断。
+- **代码围栏：** 永远不要在围栏内分割；当在 `maxChars` 处强制时，关闭 + 重新打开围栏以保持 Markdown 有效。
+
+`maxChars` 被限制为频道 `textChunkLimit`，因此您无法超过每个频道的上限。
+
+## 合并（合并流式块）
+
+当启用块流式传输时，OpenClaw 可以在发送之前**合并连续的块分块**。这减少了"单行垃圾邮件"，同时仍提供渐进式输出。
+
+- 合并在刷新之前等待**空闲间隙**（`idleMs`）。
+- 缓冲区由 `maxChars` 限制，如果超过将刷新。
+- `minChars` 防止微小片段在累积足够文本之前发送（最终刷新总是发送剩余文本）。
+- 连接器从 `blockStreamingChunk.breakPreference` 派生（`paragraph` → `\n\n`，`newline` → `\n`，`sentence` → 空格）。
+- 频道覆盖可通过 `*.blockStreamingCoalesce` 获得（包括每个账户配置）。
+- 默认合并 `minChars` 对于 Signal/Slack/Discord 增加到 1500，除非覆盖。
+
+## 块之间的类人节奏
+
+当启用块流式传输时，您可以在块回复之间（在第一个块之后）添加**随机暂停**。这使多气泡响应感觉更自然。
+
+- 配置：`agents.defaults.humanDelay`（通过 `agents.list[].humanDelay` 按智能体覆盖）。
+- 模式：`off`（默认），`natural`（800–2500ms），`custom`（`minMs`/`maxMs`）。
+- 仅适用于**块回复**，不适用于最终回复或工具摘要。
+
+## "流式传输块或所有内容"
+
+这映射到：
+- **流式传输块：** `blockStreamingDefault: "on"` + `blockStreamingBreak: "text_end"`（随时发出）。非 Telegram 频道还需要 `*.blockStreaming: true`。
+- **在结束时流式传输所有内容：** `blockStreamingBreak: "message_end"`（刷新一次，如果很长可能有多个块）。
+- **无块流式传输：** `blockStreamingDefault: "off"`（仅最终回复）。
+
+**频道说明：** 对于非 Telegram 频道，块流式传输**关闭，除非** `*.blockStreaming` 明确设置为 `true`。Telegram 可以在没有块回复的情况下流式传输草稿（`channels.telegram.streamMode`）。
+
+配置位置提醒：`blockStreaming*` 默认值位于 `agents.defaults` 下，而不是根配置。
+
+## Telegram 草稿流式传输（类令牌）
+
+Telegram 是唯一具有草稿流式传输的频道：
+- 在**带主题的私聊**中使用 Bot API `sendMessageDraft`。
+- `channels.telegram.streamMode: "partial" | "block" | "off"`。
+  - `partial`：使用最新流文本更新草稿。
+  - `block`：以分块块更新草稿（相同的分块器规则）。
+  - `off`：无草稿流式传输。
+- 草稿分块配置（仅用于 `streamMode: "block"`）：`channels.telegram.draftChunk`（默认：`minChars: 200`，`maxChars: 800`）。
+- 草稿流式传输与块流式传输分离；块回复默认关闭，仅在非 Telegram 频道上通过 `*.blockStreaming: true` 启用。
+- 最终回复仍然是正常消息。
+- `/reasoning stream` 将推理写入草稿气泡（仅 Telegram）。
+
+当草稿流式传输处于活跃状态时，OpenClaw 禁用该回复的块流式传输以避免双重流式传输。
+
+```
+Telegram（私聊 + 主题）
+  └─ sendMessageDraft（草稿气泡）
+       ├─ streamMode=partial → 更新最新文本
+       └─ streamMode=block   → 分块器更新草稿
+  └─ 最终回复 → 正常消息
+```
+图例：
+- `sendMessageDraft`：Telegram 草稿气泡（不是真实消息）。
+- `final reply`：正常的 Telegram 消息发送。

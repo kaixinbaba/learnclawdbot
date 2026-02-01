@@ -1,0 +1,58 @@
+---
+summary: "Bun 工作流（实验性）：安装和与 pnpm 的差异注意事项"
+read_when:
+  - 你想要最快的本地开发循环（bun + watch）
+  - 你遇到了 Bun 安装/补丁/生命周期脚本问题
+---
+
+# Bun（实验性）
+
+目标：使用 **Bun** 运行此仓库（可选，不推荐用于 WhatsApp/Telegram）
+而不偏离 pnpm 工作流。
+
+⚠️ **不推荐用于网关运行时**（WhatsApp/Telegram 错误）。生产环境使用 Node。
+
+## 状态
+
+- Bun 是用于直接运行 TypeScript 的可选本地运行时（`bun run …`、`bun --watch …`）。
+- `pnpm` 是构建的默认选择，并且仍然完全支持（并被某些文档工具使用）。
+- Bun 无法使用 `pnpm-lock.yaml` 并将忽略它。
+
+## 安装
+
+默认：
+
+```sh
+bun install
+```
+
+注意：`bun.lock`/`bun.lockb` 已在 git 中忽略，因此无论哪种方式都不会导致仓库变动。如果你想要*不写入锁文件*：
+
+```sh
+bun install --no-save
+```
+
+## 构建 / 测试（Bun）
+
+```sh
+bun run build
+bun run vitest run
+```
+
+## Bun 生命周期脚本（默认阻止）
+
+Bun 可能会阻止依赖生命周期脚本，除非明确信任（`bun pm untrusted` / `bun pm trust`）。
+对于此仓库，通常被阻止的脚本不是必需的：
+
+- `@whiskeysockets/baileys` `preinstall`：检查 Node major >= 20（我们运行 Node 22+）。
+- `protobufjs` `postinstall`：发出关于不兼容版本方案的警告（无构建产物）。
+
+如果你遇到需要这些脚本的真实运行时问题，请明确信任它们：
+
+```sh
+bun pm trust @whiskeysockets/baileys protobufjs
+```
+
+## 注意事项
+
+- 某些脚本仍然硬编码 pnpm（例如 `docs:build`、`ui:*`、`protocol:check`）。目前通过 pnpm 运行这些脚本。

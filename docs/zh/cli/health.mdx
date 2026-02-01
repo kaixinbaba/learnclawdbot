@@ -1,0 +1,19 @@
+---
+summary: "`openclaw health` 的 CLI 参考（通过 RPC 获取 gateway 健康端点）"
+read_when:
+  - 您想快速检查运行中的 Gateway 健康状况时
+---
+
+# `openclaw health`
+
+从运行中的 Gateway 获取健康状况。
+
+```bash
+openclaw health
+openclaw health --json
+openclaw health --verbose
+```
+
+注意：
+- `--verbose` 运行实时探测，并在配置了多个账户时打印每个账户的计时。
+- 当配置了多个代理时，输出包括每个代理的会话存储。
