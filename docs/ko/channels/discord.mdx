@@ -1,0 +1,399 @@
+---
+summary: "Discord bot 지원 상태, 기능 및 구성"
+read_when:
+  - Discord 채널 기능 작업 시
+---
+# Discord (Bot API)
+
+
+상태: 공식 Discord bot gateway를 통한 DM 및 길드 텍스트 채널 준비 완료.
+
+## 빠른 설정 (초보자)
+1) Discord bot을 생성하고 bot 토큰을 복사합니다.
+2) Discord 앱 설정에서 **Message Content Intent**를 활성화합니다 (허용 목록 또는 이름 조회를 사용할 계획이면 **Server Members Intent**도 활성화).
+3) OpenClaw에 토큰을 설정합니다:
+   - 환경 변수: `DISCORD_BOT_TOKEN=...`
+   - 또는 구성: `channels.discord.token: "..."`.
+   - 둘 다 설정되면 구성이 우선합니다 (환경 변수 대체는 기본 계정에만 해당).
+4) 메시지 권한으로 bot을 서버에 초대합니다 (DM만 원하면 개인 서버를 만드세요).
+5) Gateway를 시작합니다.
+6) DM 접근은 기본적으로 pairing입니다; 첫 접촉 시 페어링 코드를 승인하세요.
+
+최소 구성:
+```json5
+{
+  channels: {
+    discord: {
+      enabled: true,
+      token: "YOUR_BOT_TOKEN"
+    }
+  }
+}
+```
+
+## 목표
+- Discord DM 또는 길드 채널을 통해 OpenClaw와 대화합니다.
+- 직접 채팅은 agent의 main session으로 축소됩니다 (기본값 `agent:main:main`); 길드 채널은 `agent:<agentId>:discord:channel:<channelId>`로 격리됩니다 (표시 이름은 `discord:<guildSlug>#<channelSlug>` 사용).
+- 그룹 DM은 기본적으로 무시됩니다; `channels.discord.dm.groupEnabled`를 통해 활성화하고 선택적으로 `channels.discord.dm.groupChannels`로 제한합니다.
+- 라우팅을 결정론적으로 유지: 답장은 항상 도착한 채널로 돌아갑니다.
+
+## 작동 방식
+1. Discord 애플리케이션 → Bot을 생성하고, 필요한 intent를 활성화하고 (DM + 길드 메시지 + 메시지 내용), bot 토큰을 가져옵니다.
+2. 사용하려는 곳에서 메시지를 읽고 보낼 권한으로 bot을 서버에 초대합니다.
+3. `channels.discord.token` (또는 대체로 `DISCORD_BOT_TOKEN`)으로 OpenClaw를 구성합니다.
+4. Gateway를 실행하면 토큰이 있을 때 Discord 채널을 자동으로 시작합니다 (구성 우선, 환경 변수 대체) 그리고 `channels.discord.enabled`가 `false`가 아닙니다.
+   - 환경 변수를 선호하는 경우 `DISCORD_BOT_TOKEN`을 설정하세요 (구성 블록은 선택 사항).
+5. 직접 채팅: 전달 시 `user:<id>` (또는 `<@id>` 멘션) 사용; 모든 턴은 공유 `main` session에 도착합니다. 단순 숫자 ID는 모호하며 거부됩니다.
+6. 길드 채널: 전달을 위해 `channel:<channelId>` 사용. 멘션은 기본적으로 필요하며 길드 또는 채널별로 설정할 수 있습니다.
+7. 직접 채팅: `channels.discord.dm.policy` (기본값: `"pairing"`)를 통해 기본적으로 안전합니다. 알 수 없는 발신자는 페어링 코드를 받습니다 (1시간 후 만료); `openclaw pairing approve discord <code>`를 통해 승인합니다.
+   - 이전 "누구에게나 열림" 동작을 유지하려면: `channels.discord.dm.policy="open"` 및 `channels.discord.dm.allowFrom=["*"]`를 설정하세요.
+   - 하드 허용 목록: `channels.discord.dm.policy="allowlist"`를 설정하고 `channels.discord.dm.allowFrom`에 발신자를 나열합니다.
+   - 모든 DM 무시: `channels.discord.dm.enabled=false` 또는 `channels.discord.dm.policy="disabled"`를 설정합니다.
+8. 그룹 DM은 기본적으로 무시됩니다; `channels.discord.dm.groupEnabled`를 통해 활성화하고 선택적으로 `channels.discord.dm.groupChannels`로 제한합니다.
+9. 선택적 길드 규칙: 길드 id (권장) 또는 slug로 키가 지정된 `channels.discord.guilds`를 설정하며, 채널별 규칙이 있습니다.
+10. 선택적 네이티브 명령: `commands.native`는 기본적으로 `"auto"`입니다 (Discord/Telegram에서는 켜짐, Slack에서는 꺼짐). `channels.discord.commands.native: true|false|"auto"`로 오버라이드; `false`는 이전에 등록된 명령을 지웁니다. 텍스트 명령은 `commands.text`로 제어되며 독립 실행형 `/...` 메시지로 전송해야 합니다. `commands.useAccessGroups: false`를 사용하여 명령에 대한 액세스 그룹 확인을 우회합니다.
+    - 전체 명령 목록 + 구성: [Slash commands](/tools/slash-commands)
+11. 선택적 길드 컨텍스트 기록: `channels.discord.historyLimit` (기본값 20, `messages.groupChat.historyLimit`로 대체)를 설정하여 멘션에 답장할 때 마지막 N개 길드 메시지를 컨텍스트로 포함합니다. `0`으로 설정하면 비활성화됩니다.
+12. 반응: Agent는 `discord` 도구를 통해 반응을 트리거할 수 있습니다 (`channels.discord.actions.*`에 의해 제어됨).
+    - 반응 제거 의미: [/tools/reactions](/tools/reactions) 참조.
+    - `discord` 도구는 현재 채널이 Discord일 때만 노출됩니다.
+13. 네이티브 명령은 공유 `main` session이 아닌 isolated session 키 (`agent:<agentId>:discord:slash:<userId>`)를 사용합니다.
+
+참고: 이름 → id 해결은 길드 멤버 검색을 사용하며 Server Members Intent가 필요합니다; bot이 멤버를 검색할 수 없는 경우 id 또는 `<@id>` 멘션을 사용하세요.
+참고: Slug는 소문자이며 공백이 `-`로 대체됩니다. 채널 이름은 선행 `#` 없이 slug됩니다.
+참고: 길드 컨텍스트 `[from:]` 줄에는 `author.tag` + `id`가 포함되어 ping 준비 답장이 쉽습니다.
+
+## 구성 쓰기
+기본적으로 Discord는 `/config set|unset`에 의해 트리거된 구성 업데이트를 쓸 수 있습니다 (`commands.config: true` 필요).
+
+비활성화:
+```json5
+{
+  channels: { discord: { configWrites: false } }
+}
+```
+
+## 자신의 bot 생성 방법
+
+이것은 `#help`와 같은 서버 (길드) 채널에서 OpenClaw를 실행하기 위한 "Discord Developer Portal" 설정입니다.
+
+### 1) Discord 앱 + bot 사용자 생성
+1. Discord Developer Portal → **Applications** → **New Application**
+2. 앱에서:
+   - **Bot** → **Add Bot**
+   - **Bot Token**을 복사합니다 (이것이 `DISCORD_BOT_TOKEN`에 넣는 것입니다)
+
+### 2) OpenClaw가 필요한 gateway intent 활성화
+Discord는 명시적으로 활성화하지 않으면 "권한 있는 intent"를 차단합니다.
+
+**Bot** → **Privileged Gateway Intents**에서 활성화:
+- **Message Content Intent** (대부분의 길드에서 메시지 텍스트를 읽는 데 필요; 없으면 "Used disallowed intents"가 표시되거나 bot이 연결되지만 메시지에 반응하지 않음)
+- **Server Members Intent** (권장; 일부 멤버/사용자 조회 및 길드의 허용 목록 매칭에 필요)
+
+일반적으로 **Presence Intent**는 **필요하지 않습니다**.
+
+### 3) 초대 URL 생성 (OAuth2 URL Generator)
+앱에서: **OAuth2** → **URL Generator**
+
+**Scopes**
+- ✅ `bot`
+- ✅ `applications.commands` (네이티브 명령에 필요)
+
+**Bot Permissions** (최소 기준)
+- ✅ View Channels
+- ✅ Send Messages
+- ✅ Read Message History
+- ✅ Embed Links
+- ✅ Attach Files
+- ✅ Add Reactions (선택 사항이지만 권장)
+- ✅ Use External Emojis / Stickers (선택 사항; 원하는 경우에만)
+
+디버깅 중이고 bot을 완전히 신뢰하지 않는 한 **Administrator**는 피하세요.
+
+생성된 URL을 복사하고, 열고, 서버를 선택하고, bot을 설치합니다.
+
+### 4) id 가져오기 (guild/user/channel)
+Discord는 모든 곳에서 숫자 id를 사용합니다; OpenClaw 구성은 id를 선호합니다.
+
+1. Discord (데스크톱/웹) → **User Settings** → **Advanced** → **Developer Mode** 활성화
+2. 우클릭:
+   - 서버 이름 → **Copy Server ID** (길드 id)
+   - 채널 (예: `#help`) → **Copy Channel ID**
+   - 사용자 → **Copy User ID**
+
+### 5) OpenClaw 구성
+
+#### 토큰
+환경 변수를 통해 bot 토큰 설정 (서버에서 권장):
+- `DISCORD_BOT_TOKEN=...`
+
+또는 구성을 통해:
+
+```json5
+{
+  channels: {
+    discord: {
+      enabled: true,
+      token: "YOUR_BOT_TOKEN"
+    }
+  }
+}
+```
+
+다중 계정 지원: 계정별 토큰과 선택적 `name`이 있는 `channels.discord.accounts`를 사용합니다. 공유 패턴은 [`gateway/configuration`](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts)를 참조하세요.
+
+#### 허용 목록 + 채널 라우팅
+예제 "단일 서버, 나만 허용, #help만 허용":
+
+```json5
+{
+  channels: {
+    discord: {
+      enabled: true,
+      dm: { enabled: false },
+      guilds: {
+        "YOUR_GUILD_ID": {
+          users: ["YOUR_USER_ID"],
+          requireMention: true,
+          channels: {
+            help: { allow: true, requireMention: true }
+          }
+        }
+      },
+      retry: {
+        attempts: 3,
+        minDelayMs: 500,
+        maxDelayMs: 30000,
+        jitter: 0.1
+      }
+    }
+  }
+}
+```
+
+참고사항:
+- `requireMention: true`는 bot이 멘션될 때만 답장함을 의미합니다 (공유 채널에 권장).
+- `agents.list[].groupChat.mentionPatterns` (또는 `messages.groupChat.mentionPatterns`)도 길드 메시지의 멘션으로 계산됩니다.
+- 다중 agent 오버라이드: `agents.list[].groupChat.mentionPatterns`에 agent별 패턴을 설정합니다.
+- `channels`가 있는 경우 나열되지 않은 채널은 기본적으로 거부됩니다.
+- `"*"` 채널 항목을 사용하여 모든 채널에 기본값을 적용합니다; 명시적 채널 항목은 와일드카드를 오버라이드합니다.
+- 스레드는 스레드 채널 id를 명시적으로 추가하지 않는 한 상위 채널 구성 (허용 목록, `requireMention`, skill, 프롬프트 등)을 상속합니다.
+- Bot이 작성한 메시지는 기본적으로 무시됩니다; `channels.discord.allowBots=true`를 설정하여 허용합니다 (자체 메시지는 여전히 필터링됨).
+- 경고: 다른 bot에 대한 답장을 허용하는 경우 (`channels.discord.allowBots=true`), `requireMention`, `channels.discord.guilds.*.channels.<id>.users` 허용 목록 및/또는 `AGENTS.md` 및 `SOUL.md`의 명확한 가드레일로 bot 간 답장 루프를 방지하세요.
+
+### 6) 작동 확인
+1. Gateway를 시작합니다.
+2. 서버 채널에서 전송: `@Krill hello` (또는 bot 이름).
+3. 아무 일도 일어나지 않으면: 아래 **문제 해결**을 확인하세요.
+
+### 문제 해결
+- 먼저: `openclaw doctor` 및 `openclaw channels status --probe`를 실행합니다 (실행 가능한 경고 + 빠른 감사).
+- **"Used disallowed intents"**: Developer Portal에서 **Message Content Intent** (및 **Server Members Intent**)를 활성화한 다음 gateway를 다시 시작합니다.
+- **Bot은 연결되지만 길드 채널에서 답장하지 않음**:
+  - **Message Content Intent** 누락, 또는
+  - Bot에 채널 권한이 없음 (보기/보내기/읽기 기록), 또는
+  - 구성에 멘션이 필요하지만 멘션하지 않았거나,
+  - 길드/채널 허용 목록이 채널/사용자를 거부합니다.
+- **`requireMention: false`이지만 여전히 답장 없음**:
+- `channels.discord.groupPolicy`는 기본적으로 **allowlist**입니다; `"open"`으로 설정하거나 `channels.discord.guilds` 아래에 길드 항목을 추가하세요 (선택적으로 제한하려면 `channels.discord.guilds.<id>.channels` 아래에 채널을 나열).
+  - `DISCORD_BOT_TOKEN`만 설정하고 `channels.discord` 섹션을 만들지 않으면 런타임은 `groupPolicy`를 `open`으로 기본 설정합니다. 잠그려면 `channels.discord.groupPolicy`, `channels.defaults.groupPolicy` 또는 길드/채널 허용 목록을 추가하세요.
+- `requireMention`은 `channels.discord.guilds` (또는 특정 채널) 아래에 있어야 합니다. 최상위 수준의 `channels.discord.requireMention`은 무시됩니다.
+- **권한 감사** (`channels status --probe`)는 숫자 채널 ID만 확인합니다. `channels.discord.guilds.*.channels` 키로 slug/이름을 사용하는 경우 감사는 권한을 확인할 수 없습니다.
+- **DM이 작동하지 않음**: `channels.discord.dm.enabled=false`, `channels.discord.dm.policy="disabled"` 또는 아직 승인되지 않았습니다 (`channels.discord.dm.policy="pairing"`).
+
+## 기능 및 제한
+- DM 및 길드 텍스트 채널 (스레드는 별도의 채널로 처리됨; 음성은 지원되지 않음).
+- 타이핑 표시기는 최선 노력으로 전송됩니다; 메시지 청킹은 `channels.discord.textChunkLimit` (기본값 2000)를 사용하고 줄 수로 긴 답장을 분할합니다 (`channels.discord.maxLinesPerMessage`, 기본값 17).
+- 선택적 개행 청킹: `channels.discord.chunkMode="newline"`을 설정하여 길이 청킹 전에 빈 줄 (단락 경계)에서 분할합니다.
+- 구성된 `channels.discord.mediaMaxMb` (기본값 8 MB)까지 파일 업로드가 지원됩니다.
+- 시끄러운 bot을 피하기 위해 기본적으로 멘션 게이팅된 길드 답장.
+- 답장 컨텍스트는 메시지가 다른 메시지를 참조할 때 주입됩니다 (인용된 내용 + id).
+- 네이티브 답장 스레딩은 **기본적으로 꺼져** 있습니다; `channels.discord.replyToMode` 및 답장 태그로 활성화합니다.
+
+## 재시도 정책
+아웃바운드 Discord API 호출은 Discord `retry_after`를 사용할 수 있을 때 사용하여 속도 제한 (429)에서 재시도하며, 지수 백오프 및 지터를 사용합니다. `channels.discord.retry`를 통해 구성합니다. [Retry policy](/concepts/retry)를 참조하세요.
+
+## 구성
+
+```json5
+{
+  channels: {
+    discord: {
+      enabled: true,
+      token: "abc.123",
+      groupPolicy: "allowlist",
+      guilds: {
+        "*": {
+          channels: {
+            general: { allow: true }
+          }
+        }
+      },
+      mediaMaxMb: 8,
+      actions: {
+        reactions: true,
+        stickers: true,
+        emojiUploads: true,
+        stickerUploads: true,
+        polls: true,
+        permissions: true,
+        messages: true,
+        threads: true,
+        pins: true,
+        search: true,
+        memberInfo: true,
+        roleInfo: true,
+        roles: false,
+        channelInfo: true,
+        channels: true,
+        voiceStatus: true,
+        events: true,
+        moderation: false
+      },
+      replyToMode: "off",
+      dm: {
+        enabled: true,
+        policy: "pairing", // pairing | allowlist | open | disabled
+        allowFrom: ["123456789012345678", "steipete"],
+        groupEnabled: false,
+        groupChannels: ["openclaw-dm"]
+      },
+      guilds: {
+        "*": { requireMention: true },
+        "123456789012345678": {
+          slug: "friends-of-openclaw",
+          requireMention: false,
+          reactionNotifications: "own",
+          users: ["987654321098765432", "steipete"],
+          channels: {
+            general: { allow: true },
+            help: {
+              allow: true,
+              requireMention: true,
+              users: ["987654321098765432"],
+              skills: ["search", "docs"],
+              systemPrompt: "Keep answers short."
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Ack 반응은 `messages.ackReaction` + `messages.ackReactionScope`를 통해 전역적으로 제어됩니다. Bot이 답장한 후 ack 반응을 지우려면 `messages.removeAckAfterReply`를 사용하세요.
+
+- `dm.enabled`: 모든 DM을 무시하려면 `false`로 설정 (기본값 `true`).
+- `dm.policy`: DM 접근 제어 (`pairing` 권장). `"open"`에는 `dm.allowFrom=["*"]`가 필요합니다.
+- `dm.allowFrom`: DM 허용 목록 (사용자 id 또는 이름). `dm.policy="allowlist"` 및 `dm.policy="open"` 검증에서 사용됩니다. 마법사는 사용자 이름을 허용하고 bot이 멤버를 검색할 수 있을 때 id로 해결합니다.
+- `dm.groupEnabled`: 그룹 DM 활성화 (기본값 `false`).
+- `dm.groupChannels`: 그룹 DM 채널 id 또는 slug에 대한 선택적 허용 목록.
+- `groupPolicy`: 길드 채널 처리 제어 (`open|disabled|allowlist`); `allowlist`에는 채널 허용 목록이 필요합니다.
+- `guilds`: 길드 id (권장) 또는 slug로 키가 지정된 길드별 규칙.
+- `guilds."*"`: 명시적 항목이 없을 때 적용되는 기본 길드별 설정.
+- `guilds.<id>.slug`: 표시 이름에 사용되는 선택적 친근한 slug.
+- `guilds.<id>.users`: 선택적 길드별 사용자 허용 목록 (id 또는 이름).
+- `guilds.<id>.tools`: 채널 오버라이드가 누락된 경우 사용되는 선택적 길드별 도구 정책 오버라이드 (`allow`/`deny`/`alsoAllow`).
+- `guilds.<id>.toolsBySender`: 길드 레벨에서 선택적 발신자별 도구 정책 오버라이드 (채널 오버라이드가 누락된 경우 적용; `"*"` 와일드카드 지원).
+- `guilds.<id>.channels.<channel>.allow`: `groupPolicy="allowlist"`일 때 채널 허용/거부.
+- `guilds.<id>.channels.<channel>.requireMention`: 채널에 대한 멘션 게이팅.
+- `guilds.<id>.channels.<channel>.tools`: 선택적 채널별 도구 정책 오버라이드 (`allow`/`deny`/`alsoAllow`).
+- `guilds.<id>.channels.<channel>.toolsBySender`: 채널 내에서 선택적 발신자별 도구 정책 오버라이드 (`"*"` 와일드카드 지원).
+- `guilds.<id>.channels.<channel>.users`: 선택적 채널별 사용자 허용 목록.
+- `guilds.<id>.channels.<channel>.skills`: Skill 필터 (생략 = 모든 skill, 비어 있음 = 없음).
+- `guilds.<id>.channels.<channel>.systemPrompt`: 채널에 대한 추가 시스템 프롬프트 (채널 주제와 결합됨).
+- `guilds.<id>.channels.<channel>.enabled`: 채널을 비활성화하려면 `false`로 설정.
+- `guilds.<id>.channels`: 채널 규칙 (키는 채널 slug 또는 id).
+- `guilds.<id>.requireMention`: 길드별 멘션 요구 사항 (채널별로 오버라이드 가능).
+- `guilds.<id>.reactionNotifications`: 반응 시스템 이벤트 모드 (`off`, `own`, `all`, `allowlist`).
+- `textChunkLimit`: 아웃바운드 텍스트 청크 크기 (문자). 기본값: 2000.
+- `chunkMode`: `length` (기본값)는 `textChunkLimit` 초과 시에만 분할; `newline`은 길이 청킹 전에 빈 줄 (단락 경계)에서 분할.
+- `maxLinesPerMessage`: 메시지당 소프트 최대 줄 수. 기본값: 17.
+- `mediaMaxMb`: 디스크에 저장된 인바운드 미디어 제한.
+- `historyLimit`: 멘션에 답장할 때 컨텍스트로 포함할 최근 길드 메시지 수 (기본값 20; `messages.groupChat.historyLimit`로 대체; `0`은 비활성화).
+- `dmHistoryLimit`: 사용자 턴의 DM 기록 제한. 사용자별 오버라이드: `dms["<user_id>"].historyLimit`.
+- `retry`: 아웃바운드 Discord API 호출에 대한 재시도 정책 (attempts, minDelayMs, maxDelayMs, jitter).
+- `actions`: 액션별 도구 게이트; 생략하면 모두 허용 (`false`로 설정하면 비활성화).
+  - `reactions` (react + read reactions 포함)
+  - `stickers`, `emojiUploads`, `stickerUploads`, `polls`, `permissions`, `messages`, `threads`, `pins`, `search`
+  - `memberInfo`, `roleInfo`, `channelInfo`, `voiceStatus`, `events`
+  - `channels` (채널 + 카테고리 + 권한 생성/편집/삭제)
+  - `roles` (역할 추가/제거, 기본값 `false`)
+  - `moderation` (타임아웃/킥/밴, 기본값 `false`)
+
+반응 알림은 `guilds.<id>.reactionNotifications`를 사용합니다:
+- `off`: 반응 이벤트 없음.
+- `own`: bot 자체 메시지에 대한 반응 (기본값).
+- `all`: 모든 메시지에 대한 모든 반응.
+- `allowlist`: 모든 메시지에 대한 `guilds.<id>.users`의 반응 (빈 목록은 비활성화).
+
+### 도구 액션 기본값
+
+| 액션 그룹 | 기본값 | 참고 |
+| --- | --- | --- |
+| reactions | 활성화 | React + 반응 목록 + emojiList |
+| stickers | 활성화 | 스티커 전송 |
+| emojiUploads | 활성화 | 이모지 업로드 |
+| stickerUploads | 활성화 | 스티커 업로드 |
+| polls | 활성화 | 투표 생성 |
+| permissions | 활성화 | 채널 권한 스냅샷 |
+| messages | 활성화 | 읽기/보내기/편집/삭제 |
+| threads | 활성화 | 생성/목록/답장 |
+| pins | 활성화 | 고정/고정 해제/목록 |
+| search | 활성화 | 메시지 검색 (미리보기 기능) |
+| memberInfo | 활성화 | 멤버 정보 |
+| roleInfo | 활성화 | 역할 목록 |
+| channelInfo | 활성화 | 채널 정보 + 목록 |
+| channels | 활성화 | 채널/카테고리 관리 |
+| voiceStatus | 활성화 | 음성 상태 조회 |
+| events | 활성화 | 예약된 이벤트 목록/생성 |
+| roles | 비활성화 | 역할 추가/제거 |
+| moderation | 비활성화 | 타임아웃/킥/밴 |
+- `replyToMode`: `off` (기본값), `first`, 또는 `all`. 모델에 답장 태그가 포함된 경우에만 적용됩니다.
+
+## 답장 태그
+스레드된 답장을 요청하려면 모델이 출력에 하나의 태그를 포함할 수 있습니다:
+- `[[reply_to_current]]` — 트리거하는 Discord 메시지에 답장.
+- `[[reply_to:<id>]]` — 컨텍스트/기록에서 특정 메시지 id에 답장.
+현재 메시지 id는 프롬프트에 `[message_id: …]`로 추가됩니다; 기록 항목에는 이미 id가 포함되어 있습니다.
+
+동작은 `channels.discord.replyToMode`로 제어됩니다:
+- `off`: 태그 무시.
+- `first`: 첫 번째 아웃바운드 청크/첨부 파일만 답장.
+- `all`: 모든 아웃바운드 청크/첨부 파일이 답장.
+
+허용 목록 매칭 참고사항:
+- `allowFrom`/`users`/`groupChannels`는 id, 이름, 태그 또는 `<@id>`와 같은 멘션을 허용합니다.
+- `discord:`/`user:` (사용자) 및 `channel:` (그룹 DM)과 같은 접두사가 지원됩니다.
+- `*`를 사용하여 모든 발신자/채널을 허용합니다.
+- `guilds.<id>.channels`가 있는 경우 나열되지 않은 채널은 기본적으로 거부됩니다.
+- `guilds.<id>.channels`가 생략되면 허용 목록에 있는 길드의 모든 채널이 허용됩니다.
+- **채널 없음**을 허용하려면 `channels.discord.groupPolicy: "disabled"`를 설정하세요 (또는 빈 허용 목록 유지).
+- 구성 마법사는 `Guild/Channel` 이름 (공개 + 비공개)을 허용하고 가능한 경우 ID로 해결합니다.
+- 시작 시 OpenClaw는 허용 목록의 채널/사용자 이름을 ID로 해결하고 (bot이 멤버를 검색할 수 있을 때) 매핑을 로그합니다; 해결되지 않은 항목은 입력된 대로 유지됩니다.
+
+네이티브 명령 참고사항:
+- 등록된 명령은 OpenClaw의 채팅 명령을 미러링합니다.
+- 네이티브 명령은 DM/길드 메시지와 동일한 허용 목록을 준수합니다 (`channels.discord.dm.allowFrom`, `channels.discord.guilds`, 채널별 규칙).
+- 슬래시 명령은 허용 목록에 없는 사용자에게도 Discord UI에서 표시될 수 있습니다; OpenClaw는 실행 시 허용 목록을 적용하고 "권한 없음"으로 답장합니다.
+
+## 도구 액션
+Agent는 다음과 같은 액션으로 `discord`를 호출할 수 있습니다:
+- `react` / `reactions` (반응 추가 또는 목록)
+- `sticker`, `poll`, `permissions`
+- `readMessages`, `sendMessage`, `editMessage`, `deleteMessage`
+- 읽기/검색/고정 도구 페이로드에는 원시 Discord `timestamp` 외에 정규화된 `timestampMs` (UTC epoch ms) 및 `timestampUtc`가 포함됩니다.
+- `threadCreate`, `threadList`, `threadReply`
+- `pinMessage`, `unpinMessage`, `listPins`
+- `searchMessages`, `memberInfo`, `roleInfo`, `roleAdd`, `roleRemove`, `emojiList`
+- `channelInfo`, `channelList`, `voiceStatus`, `eventList`, `eventCreate`
+- `timeout`, `kick`, `ban`
+
+Discord 메시지 id는 주입된 컨텍스트 (`[discord message id: …]` 및 기록 줄)에 표시되므로 agent가 대상으로 지정할 수 있습니다.
+이모지는 유니코드 (예: `✅`) 또는 `<:party_blob:1234567890>`와 같은 커스텀 이모지 구문일 수 있습니다.
+
+## 안전 및 운영
+- Bot 토큰을 비밀번호처럼 취급하세요; 감독되는 호스트에서는 `DISCORD_BOT_TOKEN` 환경 변수를 선호하거나 구성 파일 권한을 잠그세요.
+- Bot에 필요한 권한만 부여하세요 (일반적으로 읽기/메시지 보내기).
+- Bot이 멈추거나 속도 제한이 있는 경우 다른 프로세스가 Discord 세션을 소유하지 않는지 확인한 후 gateway를 다시 시작하세요 (`openclaw gateway --force`).

@@ -1,0 +1,64 @@
+---
+summary: "SOUL Evil hook (SOUL.md를 SOUL_EVIL.md로 교체)"
+read_when:
+  - SOUL Evil hook을 활성화하거나 조정하려는 경우
+  - 정화 창 또는 무작위 확률 페르소나 교체를 원하는 경우
+---
+
+# SOUL Evil Hook
+
+SOUL Evil hook은 정화 창 중이거나 무작위 확률로 **주입된** `SOUL.md` 콘텐츠를 `SOUL_EVIL.md`로 교체합니다. 디스크의 파일을 수정하지는 **않습니다**.
+
+## 작동 방식
+
+`agent:bootstrap`이 실행될 때, 시스템 프롬프트가 조립되기 전에 hook이 메모리의 `SOUL.md` 콘텐츠를 교체할 수 있습니다. `SOUL_EVIL.md`가 없거나 비어 있으면 OpenClaw는 경고를 로그에 기록하고 일반 `SOUL.md`를 유지합니다.
+
+Sub-agent 실행은 bootstrap 파일에 `SOUL.md`를 **포함하지 않으므로**, 이 hook은 sub-agent에 영향을 주지 않습니다.
+
+## 활성화
+
+```bash
+openclaw hooks enable soul-evil
+```
+
+그런 다음 설정을 구성합니다:
+
+```json
+{
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "soul-evil": {
+          "enabled": true,
+          "file": "SOUL_EVIL.md",
+          "chance": 0.1,
+          "purge": { "at": "21:00", "duration": "15m" }
+        }
+      }
+    }
+  }
+}
+```
+
+agent workspace 루트(`SOUL.md` 옆)에 `SOUL_EVIL.md`를 생성하세요.
+
+## 옵션
+
+- `file` (string): 대체 SOUL 파일 이름 (기본값: `SOUL_EVIL.md`)
+- `chance` (number 0–1): 실행당 `SOUL_EVIL.md`를 사용할 무작위 확률
+- `purge.at` (HH:mm): 일일 정화 시작 시간 (24시간 형식)
+- `purge.duration` (duration): 창 길이 (예: `30s`, `10m`, `1h`)
+
+**우선순위:** 정화 창이 확률보다 우선합니다.
+
+**시간대:** 설정된 경우 `agents.defaults.userTimezone`을 사용하고, 그렇지 않으면 호스트 시간대를 사용합니다.
+
+## 참고사항
+
+- 디스크의 파일이 작성되거나 수정되지 않습니다.
+- `SOUL.md`가 bootstrap 목록에 없으면 hook은 아무 작업도 수행하지 않습니다.
+
+## 참고 자료
+
+- [Hooks](/hooks)

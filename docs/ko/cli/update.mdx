@@ -1,0 +1,94 @@
+---
+summary: "`openclaw update` CLI 레퍼런스 (안전한 소스 업데이트 + gateway 자동 재시작)"
+read_when:
+  - 소스 체크아웃을 안전하게 업데이트하고 싶은 경우
+  - `--update` 축약형 동작을 이해해야 하는 경우
+---
+
+# `openclaw update`
+
+OpenClaw를 안전하게 업데이트하고 stable/beta/dev channel 간에 전환합니다.
+
+**npm/pnpm**을 통해 설치한 경우 (전역 설치, git 메타데이터 없음), 업데이트는 [Updating](/install/updating)의 패키지 매니저 플로우를 통해 발생합니다.
+
+## 사용법
+
+```bash
+openclaw update
+openclaw update status
+openclaw update wizard
+openclaw update --channel beta
+openclaw update --channel dev
+openclaw update --tag beta
+openclaw update --no-restart
+openclaw update --json
+openclaw --update
+```
+
+## 옵션
+
+- `--no-restart`: 성공적인 업데이트 후 Gateway 서비스 재시작 건너뛰기.
+- `--channel <stable|beta|dev>`: 업데이트 channel 설정 (git + npm; config에 저장됨).
+- `--tag <dist-tag|version>`: 이번 업데이트만을 위한 npm dist-tag 또는 버전 재정의.
+- `--json`: 머신 읽기 가능한 `UpdateRunResult` JSON 출력.
+- `--timeout <seconds>`: 단계별 timeout (기본값 1200초).
+
+참고: 다운그레이드는 이전 버전이 구성을 깨뜨릴 수 있으므로 확인이 필요합니다.
+
+## `update status`
+
+활성 업데이트 channel + git tag/branch/SHA (소스 체크아웃의 경우) 및 업데이트 가용성을 표시합니다.
+
+```bash
+openclaw update status
+openclaw update status --json
+openclaw update status --timeout 10
+```
+
+옵션:
+- `--json`: 머신 읽기 가능한 상태 JSON 출력.
+- `--timeout <seconds>`: 확인 timeout (기본값 3초).
+
+## `update wizard`
+
+업데이트 channel을 선택하고 업데이트 후 Gateway를 재시작할지 확인하는 대화형 플로우
+(기본값은 재시작). git 체크아웃 없이 `dev`를 선택하면 체크아웃을 생성할 것을 제안합니다.
+
+## 수행 작업
+
+channel을 명시적으로 전환할 때 (`--channel ...`), OpenClaw는 설치 방법도 정렬합니다:
+
+- `dev` → git 체크아웃 확인 (기본값: `~/openclaw`, `OPENCLAW_GIT_DIR`로 재정의),
+  업데이트하고 해당 체크아웃에서 전역 CLI 설치.
+- `stable`/`beta` → 일치하는 dist-tag를 사용하여 npm에서 설치.
+
+## Git 체크아웃 플로우
+
+Channel:
+
+- `stable`: 최신 비베타 tag를 체크아웃한 후 빌드 + doctor.
+- `beta`: 최신 `-beta` tag를 체크아웃한 후 빌드 + doctor.
+- `dev`: `main`을 체크아웃한 후 fetch + rebase.
+
+상위 레벨:
+
+1. 깨끗한 worktree 필요 (커밋되지 않은 변경 사항 없음).
+2. 선택한 channel로 전환 (tag 또는 branch).
+3. upstream fetch (dev만).
+4. Dev만: 임시 worktree에서 프리플라이트 lint + TypeScript 빌드; tip이 실패하면 최신 깨끗한 빌드를 찾기 위해 최대 10개 커밋을 거슬러 올라갑니다.
+5. 선택한 커밋으로 rebase (dev만).
+6. 의존성 설치 (pnpm 선호; npm 대체).
+7. 빌드 + Control UI 빌드.
+8. 최종 "안전 업데이트" 확인으로 `openclaw doctor` 실행.
+9. 활성 channel에 plugin 동기화 (dev는 번들 extension 사용; stable/beta는 npm 사용) 및 npm 설치 plugin 업데이트.
+
+## `--update` 축약형
+
+`openclaw --update`는 `openclaw update`로 재작성됩니다 (shell 및 런처 스크립트에 유용).
+
+## 참고
+
+- `openclaw doctor` (git 체크아웃에서 먼저 업데이트 실행 제안)
+- [Development channels](/install/development-channels)
+- [Updating](/install/updating)
+- [CLI reference](/cli)

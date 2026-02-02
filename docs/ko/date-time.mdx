@@ -1,0 +1,120 @@
+---
+summary: "Envelope, Prompt, Tool 및 Connector 전반의 날짜 및 시간 처리"
+read_when:
+  - 모델이나 사용자에게 타임스탬프가 표시되는 방식을 변경하는 경우
+  - 메시지 또는 시스템 Prompt 출력의 시간 형식을 디버깅하는 경우
+---
+
+# Date & Time
+
+OpenClaw는 **전송 타임스탬프에 대해 호스트 로컬 시간**을, **시스템 Prompt에서만 사용자 시간대**를 기본으로 사용합니다. Provider 타임스탬프는 보존되므로 Tool이 기본 의미를 유지합니다(현재 시간은 `session_status`를 통해 사용 가능).
+
+## 메시지 Envelope (기본적으로 로컬)
+
+수신 메시지는 타임스탬프(분 단위 정밀도)로 래핑됩니다:
+
+```
+[Provider ... 2026-01-05 16:26 PST] message text
+```
+
+이 Envelope 타임스탬프는 Provider 시간대와 관계없이 **기본적으로 호스트 로컬**입니다.
+
+이 동작을 재정의할 수 있습니다:
+
+```json5
+{
+  agents: {
+    defaults: {
+      envelopeTimezone: "local", // "utc" | "local" | "user" | IANA timezone
+      envelopeTimestamp: "on", // "on" | "off"
+      envelopeElapsed: "on" // "on" | "off"
+    }
+  }
+}
+```
+
+- `envelopeTimezone: "utc"`는 UTC를 사용합니다.
+- `envelopeTimezone: "local"`은 호스트 시간대를 사용합니다.
+- `envelopeTimezone: "user"`는 `agents.defaults.userTimezone`을 사용합니다 (호스트 시간대로 대체).
+- 고정 영역에 대해 명시적 IANA 시간대를 사용합니다 (예: `"America/Chicago"`).
+- `envelopeTimestamp: "off"`는 Envelope 헤더에서 절대 타임스탬프를 제거합니다.
+- `envelopeElapsed: "off"`는 경과 시간 접미사(`+2m` 스타일)를 제거합니다.
+
+### 예시
+
+**Local (기본값):**
+
+```
+[WhatsApp +1555 2026-01-18 00:19 PST] hello
+```
+
+**사용자 시간대:**
+
+```
+[WhatsApp +1555 2026-01-18 00:19 CST] hello
+```
+
+**경과 시간 활성화:**
+
+```
+[WhatsApp +1555 +30s 2026-01-18T05:19Z] follow-up
+```
+
+## 시스템 Prompt: 현재 날짜 및 시간
+
+사용자 시간대가 알려진 경우 시스템 Prompt에는 Prompt 캐싱을 안정적으로 유지하기 위해 **시간대만** 포함된 전용 **Current Date & Time** 섹션이 포함됩니다(시계/시간 형식 없음):
+
+```
+Time zone: America/Chicago
+```
+
+Agent가 현재 시간이 필요한 경우 `session_status` Tool을 사용하세요. 상태 카드에는 타임스탬프 라인이 포함됩니다.
+
+## 시스템 이벤트 라인 (기본적으로 로컬)
+
+Agent 컨텍스트에 삽입된 대기 중인 시스템 이벤트는 메시지 Envelope와 동일한 시간대 선택을 사용하여 타임스탬프가 접두사로 붙습니다 (기본값: 호스트 로컬).
+
+```
+System: [2026-01-12 12:19:17 PST] Model switched.
+```
+
+### 사용자 시간대 + 형식 구성
+
+```json5
+{
+  agents: {
+    defaults: {
+      userTimezone: "America/Chicago",
+      timeFormat: "auto" // auto | 12 | 24
+    }
+  }
+}
+```
+
+- `userTimezone`은 Prompt 컨텍스트에 대한 **사용자 로컬 시간대**를 설정합니다.
+- `timeFormat`은 Prompt에서 **12시간/24시간 표시**를 제어합니다. `auto`는 OS 기본 설정을 따릅니다.
+
+## 시간 형식 감지 (auto)
+
+`timeFormat: "auto"`일 때 OpenClaw는 OS 기본 설정(macOS/Windows)을 검사하고 로케일 형식으로 대체합니다. 감지된 값은 반복적인 시스템 호출을 피하기 위해 **프로세스당 캐시**됩니다.
+
+## Tool 페이로드 + Connector (원시 Provider 시간 + 정규화된 필드)
+
+Channel Tool은 **Provider 기본 타임스탬프**를 반환하고 일관성을 위해 정규화된 필드를 추가합니다:
+
+- `timestampMs`: epoch 밀리초 (UTC)
+- `timestampUtc`: ISO 8601 UTC 문자열
+
+원시 Provider 필드는 보존되므로 아무것도 손실되지 않습니다.
+
+- Slack: API의 epoch 유사 문자열
+- Discord: UTC ISO 타임스탬프
+- Telegram/WhatsApp: Provider별 숫자/ISO 타임스탬프
+
+로컬 시간이 필요한 경우 알려진 시간대를 사용하여 다운스트림에서 변환하세요.
+
+## 관련 문서
+
+- [System Prompt](/concepts/system-prompt)
+- [Timezones](/concepts/timezone)
+- [Messages](/concepts/messages)

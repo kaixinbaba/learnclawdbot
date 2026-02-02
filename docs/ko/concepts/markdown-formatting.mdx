@@ -1,0 +1,32 @@
+---
+summary: "아웃바운드 channel을 위한 Markdown 포맷팅 파이프라인"
+read_when:
+  - 아웃바운드 channel을 위한 markdown 포맷팅 또는 청킹을 변경하는 경우
+  - 새 channel formatter 또는 스타일 매핑을 추가하는 경우
+  - channel 간 포맷팅 회귀를 디버깅하는 경우
+---
+# Markdown 포맷팅
+
+OpenClaw는 channel별 출력을 렌더링하기 전에 공유 중간 표현(IR)으로 변환하여 아웃바운드 Markdown을 포맷팅합니다. IR은 소스 텍스트를 그대로 유지하면서 스타일/링크 span을 전달하므로 청킹 및 렌더링이 channel 간에 일관되게 유지됩니다.
+
+## 목표
+
+- **일관성:** 하나의 파싱 단계, 여러 렌더러.
+- **안전한 청킹:** 텍스트를 렌더링 전에 분할하여 인라인 포맷팅이 청크 간에 깨지지 않도록 합니다.
+- **Channel 적합성:** 동일한 IR을 Slack mrkdwn, Telegram HTML 및 Signal 스타일 범위에 매핑하며 Markdown을 다시 파싱하지 않습니다.
+
+## 파이프라인
+
+1. **Markdown -> IR 파싱**
+   - IR은 일반 텍스트 + 스타일 span(bold/italic/strike/code/spoiler) 및 링크 span입니다.
+   - 오프셋은 UTF-16 코드 단위이므로 Signal 스타일 범위가 API와 정렬됩니다.
+   - 테이블은 channel이 테이블 변환을 선택한 경우에만 파싱됩니다.
+2. **IR 청킹 (포맷 우선)**
+   - 청킹은 렌더링 전에 IR 텍스트에서 발생합니다.
+   - 인라인 포맷팅은 청크 간에 분할되지 않습니다; span은 청크당 슬라이스됩니다.
+3. **Channel당 렌더링**
+   - **Slack:** mrkdwn token (bold/italic/strike/code), 링크는 `<url|label>`.
+   - **Telegram:** HTML 태그 (`<b>`, `<i>`, `<s>`, `<code>`, `<pre><code>`, `<a href>`).
+   - **Signal:** 일반 텍스트 + `text-style` 범위; 링크는 레이블이 다른 경우 `label (url)`이 됩니다.
+
+자세한 내용은 영문 원본을 참조하세요.

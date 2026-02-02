@@ -1,0 +1,313 @@
+---
+summary: "Provider + CLI 폴백을 포함한 인바운드 이미지/오디오/비디오 이해 (선택 사항)"
+read_when:
+  - 미디어 이해 설계 또는 리팩토링 시
+  - 인바운드 오디오/비디오/이미지 전처리 튜닝 시
+---
+# Media Understanding (Inbound) — 2026-01-17
+
+OpenClaw는 답장 파이프라인이 실행되기 전에 **인바운드 미디어를 요약**할 수 있습니다. 로컬 도구 또는 provider 키를 사용할 수 있을 때 자동 감지하며, 비활성화하거나 사용자 지정할 수 있습니다. 이해가 꺼져 있으면 모델은 평소와 같이 원본 파일/URL을 받습니다.
+
+## 목표
+- 선택 사항: 더 빠른 라우팅 + 더 나은 명령 파싱을 위해 인바운드 미디어를 짧은 텍스트로 사전 요약
+- 모델에 대한 원본 미디어 전달 보존(항상)
+- **Provider API** 및 **CLI 폴백** 지원
+- 순서가 있는 폴백을 포함한 여러 모델 허용(오류/크기/시간 초과)
+
+## 고수준 동작
+1) 인바운드 첨부 파일 수집(`MediaPaths`, `MediaUrls`, `MediaTypes`)
+2) 활성화된 각 기능(이미지/오디오/비디오)에 대해 정책에 따라 첨부 파일 선택(기본값: **첫 번째**)
+3) 첫 번째 적격 모델 항목 선택(크기 + 기능 + 인증)  
+4) 모델이 실패하거나 미디어가 너무 큰 경우 **다음 항목으로 폴백**
+5) 성공 시:
+   - `Body`가 `[Image]`, `[Audio]`, 또는 `[Video]` 블록이 됩니다
+   - 오디오는 `{{Transcript}}`를 설정합니다; 명령 파싱은 캡션 텍스트가 있으면 사용하고,
+     없으면 전사를 사용합니다
+   - 캡션은 블록 내부에 `User text:`로 보존됩니다
+
+이해가 실패하거나 비활성화된 경우 **답장 흐름은 원본 본문 + 첨부 파일로 계속됩니다**.
+
+## 설정 개요
+`tools.media`는 **공유 모델**과 기능별 재정의를 지원합니다:
+- `tools.media.models`: 공유 모델 목록(`capabilities`를 사용하여 게이트)
+- `tools.media.image` / `tools.media.audio` / `tools.media.video`:
+  - 기본값(`prompt`, `maxChars`, `maxBytes`, `timeoutSeconds`, `language`)
+  - provider 재정의(`baseUrl`, `headers`, `providerOptions`)
+  - `tools.media.audio.providerOptions.deepgram`를 통한 Deepgram 오디오 옵션
+  - 선택 사항 **기능별 `models` 목록**(공유 모델보다 우선)
+  - `attachments` 정책(`mode`, `maxAttachments`, `prefer`)
+  - `scope`(channel/chatType/session 키별 선택적 게이팅)
+- `tools.media.concurrency`: 최대 동시 기능 실행(기본값 **2**)
+
+```json5
+{
+  tools: {
+    media: {
+      models: [ /* 공유 목록 */ ],
+      image: { /* 선택적 재정의 */ },
+      audio: { /* 선택적 재정의 */ },
+      video: { /* 선택적 재정의 */ }
+    }
+  }
+}
+```
+
+### 모델 항목
+각 `models[]` 항목은 **provider** 또는 **CLI**일 수 있습니다:
+
+```json5
+{
+  type: "provider",        // 생략 시 기본값
+  provider: "openai",
+  model: "gpt-5.2",
+  prompt: "이미지를 <= 500자로 설명하세요.",
+  maxChars: 500,
+  maxBytes: 10485760,
+  timeoutSeconds: 60,
+  capabilities: ["image"], // 선택 사항, 멀티모달 항목에 사용
+  profile: "vision-profile",
+  preferredProfile: "vision-fallback"
+}
+```
+
+```json5
+{
+  type: "cli",
+  command: "gemini",
+  args: [
+    "-m",
+    "gemini-3-flash",
+    "--allowed-tools",
+    "read_file",
+    "{{MediaPath}}에서 미디어를 읽고 <= {{MaxChars}}자로 설명하세요."
+  ],
+  maxChars: 500,
+  maxBytes: 52428800,
+  timeoutSeconds: 120,
+  capabilities: ["video", "image"]
+}
+```
+
+CLI 템플릿은 다음도 사용할 수 있습니다:
+- `{{MediaDir}}` (미디어 파일이 포함된 디렉토리)
+- `{{OutputDir}}` (이 실행을 위해 생성된 스크래치 디렉토리)
+- `{{OutputBase}}` (스크래치 파일 기본 경로, 확장자 없음)
+
+## 기본값 및 제한
+권장 기본값:
+- `maxChars`: 이미지/비디오는 **500**(짧고 명령 친화적)
+- `maxChars`: 오디오는 **설정되지 않음**(제한을 설정하지 않으면 전체 전사)
+- `maxBytes`:
+  - 이미지: **10MB**
+  - 오디오: **20MB**
+  - 비디오: **50MB**
+
+규칙:
+- 미디어가 `maxBytes`를 초과하면 해당 모델을 건너뛰고 **다음 모델을 시도합니다**
+- 모델이 `maxChars`보다 많이 반환하면 출력이 잘립니다
+- `prompt`는 기본적으로 간단한 "{media} 설명." + `maxChars` 안내(이미지/비디오만)
+- `<capability>.enabled: true`이지만 모델이 구성되지 않은 경우 OpenClaw는
+  provider가 기능을 지원할 때 **활성 답장 모델**을 시도합니다
+
+### 미디어 이해 자동 감지 (기본값)
+`tools.media.<capability>.enabled`가 `false`로 설정되지 **않고** 모델을
+구성하지 않은 경우, OpenClaw는 다음 순서로 자동 감지하며 **첫 번째로
+작동하는 옵션에서 멈춥니다**:
+
+1) **로컬 CLI** (오디오만; 설치된 경우)
+   - `sherpa-onnx-offline` (encoder/decoder/joiner/tokens가 포함된 `SHERPA_ONNX_MODEL_DIR` 필요)
+   - `whisper-cli` (`whisper-cpp`; `WHISPER_CPP_MODEL` 또는 번들 tiny 모델 사용)
+   - `whisper` (Python CLI; 모델 자동 다운로드)
+2) **Gemini CLI** (`gemini`) `read_many_files` 사용
+3) **Provider 키**
+   - 오디오: OpenAI → Groq → Deepgram → Google
+   - 이미지: OpenAI → Anthropic → Google → MiniMax
+   - 비디오: Google
+
+자동 감지를 비활성화하려면 다음을 설정하세요:
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: false
+      }
+    }
+  }
+}
+```
+참고: 바이너리 감지는 macOS/Linux/Windows에서 최선을 다하며, CLI가 `PATH`에 있는지 확인하거나(`~` 확장), 전체 명령 경로로 명시적인 CLI 모델을 설정하세요.
+
+## 기능 (선택 사항)
+`capabilities`를 설정하면 항목은 해당 미디어 유형에 대해서만 실행됩니다. 공유
+목록의 경우 OpenClaw는 기본값을 추론할 수 있습니다:
+- `openai`, `anthropic`, `minimax`: **image**
+- `google` (Gemini API): **image + audio + video**
+- `groq`: **audio**
+- `deepgram`: **audio**
+
+CLI 항목의 경우 **명시적으로 `capabilities`를 설정하여** 놀라운 일치를 방지하세요.
+`capabilities`를 생략하면 항목이 나타나는 목록에 적격입니다.
+
+## Provider 지원 매트릭스 (OpenClaw 통합)
+| 기능 | Provider 통합 | 참고 |
+|------------|----------------------|-------|
+| Image | OpenAI / Anthropic / Google / `pi-ai`를 통한 기타 | 레지스트리의 모든 이미지 지원 모델이 작동합니다. |
+| Audio | OpenAI, Groq, Deepgram, Google | Provider 전사(Whisper/Deepgram/Gemini). |
+| Video | Google (Gemini API) | Provider 비디오 이해. |
+
+## 권장 provider
+**이미지**
+- 이미지를 지원하는 경우 활성 모델을 선호합니다
+- 좋은 기본값: `openai/gpt-5.2`, `anthropic/claude-opus-4-5`, `google/gemini-3-pro-preview`
+
+**오디오**
+- `openai/gpt-4o-mini-transcribe`, `groq/whisper-large-v3-turbo`, 또는 `deepgram/nova-3`
+- CLI 폴백: `whisper-cli` (whisper-cpp) 또는 `whisper`
+- Deepgram 설정: [Deepgram (audio transcription)](/providers/deepgram)
+
+**비디오**
+- `google/gemini-3-flash-preview` (빠름), `google/gemini-3-pro-preview` (더 풍부함)
+- CLI 폴백: `gemini` CLI (비디오/오디오에서 `read_file` 지원)
+
+## 첨부 파일 정책
+기능별 `attachments`는 처리할 첨부 파일을 제어합니다:
+- `mode`: `first` (기본값) 또는 `all`
+- `maxAttachments`: 처리할 수 제한(기본값 **1**)
+- `prefer`: `first`, `last`, `path`, `url`
+
+`mode: "all"`인 경우 출력은 `[Image 1/2]`, `[Audio 2/2]` 등으로 레이블이 지정됩니다.
+
+## 설정 예시
+
+### 1) 공유 모델 목록 + 재정의
+```json5
+{
+  tools: {
+    media: {
+      models: [
+        { provider: "openai", model: "gpt-5.2", capabilities: ["image"] },
+        { provider: "google", model: "gemini-3-flash-preview", capabilities: ["image", "audio", "video"] },
+        {
+          type: "cli",
+          command: "gemini",
+          args: [
+            "-m",
+            "gemini-3-flash",
+            "--allowed-tools",
+            "read_file",
+            "{{MediaPath}}에서 미디어를 읽고 <= {{MaxChars}}자로 설명하세요."
+          ],
+          capabilities: ["image", "video"]
+        }
+      ],
+      audio: {
+        attachments: { mode: "all", maxAttachments: 2 }
+      },
+      video: {
+        maxChars: 500
+      }
+    }
+  }
+}
+```
+
+### 2) 오디오 + 비디오만 (이미지 끄기)
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+          {
+            type: "cli",
+            command: "whisper",
+            args: ["--model", "base", "{{MediaPath}}"]
+          }
+        ]
+      },
+      video: {
+        enabled: true,
+        maxChars: 500,
+        models: [
+          { provider: "google", model: "gemini-3-flash-preview" },
+          {
+            type: "cli",
+            command: "gemini",
+            args: [
+              "-m",
+              "gemini-3-flash",
+              "--allowed-tools",
+              "read_file",
+              "{{MediaPath}}에서 미디어를 읽고 <= {{MaxChars}}자로 설명하세요."
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### 3) 선택적 이미지 이해
+```json5
+{
+  tools: {
+    media: {
+      image: {
+        enabled: true,
+        maxBytes: 10485760,
+        maxChars: 500,
+        models: [
+          { provider: "openai", model: "gpt-5.2" },
+          { provider: "anthropic", model: "claude-opus-4-5" },
+          {
+            type: "cli",
+            command: "gemini",
+            args: [
+              "-m",
+              "gemini-3-flash",
+              "--allowed-tools",
+              "read_file",
+              "{{MediaPath}}에서 미디어를 읽고 <= {{MaxChars}}자로 설명하세요."
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### 4) 멀티모달 단일 항목 (명시적 기능)
+```json5
+{
+  tools: {
+    media: {
+      image: { models: [{ provider: "google", model: "gemini-3-pro-preview", capabilities: ["image", "video", "audio"] }] },
+      audio: { models: [{ provider: "google", model: "gemini-3-pro-preview", capabilities: ["image", "video", "audio"] }] },
+      video: { models: [{ provider: "google", model: "gemini-3-pro-preview", capabilities: ["image", "video", "audio"] }] }
+    }
+  }
+}
+```
+
+## 상태 출력
+미디어 이해가 실행되면 `/status`에 짧은 요약 라인이 포함됩니다:
+
+```
+📎 Media: image ok (openai/gpt-5.2) · audio skipped (maxBytes)
+```
+
+이는 기능별 결과와 해당하는 경우 선택한 provider/모델을 표시합니다.
+
+## 참고 사항
+- 이해는 **최선을 다합니다**. 오류가 답장을 차단하지 않습니다
+- 이해가 비활성화된 경우에도 첨부 파일은 모델에 전달됩니다
+- `scope`를 사용하여 이해가 실행되는 위치를 제한합니다(예: DM만)
+
+## 관련 문서
+- [Configuration](/gateway/configuration)
+- [Image & Media Support](/nodes/images)

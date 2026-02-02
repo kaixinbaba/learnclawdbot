@@ -1,0 +1,238 @@
+---
+summary: "OpenClaw의 최상위 개요, 기능 및 목적"
+read_when:
+  - 신규 사용자에게 OpenClaw 소개
+---
+# OpenClaw 🦞
+
+> *"EXFOLIATE! EXFOLIATE!"* — 우주 랍스터, 아마도
+
+<p align="center">
+  <img src="whatsapp-openclaw.jpg" alt="OpenClaw" width="420" />
+</p>
+
+<p align="center">
+  <strong>모든 OS + WhatsApp/Telegram/Discord/iMessage Gateway for AI Agent (Pi).</strong><br />
+  Plugin으로 Mattermost 등을 추가할 수 있습니다.
+  메시지를 보내면 Agent 응답을 받을 수 있습니다 — 주머니에서.
+</p>
+
+<p align="center">
+  <a href="https://github.com/openclaw/openclaw">GitHub</a> ·
+  <a href="https://github.com/openclaw/openclaw/releases">Releases</a> ·
+  <a href="/">Docs</a> ·
+  <a href="/start/openclaw">OpenClaw Assistant 설정</a>
+</p>
+
+OpenClaw는 WhatsApp(WhatsApp Web / Baileys를 통해), Telegram(Bot API / grammY), Discord(Bot API / channels.discord.js), iMessage(imsg CLI)를 [Pi](https://github.com/badlogic/pi-mono)와 같은 코딩 Agent에 연결합니다. Plugin으로 Mattermost(Bot API + WebSocket) 등을 추가할 수 있습니다. OpenClaw는 OpenClaw Assistant도 구동합니다.
+
+## 여기서 시작하세요
+
+- **처음부터 새로 설치:** [Getting Started](/start/getting-started)
+- **가이드된 설정(권장):** [Wizard](/start/wizard) (`openclaw onboard`)
+- **대시보드 열기(로컬 Gateway):** http://127.0.0.1:18789/ (또는 http://localhost:18789/)
+
+Gateway가 동일한 컴퓨터에서 실행 중이면 해당 링크로 브라우저 Control UI가 즉시 열립니다. 실패하면 먼저 Gateway를 시작하세요: `openclaw gateway`.
+
+## 대시보드 (브라우저 Control UI)
+
+대시보드는 채팅, 설정, Node, Session 등을 위한 브라우저 Control UI입니다.
+로컬 기본값: http://127.0.0.1:18789/
+원격 액세스: [Web surfaces](/web) 및 [Tailscale](/gateway/tailscale)
+
+## 작동 방식
+
+```
+WhatsApp / Telegram / Discord / iMessage (+ plugins)
+        │
+        ▼
+  ┌───────────────────────────┐
+  │          Gateway          │  ws://127.0.0.1:18789 (루프백 전용)
+  │     (단일 소스)            │
+  │                           │  http://<gateway-host>:18793
+  │                           │    /__openclaw__/canvas/ (Canvas 호스트)
+  └───────────┬───────────────┘
+              │
+              ├─ Pi Agent (RPC)
+              ├─ CLI (openclaw …)
+              ├─ Chat UI (SwiftUI)
+              ├─ macOS app (OpenClaw.app)
+              ├─ Gateway WS + 페어링을 통한 iOS Node
+              └─ Gateway WS + 페어링을 통한 Android Node
+```
+
+대부분의 작업은 **Gateway** (`openclaw gateway`)를 통해 흐릅니다. 이는 Channel 연결과 WebSocket Control Plane을 소유하는 단일 장기 실행 프로세스입니다.
+
+## 네트워크 모델
+
+- **호스트당 하나의 Gateway(권장)**: WhatsApp Web 세션을 소유할 수 있는 유일한 프로세스입니다. 구조 Bot이나 엄격한 격리가 필요한 경우 격리된 프로필과 포트로 여러 Gateway를 실행하세요. [Multiple gateways](/gateway/multiple-gateways)를 참조하세요.
+- **루프백 우선**: Gateway WS는 기본적으로 `ws://127.0.0.1:18789`입니다.
+  - 이제 마법사는 기본적으로 Gateway Token을 생성합니다(루프백의 경우에도).
+  - Tailnet 액세스의 경우 `openclaw gateway --bind tailnet --token ...`을 실행하세요(비 루프백 바인딩에는 Token이 필요함).
+- **Node**: Gateway WebSocket에 연결합니다 (LAN/tailnet/SSH 필요에 따라). 레거시 TCP 브리지는 더 이상 사용되지 않음/제거됨.
+- **Canvas 호스트**: `canvasHost.port`(기본값 `18793`)의 HTTP 파일 서버로, Node WebView용 `/__openclaw__/canvas/`를 제공합니다. [Gateway configuration](/gateway/configuration) (`canvasHost`)를 참조하세요.
+- **원격 사용**: SSH 터널 또는 tailnet/VPN. [Remote access](/gateway/remote) 및 [Discovery](/gateway/discovery)를 참조하세요.
+
+## 기능 (상위 수준)
+
+- 📱 **WhatsApp 통합** — WhatsApp Web 프로토콜용 Baileys 사용
+- ✈️ **Telegram Bot** — grammY를 통한 DM + 그룹
+- 🎮 **Discord Bot** — channels.discord.js를 통한 DM + Guild Channel
+- 🧩 **Mattermost Bot (Plugin)** — Bot Token + WebSocket 이벤트
+- 💬 **iMessage** — 로컬 imsg CLI 통합 (macOS)
+- 🤖 **Agent 브리지** — Tool 스트리밍이 포함된 Pi (RPC 모드)
+- ⏱️ **스트리밍 + 청킹** — 블록 스트리밍 + Telegram 초안 스트리밍 세부 정보 ([/concepts/streaming](/concepts/streaming))
+- 🧠 **Multi-Agent 라우팅** — Provider 계정/Peer를 격리된 Agent로 라우팅 (Workspace + Agent별 Session)
+- 🔐 **구독 인증** — OAuth를 통한 Anthropic (Claude Pro/Max) + OpenAI (ChatGPT/Codex)
+- 💬 **Session** — 직접 채팅은 공유 `main`(기본값)으로 축소됩니다. 그룹은 격리됩니다
+- 👥 **그룹 채팅 지원** — 기본적으로 멘션 기반. 소유자는 `/activation always|mention` 전환 가능
+- 📎 **미디어 지원** — 이미지, 오디오, 문서 전송 및 수신
+- 🎤 **음성 메모** — 선택적 전사 Hook
+- 🖥️ **WebChat + macOS app** — 운영 및 음성 활성화를 위한 로컬 UI + 메뉴 바 컴패니언
+- 📱 **iOS Node** — Node로 페어링되고 Canvas 표면을 노출합니다
+- 📱 **Android Node** — Node로 페어링되고 Canvas + 채팅 + 카메라를 노출합니다
+
+참고: 레거시 Claude/Codex/Gemini/Opencode 경로가 제거되었습니다. Pi는 유일한 코딩 Agent 경로입니다.
+
+## 빠른 시작
+
+런타임 요구 사항: **Node ≥ 22**.
+
+```bash
+# 권장: 전역 설치 (npm/pnpm)
+npm install -g openclaw@latest
+# 또는: pnpm add -g openclaw@latest
+
+# 온보딩 + 서비스 설치 (launchd/systemd 사용자 서비스)
+openclaw onboard --install-daemon
+
+# WhatsApp Web 페어링 (QR 표시)
+openclaw channels login
+
+# Gateway는 온보딩 후 서비스를 통해 실행됩니다. 수동 실행도 가능합니다:
+openclaw gateway --port 18789
+```
+
+npm과 git 설치 간 전환은 쉽습니다: 다른 버전을 설치하고 `openclaw doctor`를 실행하여 Gateway 서비스 엔트리포인트를 업데이트하세요.
+
+소스에서 (개발):
+
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+pnpm install
+pnpm ui:build # 첫 실행 시 UI 종속성 자동 설치
+pnpm build
+openclaw onboard --install-daemon
+```
+
+아직 전역 설치가 없는 경우 리포지토리에서 `pnpm openclaw ...`를 통해 온보딩 단계를 실행하세요.
+
+다중 인스턴스 빠른 시작 (선택 사항):
+
+```bash
+OPENCLAW_CONFIG_PATH=~/.openclaw/a.json \
+OPENCLAW_STATE_DIR=~/.openclaw-a \
+openclaw gateway --port 19001
+```
+
+테스트 메시지 전송 (실행 중인 Gateway 필요):
+
+```bash
+openclaw message send --target +15555550123 --message "Hello from OpenClaw"
+```
+
+## 설정 (선택 사항)
+
+설정은 `~/.openclaw/openclaw.json`에 있습니다.
+
+- **아무것도 하지 않으면** OpenClaw는 발신자별 Session이 있는 RPC 모드에서 번들 Pi 바이너리를 사용합니다.
+- 잠그려면 `channels.whatsapp.allowFrom`과 (그룹의 경우) 멘션 규칙으로 시작하세요.
+
+예시:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      allowFrom: ["+15555550123"],
+      groups: { "*": { requireMention: true } }
+    }
+  },
+  messages: { groupChat: { mentionPatterns: ["@openclaw"] } }
+}
+```
+
+## 문서
+
+- 여기서 시작:
+  - [Docs hubs (모든 페이지 링크)](/start/hubs)
+  - [Help](/help) ← *일반 수정 + 문제 해결*
+  - [Configuration](/gateway/configuration)
+  - [Configuration examples](/gateway/configuration-examples)
+  - [Slash commands](/tools/slash-commands)
+  - [Multi-agent routing](/concepts/multi-agent)
+  - [Updating / rollback](/install/updating)
+  - [Pairing (DM + nodes)](/start/pairing)
+  - [Nix mode](/install/nix)
+  - [OpenClaw assistant setup](/start/openclaw)
+  - [Skills](/tools/skills)
+  - [Skills config](/tools/skills-config)
+  - [Workspace templates](/reference/templates/AGENTS)
+  - [RPC adapters](/reference/rpc)
+  - [Gateway runbook](/gateway)
+  - [Nodes (iOS/Android)](/nodes)
+  - [Web surfaces (Control UI)](/web)
+  - [Discovery + transports](/gateway/discovery)
+  - [Remote access](/gateway/remote)
+- Provider 및 UX:
+  - [WebChat](/web/webchat)
+  - [Control UI (browser)](/web/control-ui)
+  - [Telegram](/channels/telegram)
+  - [Discord](/channels/discord)
+  - [Mattermost (plugin)](/channels/mattermost)
+  - [iMessage](/channels/imessage)
+  - [Groups](/concepts/groups)
+  - [WhatsApp group messages](/concepts/group-messages)
+  - [Media: images](/nodes/images)
+  - [Media: audio](/nodes/audio)
+- 컴패니언 앱:
+  - [macOS app](/platforms/macos)
+  - [iOS app](/platforms/ios)
+  - [Android app](/platforms/android)
+  - [Windows (WSL2)](/platforms/windows)
+  - [Linux app](/platforms/linux)
+- 운영 및 보안:
+  - [Sessions](/concepts/session)
+  - [Cron jobs](/automation/cron-jobs)
+  - [Webhooks](/automation/webhook)
+  - [Gmail hooks (Pub/Sub)](/automation/gmail-pubsub)
+  - [Security](/gateway/security)
+  - [Troubleshooting](/gateway/troubleshooting)
+
+## 이름
+
+**OpenClaw = CLAW + TARDIS** — 모든 우주 랍스터에게는 시공간 기계가 필요하니까요.
+
+---
+
+*"우리는 모두 자신의 Prompt로 놀고 있을 뿐입니다."* — Token에 취한 AI, 아마도
+
+## 크레딧
+
+- **Peter Steinberger** ([@steipete](https://twitter.com/steipete)) — 제작자, 랍스터 속삭이는 자
+- **Mario Zechner** ([@badlogicc](https://twitter.com/badlogicgames)) — Pi 제작자, 보안 펜 테스터
+- **Clawd** — 더 나은 이름을 요구한 우주 랍스터
+
+## 핵심 기여자
+
+- **Maxim Vovshin** (@Hyaxia, 36747317+Hyaxia@users.noreply.github.com) — Blogwatcher Skill
+- **Nacho Iacovino** (@nachoiacovino, nacho.iacovino@gmail.com) — 위치 파싱 (Telegram + WhatsApp)
+
+## 라이선스
+
+MIT — 바다의 랍스터처럼 자유롭습니다 🦞
+
+---
+
+*"우리는 모두 자신의 Prompt로 놀고 있을 뿐입니다."* — Token에 취한 AI, 아마도

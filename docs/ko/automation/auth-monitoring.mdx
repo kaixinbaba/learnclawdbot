@@ -1,0 +1,37 @@
+---
+summary: "모델 provider의 OAuth 만료 모니터링"
+read_when:
+  - 인증 만료 모니터링 또는 알림 설정 시
+  - Claude Code / Codex OAuth 갱신 확인 자동화 시
+---
+# Auth 모니터링
+
+OpenClaw는 `openclaw models status`를 통해 OAuth 만료 상태를 제공합니다. 자동화 및 알림에 이를 사용하세요. 스크립트는 모바일 워크플로우를 위한 선택적 추가 기능입니다.
+
+## 권장: CLI 확인 (이식 가능)
+
+```bash
+openclaw models status --check
+```
+
+종료 코드:
+- `0`: 정상
+- `1`: 만료되었거나 자격 증명 누락
+- `2`: 곧 만료 예정 (24시간 이내)
+
+이 방식은 cron/systemd에서 작동하며 추가 스크립트가 필요하지 않습니다.
+
+## 선택적 스크립트 (운영 / 모바일 워크플로우)
+
+이 스크립트들은 `scripts/` 아래에 있으며 **선택 사항**입니다. Gateway 호스트에 SSH 접근이 가능하다고 가정하며 systemd + Termux에 최적화되어 있습니다.
+
+- `scripts/claude-auth-status.sh`는 이제 `openclaw models status --json`을 신뢰할 수 있는 소스로 사용합니다 (CLI를 사용할 수 없는 경우 직접 파일 읽기로 대체). 따라서 타이머를 위해 `openclaw`를 `PATH`에 유지하세요.
+- `scripts/auth-monitor.sh`: cron/systemd 타이머 대상; 알림 전송 (ntfy 또는 모바일).
+- `scripts/systemd/openclaw-auth-monitor.{service,timer}`: systemd 사용자 타이머.
+- `scripts/claude-auth-status.sh`: Claude Code + OpenClaw 인증 확인기 (full/json/simple).
+- `scripts/mobile-reauth.sh`: SSH를 통한 안내형 재인증 플로우.
+- `scripts/termux-quick-auth.sh`: 원탭 위젯 상태 + 인증 URL 열기.
+- `scripts/termux-auth-widget.sh`: 전체 안내형 위젯 플로우.
+- `scripts/termux-sync-widget.sh`: Claude Code 자격 증명 → OpenClaw로 동기화.
+
+모바일 자동화나 systemd 타이머가 필요하지 않다면 이 스크립트들은 건너뛰어도 됩니다.

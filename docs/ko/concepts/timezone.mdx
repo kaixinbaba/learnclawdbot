@@ -1,0 +1,88 @@
+---
+summary: "Agent, envelope 및 프롬프트에 대한 Timezone 처리"
+read_when:
+  - Model에 대해 타임스탬프가 정규화되는 방식을 이해해야 할 때
+  - 시스템 프롬프트에 대한 사용자 timezone 구성 시
+---
+
+# Timezones
+
+OpenClaw는 model이 **단일 참조 시간**을 볼 수 있도록 타임스탬프를 표준화합니다.
+
+## 메시지 envelope (기본적으로 로컬)
+
+인바운드 메시지는 다음과 같은 envelope로 래핑됩니다:
+
+```
+[Provider ... 2026-01-05 16:26 PST] message text
+```
+
+Envelope의 타임스탬프는 **기본적으로 호스트 로컬**이며 분 정밀도를 가집니다.
+
+다음으로 재정의할 수 있습니다:
+
+```json5
+{
+  agents: {
+    defaults: {
+      envelopeTimezone: "local", // "utc" | "local" | "user" | IANA timezone
+      envelopeTimestamp: "on", // "on" | "off"
+      envelopeElapsed: "on" // "on" | "off"
+    }
+  }
+}
+```
+
+- `envelopeTimezone: "utc"`는 UTC를 사용합니다.
+- `envelopeTimezone: "user"`는 `agents.defaults.userTimezone`을 사용합니다(호스트 timezone으로 폴백).
+- 고정된 오프셋을 위해 명시적인 IANA timezone(예: `"Europe/Vienna"`)을 사용하세요.
+- `envelopeTimestamp: "off"`는 envelope 헤더에서 절대 타임스탬프를 제거합니다.
+- `envelopeElapsed: "off"`는 경과 시간 접미사(`+2m` 스타일)를 제거합니다.
+
+### 예시
+
+**로컬 (기본값):**
+
+```
+[Signal Alice +1555 2026-01-18 00:19 PST] hello
+```
+
+**고정 timezone:**
+
+```
+[Signal Alice +1555 2026-01-18 06:19 GMT+1] hello
+```
+
+**경과 시간:**
+
+```
+[Signal Alice +1555 +2m 2026-01-18T05:19Z] follow-up
+```
+
+## Tool payload (원시 provider 데이터 + 정규화된 필드)
+
+Tool 호출(`channels.discord.readMessages`, `channels.slack.readMessages` 등)은 **원시 provider 타임스탬프**를 반환합니다.
+일관성을 위해 정규화된 필드도 첨부합니다:
+
+- `timestampMs` (UTC epoch 밀리초)
+- `timestampUtc` (ISO 8601 UTC 문자열)
+
+원시 provider 필드는 보존됩니다.
+
+## 시스템 프롬프트에 대한 사용자 timezone
+
+`agents.defaults.userTimezone`을 설정하여 model에 사용자의 로컬 time zone을 알려주세요. 설정하지 않으면 OpenClaw는 **런타임에 호스트 timezone을 해석**합니다(config 쓰기 없음).
+
+```json5
+{
+  agents: { defaults: { userTimezone: "America/Chicago" } }
+}
+```
+
+시스템 프롬프트에는 다음이 포함됩니다:
+- 로컬 시간 및 timezone이 있는 `Current Date & Time` 섹션
+- `Time format: 12-hour` 또는 `24-hour`
+
+`agents.defaults.timeFormat` (`auto` | `12` | `24`)으로 프롬프트 형식을 제어할 수 있습니다.
+
+전체 동작 및 예시는 [Date & Time](/date-time)을 참조하세요.

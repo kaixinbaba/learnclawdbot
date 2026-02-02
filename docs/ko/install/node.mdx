@@ -1,0 +1,78 @@
+---
+title: "Node.js + npm (PATH 점검)"
+summary: "Node.js + npm 설치 점검: 버전, PATH 및 전역 설치"
+read_when:
+  - "OpenClaw를 설치했지만 `openclaw`가 "command not found""
+  - "새 머신에서 Node.js/npm을 설정하는 경우"
+  - "npm install -g ... 가 권한 또는 PATH 문제로 실패하는 경우"
+---
+
+# Node.js + npm (PATH 점검)
+
+OpenClaw의 런타임 기준은 **Node 22+**입니다.
+
+`npm install -g openclaw@latest`를 실행할 수 있지만 나중에 `openclaw: command not found`가 표시되는 경우, 거의 항상 **PATH** 문제입니다: npm이 전역 바이너리를 넣는 디렉토리가 셸의 PATH에 없습니다.
+
+## 빠른 진단
+
+실행:
+
+```bash
+node -v
+npm -v
+npm prefix -g
+echo "$PATH"
+```
+
+`$(npm prefix -g)/bin` (macOS/Linux) 또는 `$(npm prefix -g)` (Windows)가 `echo "$PATH"` 내에 **없으면**, 셸이 전역 npm 바이너리(`openclaw` 포함)를 찾을 수 없습니다.
+
+## 수정: npm의 전역 bin 디렉토리를 PATH에 추가
+
+1) 전역 npm prefix 찾기:
+
+```bash
+npm prefix -g
+```
+
+2) 셸 시작 파일에 전역 npm bin 디렉토리 추가:
+
+- zsh: `~/.zshrc`
+- bash: `~/.bashrc`
+
+예 (`npm prefix -g` 출력으로 경로 교체):
+
+```bash
+# macOS / Linux
+export PATH="/path/from/npm/prefix/bin:$PATH"
+```
+
+그런 다음 **새 터미널**을 열거나 (zsh에서 `rehash` 또는 bash에서 `hash -r` 실행).
+
+Windows에서는 `npm prefix -g`의 출력을 PATH에 추가하세요.
+
+## 수정: `sudo npm install -g` / 권한 오류 방지 (Linux)
+
+`npm install -g ...`가 `EACCES`로 실패하는 경우, npm의 전역 prefix를 사용자가 쓸 수 있는 디렉토리로 전환하세요:
+
+```bash
+mkdir -p "$HOME/.npm-global"
+npm config set prefix "$HOME/.npm-global"
+export PATH="$HOME/.npm-global/bin:$PATH"
+```
+
+셸 시작 파일에 `export PATH=...` 줄을 유지하세요.
+
+## 권장 Node 설치 옵션
+
+다음과 같은 방식으로 Node/npm을 설치하면 놀라움이 가장 적습니다:
+
+- Node를 최신 상태로 유지 (22+)
+- 전역 npm bin 디렉토리를 안정적이고 새 셸의 PATH에 추가
+
+일반적인 선택:
+
+- macOS: Homebrew (`brew install node`) 또는 버전 관리자
+- Linux: 선호하는 버전 관리자 또는 Node 22+를 제공하는 배포판 지원 설치
+- Windows: 공식 Node 설치 프로그램, `winget` 또는 Windows Node 버전 관리자
+
+버전 관리자(nvm/fnm/asdf/등)를 사용하는 경우, 일상적으로 사용하는 셸(zsh vs bash)에서 초기화되어 설치 프로그램을 실행할 때 설정한 PATH가 있는지 확인하세요.

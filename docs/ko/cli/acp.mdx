@@ -1,0 +1,162 @@
+---
+summary: "IDE 통합을 위한 ACP 브리지 실행"
+read_when:
+  - ACP 기반 IDE 통합 설정
+  - Gateway로의 ACP 세션 라우팅 디버깅
+---
+
+# acp
+
+OpenClaw Gateway와 통신하는 ACP (Agent Client Protocol) 브리지를 실행합니다.
+
+이 명령은 IDE를 위해 stdio를 통해 ACP를 처리하고, WebSocket을 통해 Gateway로 프롬프트를 전달합니다. ACP 세션을 Gateway 세션 키에 매핑합니다.
+
+## 사용법
+
+```bash
+openclaw acp
+
+# 원격 Gateway
+openclaw acp --url wss://gateway-host:18789 --token <token>
+
+# 기존 세션 키에 연결
+openclaw acp --session agent:main:main
+
+# 레이블로 연결 (이미 존재해야 함)
+openclaw acp --session-label "support inbox"
+
+# 첫 프롬프트 전에 세션 키 리셋
+openclaw acp --session agent:main:main --reset-session
+```
+
+## ACP 클라이언트 (디버그)
+
+IDE 없이 브리지를 테스트하려면 내장 ACP 클라이언트를 사용하세요.
+ACP 브리지를 실행하고 대화형으로 프롬프트를 입력할 수 있습니다.
+
+```bash
+openclaw acp client
+
+# 생성된 브리지를 원격 Gateway로 지정
+openclaw acp client --server-args --url wss://gateway-host:18789 --token <token>
+
+# 서버 명령 재정의 (기본값: openclaw)
+openclaw acp client --server "node" --server-args openclaw.mjs acp --url ws://127.0.0.1:19001
+```
+
+## 사용 방법
+
+IDE(또는 다른 클라이언트)가 Agent Client Protocol을 사용하고 OpenClaw Gateway 세션을 구동하려는 경우 ACP를 사용합니다.
+
+1. Gateway가 실행 중인지 확인합니다 (로컬 또는 원격).
+2. Gateway 대상을 구성합니다 (config 또는 플래그).
+3. IDE가 stdio를 통해 `openclaw acp`를 실행하도록 설정합니다.
+
+예시 구성 (영구 저장):
+
+```bash
+openclaw config set gateway.remote.url wss://gateway-host:18789
+openclaw config set gateway.remote.token <token>
+```
+
+예시 직접 실행 (config 기록 없음):
+
+```bash
+openclaw acp --url wss://gateway-host:18789 --token <token>
+```
+
+## 에이전트 선택
+
+ACP는 에이전트를 직접 선택하지 않습니다. Gateway 세션 키로 라우팅합니다.
+
+특정 에이전트를 대상으로 하려면 에이전트 범위 세션 키를 사용하세요:
+
+```bash
+openclaw acp --session agent:main:main
+openclaw acp --session agent:design:main
+openclaw acp --session agent:qa:bug-123
+```
+
+각 ACP 세션은 단일 Gateway 세션 키에 매핑됩니다. 하나의 에이전트가 여러 세션을 가질 수 있습니다. ACP는 키나 레이블을 재정의하지 않는 한 격리된 `acp:<uuid>` 세션을 기본으로 사용합니다.
+
+## Zed 편집기 설정
+
+`~/.config/zed/settings.json`에 커스텀 ACP 에이전트를 추가하거나 Zed의 Settings UI를 사용하세요:
+
+```json
+{
+  "agent_servers": {
+    "OpenClaw ACP": {
+      "type": "custom",
+      "command": "openclaw",
+      "args": ["acp"],
+      "env": {}
+    }
+  }
+}
+```
+
+특정 Gateway 또는 에이전트를 대상으로 하려면:
+
+```json
+{
+  "agent_servers": {
+    "OpenClaw ACP": {
+      "type": "custom",
+      "command": "openclaw",
+      "args": [
+        "acp",
+        "--url", "wss://gateway-host:18789",
+        "--token", "<token>",
+        "--session", "agent:design:main"
+      ],
+      "env": {}
+    }
+  }
+}
+```
+
+Zed에서 Agent 패널을 열고 "OpenClaw ACP"를 선택하여 스레드를 시작합니다.
+
+## 세션 매핑
+
+기본적으로 ACP 세션은 `acp:` 접두사가 있는 격리된 Gateway 세션 키를 얻습니다.
+알려진 세션을 재사용하려면 세션 키 또는 레이블을 전달하세요:
+
+- `--session <key>`: 특정 Gateway 세션 키 사용.
+- `--session-label <label>`: 기존 세션을 레이블로 찾기.
+- `--reset-session`: 해당 키에 대한 새 세션 id 생성 (같은 키, 새 대화 기록).
+
+ACP 클라이언트가 메타데이터를 지원하는 경우 세션별로 재정의할 수 있습니다:
+
+```json
+{
+  "_meta": {
+    "sessionKey": "agent:main:main",
+    "sessionLabel": "support inbox",
+    "resetSession": true
+  }
+}
+```
+
+세션 키에 대한 자세한 내용은 [/concepts/session](/concepts/session)을 참조하세요.
+
+## 옵션
+
+- `--url <url>`: Gateway WebSocket URL (구성된 경우 gateway.remote.url이 기본값).
+- `--token <token>`: Gateway 인증 토큰.
+- `--password <password>`: Gateway 인증 비밀번호.
+- `--session <key>`: 기본 세션 키.
+- `--session-label <label>`: 찾을 기본 세션 레이블.
+- `--require-existing`: 세션 키/레이블이 존재하지 않으면 실패.
+- `--reset-session`: 첫 사용 전에 세션 키 리셋.
+- `--no-prefix-cwd`: 프롬프트에 작업 디렉토리 접두사를 붙이지 않음.
+- `--verbose, -v`: stderr로 상세 로깅.
+
+### `acp client` 옵션
+
+- `--cwd <dir>`: ACP 세션의 작업 디렉토리.
+- `--server <command>`: ACP 서버 명령 (기본값: `openclaw`).
+- `--server-args <args...>`: ACP 서버에 전달할 추가 인수.
+- `--server-verbose`: ACP 서버에서 상세 로깅 활성화.
+- `--verbose, -v`: 클라이언트 상세 로깅.

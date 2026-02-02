@@ -1,0 +1,52 @@
+---
+summary: "웨이크 워드와 push-to-talk이 겹칠 때 voice overlay 라이프사이클"
+read_when:
+  - voice overlay 동작 조정 시
+---
+# Voice Overlay 라이프사이클 (macOS)
+
+대상: macOS 앱 기여자. 목표: 웨이크 워드와 push-to-talk이 겹칠 때 voice overlay를 예측 가능하게 유지.
+
+### 현재 의도
+- 웨이크 워드로 오버레이가 이미 표시되어 있고 사용자가 핫키를 누르면, 핫키 세션이 기존 텍스트를 *채택*하여 재설정하지 않습니다. 핫키를 누르고 있는 동안 오버레이가 유지됩니다. 사용자가 릴리스할 때: 트림된 텍스트가 있으면 전송, 그렇지 않으면 취소.
+- 웨이크 워드만 있으면 여전히 침묵 시 자동 전송; push-to-talk은 릴리스 시 즉시 전송.
+
+### 구현됨 (2025년 12월 9일)
+- 오버레이 세션은 이제 캡처당 토큰을 운반합니다 (웨이크 워드 또는 push-to-talk). 토큰이 일치하지 않으면 partial/final/send/dismiss/level 업데이트가 삭제되어 오래된 콜백을 방지합니다.
+- Push-to-talk은 표시된 오버레이 텍스트를 접두사로 채택합니다 (웨이크 오버레이가 표시된 상태에서 핫키를 누르면 텍스트가 유지되고 새 음성이 추가됨). 최종 transcript를 위해 최대 1.5초를 대기하고 현재 텍스트로 폴백합니다.
+- Chime/오버레이 로깅은 카테고리 `voicewake.overlay`, `voicewake.ptt`, `voicewake.chime`에서 `info`로 발행됩니다 (세션 시작, partial, final, send, dismiss, chime 이유).
+
+### 다음 단계
+1. **VoiceSessionCoordinator (actor)**
+   - 한 번에 정확히 하나의 `VoiceSession` 소유.
+   - API (토큰 기반): `beginWakeCapture`, `beginPushToTalk`, `updatePartial`, `endCapture`, `cancel`, `applyCooldown`.
+   - 오래된 토큰을 운반하는 콜백 삭제 (오래된 recognizer가 오버레이를 다시 열지 못하도록 방지).
+2. **VoiceSession (모델)**
+   - 필드: `token`, `source` (wakeWord|pushToTalk), 커밋된/휘발성 텍스트, chime 플래그, 타이머 (자동 전송, idle), `overlayMode` (display|editing|sending), 쿨다운 마감.
+3. **오버레이 바인딩**
+   - `VoiceSessionPublisher` (`ObservableObject`)가 활성 세션을 SwiftUI로 미러링.
+   - `VoiceWakeOverlayView`는 publisher를 통해서만 렌더링; 전역 싱글톤을 직접 변경하지 않음.
+   - 오버레이 사용자 액션 (`sendNow`, `dismiss`, `edit`)은 세션 토큰으로 코디네이터를 콜백.
+4. **통합된 전송 경로**
+   - `endCapture` 시: 트림된 텍스트가 비어 있으면 → dismiss; 그렇지 않으면 `performSend(session:)` (전송 chime 한 번 재생, 포워드, dismiss).
+   - Push-to-talk: 지연 없음; 웨이크 워드: 자동 전송을 위한 선택적 지연.
+   - Push-to-talk 완료 후 웨이크 런타임에 짧은 쿨다운을 적용하여 웨이크 워드가 즉시 다시 트리거되지 않도록 함.
+5. **로깅**
+   - Coordinator는 서브시스템 `bot.molt`, 카테고리 `voicewake.overlay` 및 `voicewake.chime`에서 `.info` 로그를 발행.
+   - 주요 이벤트: `session_started`, `adopted_by_push_to_talk`, `partial`, `finalized`, `send`, `dismiss`, `cancel`, `cooldown`.
+
+### 디버깅 체크리스트
+- 고착된 오버레이를 재현하는 동안 로그 스트리밍:
+
+  ```bash
+  sudo log stream --predicate 'subsystem == "bot.molt" AND category CONTAINS "voicewake"' --level info --style compact
+  ```
+- 하나의 활성 세션 토큰만 있는지 확인; 오래된 콜백은 코디네이터에 의해 삭제되어야 함.
+- Push-to-talk 릴리스가 항상 활성 토큰으로 `endCapture`를 호출하는지 확인; 텍스트가 비어 있으면 chime 또는 send 없이 `dismiss` 예상.
+
+### 마이그레이션 단계 (제안)
+1. `VoiceSessionCoordinator`, `VoiceSession`, `VoiceSessionPublisher` 추가.
+2. `VoiceWakeRuntime`을 리팩토링하여 `VoiceWakeOverlayController`를 직접 터치하는 대신 세션을 생성/업데이트/종료.
+3. `VoicePushToTalk`을 리팩토링하여 기존 세션을 채택하고 릴리스 시 `endCapture` 호출; 런타임 쿨다운 적용.
+4. `VoiceWakeOverlayController`를 publisher에 연결; runtime/PTT에서 직접 호출 제거.
+5. 세션 채택, 쿨다운, 빈 텍스트 취소를 위한 통합 테스트 추가.

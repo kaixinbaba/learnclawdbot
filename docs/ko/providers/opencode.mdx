@@ -1,0 +1,34 @@
+---
+summary: "OpenClaw에서 OpenCode Zen(선별된 모델) 사용하기"
+read_when:
+  - 모델 접근을 위해 OpenCode Zen을 사용하고 싶을 때
+  - 코딩 친화적인 선별된 모델 목록을 원할 때
+---
+# OpenCode Zen
+
+OpenCode Zen은 OpenCode 팀이 코딩 에이전트를 위해 추천하는 **선별된 모델 목록**입니다.
+API 키와 `opencode` provider를 사용하는 선택적 호스팅 모델 접근 경로입니다.
+Zen은 현재 베타 버전입니다.
+
+## CLI 설정
+
+```bash
+openclaw onboard --auth-choice opencode-zen
+# 또는 비대화형
+openclaw onboard --opencode-zen-api-key "$OPENCODE_API_KEY"
+```
+
+## Config 예시
+
+```json5
+{
+  env: { OPENCODE_API_KEY: "sk-..." },
+  agents: { defaults: { model: { primary: "opencode/claude-opus-4-5" } } }
+}
+```
+
+## 참고사항
+
+- `OPENCODE_ZEN_API_KEY`도 지원됩니다.
+- Zen에 로그인하고, 청구 정보를 추가한 후 API 키를 복사합니다.
+- OpenCode Zen은 요청당 청구합니다. 자세한 내용은 OpenCode 대시보드를 확인하세요.

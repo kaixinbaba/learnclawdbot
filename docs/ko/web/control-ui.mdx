@@ -1,0 +1,159 @@
+---
+summary: "Gateway를 위한 브라우저 기반 제어 UI (채팅, 노드, 구성)"
+read_when:
+  - 브라우저에서 Gateway를 작동하려고 할 때
+  - SSH 터널 없이 Tailnet 액세스를 원할 때
+---
+# Control UI (브라우저)
+
+Control UI는 Gateway가 제공하는 작은 **Vite + Lit** 단일 페이지 앱입니다:
+
+- 기본값: `http://<host>:18789/`
+- 선택적 프리픽스: `gateway.controlUi.basePath` 설정 (예: `/openclaw`)
+
+동일한 포트에서 **Gateway WebSocket에 직접** 통신합니다.
+
+## 빠른 열기 (로컬)
+
+Gateway가 동일한 컴퓨터에서 실행 중인 경우 다음을 엽니다:
+
+- http://127.0.0.1:18789/ (또는 http://localhost:18789/)
+
+페이지가 로드되지 않으면 먼저 Gateway를 시작합니다: `openclaw gateway`.
+
+인증은 WebSocket 핸드셰이크 중에 다음을 통해 제공됩니다:
+- `connect.params.auth.token`
+- `connect.params.auth.password`
+대시보드 설정 패널에서 토큰을 저장할 수 있습니다; 비밀번호는 유지되지 않습니다.
+온보딩 마법사는 기본적으로 Gateway 토큰을 생성하므로 첫 연결 시 여기에 붙여넣습니다.
+
+## 할 수 있는 일 (현재)
+- Gateway WS를 통해 모델과 채팅 (`chat.history`, `chat.send`, `chat.abort`, `chat.inject`)
+- 채팅에서 도구 호출 + 라이브 도구 출력 카드 스트림 (agent 이벤트)
+- 채널: WhatsApp/Telegram/Discord/Slack + 플러그인 채널 (Mattermost 등) 상태 + QR 로그인 + 채널별 구성 (`channels.status`, `web.login.*`, `config.patch`)
+- 인스턴스: 존재 목록 + 새로 고침 (`system-presence`)
+- 세션: 목록 + 세션별 thinking/verbose 재정의 (`sessions.list`, `sessions.patch`)
+- Cron 작업: 목록/추가/실행/활성화/비활성화 + 실행 히스토리 (`cron.*`)
+- 스킬: 상태, 활성화/비활성화, 설치, API 키 업데이트 (`skills.*`)
+- 노드: 목록 + 기능 (`node.list`)
+- Exec 승인: Gateway 또는 노드 허용 목록 편집 + `exec host=gateway/node`에 대한 ask 정책 (`exec.approvals.*`)
+- 구성: `~/.openclaw/openclaw.json` 보기/편집 (`config.get`, `config.set`)
+- 구성: 검증과 함께 적용 + 재시작 (`config.apply`) 및 마지막 활성 세션 깨우기
+- Config 쓰기에는 동시 편집을 덮어쓰지 않도록 base-hash 가드가 포함됩니다
+- Config 스키마 + 양식 렌더링 (`config.schema`, 플러그인 + 채널 스키마 포함); 원시 JSON 편집기는 계속 사용 가능
+- 디버그: 상태/헬스/모델 스냅샷 + 이벤트 로그 + 수동 RPC 호출 (`status`, `health`, `models.list`)
+- 로그: 필터/내보내기가 있는 Gateway 파일 로그의 라이브 tail (`logs.tail`)
+- 업데이트: 재시작 보고서와 함께 패키지/git 업데이트 + 재시작 실행 (`update.run`)
+
+## 채팅 동작
+
+- `chat.send`는 **논블로킹**입니다: 즉시 `{ runId, status: "started" }`로 확인하고 응답은 `chat` 이벤트를 통해 스트림됩니다.
+- 동일한 `idempotencyKey`로 재전송하면 실행 중에는 `{ status: "in_flight" }`를 반환하고 완료 후에는 `{ status: "ok" }`를 반환합니다.
+- `chat.inject`는 세션 트랜스크립트에 어시스턴트 메모를 추가하고 UI 전용 업데이트를 위해 `chat` 이벤트를 브로드캐스트합니다 (agent 실행 없음, 채널 전달 없음).
+- 중지:
+  - **Stop** 클릭 (`chat.abort` 호출)
+  - `/stop` (또는 `stop|esc|abort|wait|exit|interrupt`) 입력하여 대역 외 중단
+  - `chat.abort`는 해당 세션의 모든 활성 실행을 중단하기 위해 `{ sessionKey }` (`runId` 없음)를 지원합니다
+
+## Tailnet 액세스 (권장)
+
+### 통합 Tailscale Serve (선호)
+
+Gateway를 loopback에 유지하고 Tailscale Serve가 HTTPS로 프록시하도록 합니다:
+
+```bash
+openclaw gateway --tailscale serve
+```
+
+열기:
+- `https://<magicdns>/` (또는 구성된 `gateway.controlUi.basePath`)
+
+기본적으로 Serve 요청은 `gateway.auth.allowTailscale`이 `true`일 때 Tailscale 신원 헤더
+(`tailscale-user-login`)를 통해 인증할 수 있습니다. OpenClaw는
+`x-forwarded-for` 주소를 `tailscale whois`로 해결하고 헤더와 일치시켜 신원을 확인하며,
+요청이 Tailscale의 `x-forwarded-*` 헤더와 함께 loopback에 도달할 때만 이들을 수락합니다. Serve 트래픽에도 토큰/비밀번호를 요구하려면
+`gateway.auth.allowTailscale: false`를 설정하거나 (`gateway.auth.mode: "password"`를 강제합니다).
+
+### tailnet에 바인드 + 토큰
+
+```bash
+openclaw gateway --bind tailnet --token "$(openssl rand -hex 32)"
+```
+
+그런 다음 엽니다:
+- `http://<tailscale-ip>:18789/` (또는 구성된 `gateway.controlUi.basePath`)
+
+토큰을 UI 설정에 붙여넣습니다 (`connect.params.auth.token`으로 전송됨).
+
+## 비보안 HTTP
+
+일반 HTTP (`http://<lan-ip>` 또는 `http://<tailscale-ip>`)를 통해 대시보드를 열면
+브라우저가 **비보안 컨텍스트**에서 실행되고 WebCrypto를 차단합니다. 기본적으로
+OpenClaw는 기기 신원이 없는 Control UI 연결을 **차단**합니다.
+
+**권장 수정:** HTTPS (Tailscale Serve)를 사용하거나 UI를 로컬로 엽니다:
+- `https://<magicdns>/` (Serve)
+- `http://127.0.0.1:18789/` (Gateway 호스트에서)
+
+**다운그레이드 예제 (HTTP를 통한 토큰만):**
+
+```json5
+{
+  gateway: {
+    controlUi: { allowInsecureAuth: true },
+    bind: "tailnet",
+    auth: { mode: "token", token: "replace-me" }
+  }
+}
+```
+
+이는 Control UI에 대한 기기 신원 + 페어링을 비활성화합니다 (HTTPS에서도). 네트워크를 신뢰하는 경우에만 사용하세요.
+
+HTTPS 설정 지침은 [Tailscale](/gateway/tailscale)을 참조하세요.
+
+## UI 빌드
+
+Gateway는 `dist/control-ui`에서 정적 파일을 제공합니다. 다음으로 빌드합니다:
+
+```bash
+pnpm ui:build # 첫 실행 시 UI 종속성 자동 설치
+```
+
+선택적 절대 base (고정 에셋 URL을 원할 때):
+
+```bash
+OPENCLAW_CONTROL_UI_BASE_PATH=/openclaw/ pnpm ui:build
+```
+
+로컬 개발의 경우 (별도의 개발 서버):
+
+```bash
+pnpm ui:dev # 첫 실행 시 UI 종속성 자동 설치
+```
+
+그런 다음 UI를 Gateway WS URL (예: `ws://127.0.0.1:18789`)로 포인트합니다.
+
+## 디버깅/테스트: 개발 서버 + 원격 Gateway
+
+Control UI는 정적 파일입니다; WebSocket 대상은 구성 가능하며
+HTTP origin과 다를 수 있습니다. 이는 Vite 개발 서버를 로컬로 원하지만 Gateway가 다른 곳에서 실행될 때 유용합니다.
+
+1) UI 개발 서버 시작: `pnpm ui:dev`
+2) 다음과 같은 URL을 엽니다:
+
+```text
+http://localhost:5173/?gatewayUrl=ws://<gateway-host>:18789
+```
+
+필요한 경우 선택적 일회성 인증:
+
+```text
+http://localhost:5173/?gatewayUrl=wss://<gateway-host>:18789&token=<gateway-token>
+```
+
+참고:
+- `gatewayUrl`은 로드 후 localStorage에 저장되고 URL에서 제거됩니다.
+- `token`은 localStorage에 저장됩니다; `password`는 메모리에만 보관됩니다.
+- Gateway가 TLS 뒤에 있을 때 (Tailscale Serve, HTTPS 프록시 등) `wss://`를 사용합니다.
+
+원격 액세스 설정 세부 사항: [Remote access](/gateway/remote).

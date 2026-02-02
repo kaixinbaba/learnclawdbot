@@ -1,0 +1,93 @@
+---
+summary: "OpenClaw 시스템 프롬프트의 내용과 조립 방식"
+read_when:
+  - 시스템 프롬프트 텍스트, tool 목록 또는 시간/heartbeat 섹션을 편집할 때
+  - Workspace bootstrap 또는 skill 주입 동작을 변경할 때
+---
+# System Prompt
+
+OpenClaw는 모든 agent 실행에 대해 사용자 지정 시스템 프롬프트를 빌드합니다. 프롬프트는 **OpenClaw 소유**이며 p-coding-agent 기본 프롬프트를 사용하지 않습니다.
+
+프롬프트는 OpenClaw에서 조립되어 각 agent 실행에 주입됩니다.
+
+## 구조
+
+프롬프트는 의도적으로 간결하며 고정된 섹션을 사용합니다:
+
+- **Tooling**: 현재 tool 목록 + 짧은 설명.
+- **Skills** (사용 가능한 경우): 필요 시 skill 지침을 로드하는 방법을 model에 알려줍니다.
+- **OpenClaw Self-Update**: `config.apply` 및 `update.run` 실행 방법.
+- **Workspace**: 작업 디렉토리 (`agents.defaults.workspace`).
+- **Documentation**: OpenClaw 문서에 대한 로컬 경로(repo 또는 npm 패키지) 및 읽기 시점.
+- **Workspace Files (주입됨)**: bootstrap 파일이 아래에 포함되어 있음을 나타냅니다.
+- **Sandbox** (활성화된 경우): sandbox된 런타임, sandbox 경로 및 elevated exec 가용성을 나타냅니다.
+- **Current Date & Time**: 사용자 로컬 시간, timezone 및 시간 형식.
+- **Reply Tags**: 지원되는 provider에 대한 선택적 reply tag 구문.
+- **Heartbeats**: heartbeat 프롬프트 및 ack 동작.
+- **Runtime**: 호스트, OS, node, model, repo root(감지된 경우), thinking 레벨(한 줄).
+- **Reasoning**: 현재 가시성 레벨 + /reasoning 토글 힌트.
+
+## 프롬프트 모드
+
+OpenClaw는 sub-agent에 대해 더 작은 시스템 프롬프트를 렌더링할 수 있습니다. 런타임은 각 실행에 대해 `promptMode`를 설정합니다(사용자 대면 config가 아님):
+
+- `full` (기본값): 위의 모든 섹션을 포함합니다.
+- `minimal`: sub-agent에 사용됨; **Skills**, **Memory Recall**, **OpenClaw
+  Self-Update**, **Model Aliases**, **User Identity**, **Reply Tags**,
+  **Messaging**, **Silent Replies** 및 **Heartbeats**를 생략합니다. Tooling, Workspace,
+  Sandbox, Current Date & Time(알려진 경우), Runtime 및 주입된 컨텍스트는 사용 가능합니다.
+- `none`: 기본 identity 라인만 반환합니다.
+
+`promptMode=minimal`인 경우 추가 주입된 프롬프트는 **Group Chat Context** 대신 **Subagent
+Context**로 레이블이 지정됩니다.
+
+## Workspace bootstrap 주입
+
+Bootstrap 파일은 **Project Context** 아래에 트리밍되어 추가되므로 model이 명시적인 읽기 없이 identity 및 프로필 컨텍스트를 볼 수 있습니다:
+
+- `AGENTS.md`
+- `SOUL.md`
+- `TOOLS.md`
+- `IDENTITY.md`
+- `USER.md`
+- `HEARTBEAT.md`
+- `BOOTSTRAP.md` (완전히 새로운 workspace에만)
+
+큰 파일은 마커와 함께 잘립니다. 파일당 최대 크기는 `agents.defaults.bootstrapMaxChars`(기본값: 20000)로 제어됩니다. 누락된 파일은 짧은 누락 파일 마커를 주입합니다.
+
+내부 hook은 `agent:bootstrap`를 통해 이 단계를 가로채서 주입된 bootstrap 파일을 변경하거나 교체할 수 있습니다(예: `SOUL.md`를 대체 페르소나로 교체).
+
+각 주입된 파일이 얼마나 기여하는지 검사하려면(원시 vs 주입, 잘림 + tool 스키마 오버헤드) `/context list` 또는 `/context detail`을 사용하세요. [Context](/concepts/context)를 참조하세요.
+
+## 시간 처리
+
+시스템 프롬프트에는 사용자 timezone이 알려진 경우 전용 **Current Date & Time** 섹션이 포함됩니다. 프롬프트 캐시를 안정적으로 유지하기 위해 이제 **time zone**만 포함합니다(동적 시계나 시간 형식 없음).
+
+Agent가 현재 시간이 필요한 경우 `session_status`를 사용하세요. 상태 카드에는 타임스탬프 라인이 포함됩니다.
+
+다음으로 구성:
+
+- `agents.defaults.userTimezone`
+- `agents.defaults.timeFormat` (`auto` | `12` | `24`)
+
+전체 동작 세부 정보는 [Date & Time](/date-time)을 참조하세요.
+
+## Skills
+
+적격 skill이 존재하는 경우 OpenClaw는 각 skill에 대한 **파일 경로**를 포함하는 간결한 **사용 가능한 skill 목록**(`formatSkillsForPrompt`)을 주입합니다. 프롬프트는 model에게 `read`를 사용하여 나열된 위치(workspace, managed 또는 번들)에서 SKILL.md를 로드하도록 지시합니다. 적격 skill이 없으면 Skills 섹션이 생략됩니다.
+
+```
+<available_skills>
+  <skill>
+    <name>...</name>
+    <description>...</description>
+    <location>...</location>
+  </skill>
+</available_skills>
+```
+
+이렇게 하면 타겟팅된 skill 사용을 활성화하면서도 기본 프롬프트를 작게 유지합니다.
+
+## Documentation
+
+사용 가능한 경우 시스템 프롬프트에는 로컬 OpenClaw 문서 디렉토리(repo workspace의 `docs/` 또는 번들된 npm 패키지 문서)를 가리키고 공개 미러, 소스 repo, 커뮤니티 Discord 및 skill discovery를 위한 ClawdHub (https://clawdhub.com)도 언급하는 **Documentation** 섹션이 포함됩니다. 프롬프트는 model에게 OpenClaw 동작, 명령, 구성 또는 아키텍처에 대해 먼저 로컬 문서를 참조하고 가능하면 `openclaw status`를 직접 실행하도록 지시합니다(액세스가 없는 경우에만 사용자에게 요청).

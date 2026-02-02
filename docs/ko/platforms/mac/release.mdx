@@ -1,0 +1,79 @@
+---
+summary: "OpenClaw macOS 릴리스 체크리스트 (Sparkle feed, 패키징, 서명)"
+read_when:
+  - OpenClaw macOS 릴리스 준비 또는 검증 시
+  - Sparkle appcast 또는 feed 에셋 업데이트 시
+---
+
+# OpenClaw macOS 릴리스 (Sparkle)
+
+이 앱은 이제 Sparkle 자동 업데이트를 지원합니다. 릴리스 빌드는 Developer ID로 서명되고, 압축되며,
+서명된 appcast 항목과 함께 게시되어야 합니다.
+
+## 사전 요구사항
+- Developer ID Application 인증서 설치됨 (예: `Developer ID Application: <Developer Name> (<TEAMID>)`).
+- 환경에 `SPARKLE_PRIVATE_KEY_FILE`로 Sparkle 개인 키 경로 설정 (Sparkle ed25519 개인 키 경로; 공개 키는 Info.plist에 내장됨). 누락된 경우 `~/.profile`을 확인하세요.
+- Gatekeeper-safe DMG/zip 배포를 원하면 `xcrun notarytool`을 위한 공증 자격 증명 (키체인 프로필 또는 API 키).
+  - 쉘 프로필의 App Store Connect API 키 환경 변수에서 생성된 키체인 프로필 `openclaw-notary` 사용:
+    - `APP_STORE_CONNECT_API_KEY_P8`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`
+    - `echo "$APP_STORE_CONNECT_API_KEY_P8" | sed 's/\\n/\n/g' > /tmp/openclaw-notary.p8`
+    - `xcrun notarytool store-credentials "openclaw-notary" --key /tmp/openclaw-notary.p8 --key-id "$APP_STORE_CONNECT_KEY_ID" --issuer "$APP_STORE_CONNECT_ISSUER_ID"`
+- `pnpm` 의존성 설치됨 (`pnpm install --config.node-linker=hoisted`).
+- Sparkle 도구는 SwiftPM을 통해 `apps/macos/.build/artifacts/sparkle/Sparkle/bin/`에서 자동으로 가져옴 (`sign_update`, `generate_appcast` 등).
+
+## 빌드 및 패키징
+참고사항:
+- `APP_BUILD`는 `CFBundleVersion`/`sparkle:version`에 매핑됨; 숫자 + 단조 증가 유지 (`-beta` 없음), 그렇지 않으면 Sparkle이 동일한 것으로 비교합니다.
+- 기본값은 현재 아키텍처 (`$(uname -m)`). 릴리스/유니버설 빌드의 경우 `BUILD_ARCHS="arm64 x86_64"` (또는 `BUILD_ARCHS=all`) 설정.
+- 릴리스 아티팩트 (zip + DMG + 공증)에는 `scripts/package-mac-dist.sh` 사용. 로컬/개발 패키징에는 `scripts/package-mac-app.sh` 사용.
+
+```bash
+# 리포지토리 루트에서; Sparkle feed가 활성화되도록 릴리스 ID 설정.
+# APP_BUILD는 Sparkle 비교를 위해 숫자 + 단조 증가여야 함.
+BUNDLE_ID=bot.molt.mac \
+APP_VERSION=2026.1.27-beta.1 \
+APP_BUILD="$(git rev-list --count HEAD)" \
+BUILD_CONFIG=release \
+SIGN_IDENTITY="Developer ID Application: <Developer Name> (<TEAMID>)" \
+scripts/package-mac-app.sh
+
+# 배포용 압축 (Sparkle 델타 지원을 위한 리소스 포크 포함)
+ditto -c -k --sequesterRsrc --keepParent dist/OpenClaw.app dist/OpenClaw-2026.1.27-beta.1.zip
+
+# 선택사항: 사람을 위한 스타일 DMG도 빌드 (/Applications로 드래그)
+scripts/create-dmg.sh dist/OpenClaw.app dist/OpenClaw-2026.1.27-beta.1.dmg
+
+# 권장: zip + DMG 빌드 + 공증/스테이플
+# 먼저, 키체인 프로필 한 번 생성:
+#   xcrun notarytool store-credentials "openclaw-notary" \
+#     --apple-id "<apple-id>" --team-id "<team-id>" --password "<app-specific-password>"
+NOTARIZE=1 NOTARYTOOL_PROFILE=openclaw-notary \
+BUNDLE_ID=bot.molt.mac \
+APP_VERSION=2026.1.27-beta.1 \
+APP_BUILD="$(git rev-list --count HEAD)" \
+BUILD_CONFIG=release \
+SIGN_IDENTITY="Developer ID Application: <Developer Name> (<TEAMID>)" \
+scripts/package-mac-dist.sh
+
+# 선택사항: dSYM을 릴리스와 함께 배송
+ditto -c -k --keepParent apps/macos/.build/release/OpenClaw.app.dSYM dist/OpenClaw-2026.1.27-beta.1.dSYM.zip
+```
+
+## Appcast 항목
+Sparkle이 포맷된 HTML 노트를 렌더링하도록 릴리스 노트 생성기 사용:
+```bash
+SPARKLE_PRIVATE_KEY_FILE=/path/to/ed25519-private-key scripts/make_appcast.sh dist/OpenClaw-2026.1.27-beta.1.zip https://raw.githubusercontent.com/openclaw/openclaw/main/appcast.xml
+```
+`CHANGELOG.md`에서 HTML 릴리스 노트를 생성하고 ([`scripts/changelog-to-html.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/changelog-to-html.sh)를 통해) appcast 항목에 포함합니다.
+게시 시 업데이트된 `appcast.xml`을 릴리스 에셋 (zip + dSYM)과 함께 커밋하세요.
+
+## 게시 및 검증
+- `OpenClaw-2026.1.27-beta.1.zip` (및 `OpenClaw-2026.1.27-beta.1.dSYM.zip`)을 태그 `v2026.1.27-beta.1`의 GitHub 릴리스에 업로드.
+- raw appcast URL이 내장된 feed와 일치하는지 확인: `https://raw.githubusercontent.com/openclaw/openclaw/main/appcast.xml`.
+- 건전성 확인:
+  - `curl -I https://raw.githubusercontent.com/openclaw/openclaw/main/appcast.xml`이 200 반환.
+  - 에셋 업로드 후 `curl -I <enclosure url>`이 200 반환.
+  - 이전 공개 빌드에서 About 탭에서 "Check for Updates…"를 실행하고 Sparkle이 새 빌드를 깔끔하게 설치하는지 확인.
+
+완료 정의: 서명된 앱 + appcast가 게시되고, 이전 설치된 버전에서 업데이트 플로우가 작동하며,
+릴리스 에셋이 GitHub 릴리스에 첨부됨.

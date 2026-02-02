@@ -1,0 +1,51 @@
+---
+summary: "OpenClaw가 입력 표시기를 표시하는 시점 및 조정 방법"
+read_when:
+  - 입력 표시기 동작 또는 기본값을 변경할 때
+---
+# 입력 표시기
+
+입력 표시기는 실행이 활성화된 동안 채팅 channel로 전송됩니다. `agents.defaults.typingMode`를 사용하여 입력이 **언제** 시작되는지 제어하고 `typingIntervalSeconds`를 사용하여 **얼마나 자주** 새로 고쳐지는지 제어하세요.
+
+## 기본값
+`agents.defaults.typingMode`가 **설정되지 않은** 경우 OpenClaw는 레거시 동작을 유지합니다:
+- **Direct chat**: model 루프가 시작되면 즉시 입력이 시작됩니다.
+- **멘션이 있는 그룹 chat**: 즉시 입력이 시작됩니다.
+- **멘션이 없는 그룹 chat**: 메시지 텍스트가 streaming을 시작할 때만 입력이 시작됩니다.
+- **Heartbeat 실행**: 입력이 비활성화됩니다.
+
+## 모드
+`agents.defaults.typingMode`를 다음 중 하나로 설정하세요:
+- `never` — 절대 입력 표시기를 표시하지 않습니다.
+- `instant` — **model 루프가 시작되자마자** 입력을 시작합니다. 실행이 나중에 침묵 답장 토큰만 반환하더라도.
+- `thinking` — **첫 번째 reasoning 델타**에서 입력을 시작합니다(실행에 대해 `reasoningLevel: "stream"`이 필요함).
+- `message` — **첫 번째 비침묵 텍스트 델타**에서 입력을 시작합니다(`NO_REPLY` 침묵 토큰 무시).
+
+"얼마나 일찍 발생하는지" 순서:
+`never` → `message` → `thinking` → `instant`
+
+## 구성
+```json5
+{
+  agent: {
+    typingMode: "thinking",
+    typingIntervalSeconds: 6
+  }
+}
+```
+
+Session별로 모드 또는 케이던스를 재정의할 수 있습니다:
+```json5
+{
+  session: {
+    typingMode: "message",
+    typingIntervalSeconds: 4
+  }
+}
+```
+
+## 참고사항
+- `message` 모드는 침묵 전용 답장에 대해 입력을 표시하지 않습니다(예: 출력을 억제하는 데 사용되는 `NO_REPLY` 토큰).
+- `thinking`은 실행이 reasoning을 stream하는 경우에만 발생합니다(`reasoningLevel: "stream"`). Model이 reasoning 델타를 emit하지 않으면 입력이 시작되지 않습니다.
+- Heartbeat는 모드에 관계없이 절대 입력을 표시하지 않습니다.
+- `typingIntervalSeconds`는 시작 시간이 아닌 **새로 고침 케이던스**를 제어합니다. 기본값은 6초입니다.

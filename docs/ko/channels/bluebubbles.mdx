@@ -1,0 +1,233 @@
+---
+summary: "BlueBubbles macOS 서버를 통한 iMessage (REST 전송/수신, 타이핑, 반응, 페어링, 고급 액션)."
+read_when:
+  - BlueBubbles 채널 설정 시
+  - Webhook 페어링 문제 해결 시
+  - macOS에서 iMessage 구성 시
+---
+# BlueBubbles (macOS REST)
+
+상태: HTTP를 통해 BlueBubbles macOS 서버와 통신하는 번들 plugin. 레거시 imsg 채널에 비해 더 풍부한 API와 쉬운 설정으로 **iMessage 통합에 권장됩니다**.
+
+## 개요
+- BlueBubbles 헬퍼 앱을 통해 macOS에서 실행됩니다 ([bluebubbles.app](https://bluebubbles.app)).
+- 권장/테스트됨: macOS Sequoia (15). macOS Tahoe (26) 작동; 현재 Tahoe에서 편집이 작동하지 않으며 그룹 아이콘 업데이트가 성공을 보고하지만 동기화되지 않을 수 있습니다.
+- OpenClaw는 REST API (`GET /api/v1/ping`, `POST /message/text`, `POST /chat/:id/*`)를 통해 통신합니다.
+- 수신 메시지는 webhook을 통해 도착하며, 발신 답장, 타이핑 표시기, 읽음 확인, 탭백은 REST 호출입니다.
+- 첨부 파일 및 스티커는 인바운드 미디어로 수집됩니다 (가능한 경우 agent에 표시됨).
+- 페어링/허용 목록은 다른 채널과 동일하게 작동합니다 (`/start/pairing` 등) `channels.bluebubbles.allowFrom` + 페어링 코드 사용.
+- 반응은 Slack/Telegram처럼 시스템 이벤트로 표시되므로 agent가 답장하기 전에 "언급"할 수 있습니다.
+- 고급 기능: 편집, 전송 취소, 답장 스레딩, 메시지 효과, 그룹 관리.
+
+## 빠른 시작
+1. Mac에 BlueBubbles 서버를 설치합니다 ([bluebubbles.app/install](https://bluebubbles.app/install) 지침 참조).
+2. BlueBubbles 구성에서 웹 API를 활성화하고 비밀번호를 설정합니다.
+3. `openclaw onboard`를 실행하고 BlueBubbles를 선택하거나 수동으로 구성합니다:
+   ```json5
+   {
+     channels: {
+       bluebubbles: {
+         enabled: true,
+         serverUrl: "http://192.168.1.100:1234",
+         password: "example-password",
+         webhookPath: "/bluebubbles-webhook"
+       }
+     }
+   }
+   ```
+4. BlueBubbles webhook을 gateway로 지정합니다 (예: `https://your-gateway-host:3000/bluebubbles-webhook?password=<password>`).
+5. Gateway를 시작하면 webhook 핸들러가 등록되고 페어링이 시작됩니다.
+
+## 온보딩
+BlueBubbles는 대화형 설정 마법사에서 사용할 수 있습니다:
+```
+openclaw onboard
+```
+
+마법사는 다음을 묻습니다:
+- **Server URL** (필수): BlueBubbles 서버 주소 (예: `http://192.168.1.100:1234`)
+- **Password** (필수): BlueBubbles Server 설정의 API 비밀번호
+- **Webhook path** (선택 사항): 기본값 `/bluebubbles-webhook`
+- **DM 정책**: pairing, allowlist, open, 또는 disabled
+- **허용 목록**: 전화번호, 이메일 또는 채팅 대상
+
+CLI를 통해 BlueBubbles를 추가할 수도 있습니다:
+```
+openclaw channels add bluebubbles --http-url http://192.168.1.100:1234 --password <password>
+```
+
+## 접근 제어 (DM + 그룹)
+DM:
+- 기본값: `channels.bluebubbles.dmPolicy = "pairing"`.
+- 알 수 없는 발신자는 페어링 코드를 받습니다; 승인될 때까지 메시지가 무시됩니다 (코드는 1시간 후 만료).
+- 승인 방법:
+  - `openclaw pairing list bluebubbles`
+  - `openclaw pairing approve bluebubbles <CODE>`
+- 페어링은 기본 토큰 교환입니다. 세부사항: [Pairing](/start/pairing)
+
+그룹:
+- `channels.bluebubbles.groupPolicy = open | allowlist | disabled` (기본값: `allowlist`).
+- `channels.bluebubbles.groupAllowFrom`은 `allowlist`가 설정된 경우 그룹에서 트리거할 수 있는 사람을 제어합니다.
+
+### 멘션 게이팅 (그룹)
+BlueBubbles는 iMessage/WhatsApp 동작과 일치하는 그룹 채팅용 멘션 게이팅을 지원합니다:
+- `agents.list[].groupChat.mentionPatterns` (또는 `messages.groupChat.mentionPatterns`)를 사용하여 멘션을 감지합니다.
+- 그룹에 대해 `requireMention`이 활성화되면 agent는 멘션될 때만 응답합니다.
+- 승인된 발신자의 제어 명령은 멘션 게이팅을 우회합니다.
+
+그룹별 구성:
+```json5
+{
+  channels: {
+    bluebubbles: {
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["+15555550123"],
+      groups: {
+        "*": { requireMention: true },  // 모든 그룹의 기본값
+        "iMessage;-;chat123": { requireMention: false }  // 특정 그룹에 대한 오버라이드
+      }
+    }
+  }
+}
+```
+
+### 명령 게이팅
+- 제어 명령 (예: `/config`, `/model`)은 인증이 필요합니다.
+- `allowFrom` 및 `groupAllowFrom`을 사용하여 명령 인증을 결정합니다.
+- 승인된 발신자는 그룹에서 멘션하지 않아도 제어 명령을 실행할 수 있습니다.
+
+## 타이핑 + 읽음 확인
+- **타이핑 표시기**: 응답 생성 전후에 자동으로 전송됩니다.
+- **읽음 확인**: `channels.bluebubbles.sendReadReceipts`로 제어됩니다 (기본값: `true`).
+- **타이핑 표시기**: OpenClaw는 타이핑 시작 이벤트를 전송합니다; BlueBubbles는 전송 또는 타임아웃 시 타이핑을 자동으로 지웁니다 (DELETE를 통한 수동 중지는 신뢰할 수 없음).
+
+```json5
+{
+  channels: {
+    bluebubbles: {
+      sendReadReceipts: false  // 읽음 확인 비활성화
+    }
+  }
+}
+```
+
+## 고급 액션
+BlueBubbles는 구성에서 활성화된 경우 고급 메시지 액션을 지원합니다:
+
+```json5
+{
+  channels: {
+    bluebubbles: {
+      actions: {
+        reactions: true,       // 탭백 (기본값: true)
+        edit: true,            // 전송된 메시지 편집 (macOS 13+, macOS 26 Tahoe에서 작동 안 함)
+        unsend: true,          // 메시지 전송 취소 (macOS 13+)
+        reply: true,           // 메시지 GUID로 답장 스레딩
+        sendWithEffect: true,  // 메시지 효과 (slam, loud 등)
+        renameGroup: true,     // 그룹 채팅 이름 변경
+        setGroupIcon: true,    // 그룹 채팅 아이콘/사진 설정 (macOS 26 Tahoe에서 불안정)
+        addParticipant: true,  // 그룹에 참가자 추가
+        removeParticipant: true, // 그룹에서 참가자 제거
+        leaveGroup: true,      // 그룹 채팅 나가기
+        sendAttachment: true   // 첨부 파일/미디어 전송
+      }
+    }
+  }
+}
+```
+
+사용 가능한 액션:
+- **react**: 탭백 반응 추가/제거 (`messageId`, `emoji`, `remove`)
+- **edit**: 전송된 메시지 편집 (`messageId`, `text`)
+- **unsend**: 메시지 전송 취소 (`messageId`)
+- **reply**: 특정 메시지에 답장 (`messageId`, `text`, `to`)
+- **sendWithEffect**: iMessage 효과와 함께 전송 (`text`, `to`, `effectId`)
+- **renameGroup**: 그룹 채팅 이름 변경 (`chatGuid`, `displayName`)
+- **setGroupIcon**: 그룹 채팅의 아이콘/사진 설정 (`chatGuid`, `media`) — macOS 26 Tahoe에서 불안정 (API가 성공을 반환하지만 아이콘이 동기화되지 않을 수 있음).
+- **addParticipant**: 그룹에 누군가 추가 (`chatGuid`, `address`)
+- **removeParticipant**: 그룹에서 누군가 제거 (`chatGuid`, `address`)
+- **leaveGroup**: 그룹 채팅 나가기 (`chatGuid`)
+- **sendAttachment**: 미디어/파일 전송 (`to`, `buffer`, `filename`, `asVoice`)
+  - 음성 메모: **MP3** 또는 **CAF** 오디오로 `asVoice: true`를 설정하여 iMessage 음성 메시지로 전송합니다. BlueBubbles는 음성 메모를 전송할 때 MP3 → CAF로 변환합니다.
+
+### 메시지 ID (짧은 vs 전체)
+OpenClaw는 토큰을 절약하기 위해 *짧은* 메시지 ID (예: `1`, `2`)를 표시할 수 있습니다.
+- `MessageSid` / `ReplyToId`는 짧은 ID일 수 있습니다.
+- `MessageSidFull` / `ReplyToIdFull`에는 provider 전체 ID가 포함됩니다.
+- 짧은 ID는 메모리에 있으며 재시작 또는 캐시 제거 시 만료될 수 있습니다.
+- 액션은 짧은 또는 전체 `messageId`를 허용하지만 더 이상 사용할 수 없는 경우 짧은 ID는 오류가 발생합니다.
+
+영구 자동화 및 저장을 위해 전체 ID를 사용하세요:
+- 템플릿: `{{MessageSidFull}}`, `{{ReplyToIdFull}}`
+- 컨텍스트: 인바운드 페이로드의 `MessageSidFull` / `ReplyToIdFull`
+
+템플릿 변수는 [Configuration](/gateway/configuration)을 참조하세요.
+
+## 블록 스트리밍
+응답이 단일 메시지로 전송될지 블록으로 스트리밍될지 제어합니다:
+```json5
+{
+  channels: {
+    bluebubbles: {
+      blockStreaming: true  // 블록 스트리밍 활성화 (기본 동작)
+    }
+  }
+}
+```
+
+## 미디어 + 제한
+- 인바운드 첨부 파일은 다운로드되어 미디어 캐시에 저장됩니다.
+- `channels.bluebubbles.mediaMaxMb`를 통한 미디어 제한 (기본값: 8 MB).
+- 아웃바운드 텍스트는 `channels.bluebubbles.textChunkLimit`로 청크됩니다 (기본값: 4000자).
+
+## 구성 참조
+전체 구성: [Configuration](/gateway/configuration)
+
+Provider 옵션:
+- `channels.bluebubbles.enabled`: 채널 활성화/비활성화.
+- `channels.bluebubbles.serverUrl`: BlueBubbles REST API 기본 URL.
+- `channels.bluebubbles.password`: API 비밀번호.
+- `channels.bluebubbles.webhookPath`: Webhook 엔드포인트 경로 (기본값: `/bluebubbles-webhook`).
+- `channels.bluebubbles.dmPolicy`: `pairing | allowlist | open | disabled` (기본값: `pairing`).
+- `channels.bluebubbles.allowFrom`: DM 허용 목록 (핸들, 이메일, E.164 번호, `chat_id:*`, `chat_guid:*`).
+- `channels.bluebubbles.groupPolicy`: `open | allowlist | disabled` (기본값: `allowlist`).
+- `channels.bluebubbles.groupAllowFrom`: 그룹 발신자 허용 목록.
+- `channels.bluebubbles.groups`: 그룹별 구성 (`requireMention` 등).
+- `channels.bluebubbles.sendReadReceipts`: 읽음 확인 전송 (기본값: `true`).
+- `channels.bluebubbles.blockStreaming`: 블록 스트리밍 활성화 (기본값: `true`).
+- `channels.bluebubbles.textChunkLimit`: 아웃바운드 청크 크기 (문자 단위, 기본값: 4000).
+- `channels.bluebubbles.chunkMode`: `length` (기본값)는 `textChunkLimit` 초과 시에만 분할; `newline`은 길이 청킹 전에 빈 줄 (단락 경계)에서 분할.
+- `channels.bluebubbles.mediaMaxMb`: 인바운드 미디어 제한 (MB, 기본값: 8).
+- `channels.bluebubbles.historyLimit`: 컨텍스트를 위한 최대 그룹 메시지 (0은 비활성화).
+- `channels.bluebubbles.dmHistoryLimit`: DM 기록 제한.
+- `channels.bluebubbles.actions`: 특정 액션 활성화/비활성화.
+- `channels.bluebubbles.accounts`: 다중 계정 구성.
+
+관련 전역 옵션:
+- `agents.list[].groupChat.mentionPatterns` (또는 `messages.groupChat.mentionPatterns`).
+- `messages.responsePrefix`.
+
+## 주소 지정 / 전달 대상
+안정적인 라우팅을 위해 `chat_guid`를 선호하세요:
+- `chat_guid:iMessage;-;+15555550123` (그룹에 권장)
+- `chat_id:123`
+- `chat_identifier:...`
+- 직접 핸들: `+15555550123`, `user@example.com`
+  - 직접 핸들에 기존 DM 채팅이 없는 경우 OpenClaw는 `POST /api/v1/chat/new`를 통해 생성합니다. 이는 BlueBubbles Private API가 활성화되어야 합니다.
+
+## 보안
+- Webhook 요청은 `guid`/`password` 쿼리 파라미터 또는 헤더를 `channels.bluebubbles.password`와 비교하여 인증합니다. `localhost`의 요청도 허용됩니다.
+- API 비밀번호와 webhook 엔드포인트를 비밀로 유지하세요 (자격 증명처럼 취급).
+- Localhost 신뢰는 동일 호스트 리버스 프록시가 의도치 않게 비밀번호를 우회할 수 있음을 의미합니다. Gateway를 프록시하는 경우 프록시에서 인증을 요구하고 `gateway.trustedProxies`를 구성하세요. [Gateway security](/gateway/security#reverse-proxy-configuration)를 참조하세요.
+- LAN 외부로 노출하는 경우 BlueBubbles 서버에서 HTTPS + 방화벽 규칙을 활성화하세요.
+
+## 문제 해결
+- 타이핑/읽음 이벤트가 작동하지 않으면 BlueBubbles webhook 로그를 확인하고 gateway 경로가 `channels.bluebubbles.webhookPath`와 일치하는지 확인하세요.
+- 페어링 코드는 1시간 후 만료됩니다; `openclaw pairing list bluebubbles` 및 `openclaw pairing approve bluebubbles <code>`를 사용하세요.
+- 반응에는 BlueBubbles private API (`POST /api/v1/message/react`)가 필요합니다; 서버 버전이 이를 노출하는지 확인하세요.
+- 편집/전송 취소에는 macOS 13+ 및 호환되는 BlueBubbles 서버 버전이 필요합니다. macOS 26 (Tahoe)에서는 private API 변경으로 인해 편집이 현재 작동하지 않습니다.
+- 그룹 아이콘 업데이트는 macOS 26 (Tahoe)에서 불안정할 수 있습니다: API가 성공을 반환하지만 새 아이콘이 동기화되지 않습니다.
+- OpenClaw는 BlueBubbles 서버의 macOS 버전에 따라 알려진 작동하지 않는 액션을 자동으로 숨깁니다. macOS 26 (Tahoe)에서 편집이 여전히 나타나면 `channels.bluebubbles.actions.edit=false`로 수동으로 비활성화하세요.
+- 상태/건강 정보: `openclaw status --all` 또는 `openclaw status --deep`.
+
+일반 채널 워크플로우 참조는 [Channels](/channels) 및 [Plugins](/plugins) 가이드를 참조하세요.

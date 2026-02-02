@@ -1,0 +1,29 @@
+---
+summary: "Channel 연결을 위한 상태 확인 단계"
+read_when:
+  - WhatsApp channel 상태를 진단할 때
+---
+# Health Checks (CLI)
+
+추측 없이 channel 연결을 확인하는 짧은 가이드.
+
+## 빠른 확인
+- `openclaw status` — 로컬 요약: gateway 도달 가능성/모드, 업데이트 힌트, 연결된 channel auth age, 세션 + 최근 활동.
+- `openclaw status --all` — 전체 로컬 진단 (읽기 전용, 색상, 디버깅을 위해 붙여넣기 안전).
+- `openclaw status --deep` — 실행 중인 Gateway도 탐색합니다 (지원되는 경우 channel별 탐색).
+- `openclaw health --json` — 실행 중인 Gateway에 전체 상태 스냅샷을 요청합니다 (WS 전용; 직접 Baileys socket 없음).
+- WhatsApp/WebChat에서 독립 실행형 메시지로 `/status`를 보내 agent를 호출하지 않고 상태 응답을 받습니다.
+- Log: `/tmp/openclaw/openclaw-*.log`를 tail하고 `web-heartbeat`, `web-reconnect`, `web-auto-reply`, `web-inbound`를 필터링합니다.
+
+## 심층 진단
+- 디스크의 자격 증명: `ls -l ~/.openclaw/credentials/whatsapp/<accountId>/creds.json` (mtime은 최근이어야 함).
+- Session store: `ls -l ~/.openclaw/agents/<agentId>/sessions/sessions.json` (경로는 config에서 재정의될 수 있음). 개수 및 최근 수신자는 `status`를 통해 표시됩니다.
+- Relink 흐름: log에 status code 409–515 또는 `loggedOut`이 나타나면 `openclaw channels logout && openclaw channels login --verbose`. (참고: QR login 흐름은 pairing 후 status 515에 대해 한 번 자동 재시작됩니다.)
+
+## 무언가 실패할 때
+- `logged out` 또는 status 409–515 → `openclaw channels logout`으로 relink한 다음 `openclaw channels login`.
+- Gateway 연결 불가 → 시작: `openclaw gateway --port 18789` (포트가 busy한 경우 `--force` 사용).
+- 인바운드 메시지 없음 → 연결된 전화가 온라인이고 발신자가 허용되는지 확인 (`channels.whatsapp.allowFrom`). 그룹 채팅의 경우 allowlist + mention 규칙이 일치하는지 확인 (`channels.whatsapp.groups`, `agents.list[].groupChat.mentionPatterns`).
+
+## 전용 "health" 명령
+`openclaw health --json`은 실행 중인 Gateway에 상태 스냅샷을 요청합니다 (CLI에서 직접 channel socket 없음). 가능한 경우 연결된 자격 증명/auth age, channel별 탐색 요약, session-store 요약 및 탐색 기간을 보고합니다. Gateway에 연결할 수 없거나 탐색이 실패/timeout되면 0이 아닌 값으로 종료됩니다. 10초 기본값을 재정의하려면 `--timeout <ms>`를 사용하세요.

@@ -1,0 +1,50 @@
+---
+summary: "직접 `openclaw agent` CLI 실행 (선택적 전달 포함)"
+read_when:
+  - Agent CLI 진입점을 추가하거나 수정할 때
+---
+# `openclaw agent` (직접 agent 실행)
+
+`openclaw agent`는 인바운드 채팅 메시지 없이 단일 agent 턴을 실행합니다.
+기본적으로 **Gateway를 통해** 실행됩니다. `--local`을 추가하여 현재 머신의 임베디드 런타임을 강제로 사용할 수 있습니다.
+
+## 동작
+
+- 필수: `--message <text>`
+- 세션 선택:
+  - `--to <dest>`는 세션 키를 파생합니다 (그룹/channel 대상은 격리를 유지; 직접 채팅은 `main`으로 축소됨), **또는**
+  - `--session-id <id>`는 기존 세션을 id로 재사용합니다, **또는**
+  - `--agent <id>`는 설정된 agent를 직접 대상으로 합니다 (해당 agent의 `main` 세션 키 사용)
+- 일반 인바운드 응답과 동일한 임베디드 agent 런타임을 실행합니다.
+- Thinking/verbose 플래그는 세션 저장소에 지속됩니다.
+- 출력:
+  - 기본값: 응답 텍스트 출력 (`MEDIA:<url>` 줄 포함)
+  - `--json`: 구조화된 페이로드 + 메타데이터 출력
+- `--deliver` + `--channel`로 channel에 선택적 전달 (대상 형식은 `openclaw message --target`와 일치).
+- `--reply-channel`/`--reply-to`/`--reply-account`를 사용하여 세션을 변경하지 않고 전달을 재정의합니다.
+
+Gateway에 연결할 수 없는 경우, CLI는 임베디드 로컬 실행으로 **대체**됩니다.
+
+## 예시
+
+```bash
+openclaw agent --to +15555550123 --message "status update"
+openclaw agent --agent ops --message "Summarize logs"
+openclaw agent --session-id 1234 --message "Summarize inbox" --thinking medium
+openclaw agent --to +15555550123 --message "Trace logs" --verbose on --json
+openclaw agent --to +15555550123 --message "Summon reply" --deliver
+openclaw agent --agent ops --message "Generate report" --deliver --reply-channel slack --reply-to "#reports"
+```
+
+## 플래그
+
+- `--local`: 로컬에서 실행 (셸에 model provider API 키 필요)
+- `--deliver`: 선택한 channel로 응답 전송
+- `--channel`: 전달 channel (`whatsapp|telegram|discord|googlechat|slack|signal|imessage`, 기본값: `whatsapp`)
+- `--reply-to`: 전달 대상 재정의
+- `--reply-channel`: 전달 channel 재정의
+- `--reply-account`: 전달 계정 id 재정의
+- `--thinking <off|minimal|low|medium|high|xhigh>`: thinking 레벨 지속 (GPT-5.2 + Codex 모델만 해당)
+- `--verbose <on|full|off>`: verbose 레벨 지속
+- `--timeout <seconds>`: agent 타임아웃 재정의
+- `--json`: 구조화된 JSON 출력
