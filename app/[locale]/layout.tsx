@@ -83,6 +83,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale || DEFAULT_LOCALE} suppressHydrationWarning>
       <head>
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
+        <link rel="preconnect" href="https://scripts.clarity.ms" />
+        <link rel="dns-prefetch" href="https://static.cloudflareinsights.com" />
+        <link rel="preconnect" href="https://static.cloudflareinsights.com" />
         <ToltScript />
       </head>
       <body

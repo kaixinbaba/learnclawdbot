@@ -54,7 +54,7 @@ export function DashboardSidebar() {
           className="flex items-center space-x-1 px-2 py-1"
         >
           <Image
-            src="/logo.png"
+            src="/logo.webp"
             alt="Logo"
             width={24}
             height={24}

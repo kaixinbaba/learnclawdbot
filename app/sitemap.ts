@@ -2,6 +2,7 @@ import { listPublishedPostsAction } from '@/actions/posts/posts'
 import { siteConfig } from '@/config/site'
 import { DEFAULT_LOCALE, UI_LOCALES } from '@/i18n/routing'
 import { blogCms } from '@/lib/cms'
+import { listDocSlugs } from '@/lib/docs'
 import { MetadataRoute } from 'next'
 
 const siteUrl = siteConfig.url
@@ -126,10 +127,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     new Map(allGlossarySitemapEntries.map((entry) => [entry.url, entry])).values()
   );
 
+  // Documentation pages (MDX docs)
+  const allDocSitemapEntries: MetadataRoute.Sitemap = [];
+
+  for (const locale of LOCALES) {
+    // Add docs index page
+    allDocSitemapEntries.push({
+      url: `${siteUrl}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/docs`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as ChangeFrequency,
+      priority: 0.9,
+    });
+
+    // Add individual doc pages
+    const slugs = await listDocSlugs(locale);
+    for (const slug of slugs) {
+      allDocSitemapEntries.push({
+        url: `${siteUrl}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/docs/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as ChangeFrequency,
+        priority: 0.8,
+      });
+    }
+  }
+
+  // Deduplicate doc entries (in case English fallback creates duplicates)
+  const uniqueDocEntries = Array.from(
+    new Map(allDocSitemapEntries.map((entry) => [entry.url, entry])).values()
+  );
+
   return [
     ...pages,
     ...nonLocalizedPageEntries,
     ...uniqueBlogPostEntries,
-    ...uniqueGlossaryEntries
+    ...uniqueGlossaryEntries,
+    ...uniqueDocEntries,
   ]
 }

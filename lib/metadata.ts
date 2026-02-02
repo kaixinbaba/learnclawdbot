@@ -37,7 +37,7 @@ export async function constructMetadata({
     ? `${pageTitle} - ${pageTagLine}`
     : `${pageTitle} | ${siteConfig.name}`
 
-  canonicalUrl = canonicalUrl || path
+  canonicalUrl = canonicalUrl || path || '/'
 
   // Use availableLocales if provided, otherwise use all locales
   const locales = availableLocales || Object.keys(LOCALE_NAMES)
@@ -84,7 +84,7 @@ export async function constructMetadata({
     creator: siteConfig.creator,
     metadataBase: new URL(siteConfig.url),
     alternates: {
-      canonical: canonicalUrl ? `${siteConfig.url}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}${canonicalUrl === '/' ? '' : canonicalUrl}` : undefined,
+      canonical: `${siteConfig.url}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}${canonicalUrl === '/' ? '' : canonicalUrl}`,
       languages: alternateLanguages,
     },
     // Create an OG image using https://myogimage.com/
