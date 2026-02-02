@@ -1,0 +1,124 @@
+---
+summary: "Message（メッセージ）フロー、session（セッション）、queueing（キューイング）、reasoning visibility（推論可視性）"
+read_when:
+  - inbound message（受信メッセージ）がどのように reply（返信）になるかを説明するとき
+  - session、queueing mode、または streaming behavior を明確にするとき
+  - reasoning visibility と usage implications をドキュメント化するとき
+---
+# Messages
+
+このページでは、OpenClaw が inbound message、session、queueing、streaming、reasoning visibility をどのように処理するかをまとめています。
+
+## Message flow（high level）
+
+```
+Inbound message
+  -> routing/bindings -> session key
+  -> queue（run が active な場合）
+  -> agent run（streaming + tools）
+  -> outbound replies（channel limit + chunking）
+```
+
+主要な設定は configuration に存在します：
+- `messages.*` で prefix、queueing、group behavior を設定。
+- `agents.defaults.*` で block streaming と chunking のデフォルトを設定。
+- Channel override（`channels.whatsapp.*`、`channels.telegram.*` など）で cap と streaming toggle を設定。
+
+完全な schema については [Configuration](/gateway/configuration) を参照してください。
+
+## Inbound dedupe（受信重複排除）
+
+Channel は reconnect 後に同じメッセージを再配信することがあります。OpenClaw は channel/account/peer/session/message id をキーとした short-lived cache（短期キャッシュ）を保持しているため、duplicate delivery（重複配信）が別の agent run をトリガーすることはありません。
+
+## Inbound debouncing（受信デバウンス）
+
+**同じ sender** からの rapid consecutive message（連続した高速メッセージ）は、`messages.inbound` を介して単一の agent turn にバッチ処理できます。Debouncing は channel + conversation ごとにスコープされ、reply threading/ID には最新のメッセージを使用します。
+
+Config（global default + per-channel override）：
+```json5
+{
+  messages: {
+    inbound: {
+      debounceMs: 2000,
+      byChannel: {
+        whatsapp: 5000,
+        slack: 1500,
+        discord: 1500
+      }
+    }
+  }
+}
+```
+
+注意：
+- Debounce は **text-only** メッセージに適用されます。media/attachment は即座に flush されます。
+- Control command（コントロールコマンド）は debouncing をバイパスするため、standalone のままです。
+
+## Sessions and devices（セッションとデバイス）
+
+Session は gateway が所有し、client が所有するのではありません。
+- Direct chat（ダイレクトチャット）は agent main session key に collapse（折りたたまれ）ます。
+- Group/channel は独自の session key を取得します。
+- Session store と transcript は gateway host に保存されます。
+
+複数の device/channel が同じ session にマップできますが、history はすべての client に完全には sync back されません。推奨事項：divergent context（分岐コンテキスト）を避けるために、長い conversation では 1 つの primary device を使用してください。Control UI と TUI は常に gateway-backed session transcript を表示するため、真実の情報源です。
+
+詳細：[Session management](/concepts/session)。
+
+## Inbound bodies and history context（受信本文と履歴コンテキスト）
+
+OpenClaw は **prompt body** と **command body** を分離します：
+- `Body`：agent に送信される prompt text。channel envelope と optional history wrapper が含まれる場合があります。
+- `CommandBody`：directive/command parsing のための raw user text。
+- `RawBody`：`CommandBody` の legacy alias（互換性のために保持）。
+
+Channel が history を提供する場合、shared wrapper を使用します：
+- `[Chat messages since your last reply - for context]`
+- `[Current message - respond to this]`
+
+**non-direct chat**（group/channel/room）の場合、**current message body** には sender label が prefix されます（history entry に使用されるのと同じスタイル）。これにより、real-time と queued/history message が agent prompt で一貫性を保ちます。
+
+History buffer は **pending-only** です：run をトリガー*しなかった* group message（例：mention-gate されたメッセージ）が含まれ、session transcript にすでにあるメッセージは**除外**されます。
+
+Directive stripping は **current message** セクションにのみ適用されるため、history は intact のままです。History を wrap する channel は、`CommandBody`（または `RawBody`）を元のメッセージテキストに設定し、`Body` を combined prompt として保持する必要があります。History buffer は `messages.groupChat.historyLimit`（global default）および per-channel override（`channels.slack.historyLimit` や `channels.telegram.accounts.<id>.historyLimit` など）で設定可能です（`0` に設定すると無効になります）。
+
+## Queueing and followups（キューイングとフォローアップ）
+
+Run がすでに active の場合、inbound message は queue、current run に steer、または followup turn に collect できます。
+
+- `messages.queue`（および `messages.queue.byChannel`）で設定します。
+- Mode：`interrupt`、`steer`、`followup`、`collect`、および backlog variant。
+
+詳細：[Queueing](/concepts/queue)。
+
+## Streaming、chunking、batching
+
+Block streaming は、model が text block を生成する際に partial reply を送信します。
+Chunking は channel text limit を尊重し、fenced code を分割しないようにします。
+
+主要な設定：
+- `agents.defaults.blockStreamingDefault`（`on|off`、デフォルトは off）
+- `agents.defaults.blockStreamingBreak`（`text_end|message_end`）
+- `agents.defaults.blockStreamingChunk`（`minChars|maxChars|breakPreference`）
+- `agents.defaults.blockStreamingCoalesce`（idle-based batching）
+- `agents.defaults.humanDelay`（block reply 間の human-like pause）
+- Channel override：`*.blockStreaming` と `*.blockStreamingCoalesce`（非 Telegram channel は明示的な `*.blockStreaming: true` が必要）
+
+詳細：[Streaming + chunking](/concepts/streaming)。
+
+## Reasoning visibility and tokens（推論可視性とトークン）
+
+OpenClaw は model reasoning を公開または非表示にできます：
+- `/reasoning on|off|stream` で可視性を制御します。
+- Reasoning content は model によって生成されたときにトークン使用量にカウントされます。
+- Telegram は reasoning stream を draft bubble にサポートします。
+
+詳細：[Thinking + reasoning directives](/tools/thinking) と [Token use](/token-use)。
+
+## Prefix、threading、reply
+
+Outbound message formatting は `messages` で集中管理されます：
+- `messages.responsePrefix`（outbound prefix）と `channels.whatsapp.messagePrefix`（WhatsApp inbound prefix）
+- `replyToMode` と per-channel default による reply threading
+
+詳細：[Configuration](/gateway/configuration#messages) と channel docs。

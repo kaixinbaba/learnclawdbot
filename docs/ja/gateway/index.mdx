@@ -1,0 +1,287 @@
+---
+summary: "Gatewayサービス、ライフサイクル、および運用のランブック"
+read_when:
+  - Gatewayプロセスを実行またはデバッグする場合
+---
+# Gateway サービスランブック
+
+最終更新: 2025-12-09
+
+## これは何か
+- 単一のBaileys/Telegram接続と制御/イベントプレーンを所有する常時稼働プロセス。
+- レガシー `gateway` コマンドを置き換えます。CLIエントリーポイント: `openclaw gateway`。
+- 停止されるまで実行されます。致命的なエラーが発生すると非ゼロで終了し、スーパーバイザーが再起動します。
+
+## 実行方法 (ローカル)
+```bash
+openclaw gateway --port 18789
+# 完全なデバッグ/トレースログをstdioに出力:
+openclaw gateway --port 18789 --verbose
+# ポートがビジー状態の場合、リスナーを終了してから起動:
+openclaw gateway --force
+# 開発ループ (TS変更時の自動リロード):
+pnpm gateway:watch
+```
+- 設定のホットリロードは `~/.openclaw/openclaw.json` (または `OPENCLAW_CONFIG_PATH`) を監視します。
+  - デフォルトモード: `gateway.reload.mode="hybrid"` (安全な変更をホット適用、重要な場合は再起動)。
+  - ホットリロードは必要に応じて **SIGUSR1** を介してプロセス内再起動を使用します。
+  - `gateway.reload.mode="off"` で無効化します。
+- WebSocket制御プレーンを `127.0.0.1:<port>` (デフォルト18789)にバインドします。
+- 同じポートはHTTP(制御UI、フック、A2UI)も提供します。シングルポート多重化。
+  - OpenAI Chat Completions (HTTP): [`/v1/chat/completions`](/gateway/openai-http-api)。
+  - OpenResponses (HTTP): [`/v1/responses`](/gateway/openresponses-http-api)。
+  - Tools Invoke (HTTP): [`/tools/invoke`](/gateway/tools-invoke-http-api)。
+- デフォルトで `canvasHost.port` (デフォルト `18793`) でCanvasファイルサーバーを起動し、`~/.openclaw/workspace/canvas` から `http://<gateway-host>:18793/__openclaw__/canvas/` を提供します。`canvasHost.enabled=false` または `OPENCLAW_SKIP_CANVAS_HOST=1` で無効化します。
+- 標準出力にログを記録します。launchd/systemdを使用して存続させ、ログをローテーションします。
+- トラブルシューティング時にログファイルからstdioへデバッグロギング(ハンドシェイク、req/res、イベント)をミラーするには `--verbose` を渡します。
+- `--force` は `lsof` を使用して選択されたポートのリスナーを見つけ、SIGTERMを送信し、何を終了したかをログに記録してからGatewayを起動します(`lsof` が欠落している場合は高速に失敗)。
+- スーパーバイザー(launchd/systemd/macアプリ子プロセスモード)で実行する場合、停止/再起動は通常 **SIGTERM** を送信します。古いビルドでは `pnpm` `ELIFECYCLE` 終了コード **143** (SIGTERM)として表示される場合がありますが、これは通常のシャットダウンであり、クラッシュではありません。
+- **SIGUSR1** は認可された場合にプロセス内再起動をトリガーします(Gatewayツール/設定適用/更新、または手動再起動用に `commands.restart` を有効化)。
+- Gatewayの認証はデフォルトで必要です: `gateway.auth.token` (または `OPENCLAW_GATEWAY_TOKEN`) または `gateway.auth.password` を設定します。Tailscale Serve Identityを使用しない限り、クライアントは `connect.params.auth.token/password` を送信する必要があります。
+- ウィザードはループバック上でもデフォルトでトークンを生成します。
+- ポートの優先順位: `--port` > `OPENCLAW_GATEWAY_PORT` > `gateway.port` > デフォルト `18789`。
+
+## リモートアクセス
+- Tailscale/VPNが推奨されます。そうでなければSSHトンネル:
+  ```bash
+  ssh -N -L 18789:127.0.0.1:18789 user@host
+  ```
+- その後、クライアントはトンネル経由で `ws://127.0.0.1:18789` に接続します。
+- トークンが設定されている場合、クライアントはトンネル経由でも `connect.params.auth.token` に含める必要があります。
+
+## 複数のGateway (同じホスト)
+
+通常は不要です: 1つのGatewayで複数のメッセージングチャネルとエージェントを提供できます。冗長性または厳格な分離(例: レスキューボット)のためにのみ複数のGatewayを使用してください。
+
+状態 + 設定を分離し、一意のポートを使用する場合にサポートされます。完全なガイド: [複数のGateway](/gateway/multiple-gateways)。
+
+サービス名はプロファイル対応です:
+- macOS: `bot.molt.<profile>` (レガシー `com.openclaw.*` が残っている場合があります)
+- Linux: `openclaw-gateway-<profile>.service`
+- Windows: `OpenClaw Gateway (<profile>)`
+
+インストールメタデータはサービス設定に埋め込まれています:
+- `OPENCLAW_SERVICE_MARKER=openclaw`
+- `OPENCLAW_SERVICE_KIND=gateway`
+- `OPENCLAW_SERVICE_VERSION=<version>`
+
+レスキューボットパターン: 独自のプロファイル、状態ディレクトリ、ワークスペース、基本ポート間隔で2番目のGatewayを分離します。完全なガイド: [レスキューボットガイド](/gateway/multiple-gateways#rescue-bot-guide)。
+
+### 開発プロファイル (`--dev`)
+
+高速パス: プライマリセットアップに触れずに、完全に分離された開発インスタンス(設定/状態/ワークスペース)を実行します。
+
+```bash
+openclaw --dev setup
+openclaw --dev gateway --allow-unconfigured
+# その後、開発インスタンスをターゲットにします:
+openclaw --dev status
+openclaw --dev health
+```
+
+デフォルト(env/フラグ/設定でオーバーライド可能):
+- `OPENCLAW_STATE_DIR=~/.openclaw-dev`
+- `OPENCLAW_CONFIG_PATH=~/.openclaw-dev/openclaw.json`
+- `OPENCLAW_GATEWAY_PORT=19001` (Gateway WS + HTTP)
+- ブラウザー制御サービスポート = `19003` (派生: `gateway.port+2`、ループバックのみ)
+- `canvasHost.port=19005` (派生: `gateway.port+4`)
+- `agents.defaults.workspace` のデフォルトは `--dev` で `setup`/`onboard` を実行すると `~/.openclaw/workspace-dev` になります。
+
+派生ポート(経験則):
+- 基本ポート = `gateway.port` (または `OPENCLAW_GATEWAY_PORT` / `--port`)
+- ブラウザー制御サービスポート = 基本 + 2 (ループバックのみ)
+- `canvasHost.port = 基本 + 4` (または `OPENCLAW_CANVAS_HOST_PORT` / 設定オーバーライド)
+- ブラウザープロファイルCDPポートは `browser.controlPort + 9 .. + 108` から自動割り当て(プロファイルごとに永続化)。
+
+インスタンスごとのチェックリスト:
+- 一意の `gateway.port`
+- 一意の `OPENCLAW_CONFIG_PATH`
+- 一意の `OPENCLAW_STATE_DIR`
+- 一意の `agents.defaults.workspace`
+- 別のWhatsApp番号(WAを使用する場合)
+
+プロファイルごとのサービスインストール:
+```bash
+openclaw --profile main gateway install
+openclaw --profile rescue gateway install
+```
+
+例:
+```bash
+OPENCLAW_CONFIG_PATH=~/.openclaw/a.json OPENCLAW_STATE_DIR=~/.openclaw-a openclaw gateway --port 19001
+OPENCLAW_CONFIG_PATH=~/.openclaw/b.json OPENCLAW_STATE_DIR=~/.openclaw-b openclaw gateway --port 19002
+```
+
+## プロトコル (オペレーター視点)
+- 完全なドキュメント: [Gatewayプロトコル](/gateway/protocol) および [ブリッジプロトコル(レガシー)](/gateway/bridge-protocol)。
+- クライアントからの必須の最初のフレーム: `req {type:"req", id, method:"connect", params:{minProtocol,maxProtocol,client:{id,displayName?,version,platform,deviceFamily?,modelIdentifier?,mode,instanceId?}, caps, auth?, locale?, userAgent? } }`。
+- Gatewayは `res {type:"res", id, ok:true, payload:hello-ok }` で応答します(またはエラーで `ok:false`、その後クローズ)。
+- ハンドシェイク後:
+  - リクエスト: `{type:"req", id, method, params}` → `{type:"res", id, ok, payload|error}`
+  - イベント: `{type:"event", event, payload, seq?, stateVersion?}`
+- 構造化されたプレゼンスエントリ: `{host, ip, version, platform?, deviceFamily?, modelIdentifier?, mode, lastInputSeconds?, ts, reason?, tags?[], instanceId? }` (WSクライアントの場合、`instanceId` は `connect.client.instanceId` から取得)。
+- `agent` 応答は2段階: 最初の `res` 確認 `{runId,status:"accepted"}`、その後実行が終了した後の最終 `res` `{runId,status:"ok"|"error",summary}`。ストリーミング出力は `event:"agent"` として到着します。
+
+## メソッド (初期セット)
+- `health` — 完全なヘルススナップショット(`openclaw health --json` と同じ形式)。
+- `status` — 短いサマリー。
+- `system-presence` — 現在のプレゼンスリスト。
+- `system-event` — プレゼンス/システムノートを投稿(構造化)。
+- `send` — アクティブなチャネル経由でメッセージを送信。
+- `agent` — エージェントターンを実行(同じ接続でイベントをストリーム)。
+- `node.list` — ペアリング済み + 現在接続されているノードをリスト(`caps`、`deviceFamily`、`modelIdentifier`、`paired`、`connected`、およびアドバタイズされた `commands` を含む)。
+- `node.describe` — ノードを記述(機能 + サポートされている `node.invoke` コマンド。ペアリング済みノードと現在接続されている未ペアリングノードで動作)。
+- `node.invoke` — ノードでコマンドを呼び出す(例: `canvas.*`、`camera.*`)。
+- `node.pair.*` — ペアリングライフサイクル(`request`、`list`、`approve`、`reject`、`verify`)。
+
+参照: [プレゼンス](/concepts/presence) プレゼンスがどのように生成/重複排除されるか、および安定した `client.instanceId` が重要な理由。
+
+## イベント
+- `agent` — エージェント実行からのストリーミングツール/出力イベント(seqタグ付き)。
+- `presence` — プレゼンス更新(stateVersionを持つデルタ)をすべての接続されたクライアントにプッシュ。
+- `tick` — 生存を確認するための定期的なキープアライブ/ノーオペレーション。
+- `shutdown` — Gatewayが終了しています。ペイロードには `reason` とオプションの `restartExpectedMs` が含まれます。クライアントは再接続する必要があります。
+
+## WebChat統合
+- WebChatはネイティブSwiftUI UIで、履歴、送信、中止、およびイベントのためにGateway WebSocketと直接通信します。
+- リモート使用は同じSSH/Tailscaleトンネル経由で行われます。Gatewayトークンが設定されている場合、クライアントは `connect` 中にそれを含めます。
+- macOSアプリは単一のWS(共有接続)経由で接続します。初期スナップショットからプレゼンスをハイドレートし、`presence` イベントをリッスンしてUIを更新します。
+
+## 型付けと検証
+- サーバーはプロトコル定義から発行されたJSONスキーマに対してAJVですべての受信フレームを検証します。
+- クライアント(TS/Swift)は生成された型を消費します(TSは直接、Swiftはリポジトリのジェネレーター経由)。
+- プロトコル定義が真実のソースです。スキーマ/モデルを再生成するには:
+  - `pnpm protocol:gen`
+  - `pnpm protocol:gen:swift`
+
+## 接続スナップショット
+- `hello-ok` には `presence`、`health`、`stateVersion`、および `uptimeMs` と `policy {maxPayload,maxBufferedBytes,tickIntervalMs}` を含む `snapshot` が含まれているため、クライアントは追加のリクエストなしで即座にレンダリングできます。
+- `health`/`system-presence` は手動更新用に引き続き利用可能ですが、接続時には必要ありません。
+
+## エラーコード (res.error 形式)
+- エラーは `{ code, message, details?, retryable?, retryAfterMs? }` を使用します。
+- 標準コード:
+  - `NOT_LINKED` — WhatsAppが認証されていません。
+  - `AGENT_TIMEOUT` — エージェントが設定された期限内に応答しませんでした。
+  - `INVALID_REQUEST` — スキーマ/パラメータ検証が失敗しました。
+  - `UNAVAILABLE` — Gatewayがシャットダウンしているか、依存関係が利用できません。
+
+## キープアライブ動作
+- `tick` イベント(またはWS ping/pong)は定期的に発行されるため、トラフィックが発生しない場合でもクライアントはGatewayが生きていることを知ることができます。
+- 送信/エージェント確認応答は別の応答のままです。送信にティックを過負荷にしないでください。
+
+## リプレイ / ギャップ
+- イベントはリプレイされません。クライアントはseqギャップを検出し、続行する前に更新(`health` + `system-presence`)する必要があります。WebChatおよびmacOSクライアントは現在、ギャップで自動更新します。
+
+## スーパービジョン (macOS例)
+- サービスを存続させるためにlaunchdを使用します:
+  - Program: `openclaw` へのパス
+  - Arguments: `gateway`
+  - KeepAlive: true
+  - StandardOut/Err: ファイルパスまたは `syslog`
+- 失敗時、launchdは再起動します。致命的な設定ミスは終了し続ける必要があるため、オペレーターが気付きます。
+- LaunchAgentsはユーザーごとで、ログインセッションが必要です。ヘッドレスセットアップにはカスタムLaunchDaemonを使用します(出荷されていません)。
+  - `openclaw gateway install` は `~/Library/LaunchAgents/bot.molt.gateway.plist` を書き込みます
+    (または `bot.molt.<profile>.plist`。レガシー `com.openclaw.*` はクリーンアップされます)。
+  - `openclaw doctor` はLaunchAgent設定を監査し、現在のデフォルトに更新できます。
+
+## Gatewayサービス管理 (CLI)
+
+インストール/起動/停止/再起動/ステータスにはGateway CLIを使用します:
+
+```bash
+openclaw gateway status
+openclaw gateway install
+openclaw gateway stop
+openclaw gateway restart
+openclaw logs --follow
+```
+
+注意:
+- `gateway status` はデフォルトでサービスの解決されたポート/設定を使用してGateway RPCを調査します(`--url` でオーバーライド)。
+- `gateway status --deep` はシステムレベルのスキャン(LaunchDaemons/システムユニット)を追加します。
+- `gateway status --no-probe` はRPCプローブをスキップします(ネットワークがダウンしている場合に便利)。
+- `gateway status --json` はスクリプトに対して安定しています。
+- `gateway status` は **スーパーバイザーランタイム** (launchd/systemd実行中)と **RPC到達可能性** (WS接続 + ステータスRPC)を別々に報告します。
+- `gateway status` は設定パス + プローブターゲットを出力して、「localhostとLANバインド」の混乱とプロファイルの不一致を回避します。
+- `gateway status` は、サービスが実行中に見えるがポートが閉じている場合、最後のGatewayエラー行を含めます。
+- `logs` はRPC経由でGatewayファイルログをテールします(手動の `tail`/`grep` は不要)。
+- 他のGatewayライクなサービスが検出された場合、CLIはOpenClawプロファイルサービスでない限り警告します。
+  ほとんどのセットアップでは **マシンごとに1つのGateway** を推奨します。冗長性またはレスキューボット用に分離されたプロファイル/ポートを使用してください。[複数のGateway](/gateway/multiple-gateways) を参照してください。
+  - クリーンアップ: `openclaw gateway uninstall` (現在のサービス)および `openclaw doctor` (レガシー移行)。
+- `gateway install` はすでにインストールされている場合はノーオペレーションです。再インストールするには `openclaw gateway install --force` を使用します(プロファイル/env/パス変更)。
+
+バンドルされたmacアプリ:
+- OpenClaw.appはNodeベースのGatewayリレーをバンドルし、ラベル `bot.molt.gateway` (または `bot.molt.<profile>`。レガシー `com.openclaw.*` ラベルはクリーンにアンロードされます)のユーザーごとのLaunchAgentをインストールできます。
+- クリーンに停止するには、`openclaw gateway stop` (または `launchctl bootout gui/$UID/bot.molt.gateway`)を使用します。
+- 再起動するには、`openclaw gateway restart` (または `launchctl kickstart -k gui/$UID/bot.molt.gateway`)を使用します。
+  - `launchctl` はLaunchAgentがインストールされている場合にのみ機能します。そうでない場合は、最初に `openclaw gateway install` を使用してください。
+  - 名前付きプロファイルを実行する場合は、ラベルを `bot.molt.<profile>` に置き換えてください。
+
+## スーパービジョン (systemd ユーザーユニット)
+OpenClawはLinux/WSL2でデフォルトで **systemd ユーザーサービス** をインストールします。
+シングルユーザーマシンにはユーザーサービスを推奨します(envがシンプル、ユーザーごとの設定)。
+マルチユーザーまたは常時稼働サーバーには **システムサービス** を使用します(lingeringが不要、共有スーパービジョン)。
+
+`openclaw gateway install` はユーザーユニットを書き込みます。`openclaw doctor` はユニットを監査し、現在の推奨デフォルトに一致するように更新できます。
+
+`~/.config/systemd/user/openclaw-gateway[-<profile>].service` を作成:
+```
+[Unit]
+Description=OpenClaw Gateway (profile: <profile>, v<version>)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/openclaw gateway --port 18789
+Restart=always
+RestartSec=5
+Environment=OPENCLAW_GATEWAY_TOKEN=
+WorkingDirectory=/home/youruser
+
+[Install]
+WantedBy=default.target
+```
+lingeringを有効化(ユーザーサービスがログアウト/アイドルを生き残るために必要):
+```
+sudo loginctl enable-linger youruser
+```
+オンボーディングはLinux/WSL2でこれを実行します(sudoをプロンプトする場合があります。`/var/lib/systemd/linger` に書き込みます)。
+その後、サービスを有効化:
+```
+systemctl --user enable --now openclaw-gateway[-<profile>].service
+```
+
+**代替(システムサービス)** - 常時稼働またはマルチユーザーサーバーの場合、ユーザーユニットの代わりにsystemd **システム** ユニットをインストールできます(lingeringが不要)。
+`/etc/systemd/system/openclaw-gateway[-<profile>].service` を作成(上記のユニットをコピー、`WantedBy=multi-user.target` に切り替え、`User=` + `WorkingDirectory=` を設定)、その後:
+```
+sudo systemctl daemon-reload
+sudo systemctl enable --now openclaw-gateway[-<profile>].service
+```
+
+## Windows (WSL2)
+
+Windowsのインストールは **WSL2** を使用し、上記のLinux systemdセクションに従う必要があります。
+
+## 運用チェック
+- 生存性: WSを開き、`req:connect` を送信 → `payload.type="hello-ok"` (スナップショット付き)の `res` を期待。
+- 準備完了: `health` を呼び出す → `ok: true` と `linkChannel` のリンクされたチャネル(該当する場合)を期待。
+- デバッグ: `tick` および `presence` イベントをサブスクライブ。`status` がリンク済み/認証期間を表示することを確認。プレゼンスエントリはGatewayホストと接続されたクライアントを表示します。
+
+## 安全性保証
+- デフォルトではホストごとに1つのGatewayを想定します。複数のプロファイルを実行する場合、ポート/状態を分離し、正しいインスタンスをターゲットにします。
+- 直接のBaileys接続へのフォールバックはありません。Gatewayがダウンしている場合、送信は高速に失敗します。
+- 最初の非接続フレームまたは不正なJSONは拒否され、ソケットが閉じられます。
+- グレースフルシャットダウン: クローズ前に `shutdown` イベントを発行します。クライアントはクローズ + 再接続を処理する必要があります。
+
+## CLIヘルパー
+- `openclaw gateway health|status` — Gateway WS経由でヘルス/ステータスをリクエスト。
+- `openclaw message send --target <num> --message "hi" [--media ...]` — Gateway経由で送信(WhatsAppの場合はべき等)。
+- `openclaw agent --message "hi" --to <num>` — エージェントターンを実行(デフォルトで最終を待機)。
+- `openclaw gateway call <method> --params '{"k":"v"}'` — デバッグ用の生のメソッド呼び出し元。
+- `openclaw gateway stop|restart` — スーパーバイズされたGatewayサービスを停止/再起動(launchd/systemd)。
+- Gatewayヘルパーサブコマンドは `--url` で実行中のGatewayを想定します。自動スポーンはもう行いません。
+
+## 移行ガイダンス
+- `openclaw gateway` およびレガシーTCP制御ポートの使用を廃止します。
+- クライアントを更新して、必須の接続と構造化されたプレゼンスを持つWSプロトコルを話すようにします。

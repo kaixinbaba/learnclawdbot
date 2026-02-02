@@ -1,0 +1,89 @@
+---
+summary: "プラグインでエージェントツールを記述する（スキーマ、オプションツール、許可リスト）"
+read_when:
+  - プラグインに新しいエージェントツールを追加したい場合
+  - 許可リスト経由でツールをオプトインにする必要がある場合
+---
+# プラグインエージェントツール
+
+OpenClaw プラグインは、エージェント実行中に LLM に公開される **エージェントツール**（JSON スキーマ関数）を登録できます。ツールは **必須**（常に利用可能）または **オプション**（オプトイン）にできます。
+
+エージェントツールは、メイン設定の `tools` の下、またはエージェントごとに `agents.list[].tools` の下で設定されます。許可リスト/拒否リストポリシーは、エージェントが呼び出せるツールを制御します。
+
+## 基本ツール
+
+```ts
+import { Type } from "@sinclair/typebox";
+
+export default function (api) {
+  api.registerTool({
+    name: "my_tool",
+    description: "Do a thing",
+    parameters: Type.Object({
+      input: Type.String(),
+    }),
+    async execute(_id, params) {
+      return { content: [{ type: "text", text: params.input }] };
+    },
+  });
+}
+```
+
+## オプションツール（オプトイン）
+
+オプションツールは **決して** 自動有効化されません。ユーザーはエージェントの許可リストに追加する必要があります。
+
+```ts
+export default function (api) {
+  api.registerTool(
+    {
+      name: "workflow_tool",
+      description: "Run a local workflow",
+      parameters: {
+        type: "object",
+        properties: {
+          pipeline: { type: "string" },
+        },
+        required: ["pipeline"],
+      },
+      async execute(_id, params) {
+        return { content: [{ type: "text", text: params.pipeline }] };
+      },
+    },
+    { optional: true },
+  );
+}
+```
+
+`agents.list[].tools.allow`（またはグローバル `tools.allow`）でオプションツールを有効化:
+
+```json5
+{
+  agents: {
+    list: [
+      {
+        id: "main",
+        tools: {
+          allow: [
+            "workflow_tool",  // 特定のツール名
+            "workflow",       // プラグイン id（そのプラグインのすべてのツールを有効化）
+            "group:plugins"   // すべてのプラグインツール
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+ツールの可用性に影響するその他の設定ノブ:
+- プラグインツールのみを指定する許可リストは、プラグインオプトインとして扱われます。許可リストにコアツールまたはグループも含めない限り、コアツールは有効のままです。
+- `tools.profile` / `agents.list[].tools.profile`（ベース許可リスト）
+- `tools.byProvider` / `agents.list[].tools.byProvider`（プロバイダー固有の許可/拒否）
+- `tools.sandbox.tools.*`（サンドボックス化された場合のサンドボックスツールポリシー）
+
+## ルール + ヒント
+
+- ツール名はコアツール名と **衝突してはいけません**。競合するツールはスキップされます。
+- 許可リストで使用されるプラグイド id はコアツール名と衝突してはいけません。
+- 副作用をトリガーするツールや、追加のバイナリ/認証情報を必要とするツールには、`optional: true` を優先してください。

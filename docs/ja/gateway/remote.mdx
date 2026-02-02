@@ -1,0 +1,121 @@
+---
+summary: "SSH トンネル（Gateway WS）と tailnet を使用したリモートアクセス"
+read_when:
+  - リモート Gateway セットアップを実行またはトラブルシューティングする場合
+---
+# リモートアクセス（SSH、トンネル、tailnet）
+
+このリポジトリは、専用ホスト（デスクトップ/サーバー）で単一の Gateway（マスター）を実行し続け、クライアントをそれに接続することで「SSH 経由のリモート」をサポートします。
+
+- **オペレーター（あなた / macOS アプリ）**：SSH トンネリングが普遍的なフォールバックです。
+- **ノード（iOS/Android および将来のデバイス）**：Gateway **WebSocket** に接続します（LAN/tailnet または必要に応じて SSH トンネル）。
+
+## コアアイデア
+
+- Gateway WebSocket は、設定されたポート（デフォルト 18789）で **loopback** にバインドします。
+- リモート使用の場合、その loopback ポートを SSH 経由で転送します（または tailnet/VPN を使用してトンネリングを減らします）。
+
+## 一般的な VPN/tailnet セットアップ（エージェントが存在する場所）
+
+**Gateway ホスト**を「エージェントが存在する場所」と考えてください。セッション、認証プロファイル、チャンネル、状態を所有します。
+ラップトップ/デスクトップ（およびノード）はそのホストに接続します。
+
+### 1) tailnet 内の常時稼働 Gateway（VPS またはホームサーバー）
+
+永続的なホストで Gateway を実行し、**Tailscale** または SSH 経由でアクセスします。
+
+- **最高の UX：** `gateway.bind: "loopback"` を維持し、Control UI には **Tailscale Serve** を使用します。
+- **フォールバック：** loopback + アクセスが必要なマシンからの SSH トンネルを維持します。
+- **例：** [exe.dev](/platforms/exe-dev)（簡単な VM）または [Hetzner](/platforms/hetzner)（本番 VPS）。
+
+これは、ラップトップが頻繁にスリープするが、エージェントを常時稼働させたい場合に最適です。
+
+### 2) ホームデスクトップが Gateway を実行、ラップトップはリモートコントロール
+
+ラップトップはエージェントを**実行しません**。リモートで接続します：
+
+- macOS アプリの **Remote over SSH** モードを使用します（設定 → 一般 → "OpenClaw runs"）。
+- アプリがトンネルを開き、管理するため、WebChat + ヘルスチェックが「そのまま動作」します。
+
+ランブック：[macOS remote access](/platforms/mac/remote)
+
+### 3) ラップトップが Gateway を実行、他のマシンからリモートアクセス
+
+Gateway をローカルに保ちながら、安全に公開します：
+
+- 他のマシンからラップトップへの SSH トンネル、または
+- Tailscale Serve で Control UI を提供し、Gateway を loopback のみに保ちます。
+
+ガイド：[Tailscale](/gateway/tailscale) および [Web overview](/web)
+
+## コマンドフロー（何がどこで実行されるか）
+
+1つの Gateway サービスが state + channels を所有します。ノードは周辺機器です。
+
+フロー例（Telegram → node）：
+- Telegram メッセージが **Gateway** に到着します。
+- Gateway が **agent** を実行し、ノードツールを呼び出すかどうかを決定します。
+- Gateway が Gateway WebSocket（`node.*` RPC）経由で**ノード**を呼び出します。
+- ノードが結果を返します。Gateway は Telegram に返信します。
+
+注意：
+- **ノードは Gateway サービスを実行しません。** 意図的に分離されたプロファイルを実行する場合を除き、ホストごとに1つの Gateway のみを実行する必要があります（[Multiple gateways](/gateway/multiple-gateways) を参照）。
+- macOS アプリの「ノードモード」は、Gateway WebSocket 経由のノードクライアントに過ぎません。
+
+## SSH トンネル（CLI + ツール）
+
+リモート Gateway WS へのローカルトンネルを作成します：
+
+```bash
+ssh -N -L 18789:127.0.0.1:18789 user@host
+```
+
+トンネルが稼働している状態：
+- `openclaw health` および `openclaw status --deep` が `ws://127.0.0.1:18789` 経由でリモート Gateway に到達します。
+- `openclaw gateway {status,health,send,agent,call}` も、必要に応じて `--url` 経由で転送された URL をターゲットにできます。
+
+注意：`18789` を設定された `gateway.port`（または `--port`/`OPENCLAW_GATEWAY_PORT`）に置き換えてください。
+
+## CLI リモートデフォルト
+
+リモートターゲットを永続化して、CLI コマンドがデフォルトでそれを使用するようにできます：
+
+```json5
+{
+  gateway: {
+    mode: "remote",
+    remote: {
+      url: "ws://127.0.0.1:18789",
+      token: "your-token"
+    }
+  }
+}
+```
+
+Gateway が loopback のみの場合、URL を `ws://127.0.0.1:18789` のままにして、最初に SSH トンネルを開きます。
+
+## SSH 経由のチャット UI
+
+WebChat は別の HTTP ポートを使用しなくなりました。SwiftUI チャット UI は Gateway WebSocket に直接接続します。
+
+- SSH 経由で `18789` を転送し（上記参照）、クライアントを `ws://127.0.0.1:18789` に接続します。
+- macOS では、アプリの「Remote over SSH」モードを優先してください。トンネルを自動的に管理します。
+
+## macOS アプリ「Remote over SSH」
+
+macOS メニューバーアプリは、同じセットアップをエンドツーエンドで駆動できます（リモートステータスチェック、WebChat、Voice Wake 転送）。
+
+ランブック：[macOS remote access](/platforms/mac/remote)
+
+## セキュリティルール（remote/VPN）
+
+短いバージョン：**確実にバインドが必要でない限り、Gateway を loopback のみに保ってください**。
+
+- **Loopback + SSH/Tailscale Serve** が最も安全なデフォルトです（公開露出なし）。
+- **非 loopback バインド**（`lan`/`tailnet`/`custom`、または loopback が使用できない場合の `auto`）は、認証トークン/パスワードを使用する必要があります。
+- `gateway.remote.token` は**リモート CLI 呼び出し専用**です。ローカル認証を有効にしません。
+- `gateway.remote.tlsFingerprint` は、`wss://` を使用する際にリモート TLS 証明書をピン留めします。
+- **Tailscale Serve** は、`gateway.auth.allowTailscale: true` の場合、アイデンティティヘッダー経由で認証できます。代わりにトークン/パスワードが必要な場合は、`false` に設定してください。
+- ブラウザーコントロールをオペレーターアクセスと同様に扱ってください：tailnet のみ + 慎重なノードペアリング。
+
+詳細：[Security](/gateway/security)

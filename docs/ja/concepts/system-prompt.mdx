@@ -1,0 +1,93 @@
+---
+summary: "OpenClawシステムプロンプトの内容とその組み立て方法"
+read_when:
+  - システムプロンプトテキスト、ツールリスト、または時間/ハートビートセクションを編集する場合
+  - ワークスペースブートストラップまたはスキル注入動作を変更する場合
+---
+# システムプロンプト
+
+OpenClawは、各エージェント実行のためにカスタムシステムプロンプトを構築します。このプロンプトは**OpenClaw所有**であり、p-coding-agentのデフォルトプロンプトを使用しません。
+
+プロンプトはOpenClawによって組み立てられ、各エージェント実行に注入されます。
+
+## 構造
+
+プロンプトは意図的にコンパクトで、固定セクションを使用します：
+
+- **Tooling**: 現在のツールリスト + 簡単な説明。
+- **Skills** （利用可能な場合）: オンデマンドでスキル指示をロードする方法をモデルに伝えます。
+- **OpenClaw Self-Update**: `config.apply`と`update.run`の実行方法。
+- **Workspace**: 作業ディレクトリ（`agents.defaults.workspace`）。
+- **Documentation**: OpenClawドキュメントへのローカルパス（リポジトリまたはnpmパッケージ）といつ読むべきか。
+- **Workspace Files (injected)**: ブートストラップファイルが以下に含まれていることを示します。
+- **Sandbox** （有効な場合）: サンドボックス化されたランタイム、サンドボックスパス、および昇格されたexecが利用可能かどうかを示します。
+- **Current Date & Time**: ユーザーローカル時間、タイムゾーン、時間形式。
+- **Reply Tags**: サポートされているプロバイダー向けのオプションの返信タグ構文。
+- **Heartbeats**: ハートビートプロンプトとack動作。
+- **Runtime**: ホスト、OS、ノード、モデル、リポジトリルート（検出された場合）、思考レベル（1行）。
+- **Reasoning**: 現在の可視性レベル + /reasoningトグルヒント。
+
+## プロンプトモード
+
+OpenClawは、サブエージェント用により小さなシステムプロンプトをレンダリングできます。ランタイムは各実行に対して`promptMode`を設定します（ユーザー向け設定ではありません）：
+
+- `full` （デフォルト）: 上記のすべてのセクションを含みます。
+- `minimal`: サブエージェント用。**Skills**、**Memory Recall**、**OpenClaw
+  Self-Update**、**Model Aliases**、**User Identity**、**Reply Tags**、
+  **Messaging**、**Silent Replies**、**Heartbeats**を省略します。Tooling、Workspace、
+  Sandbox、Current Date & Time（判明している場合）、Runtime、注入されたコンテキストは利用可能なままです。
+- `none`: ベースアイデンティティ行のみを返します。
+
+`promptMode=minimal`の場合、追加の注入されたプロンプトは**Group Chat Context**ではなく**Subagent
+Context**とラベル付けされます。
+
+## ワークスペースブートストラップ注入
+
+ブートストラップファイルは**Project Context**の下にトリミングされて追加されるため、モデルは明示的な読み取りなしにアイデンティティとプロファイルコンテキストを参照できます：
+
+- `AGENTS.md`
+- `SOUL.md`
+- `TOOLS.md`
+- `IDENTITY.md`
+- `USER.md`
+- `HEARTBEAT.md`
+- `BOOTSTRAP.md` （新しいワークスペースのみ）
+
+大きなファイルはマーカー付きで切り捨てられます。ファイルごとの最大サイズは`agents.defaults.bootstrapMaxChars`（デフォルト: 20000）で制御されます。欠落しているファイルは短い欠落ファイルマーカーを注入します。
+
+内部フックは、`agent:bootstrap`経由でこのステップをインターセプトして、注入されたブートストラップファイルを変更または置換できます（たとえば、`SOUL.md`を別のペルソナに交換）。
+
+各注入ファイルがどれだけ貢献するか（生 vs 注入、切り捨て、さらにツールスキーマのオーバーヘッド）を検査するには、`/context list`または`/context detail`を使用します。[Context](/concepts/context)を参照してください。
+
+## 時間の扱い
+
+システムプロンプトには、ユーザーのタイムゾーンが判明している場合、専用の**Current Date & Time**セクションが含まれます。プロンプトキャッシュを安定させるために、現在は**タイムゾーン**のみが含まれます（動的なクロックや時間形式は含まれません）。
+
+エージェントが現在時刻を必要とする場合は`session_status`を使用してください。ステータスカードにはタイムスタンプ行が含まれます。
+
+設定項目：
+
+- `agents.defaults.userTimezone`
+- `agents.defaults.timeFormat` (`auto` | `12` | `24`)
+
+完全な動作の詳細については、[Date & Time](/date-time)を参照してください。
+
+## スキル
+
+適格なスキルが存在する場合、OpenClawは各スキルの**ファイルパス**を含むコンパクトな**利用可能スキルリスト**（`formatSkillsForPrompt`）を注入します。プロンプトは、リストされた場所（ワークスペース、管理、またはバンドル）のSKILL.mdをロードするために`read`を使用するようモデルに指示します。適格なスキルがない場合、Skillsセクションは省略されます。
+
+```
+<available_skills>
+  <skill>
+    <name>...</name>
+    <description>...</description>
+    <location>...</location>
+  </skill>
+</available_skills>
+```
+
+これにより、ベースプロンプトを小さく保ちながら、ターゲットを絞ったスキル使用を可能にします。
+
+## ドキュメント
+
+利用可能な場合、システムプロンプトにはローカルのOpenClawドキュメントディレクトリ（リポジトリワークスペースの`docs/`またはバンドルされたnpmパッケージドキュメント）を指す**Documentation**セクションが含まれ、公開ミラー、ソースリポジトリ、コミュニティDiscord、およびスキル発見のためのClawdHub（https://clawdhub.com）も記載されます。プロンプトは、OpenClawの動作、コマンド、設定、またはアーキテクチャについては最初にローカルドキュメントを参照し、可能な場合は自分で`openclaw status`を実行するようモデルに指示します（アクセスできない場合のみユーザーに尋ねます）。

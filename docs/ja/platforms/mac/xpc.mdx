@@ -1,0 +1,51 @@
+---
+summary: "OpenClaw アプリ、ゲートウェイノードトランスポート、および PeekabooBridge の macOS IPC アーキテクチャ"
+read_when:
+  - IPC コントラクトまたはメニューバーアプリの IPC を編集する場合
+---
+# OpenClaw macOS IPC アーキテクチャ
+
+**現在のモデル:** ローカル Unix ソケットが **node host service** を **macOS アプリ** に接続し、exec 承認と `system.run` を処理します。`openclaw-mac` デバッグ CLI が検出/接続チェック用に存在します。エージェントアクションは引き続き Gateway WebSocket と `node.invoke` を通じて流れます。UI 自動化は PeekabooBridge を使用します。
+
+## 目標
+- すべての TCC 関連作業（通知、画面録画、マイク、音声、AppleScript）を所有する単一 GUI アプリインスタンス。
+- 自動化のための小さなサーフェス: Gateway + node コマンド、および UI 自動化のための PeekabooBridge。
+- 予測可能な権限: 常に同じ署名済みバンドル ID で、launchd によって起動されるため、TCC 許可が維持されます。
+
+## 動作方法
+### Gateway + node トランスポート
+- アプリは Gateway（ローカルモード）を実行し、ノードとして接続します。
+- エージェントアクションは `node.invoke` 経由で実行されます（例: `system.run`、`system.notify`、`canvas.*`）。
+
+### Node service + app IPC
+- ヘッドレス node host service が Gateway WebSocket に接続します。
+- `system.run` リクエストはローカル Unix ソケットを介して macOS アプリに転送されます。
+- アプリは UI コンテキストで exec を実行し、必要に応じてプロンプトを表示し、出力を返します。
+
+図（SCI）:
+```
+Agent -> Gateway -> Node Service (WS)
+                      |  IPC (UDS + token + HMAC + TTL)
+                      v
+                  Mac App (UI + TCC + system.run)
+```
+
+### PeekabooBridge（UI 自動化）
+- UI 自動化は、`bridge.sock` という名前の別の UNIX ソケットと PeekabooBridge JSON プロトコルを使用します。
+- ホストの優先順位（クライアント側）: Peekaboo.app → Claude.app → OpenClaw.app → ローカル実行。
+- セキュリティ: ブリッジホストは許可された TeamID を要求します。DEBUG のみの same-UID エスケープハッチは `PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS=1`（Peekaboo 規約）によって保護されています。
+- 参照: [PeekabooBridge の使用方法](/platforms/mac/peekaboo) の詳細。
+
+## 運用フロー
+- 再起動/リビルド: `SIGN_IDENTITY="Apple Development: <Developer Name> (<TEAMID>)" scripts/restart-mac.sh`
+  - 既存のインスタンスを終了
+  - Swift ビルド + パッケージ
+  - LaunchAgent の書き込み/ブートストラップ/キックスタート
+- 単一インスタンス: 同じバンドル ID の別のインスタンスが実行中の場合、アプリは早期に終了します。
+
+## ハードニングノート
+- すべての特権サーフェスに TeamID マッチを要求することを優先します。
+- PeekabooBridge: `PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS=1`（DEBUG のみ）は、ローカル開発のために same-UID 呼び出し元を許可する場合があります。
+- すべての通信はローカルのみのまま。ネットワークソケットは公開されません。
+- TCC プロンプトは GUI アプリバンドルからのみ発生します。リビルド間で署名済みバンドル ID を安定させます。
+- IPC ハードニング: ソケットモード `0600`、トークン、peer-UID チェック、HMAC チャレンジ/レスポンス、短い TTL。

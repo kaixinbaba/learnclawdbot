@@ -1,0 +1,29 @@
+---
+summary: "`openclaw cron`のCLIリファレンス（バックグラウンドジョブのスケジュールと実行）"
+read_when:
+  - スケジュールされたジョブとウェイクアップが必要な場合
+  - cronの実行とログをデバッグしている場合
+---
+
+# `openclaw cron`
+
+Gatewayスケジューラーのcronジョブを管理します。
+
+関連:
+- Cronジョブ: [Cron jobs](/automation/cron-jobs)
+
+ヒント: `openclaw cron --help`を実行して、完全なコマンドサーフェスを確認してください。
+
+## 一般的な編集
+
+メッセージを変更せずに配信設定を更新:
+
+```bash
+openclaw cron edit <job-id> --deliver --channel telegram --to "123456789"
+```
+
+分離されたジョブの配信を無効化:
+
+```bash
+openclaw cron edit <job-id> --no-deliver
+```

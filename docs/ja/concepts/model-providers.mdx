@@ -1,0 +1,316 @@
+---
+summary: "Model provider（モデルプロバイダー）の概要と config 例 + CLI フロー"
+read_when:
+  - provider ごとの model setup reference が必要なとき
+  - model provider の config 例または CLI onboarding command が必要なとき
+---
+# Model providers
+
+このページでは **LLM/model provider**（WhatsApp/Telegram などの chat channel ではない）について説明します。
+Model selection rule については、[/concepts/models](/concepts/models) を参照してください。
+
+## Quick rule
+
+- Model ref は `provider/model` を使用します（例：`opencode/claude-opus-4-5`）。
+- `agents.defaults.models` を設定すると、それが allowlist（許可リスト）になります。
+- CLI helper：`openclaw onboard`、`openclaw models list`、`openclaw models set <provider/model>`。
+
+## Built-in provider（pi-ai catalog）
+
+OpenClaw には pi-ai catalog が付属しています。これらの provider は `models.providers` config を**必要としません**。auth を設定して model を選択するだけです。
+
+### OpenAI
+
+- Provider：`openai`
+- Auth：`OPENAI_API_KEY`
+- 例の model：`openai/gpt-5.2`
+- CLI：`openclaw onboard --auth-choice openai-api-key`
+
+```json5
+{
+  agents: { defaults: { model: { primary: "openai/gpt-5.2" } } }
+}
+```
+
+### Anthropic
+
+- Provider：`anthropic`
+- Auth：`ANTHROPIC_API_KEY` または `claude setup-token`
+- 例の model：`anthropic/claude-opus-4-5`
+- CLI：`openclaw onboard --auth-choice token`（setup-token を paste）または `openclaw models auth paste-token --provider anthropic`
+
+```json5
+{
+  agents: { defaults: { model: { primary: "anthropic/claude-opus-4-5" } } }
+}
+```
+
+### OpenAI Code（Codex）
+
+- Provider：`openai-codex`
+- Auth：OAuth（ChatGPT）
+- 例の model：`openai-codex/gpt-5.2`
+- CLI：`openclaw onboard --auth-choice openai-codex` または `openclaw models auth login --provider openai-codex`
+
+```json5
+{
+  agents: { defaults: { model: { primary: "openai-codex/gpt-5.2" } } }
+}
+```
+
+### OpenCode Zen
+
+- Provider：`opencode`
+- Auth：`OPENCODE_API_KEY`（または `OPENCODE_ZEN_API_KEY`）
+- 例の model：`opencode/claude-opus-4-5`
+- CLI：`openclaw onboard --auth-choice opencode-zen`
+
+```json5
+{
+  agents: { defaults: { model: { primary: "opencode/claude-opus-4-5" } } }
+}
+```
+
+### Google Gemini（API key）
+
+- Provider：`google`
+- Auth：`GEMINI_API_KEY`
+- 例の model：`google/gemini-3-pro-preview`
+- CLI：`openclaw onboard --auth-choice gemini-api-key`
+
+### Google Vertex / Antigravity / Gemini CLI
+
+- Provider：`google-vertex`、`google-antigravity`、`google-gemini-cli`
+- Auth：Vertex は gcloud ADC を使用。Antigravity/Gemini CLI はそれぞれの auth flow を使用
+- Antigravity OAuth は bundled plugin として shipped されています（`google-antigravity-auth`、デフォルトでは無効）。
+  - 有効化：`openclaw plugins enable google-antigravity-auth`
+  - Login：`openclaw models auth login --provider google-antigravity --set-default`
+- Gemini CLI OAuth は bundled plugin として shipped されています（`google-gemini-cli-auth`、デフォルトでは無効）。
+  - 有効化：`openclaw plugins enable google-gemini-cli-auth`
+  - Login：`openclaw models auth login --provider google-gemini-cli --set-default`
+  - 注意：client id または secret を `openclaw.json` に paste する必要は**ありません**。CLI login flow は token を gateway host の auth profile に保存します。
+
+### Z.AI（GLM）
+
+- Provider：`zai`
+- Auth：`ZAI_API_KEY`
+- 例の model：`zai/glm-4.7`
+- CLI：`openclaw onboard --auth-choice zai-api-key`
+  - Alias：`z.ai/*` と `z-ai/*` は `zai/*` に normalize されます
+
+### Vercel AI Gateway
+
+- Provider：`vercel-ai-gateway`
+- Auth：`AI_GATEWAY_API_KEY`
+- 例の model：`vercel-ai-gateway/anthropic/claude-opus-4.5`
+- CLI：`openclaw onboard --auth-choice ai-gateway-api-key`
+
+### Other built-in provider
+
+- OpenRouter：`openrouter`（`OPENROUTER_API_KEY`）
+- 例の model：`openrouter/anthropic/claude-sonnet-4-5`
+- xAI：`xai`（`XAI_API_KEY`）
+- Groq：`groq`（`GROQ_API_KEY`）
+- Cerebras：`cerebras`（`CEREBRAS_API_KEY`）
+  - Cerebras の GLM model は id `zai-glm-4.7` と `zai-glm-4.6` を使用します。
+  - OpenAI 互換 base URL：`https://api.cerebras.ai/v1`。
+- Mistral：`mistral`（`MISTRAL_API_KEY`）
+- GitHub Copilot：`github-copilot`（`COPILOT_GITHUB_TOKEN` / `GH_TOKEN` / `GITHUB_TOKEN`）
+
+## `models.providers` による provider（custom/base URL）
+
+`models.providers`（または `models.json`）を使用して **custom** provider または OpenAI/Anthropic 互換 proxy を追加します。
+
+### Moonshot AI（Kimi）
+
+Moonshot は OpenAI 互換エンドポイントを使用するため、custom provider として設定します：
+
+- Provider：`moonshot`
+- Auth：`MOONSHOT_API_KEY`
+- 例の model：`moonshot/kimi-k2.5`
+- Kimi K2 model ID：
+  {/* moonshot-kimi-k2-model-refs:start */}
+  - `moonshot/kimi-k2.5`
+  - `moonshot/kimi-k2-0905-preview`
+  - `moonshot/kimi-k2-turbo-preview`
+  - `moonshot/kimi-k2-thinking`
+  - `moonshot/kimi-k2-thinking-turbo`
+  {/* moonshot-kimi-k2-model-refs:end */}
+```json5
+{
+  agents: {
+    defaults: { model: { primary: "moonshot/kimi-k2.5" } }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      moonshot: {
+        baseUrl: "https://api.moonshot.ai/v1",
+        apiKey: "${MOONSHOT_API_KEY}",
+        api: "openai-completions",
+        models: [{ id: "kimi-k2.5", name: "Kimi K2.5" }]
+      }
+    }
+  }
+}
+```
+
+### Kimi Code
+
+Kimi Code は専用エンドポイントと key を使用します（Moonshot とは別）：
+
+- Provider：`kimi-code`
+- Auth：`KIMICODE_API_KEY`
+- 例の model：`kimi-code/kimi-for-coding`
+
+```json5
+{
+  env: { KIMICODE_API_KEY: "sk-..." },
+  agents: {
+    defaults: { model: { primary: "kimi-code/kimi-for-coding" } }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      "kimi-code": {
+        baseUrl: "https://api.kimi.com/coding/v1",
+        apiKey: "${KIMICODE_API_KEY}",
+        api: "openai-completions",
+        models: [{ id: "kimi-for-coding", name: "Kimi For Coding" }]
+      }
+    }
+  }
+}
+```
+
+### Qwen OAuth（free tier）
+
+Qwen は device-code flow を介して Qwen Coder + Vision への OAuth access を提供します。
+Bundled plugin を有効にしてから、login してください：
+
+```bash
+openclaw plugins enable qwen-portal-auth
+openclaw models auth login --provider qwen-portal --set-default
+```
+
+Model ref：
+- `qwen-portal/coder-model`
+- `qwen-portal/vision-model`
+
+Setup の詳細と注意については [/providers/qwen](/providers/qwen) を参照してください。
+
+### Synthetic
+
+Synthetic は `synthetic` provider の背後に Anthropic 互換 model を提供します：
+
+- Provider：`synthetic`
+- Auth：`SYNTHETIC_API_KEY`
+- 例の model：`synthetic/hf:MiniMaxAI/MiniMax-M2.1`
+- CLI：`openclaw onboard --auth-choice synthetic-api-key`
+
+```json5
+{
+  agents: {
+    defaults: { model: { primary: "synthetic/hf:MiniMaxAI/MiniMax-M2.1" } }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      synthetic: {
+        baseUrl: "https://api.synthetic.new/anthropic",
+        apiKey: "${SYNTHETIC_API_KEY}",
+        api: "anthropic-messages",
+        models: [{ id: "hf:MiniMaxAI/MiniMax-M2.1", name: "MiniMax M2.1" }]
+      }
+    }
+  }
+}
+```
+
+### MiniMax
+
+MiniMax は custom endpoint を使用するため、`models.providers` を介して設定されます：
+
+- MiniMax（Anthropic 互換）：`--auth-choice minimax-api`
+- Auth：`MINIMAX_API_KEY`
+
+Setup の詳細、model option、config snippet については [/providers/minimax](/providers/minimax) を参照してください。
+
+### Ollama
+
+Ollama は OpenAI 互換 API を提供する local LLM runtime です：
+
+- Provider：`ollama`
+- Auth：不要（local server）
+- 例の model：`ollama/llama3.3`
+- インストール：https://ollama.ai
+
+```bash
+# Ollama をインストールしてから、model を pull します：
+ollama pull llama3.3
+```
+
+```json5
+{
+  agents: {
+    defaults: { model: { primary: "ollama/llama3.3" } }
+  }
+}
+```
+
+Ollama は `http://127.0.0.1:11434/v1` で locally 実行されているときに自動検出されます。Model recommendation と custom configuration については [/providers/ollama](/providers/ollama) を参照してください。
+
+### Local proxy（LM Studio、vLLM、LiteLLM など）
+
+例（OpenAI 互換）：
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: { primary: "lmstudio/minimax-m2.1-gs32" },
+      models: { "lmstudio/minimax-m2.1-gs32": { alias: "Minimax" } }
+    }
+  },
+  models: {
+    providers: {
+      lmstudio: {
+        baseUrl: "http://localhost:1234/v1",
+        apiKey: "LMSTUDIO_KEY",
+        api: "openai-completions",
+        models: [
+          {
+            id: "minimax-m2.1-gs32",
+            name: "MiniMax M2.1",
+            reasoning: false,
+            input: ["text"],
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+            contextWindow: 200000,
+            maxTokens: 8192
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+注意：
+- Custom provider の場合、`reasoning`、`input`、`cost`、`contextWindow`、`maxTokens` はオプションです。
+  省略すると、OpenClaw はデフォルトで次のようになります：
+  - `reasoning: false`
+  - `input: ["text"]`
+  - `cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }`
+  - `contextWindow: 200000`
+  - `maxTokens: 8192`
+- 推奨：proxy/model limit に一致する explicit value を設定してください。
+
+## CLI 例
+
+```bash
+openclaw onboard --auth-choice opencode-zen
+openclaw models set opencode/claude-opus-4-5
+openclaw models list
+```
+
+完全な configuration 例については [/gateway/configuration](/gateway/configuration) も参照してください。

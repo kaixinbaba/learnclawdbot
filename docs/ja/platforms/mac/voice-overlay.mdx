@@ -1,0 +1,52 @@
+---
+summary: "ウェイクワードとプッシュ・トゥ・トークが重なる場合の音声オーバーレイのライフサイクル"
+read_when:
+  - 音声オーバーレイの動作を調整する場合
+---
+# 音声オーバーレイライフサイクル（macOS）
+
+対象者: macOS アプリコントリビューター。目標: ウェイクワードとプッシュ・トゥ・トークが重なる場合に音声オーバーレイを予測可能に保つ。
+
+### 現在の意図
+- オーバーレイがウェイクワードから既に表示されていて、ユーザーがホットキーを押した場合、ホットキーセッションはリセットする代わりに既存のテキストを*採用*します。オーバーレイはホットキーが押されている間表示されたままです。ユーザーが解放したとき: トリミングされたテキストがあれば送信、そうでなければ閉じます。
+- ウェイクワード単独では沈黙時に自動送信します。プッシュ・トゥ・トークは解放時に即座に送信します。
+
+### 実装済み（2025年12月9日）
+- オーバーレイセッションは、キャプチャごとにトークンを持つようになりました（ウェイクワードまたはプッシュ・トゥ・トーク）。トークンが一致しない場合、partial/final/send/dismiss/level 更新はドロップされ、古いコールバックを回避します。
+- プッシュ・トゥ・トークは、表示されているオーバーレイテキストをプレフィックスとして採用します（ウェイクオーバーレイが表示されている間にホットキーを押すと、テキストを保持して新しいスピーチを追加します）。現在のテキストにフォールバックする前に、最終トランスクリプトを最大1.5秒待ちます。
+- チャイム/オーバーレイロギングは、カテゴリ `voicewake.overlay`, `voicewake.ptt`, `voicewake.chime` で `info` レベルで出力されます（セッション開始、partial、final、send、dismiss、チャイム理由）。
+
+### 次のステップ
+1. **VoiceSessionCoordinator (actor)**
+   - 一度に正確に1つの `VoiceSession` を所有します。
+   - API（トークンベース）: `beginWakeCapture`, `beginPushToTalk`, `updatePartial`, `endCapture`, `cancel`, `applyCooldown`。
+   - 古いトークンを持つコールバックをドロップします（古い認識器がオーバーレイを再オープンするのを防ぎます）。
+2. **VoiceSession (model)**
+   - フィールド: `token`, `source` (wakeWord|pushToTalk)、コミット/揮発性テキスト、チャイムフラグ、タイマー（自動送信、アイドル）、`overlayMode` (display|editing|sending)、クールダウン期限。
+3. **オーバーレイバインディング**
+   - `VoiceSessionPublisher` (`ObservableObject`) はアクティブなセッションを SwiftUI にミラーリングします。
+   - `VoiceWakeOverlayView` はパブリッシャー経由でのみレンダリングします。グローバルシングルトンを直接変更することはありません。
+   - オーバーレイユーザーアクション（`sendNow`, `dismiss`, `edit`）は、セッショントークンを使用してコーディネーターにコールバックします。
+4. **統一送信パス**
+   - `endCapture` 時: トリミングされたテキストが空の場合 → 閉じる。そうでなければ `performSend(session:)`（送信チャイムを一度再生、転送、閉じる）。
+   - プッシュ・トゥ・トーク: 遅延なし。ウェイクワード: 自動送信のためのオプションの遅延。
+   - プッシュ・トゥ・トーク終了後、ウェイク実行時に短いクールダウンを適用して、ウェイクワードが即座に再トリガーしないようにします。
+5. **ロギング**
+   - コーディネーターは、サブシステム `bot.molt`、カテゴリ `voicewake.overlay` と `voicewake.chime` で `.info` ログを出力します。
+   - 主要イベント: `session_started`, `adopted_by_push_to_talk`, `partial`, `finalized`, `send`, `dismiss`, `cancel`, `cooldown`。
+
+### デバッグチェックリスト
+- 固定オーバーレイを再現しながらログをストリーミング:
+
+  ```bash
+  sudo log stream --predicate 'subsystem == "bot.molt" AND category CONTAINS "voicewake"' --level info --style compact
+  ```
+- アクティブなセッショントークンが1つだけであることを確認。古いコールバックはコーディネーターによってドロップされるはずです。
+- プッシュ・トゥ・トーク解放が常にアクティブなトークンで `endCapture` を呼び出すことを確認。テキストが空の場合、チャイムや送信なしの `dismiss` を期待します。
+
+### 移行ステップ（提案）
+1. `VoiceSessionCoordinator`, `VoiceSession`, `VoiceSessionPublisher` を追加します。
+2. `VoiceWakeRuntime` をリファクタリングして、`VoiceWakeOverlayController` に直接触れる代わりにセッションを作成/更新/終了します。
+3. `VoicePushToTalk` をリファクタリングして既存のセッションを採用し、解放時に `endCapture` を呼び出します。ランタイムクールダウンを適用します。
+4. `VoiceWakeOverlayController` をパブリッシャーに配線します。ランタイム/PTT からの直接呼び出しを削除します。
+5. セッション採用、クールダウン、および空テキスト閉じのための統合テストを追加します。

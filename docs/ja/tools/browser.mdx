@@ -1,0 +1,508 @@
+---
+summary: "統合ブラウザ制御サービス + アクションコマンド"
+read_when:
+  - エージェント制御のブラウザ自動化を追加する場合
+  - openclawが自分のChromeに干渉している理由をデバッグする場合
+  - macOSアプリでブラウザ設定とライフサイクルを実装する場合
+---
+
+# ブラウザ（openclaw管理）
+
+OpenClawは、エージェントが制御する**専用のChrome/Brave/Edge/Chromiumプロファイル**を実行できます。
+これは個人用ブラウザから分離されており、Gateway内の小さなローカル制御サービス（ループバックのみ）を通じて管理されます。
+
+初心者向けの説明:
+- **エージェント専用の別のブラウザ**と考えてください。
+- `openclaw`プロファイルは個人用ブラウザプロファイルに**触れません**。
+- エージェントは安全なレーン内で**タブを開き、ページを読み、クリックし、入力**できます。
+- デフォルトの`chrome`プロファイルは、拡張機能リレーを介して**システムデフォルトのChromiumベースのブラウザ**を使用します。分離された管理ブラウザには`openclaw`に切り替えてください。
+
+## 何が得られるか
+
+- **openclaw**という名前の別のブラウザプロファイル（デフォルトでオレンジのアクセント）。
+- 決定的なタブ制御（list/open/focus/close）。
+- エージェントアクション（click/type/drag/select）、スナップショット、スクリーンショット、PDF。
+- オプションのマルチプロファイルサポート（`openclaw`、`work`、`remote`など）。
+
+このブラウザはあなたの**日常使いではありません**。エージェントの自動化と検証のための安全で分離された環境です。
+
+## クイックスタート
+
+```bash
+openclaw browser --browser-profile openclaw status
+openclaw browser --browser-profile openclaw start
+openclaw browser --browser-profile openclaw open https://example.com
+openclaw browser --browser-profile openclaw snapshot
+```
+
+「Browser disabled」と表示される場合は、設定で有効にして（下記参照）Gatewayを再起動してください。
+
+## プロファイル: `openclaw` vs `chrome`
+
+- `openclaw`: 管理された分離ブラウザ（拡張機能不要）。
+- `chrome`: **システムブラウザ**への拡張機能リレー（OpenClaw拡張機能をタブにアタッチする必要があります）。
+
+デフォルトで管理モードにしたい場合は、`browser.defaultProfile: "openclaw"`を設定してください。
+
+## 設定
+
+ブラウザ設定は`~/.openclaw/openclaw.json`にあります。
+
+```json5
+{
+  browser: {
+    enabled: true,                    // デフォルト: true
+    // cdpUrl: "http://127.0.0.1:18792", // レガシーシングルプロファイルオーバーライド
+    remoteCdpTimeoutMs: 1500,         // リモートCDP HTTPタイムアウト（ms）
+    remoteCdpHandshakeTimeoutMs: 3000, // リモートCDP WebSocketハンドシェイクタイムアウト（ms）
+    defaultProfile: "chrome",
+    color: "#FF4500",
+    headless: false,
+    noSandbox: false,
+    attachOnly: false,
+    executablePath: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    profiles: {
+      openclaw: { cdpPort: 18800, color: "#FF4500" },
+      work: { cdpPort: 18801, color: "#0066CC" },
+      remote: { cdpUrl: "http://10.0.0.42:9222", color: "#00AA00" }
+    }
+  }
+}
+```
+
+注意事項:
+- ブラウザ制御サービスは、`gateway.port`から派生したポートのループバックにバインドされます（デフォルト: `18791`、これはgateway + 2）。リレーは次のポート（`18792`）を使用します。
+- Gatewayポート（`gateway.port`または`OPENCLAW_GATEWAY_PORT`）をオーバーライドすると、派生ブラウザポートは同じ「ファミリー」内に留まるようにシフトします。
+- `cdpUrl`は、設定されていない場合、リレーポートにデフォルト設定されます。
+- `remoteCdpTimeoutMs`はリモート（非ループバック）CDP到達性チェックに適用されます。
+- `remoteCdpHandshakeTimeoutMs`はリモートCDP WebSocket到達性チェックに適用されます。
+- `attachOnly: true`は「ローカルブラウザを起動しない。既に実行中の場合のみアタッチする」という意味です。
+- `color`とプロファイルごとの`color`はブラウザUIを色付けして、どのプロファイルがアクティブかを確認できます。
+- デフォルトプロファイルは`chrome`（拡張機能リレー）です。管理ブラウザには`defaultProfile: "openclaw"`を使用してください。
+- 自動検出順序: システムデフォルトブラウザ（Chromiumベースの場合）。それ以外の場合、Chrome → Brave → Edge → Chromium → Chrome Canary。
+- ローカル`openclaw`プロファイルは`cdpPort`/`cdpUrl`を自動割り当てします。リモートCDPの場合のみ設定してください。
+
+## Brave（または他のChromiumベースのブラウザ）を使用する
+
+**システムデフォルト**ブラウザがChromiumベース（Chrome/Brave/Edge等）の場合、OpenClawは自動的にそれを使用します。自動検出をオーバーライドするには`browser.executablePath`を設定してください:
+
+CLIの例:
+
+```bash
+openclaw config set browser.executablePath "/usr/bin/google-chrome"
+```
+
+```json5
+// macOS
+{
+  browser: {
+    executablePath: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+  }
+}
+
+// Windows
+{
+  browser: {
+    executablePath: "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+  }
+}
+
+// Linux
+{
+  browser: {
+    executablePath: "/usr/bin/brave-browser"
+  }
+}
+```
+
+## ローカル vs リモート制御
+
+- **ローカル制御（デフォルト）:** Gatewayがループバック制御サービスを開始し、ローカルブラウザを起動できます。
+- **リモート制御（ノードホスト）:** ブラウザがあるマシンでノードホストを実行します。Gatewayはブラウザアクションをそれにプロキシします。
+- **リモートCDP:** `browser.profiles.<name>.cdpUrl`（または`browser.cdpUrl`）を設定して、リモートのChromiumベースのブラウザにアタッチします。この場合、OpenClawはローカルブラウザを起動しません。
+
+リモートCDP URLには認証を含めることができます:
+- クエリトークン（例: `https://provider.example?token=<token>`）
+- HTTP Basic認証（例: `https://user:pass@provider.example`）
+
+OpenClawは`/json/*`エンドポイントを呼び出すときとCDP WebSocketに接続するときに認証を保持します。設定ファイルにコミットする代わりに、環境変数またはシークレットマネージャーのトークンを優先してください。
+
+## ノードブラウザプロキシ（ゼロ設定デフォルト）
+
+ブラウザがあるマシンで**ノードホスト**を実行している場合、OpenClawは追加のブラウザ設定なしでブラウザツールコールをそのノードに自動ルーティングできます。これはリモートゲートウェイのデフォルトパスです。
+
+注意事項:
+- ノードホストは**プロキシコマンド**を介してローカルブラウザ制御サーバーを公開します。
+- プロファイルはノード自身の`browser.profiles`設定から取得されます（ローカルと同じ）。
+- 不要な場合は無効にできます:
+  - ノード側: `nodeHost.browserProxy.enabled=false`
+  - ゲートウェイ側: `gateway.nodes.browser.mode="off"`
+
+## Browserless（ホストされたリモートCDP）
+
+[Browserless](https://browserless.io)は、HTTPS経由でCDPエンドポイントを公開するホスト型Chromiumサービスです。OpenClawブラウザプロファイルをBrowserlessリージョンエンドポイントに向け、APIキーで認証できます。
+
+例:
+```json5
+{
+  browser: {
+    enabled: true,
+    defaultProfile: "browserless",
+    remoteCdpTimeoutMs: 2000,
+    remoteCdpHandshakeTimeoutMs: 4000,
+    profiles: {
+      browserless: {
+        cdpUrl: "https://production-sfo.browserless.io?token=<BROWSERLESS_API_KEY>",
+        color: "#00AA00"
+      }
+    }
+  }
+}
+```
+
+注意事項:
+- `<BROWSERLESS_API_KEY>`を実際のBrowserlessトークンに置き換えてください。
+- Browserlessアカウントに一致するリージョンエンドポイントを選択してください（ドキュメントを参照）。
+
+## セキュリティ
+
+主要な考え方:
+- ブラウザ制御はループバックのみ。アクセスはGatewayの認証またはノードペアリングを通じて流れます。
+- Gatewayとノードホストをプライベートネットワーク（Tailscale）に保ち、公開を避けてください。
+- リモートCDP URL/トークンをシークレットとして扱います。環境変数またはシークレットマネージャーを優先してください。
+
+リモートCDPのヒント:
+- 可能な限りHTTPSエンドポイントと短期間のトークンを優先してください。
+- 設定ファイルに長期間のトークンを直接埋め込まないでください。
+
+## プロファイル（マルチブラウザ）
+
+OpenClawは複数の名前付きプロファイル（ルーティング設定）をサポートします。プロファイルには以下があります:
+- **openclaw管理**: 独自のユーザーデータディレクトリ + CDPポートを持つ専用Chromiumベースのブラウザインスタンス
+- **リモート**: 明示的なCDP URL（別の場所で実行されているChromiumベースのブラウザ）
+- **拡張機能リレー**: ローカルリレー + Chrome拡張機能を介した既存のChromeタブ
+
+デフォルト:
+- `openclaw`プロファイルは、欠落している場合は自動作成されます。
+- `chrome`プロファイルは、Chrome拡張機能リレー用に組み込まれています（デフォルトで`http://127.0.0.1:18792`を指します）。
+- ローカルCDPポートはデフォルトで**18800〜18899**から割り当てられます。
+- プロファイルを削除すると、ローカルデータディレクトリがゴミ箱に移動されます。
+
+すべての制御エンドポイントは`?profile=<name>`を受け入れます。CLIは`--browser-profile`を使用します。
+
+## Chrome拡張機能リレー（既存のChromeを使用）
+
+OpenClawは、ローカルCDPリレー + Chrome拡張機能を介して**既存のChromeタブ**を駆動することもできます（別の「openclaw」Chromeインスタンスなし）。
+
+完全ガイド: [Chrome拡張機能](/tools/chrome-extension)
+
+フロー:
+- Gatewayがローカル（同じマシン）で実行されるか、ノードホストがブラウザマシンで実行されます。
+- ローカル**リレーサーバー**がループバック`cdpUrl`（デフォルト: `http://127.0.0.1:18792`）でリッスンします。
+- タブで**OpenClaw Browser Relay**拡張機能アイコンをクリックしてアタッチします（自動アタッチしません）。
+- エージェントは、適切なプロファイルを選択することで、通常の`browser`ツールを介してそのタブを制御します。
+
+Gatewayが別の場所で実行されている場合は、ブラウザマシンでノードホストを実行して、Gatewayがブラウザアクションをプロキシできるようにします。
+
+### サンドボックスセッション
+
+エージェントセッションがサンドボックス化されている場合、`browser`ツールはデフォルトで`target="sandbox"`（サンドボックスブラウザ）になる可能性があります。
+Chrome拡張機能リレーのテイクオーバーにはホストブラウザ制御が必要なため、以下のいずれかを実行します:
+- セッションをサンドボックス化せずに実行する、または
+- `agents.defaults.sandbox.browser.allowHostControl: true`を設定し、ツールを呼び出すときに`target="host"`を使用します。
+
+### セットアップ
+
+1) 拡張機能をロード（開発/アンパック）:
+
+```bash
+openclaw browser extension install
+```
+
+- Chrome → `chrome://extensions` → 「デベロッパーモード」を有効にする
+- 「パッケージ化されていない拡張機能を読み込む」 → `openclaw browser extension path`で出力されたディレクトリを選択
+- 拡張機能をピン留めし、制御したいタブでクリックします（バッジに`ON`と表示されます）。
+
+2) 使用する:
+- CLI: `openclaw browser --browser-profile chrome tabs`
+- エージェントツール: `profile="chrome"`の`browser`
+
+オプション: 異なる名前またはリレーポートが必要な場合は、独自のプロファイルを作成します:
+
+```bash
+openclaw browser create-profile \
+  --name my-chrome \
+  --driver extension \
+  --cdp-url http://127.0.0.1:18792 \
+  --color "#00AA00"
+```
+
+注意事項:
+- このモードは、ほとんどの操作（スクリーンショット/スナップショット/アクション）にPlaywright-on-CDPに依存します。
+- デタッチするには、拡張機能アイコンを再度クリックします。
+
+## 分離保証
+
+- **専用ユーザーデータディレクトリ**: 個人用ブラウザプロファイルに触れません。
+- **専用ポート**: `9222`を回避して開発ワークフローとの衝突を防ぎます。
+- **決定的なタブ制御**: `targetId`でタブをターゲットにし、「最後のタブ」ではありません。
+
+## ブラウザ選択
+
+ローカルで起動する場合、OpenClawは最初に利用可能なものを選択します:
+1. Chrome
+2. Brave
+3. Edge
+4. Chromium
+5. Chrome Canary
+
+`browser.executablePath`でオーバーライドできます。
+
+プラットフォーム:
+- macOS: `/Applications`と`~/Applications`をチェックします。
+- Linux: `google-chrome`、`brave`、`microsoft-edge`、`chromium`などを探します。
+- Windows: 一般的なインストール場所をチェックします。
+
+## 制御API（オプション）
+
+ローカル統合のみの場合、Gatewayは小さなループバックHTTP APIを公開します:
+
+- ステータス/開始/停止: `GET /`、`POST /start`、`POST /stop`
+- タブ: `GET /tabs`、`POST /tabs/open`、`POST /tabs/focus`、`DELETE /tabs/:targetId`
+- スナップショット/スクリーンショット: `GET /snapshot`、`POST /screenshot`
+- アクション: `POST /navigate`、`POST /act`
+- フック: `POST /hooks/file-chooser`、`POST /hooks/dialog`
+- ダウンロード: `POST /download`、`POST /wait/download`
+- デバッグ: `GET /console`、`POST /pdf`
+- デバッグ: `GET /errors`、`GET /requests`、`POST /trace/start`、`POST /trace/stop`、`POST /highlight`
+- ネットワーク: `POST /response/body`
+- 状態: `GET /cookies`、`POST /cookies/set`、`POST /cookies/clear`
+- 状態: `GET /storage/:kind`、`POST /storage/:kind/set`、`POST /storage/:kind/clear`
+- 設定: `POST /set/offline`、`POST /set/headers`、`POST /set/credentials`、`POST /set/geolocation`、`POST /set/media`、`POST /set/timezone`、`POST /set/locale`、`POST /set/device`
+
+すべてのエンドポイントは`?profile=<name>`を受け入れます。
+
+### Playwright要件
+
+一部の機能（navigate/act/AIスナップショット/roleスナップショット、要素スクリーンショット、PDF）にはPlaywrightが必要です。Playwrightがインストールされていない場合、これらのエンドポイントは明確な501エラーを返します。ARIAスナップショットと基本的なスクリーンショットは、openclaw管理のChromeで引き続き機能します。Chrome拡張機能リレードライバーの場合、ARIAスナップショットとスクリーンショットにはPlaywrightが必要です。
+
+`Playwright is not available in this gateway build`と表示された場合は、完全なPlaywrightパッケージ（`playwright-core`ではなく）をインストールしてゲートウェイを再起動するか、ブラウザサポート付きでOpenClawを再インストールしてください。
+
+## 仕組み（内部）
+
+高レベルのフロー:
+- 小さな**制御サーバー**がHTTPリクエストを受け入れます。
+- **CDP**を介してChromiumベースのブラウザ（Chrome/Brave/Edge/Chromium）に接続します。
+- 高度なアクション（click/type/snapshot/PDF）の場合、CDPの上に**Playwright**を使用します。
+- Playwrightがない場合は、非Playwright操作のみが利用可能です。
+
+この設計により、エージェントは安定した決定的なインターフェース上に保たれ、ローカル/リモートブラウザとプロファイルを交換できます。
+
+## CLIクイックリファレンス
+
+すべてのコマンドは、特定のプロファイルをターゲットにするために`--browser-profile <name>`を受け入れます。
+すべてのコマンドは、マシン読み取り可能な出力（安定したペイロード）のために`--json`も受け入れます。
+
+基本:
+- `openclaw browser status`
+- `openclaw browser start`
+- `openclaw browser stop`
+- `openclaw browser tabs`
+- `openclaw browser tab`
+- `openclaw browser tab new`
+- `openclaw browser tab select 2`
+- `openclaw browser tab close 2`
+- `openclaw browser open https://example.com`
+- `openclaw browser focus abcd1234`
+- `openclaw browser close abcd1234`
+
+検査:
+- `openclaw browser screenshot`
+- `openclaw browser screenshot --full-page`
+- `openclaw browser screenshot --ref 12`
+- `openclaw browser screenshot --ref e12`
+- `openclaw browser snapshot`
+- `openclaw browser snapshot --format aria --limit 200`
+- `openclaw browser snapshot --interactive --compact --depth 6`
+- `openclaw browser snapshot --efficient`
+- `openclaw browser snapshot --labels`
+- `openclaw browser snapshot --selector "#main" --interactive`
+- `openclaw browser snapshot --frame "iframe#main" --interactive`
+- `openclaw browser console --level error`
+- `openclaw browser errors --clear`
+- `openclaw browser requests --filter api --clear`
+- `openclaw browser pdf`
+- `openclaw browser responsebody "**/api" --max-chars 5000`
+
+アクション:
+- `openclaw browser navigate https://example.com`
+- `openclaw browser resize 1280 720`
+- `openclaw browser click 12 --double`
+- `openclaw browser click e12 --double`
+- `openclaw browser type 23 "hello" --submit`
+- `openclaw browser press Enter`
+- `openclaw browser hover 44`
+- `openclaw browser scrollintoview e12`
+- `openclaw browser drag 10 11`
+- `openclaw browser select 9 OptionA OptionB`
+- `openclaw browser download e12 /tmp/report.pdf`
+- `openclaw browser waitfordownload /tmp/report.pdf`
+- `openclaw browser upload /tmp/file.pdf`
+- `openclaw browser fill --fields '[{"ref":"1","type":"text","value":"Ada"}]'`
+- `openclaw browser dialog --accept`
+- `openclaw browser wait --text "Done"`
+- `openclaw browser wait "#main" --url "**/dash" --load networkidle --fn "window.ready===true"`
+- `openclaw browser evaluate --fn '(el) => el.textContent' --ref 7`
+- `openclaw browser highlight e12`
+- `openclaw browser trace start`
+- `openclaw browser trace stop`
+
+状態:
+- `openclaw browser cookies`
+- `openclaw browser cookies set session abc123 --url "https://example.com"`
+- `openclaw browser cookies clear`
+- `openclaw browser storage local get`
+- `openclaw browser storage local set theme dark`
+- `openclaw browser storage session clear`
+- `openclaw browser set offline on`
+- `openclaw browser set headers --json '{"X-Debug":"1"}'`
+- `openclaw browser set credentials user pass`
+- `openclaw browser set credentials --clear`
+- `openclaw browser set geo 37.7749 -122.4194 --origin "https://example.com"`
+- `openclaw browser set geo --clear`
+- `openclaw browser set media dark`
+- `openclaw browser set timezone America/New_York`
+- `openclaw browser set locale en-US`
+- `openclaw browser set device "iPhone 14"`
+
+注意事項:
+- `upload`と`dialog`は**アーミング**コールです。チューザー/ダイアログをトリガーするクリック/プレスの前に実行してください。
+- `upload`は、`--input-ref`または`--element`を介してファイル入力を直接設定することもできます。
+- `snapshot`:
+  - `--format ai`（Playwrightがインストールされている場合のデフォルト）: 数値ref（`aria-ref="<n>"`）を持つAIスナップショットを返します。
+  - `--format aria`: アクセシビリティツリーを返します（refなし。検査のみ）。
+  - `--efficient`（または`--mode efficient`）: コンパクトなroleスナップショットプリセット（interactive + compact + depth + 低いmaxChars）。
+  - 設定デフォルト（ツール/CLIのみ）: 呼び出し元がモードを渡さない場合に効率的なスナップショットを使用するには、`browser.snapshotDefaults.mode: "efficient"`を設定します（[Gateway設定](/gateway/configuration#browser-openclaw-managed-browser)を参照）。
+  - Roleスナップショットオプション（`--interactive`、`--compact`、`--depth`、`--selector`）は、`ref=e12`のようなrefを持つroleベースのスナップショットを強制します。
+  - `--frame "<iframe selector>"`は、roleスナップショットをiframeにスコープします（`e12`のようなrole refとペアになります）。
+  - `--interactive`は、インタラクティブ要素のフラットで選択しやすいリストを出力します（アクションの駆動に最適）。
+  - `--labels`は、オーバーレイされたrefラベルを持つビューポートのみのスクリーンショットを追加します（`MEDIA:<path>`を出力します）。
+- `click`/`type`などには、`snapshot`からの`ref`が必要です（数値`12`またはrole ref `e12`のいずれか）。CSSセレクターは、アクションに対して意図的にサポートされていません。
+
+## スナップショットとref
+
+OpenClawは2つの「スナップショット」スタイルをサポートします:
+
+- **AIスナップショット（数値ref）**: `openclaw browser snapshot`（デフォルト; `--format ai`）
+  - 出力: 数値refを含むテキストスナップショット。
+  - アクション: `openclaw browser click 12`、`openclaw browser type 23 "hello"`。
+  - 内部的には、refはPlaywrightの`aria-ref`を介して解決されます。
+
+- **Roleスナップショット（`e12`のようなrole ref）**: `openclaw browser snapshot --interactive`（または`--compact`、`--depth`、`--selector`、`--frame`）
+  - 出力: `[ref=e12]`（およびオプションの`[nth=1]`）を持つroleベースのリスト/ツリー。
+  - アクション: `openclaw browser click e12`、`openclaw browser highlight e12`。
+  - 内部的には、refは`getByRole(...)`を介して解決されます（重複には`nth()`を追加）。
+  - `--labels`を追加して、オーバーレイされた`e12`ラベルを持つビューポートスクリーンショットを含めます。
+
+Refの動作:
+- Refはナビゲーション間で**安定していません**。何かが失敗した場合は、`snapshot`を再実行して新しいrefを使用してください。
+- Roleスナップショットが`--frame`で取得された場合、role refは次のroleスナップショットまでそのiframeにスコープされます。
+
+## 待機パワーアップ
+
+時間/テキスト以上のものを待つことができます:
+
+- URLを待つ（Playwrightがサポートするグロブ）:
+  - `openclaw browser wait --url "**/dash"`
+- ロード状態を待つ:
+  - `openclaw browser wait --load networkidle`
+- JS述語を待つ:
+  - `openclaw browser wait --fn "window.ready===true"`
+- セレクターが表示されるのを待つ:
+  - `openclaw browser wait "#main"`
+
+これらは組み合わせることができます:
+
+```bash
+openclaw browser wait "#main" \
+  --url "**/dash" \
+  --load networkidle \
+  --fn "window.ready===true" \
+  --timeout-ms 15000
+```
+
+## デバッグワークフロー
+
+アクションが失敗した場合（例: 「表示されていない」、「厳密モード違反」、「カバーされている」）:
+
+1. `openclaw browser snapshot --interactive`
+2. `click <ref>` / `type <ref>`を使用します（インタラクティブモードではrole refを優先）
+3. まだ失敗する場合: `openclaw browser highlight <ref>`でPlaywrightがターゲットにしているものを確認します
+4. ページが奇妙に動作する場合:
+   - `openclaw browser errors --clear`
+   - `openclaw browser requests --filter api --clear`
+5. 深いデバッグの場合: トレースを記録します:
+   - `openclaw browser trace start`
+   - 問題を再現します
+   - `openclaw browser trace stop`（`TRACE:<path>`を出力します）
+
+## JSON出力
+
+`--json`は、スクリプトと構造化ツールのためのものです。
+
+例:
+
+```bash
+openclaw browser status --json
+openclaw browser snapshot --interactive --json
+openclaw browser requests --filter api --json
+openclaw browser cookies --json
+```
+
+JSONのRoleスナップショットには、`refs`と小さな`stats`ブロック（lines/chars/refs/interactive）が含まれており、ツールがペイロードサイズと密度について推論できます。
+
+## 状態と環境ノブ
+
+これらは「サイトをXのように動作させる」ワークフローに役立ちます:
+
+- Cookie: `cookies`、`cookies set`、`cookies clear`
+- ストレージ: `storage local|session get|set|clear`
+- オフライン: `set offline on|off`
+- ヘッダー: `set headers --json '{"X-Debug":"1"}'`（または`--clear`）
+- HTTP基本認証: `set credentials user pass`（または`--clear`）
+- 位置情報: `set geo <lat> <lon> --origin "https://example.com"`（または`--clear`）
+- メディア: `set media dark|light|no-preference|none`
+- タイムゾーン/ロケール: `set timezone ...`、`set locale ...`
+- デバイス/ビューポート:
+  - `set device "iPhone 14"`（Playwrightデバイスプリセット）
+  - `set viewport 1280 720`
+
+## セキュリティとプライバシー
+
+- openclawブラウザプロファイルには、ログインセッションが含まれる可能性があります。機密として扱ってください。
+- `browser act kind=evaluate` / `openclaw browser evaluate`と`wait --fn`は、ページコンテキストで任意のJavaScriptを実行します。プロンプトインジェクションがこれを誘導できます。必要ない場合は`browser.evaluateEnabled=false`で無効にしてください。
+- ログインとアンチボットの注意事項（X/Twitterなど）については、[ブラウザログイン + X/Twitter投稿](/tools/browser-login)を参照してください。
+- Gateway/ノードホストをプライベート（ループバックまたはtailnetのみ）に保ちます。
+- リモートCDPエンドポイントは強力です。トンネルして保護してください。
+
+## トラブルシューティング
+
+Linux固有の問題（特にsnap Chromium）については、[ブラウザトラブルシューティング](/tools/browser-linux-troubleshooting)を参照してください。
+
+## エージェントツールと制御の仕組み
+
+エージェントは、ブラウザ自動化のために**1つのツール**を取得します:
+- `browser` — status/start/stop/tabs/open/focus/close/snapshot/screenshot/navigate/act
+
+マッピング方法:
+- `browser snapshot`は、安定したUIツリー（AIまたはARIA）を返します。
+- `browser act`は、スナップショット`ref` IDを使用してclick/type/drag/selectを実行します。
+- `browser screenshot`は、ピクセルをキャプチャします（フルページまたは要素）。
+- `browser`は以下を受け入れます:
+  - 名前付きブラウザプロファイル（openclaw、chrome、またはリモートCDP）を選択するための`profile`。
+  - ブラウザがどこにあるかを選択するための`target`（`sandbox` | `host` | `node`）。
+  - サンドボックスセッションでは、`target: "host"`には`agents.defaults.sandbox.browser.allowHostControl=true`が必要です。
+  - `target`が省略された場合: サンドボックスセッションはデフォルトで`sandbox`、非サンドボックスセッションはデフォルトで`host`になります。
+  - ブラウザ対応ノードが接続されている場合、`target="host"`または`target="node"`をピン留めしない限り、ツールは自動的にルーティングする可能性があります。
+
+これにより、エージェントが決定的に保たれ、脆弱なセレクターが回避されます。

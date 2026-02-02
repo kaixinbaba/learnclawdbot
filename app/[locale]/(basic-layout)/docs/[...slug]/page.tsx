@@ -57,7 +57,7 @@ export default async function DocPage({ params }: { params: Params }) {
   }
 
   // For untranslated locales, sidebar uses English
-  const hasLocaleDocs = locale === "en" || locale === "zh";
+  const hasLocaleDocs = locale === "en" || locale === "zh" || locale === "ja";
   const sidebarLocale = hasLocaleDocs ? locale : "en";
   const sections = await getDocSidebar(sidebarLocale);
 

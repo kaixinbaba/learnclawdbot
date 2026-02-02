@@ -1,0 +1,180 @@
+---
+summary: "OpenClaw macOSコンパニオン（メニューバー + gatewayブローカー）"
+read_when:
+  - macOSアプリ機能を実装する時
+  - macOS上のgatewayライフサイクルまたはノードブリッジングを変更する時
+---
+# OpenClaw macOSコンパニオン（メニューバー + gatewayブローカー）
+
+macOSアプリはOpenClawの**メニューバーコンパニオン**です。パーミッションを所有し、Gatewayをローカルで（launchdまたは手動で）管理/アタッチし、macOS機能をノードとしてエージェントに公開します。
+
+## 機能
+
+- メニューバーにネイティブ通知とステータスを表示。
+- TCCプロンプトを所有（通知、アクセシビリティ、画面記録、マイク、音声認識、Automation/AppleScript）。
+- Gatewayを実行または接続（ローカルまたはリモート）。
+- macOS専用ツールを公開（Canvas、カメラ、画面記録、`system.run`）。
+- **remote**モードでローカルノードホストサービスを起動（launchd）し、**local**モードで停止。
+- オプションでUI自動化用の**PeekabooBridge**をホスト。
+- リクエストに応じてグローバルCLI（`openclaw`）をnpm/pnpm経由でインストール（bunはGatewayランタイムには非推奨）。
+
+## ローカル vs リモートモード
+
+- **Local**（デフォルト）：アプリは実行中のローカルGatewayが存在する場合はアタッチし、それ以外の場合は`openclaw gateway install`経由でlaunchdサービスを有効にします。
+- **Remote**：アプリはSSH/Tailscale経由でGatewayに接続し、ローカルプロセスを起動しません。
+  アプリはローカル**node host service**を起動して、リモートGatewayがこのMacに到達できるようにします。
+アプリはGatewayを子プロセスとして生成しません。
+
+## Launchd制御
+
+アプリは`bot.molt.gateway`というラベルのユーザーごとのLaunchAgentを管理します
+（`--profile`/`OPENCLAW_PROFILE`使用時は`bot.molt.<profile>`；レガシー`com.openclaw.*`は引き続きアンロードされます）。
+
+```bash
+launchctl kickstart -k gui/$UID/bot.molt.gateway
+launchctl bootout gui/$UID/bot.molt.gateway
+```
+
+名前付きプロファイルを実行する場合は、ラベルを`bot.molt.<profile>`に置き換えてください。
+
+LaunchAgentがインストールされていない場合は、アプリから有効にするか、`openclaw gateway install`を実行してください。
+
+## ノード機能（mac）
+
+macOSアプリはノードとして機能します。一般的なコマンド：
+
+- Canvas：`canvas.present`、`canvas.navigate`、`canvas.eval`、`canvas.snapshot`、`canvas.a2ui.*`
+- カメラ：`camera.snap`、`camera.clip`
+- 画面：`screen.record`
+- システム：`system.run`、`system.notify`
+
+ノードは`permissions`マップを報告するため、エージェントは何が許可されているかを判断できます。
+
+ノードサービス + アプリIPC：
+- ヘッドレスノードホストサービスが実行されている場合（リモートモード）、ノードとしてGateway WSに接続します。
+- `system.run`はローカルUnixソケット経由でmacOSアプリ（UI/TCCコンテキスト）で実行されます；プロンプト + 出力はアプリ内に留まります。
+
+図（SCI）：
+```
+Gateway -> Node Service (WS)
+                 |  IPC (UDS + token + HMAC + TTL)
+                 v
+             Mac App (UI + TCC + system.run)
+```
+
+## Exec承認（system.run）
+
+`system.run`はmacOSアプリの**Exec approvals**（Settings → Exec approvals）によって制御されます。
+セキュリティ + ask + allowlistは、Macのローカルに以下に保存されます：
+
+```
+~/.openclaw/exec-approvals.json
+```
+
+例：
+
+```json
+{
+  "version": 1,
+  "defaults": {
+    "security": "deny",
+    "ask": "on-miss"
+  },
+  "agents": {
+    "main": {
+      "security": "allowlist",
+      "ask": "on-miss",
+      "allowlist": [
+        { "pattern": "/opt/homebrew/bin/rg" }
+      ]
+    }
+  }
+}
+```
+
+注意：
+- `allowlist`エントリは、解決されたバイナリパスのglobパターンです。
+- プロンプトで「Always Allow」を選択すると、そのコマンドがallowlistに追加されます。
+- `system.run`環境オーバーライドはフィルタリングされ（`PATH`、`DYLD_*`、`LD_*`、`NODE_OPTIONS`、`PYTHON*`、`PERL*`、`RUBYOPT`を削除）、アプリの環境とマージされます。
+
+## ディープリンク
+
+アプリはローカルアクション用に`openclaw://` URLスキームを登録します。
+
+### `openclaw://agent`
+
+Gateway `agent`リクエストをトリガーします。
+
+```bash
+open 'openclaw://agent?message=Hello%20from%20deep%20link'
+```
+
+クエリパラメータ：
+- `message`（必須）
+- `sessionKey`（オプション）
+- `thinking`（オプション）
+- `deliver` / `to` / `channel`（オプション）
+- `timeoutSeconds`（オプション）
+- `key`（オプション無人モードキー）
+
+安全性：
+- `key`なしで、アプリは確認のプロンプトを表示します。
+- 有効な`key`で、実行は無人です（個人的な自動化を意図）。
+
+## オンボーディングフロー（典型的）
+
+1) **OpenClaw.app**をインストールして起動。
+2) パーミッションチェックリストを完了（TCCプロンプト）。
+3) **Local**モードがアクティブでGatewayが実行されていることを確認。
+4) ターミナルアクセスが必要な場合はCLIをインストール。
+
+## ビルド & 開発ワークフロー（ネイティブ）
+
+- `cd apps/macos && swift build`
+- `swift run OpenClaw`（またはXcode）
+- アプリをパッケージ：`scripts/package-mac-app.sh`
+
+## デバッグgateway接続（macOS CLI）
+
+デバッグCLIを使用して、macOSアプリが使用するものと同じGateway WebSocketハンドシェイクとディスカバリーロジックを、アプリを起動せずに実行します。
+
+```bash
+cd apps/macos
+swift run openclaw-mac connect --json
+swift run openclaw-mac discover --timeout 3000 --json
+```
+
+接続オプション：
+- `--url <ws://host:port>`：設定をオーバーライド
+- `--mode <local|remote>`：設定から解決（デフォルト：設定またはlocal）
+- `--probe`：強制的に新しいヘルスプローブ
+- `--timeout <ms>`：リクエストタイムアウト（デフォルト：`15000`）
+- `--json`：差分用の構造化出力
+
+ディスカバリーオプション：
+- `--include-local`：「local」としてフィルタリングされるゲートウェイを含める
+- `--timeout <ms>`：全体的なディスカバリーウィンドウ（デフォルト：`2000`）
+- `--json`：差分用の構造化出力
+
+ヒント：`openclaw gateway discover --json`と比較して、macOSアプリのディスカバリーパイプライン（NWBrowser + tailnet DNS-SDフォールバック）がNode CLIの`dns-sd`ベースのディスカバリーと異なるかどうかを確認します。
+
+## リモート接続の配管（SSHトンネル）
+
+macOSアプリが**Remote**モードで実行されている場合、SSHトンネルを開き、ローカルUIコンポーネントがリモートGatewayとlocalhost上にあるかのように通信できるようにします。
+
+### コントロールトンネル（Gateway WebSocketポート）
+- **目的：** ヘルスチェック、ステータス、Web Chat、設定、その他のコントロールプレーン呼び出し。
+- **ローカルポート：** Gatewayポート（デフォルト`18789`）、常に安定。
+- **リモートポート：** リモートホスト上の同じGatewayポート。
+- **動作：** ランダムなローカルポートなし；アプリは既存の健全なトンネルを再利用するか、必要に応じて再起動します。
+- **SSHシェイプ：** `ssh -N -L <local>:127.0.0.1:<remote>`、BatchMode + ExitOnForwardFailure + keepaliveオプション付き。
+- **IPレポート：** SSHトンネルはループバックを使用するため、gatewayはノードIPを`127.0.0.1`として認識します。実際のクライアントIPを表示したい場合は**Direct（ws/wss）**トランスポートを使用してください（[macOSリモートアクセス](/platforms/mac/remote)参照）。
+
+セットアップ手順については、[macOSリモートアクセス](/platforms/mac/remote)を参照してください。プロトコルの詳細については、[Gatewayプロトコル](/gateway/protocol)を参照してください。
+
+## 関連ドキュメント
+
+- [Gatewayランブック](/gateway)
+- [Gateway（macOS）](/platforms/mac/bundled-gateway)
+- [macOSパーミッション](/platforms/mac/permissions)
+- [Canvas](/platforms/mac/canvas)

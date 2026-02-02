@@ -1,0 +1,239 @@
+---
+summary: "スキル: 管理 vs ワークスペース、ゲーティングルール、設定/環境のワイヤリング"
+read_when:
+  - スキルを追加または変更する場合
+  - スキルのゲーティングまたはロードルールを変更する場合
+---
+# スキル（OpenClaw）
+
+OpenClawは、**[AgentSkills](https://agentskills.io)互換**のスキルフォルダーを使用して、エージェントにツールの使用方法を教えます。各スキルは、YAMLフロントマターと指示を含む`SKILL.md`を含むディレクトリです。OpenClawは**バンドルされたスキル**とオプションのローカルオーバーライドをロードし、環境、設定、バイナリの存在に基づいてロード時にフィルタリングします。
+
+## 場所と優先順位
+
+スキルは**3つ**の場所からロードされます:
+
+1) **バンドルされたスキル**: インストールと一緒に出荷されます（npmパッケージまたはOpenClaw.app）
+2) **管理/ローカルスキル**: `~/.openclaw/skills`
+3) **ワークスペーススキル**: `<workspace>/skills`
+
+スキル名が競合する場合、優先順位は次のとおりです:
+
+`<workspace>/skills`（最高） → `~/.openclaw/skills` → バンドルされたスキル（最低）
+
+さらに、`~/.openclaw/openclaw.json`の`skills.load.extraDirs`を介して追加のスキルフォルダー（最低優先度）を設定できます。
+
+## エージェントごと vs 共有スキル
+
+**マルチエージェント**セットアップでは、各エージェントに独自のワークスペースがあります。つまり:
+
+- **エージェントごとのスキル**は、そのエージェントのみの`<workspace>/skills`にあります。
+- **共有スキル**は`~/.openclaw/skills`（管理/ローカル）にあり、同じマシン上の**すべてのエージェント**に表示されます。
+- 複数のエージェントで使用される共通のスキルパックが必要な場合は、`skills.load.extraDirs`を介して**共有フォルダー**を追加することもできます（最低優先度）。
+
+同じスキル名が複数の場所に存在する場合、通常の優先順位が適用されます: ワークスペースが優先され、次に管理/ローカル、次にバンドルされます。
+
+## プラグイン + スキル
+
+プラグインは、`openclaw.plugin.json`に`skills`ディレクトリをリストすることで（プラグインルートからの相対パス）、独自のスキルを出荷できます。プラグインスキルは、プラグインが有効になっているときにロードされ、通常のスキル優先順位ルールに参加します。プラグインの設定エントリで`metadata.openclaw.requires.config`を介してゲートできます。発見/設定については[プラグイン](/plugin)を、これらのスキルが教えるツールサーフェスについては[ツール](/tools)を参照してください。
+
+## ClawdHub（インストール + 同期）
+
+ClawdHubは、OpenClawのパブリックスキルレジストリです。https://clawdhub.com で閲覧できます。これを使用して、スキルを発見、インストール、更新、バックアップします。完全ガイド: [ClawdHub](/tools/clawdhub)。
+
+一般的なフロー:
+
+- ワークスペースにスキルをインストールする:
+  - `clawdhub install <skill-slug>`
+- インストールされたすべてのスキルを更新する:
+  - `clawdhub update --all`
+- 同期（スキャン + 更新の公開）:
+  - `clawdhub sync --all`
+
+デフォルトでは、`clawdhub`は現在の作業ディレクトリの下の`./skills`にインストールします（または設定されたOpenClawワークスペースにフォールバックします）。OpenClawは、次のセッションで`<workspace>/skills`としてそれを取得します。
+
+## セキュリティに関する注意事項
+
+- サードパーティのスキルを**信頼できるコード**として扱ってください。有効にする前に読んでください。
+- 信頼できない入力やリスクの高いツールには、サンドボックス実行を優先してください。[サンドボックス](/gateway/sandboxing)を参照してください。
+- `skills.entries.*.env`と`skills.entries.*.apiKey`は、そのエージェントターンの**ホスト**プロセスにシークレットを注入します（サンドボックスではありません）。シークレットをプロンプトとログから除外してください。
+- より広範な脅威モデルとチェックリストについては、[セキュリティ](/gateway/security)を参照してください。
+
+## フォーマット（AgentSkills + Pi互換）
+
+`SKILL.md`には少なくとも次のものが含まれている必要があります:
+
+```markdown
+---
+name: nano-banana-pro
+description: Generate or edit images via Gemini 3 Pro Image
+---
+```
+
+注意事項:
+- レイアウト/意図についてはAgentSkills仕様に従います。
+- 埋め込みエージェントが使用するパーサーは、**単一行**のフロントマターキーのみをサポートします。
+- `metadata`は**単一行のJSONオブジェクト**である必要があります。
+- 指示でスキルフォルダーパスを参照するには`{baseDir}`を使用してください。
+- オプションのフロントマターキー:
+  - `homepage` — macOS Skills UIで「Website」として表示されるURL（`metadata.openclaw.homepage`でもサポート）。
+  - `user-invocable` — `true|false`（デフォルト: `true`）。`true`の場合、スキルはユーザースラッシュコマンドとして公開されます。
+  - `disable-model-invocation` — `true|false`（デフォルト: `false`）。`true`の場合、スキルはモデルプロンプトから除外されます（ユーザー呼び出しを介して引き続き利用可能）。
+  - `command-dispatch` — `tool`（オプション）。`tool`に設定されている場合、スラッシュコマンドはモデルをバイパスし、ツールに直接ディスパッチします。
+  - `command-tool` — `command-dispatch: tool`が設定されている場合に呼び出すツール名。
+  - `command-arg-mode` — `raw`（デフォルト）。ツールディスパッチの場合、ツールに生のargs文字列を転送します（コア解析なし）。
+
+    ツールは次のパラメータで呼び出されます:
+    `{ command: "<raw args>", commandName: "<slash command>", skillName: "<skill name>" }`。
+
+## ゲーティング（ロード時フィルター）
+
+OpenClawは`metadata`（単一行JSON）を使用して**ロード時にスキルをフィルタリング**します:
+
+```markdown
+---
+name: nano-banana-pro
+description: Generate or edit images via Gemini 3 Pro Image
+metadata: {"openclaw":{"requires":{"bins":["uv"],"env":["GEMINI_API_KEY"],"config":["browser.enabled"]},"primaryEnv":"GEMINI_API_KEY"}}
+---
+```
+
+`metadata.openclaw`の下のフィールド:
+- `always: true` — 常にスキルを含める（他のゲートをスキップ）。
+- `emoji` — macOS Skills UIで使用されるオプションの絵文字。
+- `homepage` — macOS Skills UIで「Website」として表示されるオプションのURL。
+- `os` — オプションのプラットフォームリスト（`darwin`、`linux`、`win32`）。設定されている場合、スキルはそれらのOS上でのみ対象となります。
+- `requires.bins` — リスト。それぞれが`PATH`に存在する必要があります。
+- `requires.anyBins` — リスト。少なくとも1つが`PATH`に存在する必要があります。
+- `requires.env` — リスト。環境変数が存在する**または**設定で提供される必要があります。
+- `requires.config` — truthyである必要がある`openclaw.json`パスのリスト。
+- `primaryEnv` — `skills.entries.<name>.apiKey`に関連付けられた環境変数名。
+- `install` — macOS Skills UIで使用されるオプションのインストーラー仕様の配列（brew/node/go/uv/download）。
+
+サンドボックスに関する注意事項:
+- `requires.bins`は、スキルロード時に**ホスト**でチェックされます。
+- エージェントがサンドボックス化されている場合、バイナリも**コンテナ内**に存在する必要があります。`agents.defaults.sandbox.docker.setupCommand`（またはカスタムイメージ）を介してインストールします。`setupCommand`は、コンテナが作成された後に1回実行されます。パッケージインストールには、ネットワークエグレス、書き込み可能なルートFS、およびサンドボックス内のルートユーザーも必要です。例: `summarize`スキル（`skills/summarize/SKILL.md`）は、そこで実行するためにサンドボックスコンテナ内に`summarize` CLIが必要です。
+
+インストーラーの例:
+
+```markdown
+---
+name: gemini
+description: Use Gemini CLI for coding assistance and Google search lookups.
+metadata: {"openclaw":{"emoji":"♊️","requires":{"bins":["gemini"]},"install":[{"id":"brew","kind":"brew","formula":"gemini-cli","bins":["gemini"],"label":"Install Gemini CLI (brew)"}]}}
+---
+```
+
+注意事項:
+- 複数のインストーラーがリストされている場合、ゲートウェイは**単一**の優先オプションを選択します（利用可能な場合はbrew、それ以外の場合はnode）。
+- すべてのインストーラーが`download`の場合、OpenClawは各エントリをリストして、利用可能なアーティファクトを確認できます。
+- インストーラー仕様には、プラットフォームごとにオプションをフィルタリングするために`os: ["darwin"|"linux"|"win32"]`を含めることができます。
+- Nodeインストールは、`openclaw.json`の`skills.install.nodeManager`を尊重します（デフォルト: npm。オプション: npm/pnpm/yarn/bun）。これは**スキルインストール**のみに影響します。Gatewayランタイムは依然としてNodeである必要があります（WhatsApp/TelegramではBunは推奨されません）。
+- Goインストール: `go`がなく`brew`が利用可能な場合、ゲートウェイは最初にHomebrewを介してGoをインストールし、可能な場合はHomebrewの`bin`に`GOBIN`を設定します。
+- ダウンロードインストール: `url`（必須）、`archive`（`tar.gz` | `tar.bz2` | `zip`）、`extract`（デフォルト: アーカイブが検出されたときに自動）、`stripComponents`、`targetDir`（デフォルト: `~/.openclaw/tools/<skillKey>`）。
+
+`metadata.openclaw`が存在しない場合、スキルは常に対象となります（設定で無効にされていない限り、またはバンドルされたスキルの`skills.allowBundled`によってブロックされていない限り）。
+
+## 設定のオーバーライド（`~/.openclaw/openclaw.json`）
+
+バンドル/管理されたスキルは、トグルして環境値を提供できます:
+
+```json5
+{
+  skills: {
+    entries: {
+      "nano-banana-pro": {
+        enabled: true,
+        apiKey: "GEMINI_KEY_HERE",
+        env: {
+          GEMINI_API_KEY: "GEMINI_KEY_HERE"
+        },
+        config: {
+          endpoint: "https://example.invalid",
+          model: "nano-pro"
+        }
+      },
+      peekaboo: { enabled: true },
+      sag: { enabled: false }
+    }
+  }
+}
+```
+
+注意: スキル名にハイフンが含まれている場合は、キーを引用符で囲みます（JSON5は引用符で囲まれたキーを許可します）。
+
+設定キーはデフォルトで**スキル名**と一致します。スキルが`metadata.openclaw.skillKey`を定義している場合は、`skills.entries`の下でそのキーを使用してください。
+
+ルール:
+- `enabled: false`は、バンドル/インストールされている場合でもスキルを無効にします。
+- `env`: 変数がプロセスにまだ設定されていない場合**のみ**注入されます。
+- `apiKey`: `metadata.openclaw.primaryEnv`を宣言するスキルの便利機能。
+- `config`: カスタムスキルごとのフィールド用のオプションのバッグ。カスタムキーはここに配置する必要があります。
+- `allowBundled`: **バンドルされた**スキルのみのオプション許可リスト。設定されている場合、リスト内のバンドルされたスキルのみが対象となります（管理/ワークスペーススキルは影響を受けません）。
+
+## 環境注入（エージェント実行ごと）
+
+エージェント実行が開始されると、OpenClawは次のことを行います:
+1) スキルメタデータを読み取ります。
+2) `skills.entries.<key>.env`または`skills.entries.<key>.apiKey`を`process.env`に適用します。
+3) **対象**スキルを使用してシステムプロンプトを構築します。
+4) 実行終了後、元の環境を復元します。
+
+これは**エージェント実行にスコープされ**、グローバルシェル環境ではありません。
+
+## セッションスナップショット（パフォーマンス）
+
+OpenClawは、**セッションが開始されたとき**に対象スキルをスナップショットし、同じセッション内の後続のターンでそのリストを再利用します。スキルまたは設定への変更は、次の新しいセッションで有効になります。
+
+スキルウォッチャーが有効になっているとき、または新しい対象リモートノードが表示されたときにも、セッション中にスキルを更新できます（下記参照）。これを**ホットリロード**と考えてください: 更新されたリストは次のエージェントターンで取得されます。
+
+## リモートmacOSノード（Linux gateway）
+
+GatewayがLinux上で実行されているが、**macOSノード**が**`system.run`が許可されている**状態で接続されている場合（Exec承認セキュリティが`deny`に設定されていない）、必要なバイナリがそのノードに存在する場合、OpenClawはmacOS専用スキルを対象として扱うことができます。エージェントは、`nodes`ツール（通常は`nodes.run`）を介してこれらのスキルを実行する必要があります。
+
+これは、ノードがコマンドサポートを報告し、`system.run`を介したbinプローブに依存しています。macOSノードが後でオフラインになった場合、スキルは表示されたままになります。ノードが再接続するまで呼び出しが失敗する可能性があります。
+
+## スキルウォッチャー（自動更新）
+
+デフォルトでは、OpenClawはスキルフォルダーを監視し、`SKILL.md`ファイルが変更されたときにスキルスナップショットをバンプします。`skills.load`の下でこれを設定します:
+
+```json5
+{
+  skills: {
+    load: {
+      watch: true,
+      watchDebounceMs: 250
+    }
+  }
+}
+```
+
+## トークンへの影響（スキルリスト）
+
+スキルが対象である場合、OpenClawは利用可能なスキルのコンパクトなXMLリストをシステムプロンプトに注入します（`pi-coding-agent`の`formatSkillsForPrompt`を介して）。コストは決定的です:
+
+- **基本オーバーヘッド（≥1スキルの場合のみ）:** 195文字。
+- **スキルごと:** 97文字 + XMLエスケープされた`<name>`、`<description>`、`<location>`の値の長さ。
+
+式（文字）:
+
+```
+total = 195 + Σ (97 + len(name_escaped) + len(description_escaped) + len(location_escaped))
+```
+
+注意事項:
+- XMLエスケープは`& < > " '`をエンティティ（`&amp;`、`&lt;`など）に拡張し、長さを増やします。
+- トークン数は、モデルトークナイザーによって異なります。OpenAIスタイルの大まかな推定は約4文字/トークンなので、**97文字 ≈ スキルごとに24トークン** + 実際のフィールド長です。
+
+## 管理されたスキルのライフサイクル
+
+OpenClawは、インストールの一部として基本スキルセットを**バンドルされたスキル**として出荷します（npmパッケージまたはOpenClaw.app）。`~/.openclaw/skills`は、ローカルオーバーライド用に存在します（たとえば、バンドルされたコピーを変更せずにスキルをピン留め/パッチする）。ワークスペーススキルはユーザー所有で、名前の競合時に両方をオーバーライドします。
+
+## 設定リファレンス
+
+完全な設定スキーマについては、[スキル設定](/tools/skills-config)を参照してください。
+
+## もっとスキルをお探しですか？
+
+https://clawdhub.com を閲覧してください。
+
+---

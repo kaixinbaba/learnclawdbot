@@ -1,0 +1,203 @@
+---
+summary: "初心者ガイド：ゼロから最初のメッセージまで（ウィザード、認証、チャネル、ペアリング）"
+read_when:
+  - ゼロから初めてセットアップする時
+  - インストール → オンボーディング → 最初のメッセージまでの最速経路が必要な時
+---
+
+# はじめに
+
+目標：**ゼロ** → **最初の動作するチャット**（適切なデフォルト設定で）をできるだけ早く実現すること。
+
+最速のチャット：Control UIを開く（チャネル設定不要）。`openclaw dashboard`を実行してブラウザでチャットするか、gatewayホスト上で`http://127.0.0.1:18789/`を開きます。
+ドキュメント：[Dashboard](/web/dashboard) と [Control UI](/web/control-ui)。
+
+推奨経路：**CLIオンボーディングウィザード**（`openclaw onboard`）を使用します。これにより以下が設定されます：
+- モデル/認証（OAuth推奨）
+- gateway設定
+- チャネル（WhatsApp/Telegram/Discord/Mattermost（プラグイン）/...）
+- ペアリングデフォルト（安全なDM）
+- ワークスペースのブートストラップ + スキル
+- オプションのバックグラウンドサービス
+
+より詳細なリファレンスページが必要な場合は、以下を参照してください：[Wizard](/start/wizard)、[Setup](/start/setup)、[Pairing](/start/pairing)、[Security](/gateway/security)。
+
+サンドボックスの注意：`agents.defaults.sandbox.mode: "non-main"`は`session.mainKey`（デフォルトは`"main"`）を使用するため、
+グループ/チャネルセッションはサンドボックス化されます。メインエージェントを常にホスト上で実行したい場合は、
+エージェントごとの明示的なオーバーライドを設定してください：
+
+```json
+{
+  "routing": {
+    "agents": {
+      "main": {
+        "workspace": "~/.openclaw/workspace",
+        "sandbox": { "mode": "off" }
+      }
+    }
+  }
+}
+```
+
+## 0) 前提条件
+
+- Node `>=22`
+- `pnpm`（オプション；ソースからビルドする場合は推奨）
+- **推奨：** Web検索用のBrave Search APIキー。最も簡単な方法：
+  `openclaw configure --section web`（`tools.web.search.apiKey`を保存します）。
+  [Web tools](/tools/web)を参照してください。
+
+macOS：アプリをビルドする予定がある場合は、Xcode / CLTをインストールしてください。CLI + gatewayのみの場合は、Nodeで十分です。
+Windows：**WSL2**を使用してください（Ubuntuを推奨）。WSL2を強く推奨します；ネイティブWindowsは未テストで、より問題が多く、ツールの互換性も劣ります。最初にWSL2をインストールしてから、WSL内でLinuxの手順を実行してください。[Windows (WSL2)](/platforms/windows)を参照してください。
+
+## 1) CLIをインストールする（推奨）
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash
+```
+
+インストーラーオプション（インストール方法、非インタラクティブ、GitHubから）：[Install](/install)。
+
+Windows（PowerShell）：
+
+```powershell
+iwr -useb https://openclaw.ai/install.ps1 | iex
+```
+
+代替方法（グローバルインストール）：
+
+```bash
+npm install -g openclaw@latest
+```
+
+```bash
+pnpm add -g openclaw@latest
+```
+
+## 2) オンボーディングウィザードを実行する（そしてサービスをインストールする）
+
+```bash
+openclaw onboard --install-daemon
+```
+
+選択する内容：
+- **ローカル vs リモート** gateway
+- **認証**：OpenAI Code（Codex）サブスクリプション（OAuth）またはAPIキー。Anthropicの場合はAPIキーを推奨します；`claude setup-token`もサポートされています。
+- **プロバイダー**：WhatsApp QRログイン、Telegram/Discordボットトークン、Mattermost プラグイントークンなど
+- **Daemon**：バックグラウンドインストール（launchd/systemd；WSL2はsystemdを使用）
+  - **ランタイム**：Node（推奨；WhatsApp/Telegramに必要）。Bunは**非推奨**です。
+- **Gatewayトークン**：ウィザードはデフォルトで1つ生成し（ループバック上でも）、`gateway.auth.token`に保存します。
+
+ウィザードドキュメント：[Wizard](/start/wizard)
+
+### 認証：保存場所（重要）
+
+- **推奨されるAnthropicの経路：** APIキーを設定します（ウィザードはサービス使用のためにそれを保存できます）。Claude Codeの認証情報を再利用したい場合は、`claude setup-token`もサポートされています。
+
+- OAuth認証情報（レガシーインポート）：`~/.openclaw/credentials/oauth.json`
+- 認証プロファイル（OAuth + APIキー）：`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+
+ヘッドレス/サーバーのヒント：まず通常のマシンでOAuthを実行してから、`oauth.json`をgatewayホストにコピーしてください。
+
+## 3) Gatewayを起動する
+
+オンボーディング中にサービスをインストールした場合、Gatewayはすでに実行されているはずです：
+
+```bash
+openclaw gateway status
+```
+
+手動実行（フォアグラウンド）：
+
+```bash
+openclaw gateway --port 18789 --verbose
+```
+
+Dashboard（ローカルループバック）：`http://127.0.0.1:18789/`
+トークンが設定されている場合は、Control UI設定に貼り付けてください（`connect.params.auth.token`として保存されます）。
+
+⚠️ **Bunの警告（WhatsApp + Telegram）：** Bunはこれらの
+チャネルで既知の問題があります。WhatsAppまたはTelegramを使用する場合は、**Node**でGatewayを実行してください。
+
+## 3.5) クイック確認（2分）
+
+```bash
+openclaw status
+openclaw health
+openclaw security audit --deep
+```
+
+## 4) 最初のチャットサーフェスをペアリング + 接続する
+
+### WhatsApp（QRログイン）
+
+```bash
+openclaw channels login
+```
+
+WhatsApp → 設定 → リンク済みデバイスでスキャンします。
+
+WhatsAppドキュメント：[WhatsApp](/channels/whatsapp)
+
+### Telegram / Discord / その他
+
+ウィザードはトークン/設定を書き込むことができます。手動設定を希望する場合は、以下から始めてください：
+- Telegram：[Telegram](/channels/telegram)
+- Discord：[Discord](/channels/discord)
+- Mattermost（プラグイン）：[Mattermost](/channels/mattermost)
+
+**Telegram DMのヒント：** 最初のDMはペアリングコードを返します。承認する（次のステップを参照）、そうしないとボットは応答しません。
+
+## 5) DMの安全性（ペアリング承認）
+
+デフォルトの姿勢：未知のDMは短いコードを取得し、承認されるまでメッセージは処理されません。
+最初のDMが返信を得られない場合は、ペアリングを承認してください：
+
+```bash
+openclaw pairing list whatsapp
+openclaw pairing approve whatsapp <code>
+```
+
+ペアリングドキュメント：[Pairing](/start/pairing)
+
+## ソースから（開発）
+
+OpenClaw自体をハッキングする場合は、ソースから実行してください：
+
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+pnpm install
+pnpm ui:build # 初回実行時にUI依存関係を自動インストール
+pnpm build
+openclaw onboard --install-daemon
+```
+
+グローバルインストールがまだない場合は、リポジトリから`pnpm openclaw ...`経由でオンボーディングステップを実行してください。
+`pnpm build`はA2UIアセットもバンドルします；そのステップだけを実行する必要がある場合は、`pnpm canvas:a2ui:bundle`を使用してください。
+
+Gateway（このリポジトリから）：
+
+```bash
+node openclaw.mjs gateway --port 18789 --verbose
+```
+
+## 7) エンドツーエンドの確認
+
+新しいターミナルで、テストメッセージを送信します：
+
+```bash
+openclaw message send --target +15555550123 --message "Hello from OpenClaw"
+```
+
+`openclaw health`が「no auth configured」と表示される場合は、ウィザードに戻ってOAuth/キー認証を設定してください — 認証なしではエージェントは応答できません。
+
+ヒント：`openclaw status --all`は最も貼り付けやすい、読み取り専用のデバッグレポートです。
+ヘルスプローブ：`openclaw health`（または`openclaw status --deep`）は実行中のgatewayにヘルススナップショットを要求します。
+
+## 次のステップ（オプションですが、素晴らしい）
+
+- macOSメニューバーアプリ + 音声ウェイク：[macOS app](/platforms/macos)
+- iOS/Androidノード（Canvas/カメラ/音声）：[Nodes](/nodes)
+- リモートアクセス（SSHトンネル / Tailscale Serve）：[Remote access](/gateway/remote) と [Tailscale](/gateway/tailscale)
+- 常時接続 / VPN設定：[Remote access](/gateway/remote)、[exe.dev](/platforms/exe-dev)、[Hetzner](/platforms/hetzner)、[macOS remote](/platforms/mac/remote)

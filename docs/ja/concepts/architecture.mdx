@@ -1,0 +1,109 @@
+---
+summary: "WebSocket ゲートウェイアーキテクチャ、コンポーネント、およびクライアントフロー"
+read_when:
+  - ゲートウェイプロトコル、クライアント、またはトランスポートに取り組んでいる場合
+---
+# Gateway architecture（ゲートウェイアーキテクチャ）
+
+最終更新：2026-01-22
+
+## 概要
+
+- 単一の長期実行される **Gateway**（ゲートウェイ）が、すべてのメッセージング表面（Baileys 経由の WhatsApp、grammY 経由の Telegram、Slack、Discord、Signal、iMessage、WebChat）を所有します。
+- コントロールプレーンクライアント（macOS アプリ、CLI、Web UI、自動化）は、設定されたバインドホスト（デフォルトは `127.0.0.1:18789`）で **WebSocket** を介してゲートウェイに接続します。
+- **Nodes**（ノード）（macOS/iOS/Android/ヘッドレス）も **WebSocket** を介して接続しますが、明示的な caps/commands で `role: node` を宣言します。
+- ホストごとに 1 つのゲートウェイ。これは WhatsApp セッションを開く唯一の場所です。
+- **canvas host**（キャンバスホスト）（デフォルト `18793`）は、エージェント編集可能な HTML と A2UI を提供します。
+
+## コンポーネントとフロー
+
+### Gateway（ゲートウェイ）（デーモン）
+- プロバイダー（provider）接続を維持します。
+- 型付き WS API（リクエスト、レスポンス、サーバープッシュイベント）を公開します。
+- JSON Schema に対して受信フレームを検証します。
+- `agent`、`chat`、`presence`、`health`、`heartbeat`、`cron` などのイベントを発行します。
+
+### Clients（クライアント）（mac app / CLI / web admin）
+- クライアントごとに 1 つの WS 接続。
+- リクエストを送信（`health`、`status`、`send`、`agent`、`system-presence`）。
+- イベントにサブスクライブ（`tick`、`agent`、`presence`、`shutdown`）。
+
+### Nodes（ノード）（macOS / iOS / Android / ヘッドレス）
+- `role: node` で **同じ WS サーバー**に接続します。
+- `connect` でデバイス ID を提供します。ペアリング（pairing）は **デバイスベース**（role `node`）であり、承認はデバイスペアリングストアに保存されます。
+- `canvas.*`、`camera.*`、`screen.record`、`location.get` などのコマンドを公開します。
+
+プロトコルの詳細：
+- [Gateway protocol](/gateway/protocol)
+
+### WebChat
+- Gateway WS API を使用してチャット履歴と送信を行う静的 UI。
+- リモート設定では、他のクライアントと同じ SSH/Tailscale トンネルを介して接続します。
+
+## 接続ライフサイクル（単一クライアント）
+
+```
+Client                    Gateway
+  |                          |
+  |---- req:connect -------->|
+  |<------ res (ok) ---------|   (または res error + close)
+  |   (payload=hello-ok は snapshot を運ぶ: presence + health)
+  |                          |
+  |<------ event:presence ---|
+  |<------ event:tick -------|
+  |                          |
+  |------- req:agent ------->|
+  |<------ res:agent --------|   (ack: {runId,status:"accepted"})
+  |<------ event:agent ------|   (streaming)
+  |<------ res:agent --------|   (final: {runId,status,summary})
+  |                          |
+```
+
+## ワイヤプロトコル（要約）
+
+- トランスポート（transport）：WebSocket、JSON ペイロードを含むテキストフレーム。
+- 最初のフレームは `connect` で**なければなりません**。
+- ハンドシェイク後：
+  - リクエスト：`{type:"req", id, method, params}` → `{type:"res", id, ok, payload|error}`
+  - イベント：`{type:"event", event, payload, seq?, stateVersion?}`
+- `OPENCLAW_GATEWAY_TOKEN`（または `--token`）が設定されている場合、`connect.params.auth.token` は一致する必要があります。そうでない場合、ソケットは閉じられます。
+- 冪等性キー（idempotency keys）は、副作用のあるメソッド（`send`、`agent`）で安全に再試行するために必要です。サーバーは短期間の重複排除キャッシュを保持します。
+- ノードは `connect` に `role: "node"` と caps/commands/permissions を含める必要があります。
+
+## ペアリング + ローカル信頼
+
+- すべての WS クライアント（オペレーター + ノード）は、`connect` に **デバイス ID** を含めます。
+- 新しいデバイス ID にはペアリング承認が必要です。ゲートウェイは、後続の接続用に **デバイストークン** を発行します。
+- **ローカル**接続（ループバックまたはゲートウェイホスト自身の tailnet アドレス）は、同じホストの UX をスムーズに保つために自動承認できます。
+- **非ローカル**接続は、`connect.challenge` nonce に署名し、明示的な承認が必要です。
+- ゲートウェイ認証（`gateway.auth.*`）は、ローカルまたはリモートに関わらず、**すべての**接続に引き続き適用されます。
+
+詳細：[Gateway protocol](/gateway/protocol)、[Pairing](/start/pairing)、[Security](/gateway/security)。
+
+## プロトコルの型付けとコードジェン
+
+- TypeBox スキーマがプロトコルを定義します。
+- JSON Schema はこれらのスキーマから生成されます。
+- Swift モデルは JSON Schema から生成されます。
+
+## リモートアクセス
+
+- 推奨：Tailscale または VPN。
+- 代替：SSH トンネル
+  ```bash
+  ssh -N -L 18789:127.0.0.1:18789 user@host
+  ```
+- トンネル経由でも同じハンドシェイク + 認証トークンが適用されます。
+- TLS + オプションのピンニングは、リモート設定で WS に対して有効にできます。
+
+## オペレーションスナップショット
+
+- 起動：`openclaw gateway`（フォアグラウンド、stdout にログ出力）。
+- ヘルス：WS を介した `health`（`hello-ok` にも含まれる）。
+- 監督：自動再起動のための launchd/systemd。
+
+## 不変条件
+
+- ホストごとに正確に 1 つのゲートウェイが単一の Baileys セッションを制御します。
+- ハンドシェイクは必須です。最初のフレームが非 JSON または非 connect の場合、ハードクローズされます。
+- イベントは再生されません。クライアントはギャップで更新する必要があります。

@@ -1,0 +1,70 @@
+---
+summary: "スキル設定のスキーマと例"
+read_when:
+  - スキル設定を追加または変更する場合
+  - バンドルされた許可リストまたはインストール動作を調整する場合
+---
+# スキル設定
+
+すべてのスキル関連の設定は、`~/.openclaw/openclaw.json`の`skills`の下にあります。
+
+```json5
+{
+  skills: {
+    allowBundled: ["gemini", "peekaboo"],
+    load: {
+      extraDirs: [
+        "~/Projects/agent-scripts/skills",
+        "~/Projects/oss/some-skill-pack/skills"
+      ],
+      watch: true,
+      watchDebounceMs: 250
+    },
+    install: {
+      preferBrew: true,
+      nodeManager: "npm" // npm | pnpm | yarn | bun (Gatewayランタイムは依然としてNode。bunは推奨されません)
+    },
+    entries: {
+      "nano-banana-pro": {
+        enabled: true,
+        apiKey: "GEMINI_KEY_HERE",
+        env: {
+          GEMINI_API_KEY: "GEMINI_KEY_HERE"
+        }
+      },
+      peekaboo: { enabled: true },
+      sag: { enabled: false }
+    }
+  }
+}
+```
+
+## フィールド
+
+- `allowBundled`: **バンドルされた**スキルのみのオプション許可リスト。設定すると、リスト内のバンドルされたスキルのみが対象となります（管理/ワークスペーススキルは影響を受けません）。
+- `load.extraDirs`: スキャンする追加のスキルディレクトリ（最低優先度）。
+- `load.watch`: スキルフォルダーを監視し、スキルスナップショットを更新します（デフォルト: true）。
+- `load.watchDebounceMs`: スキルウォッチャーイベントのデバウンス（ミリ秒単位、デフォルト: 250）。
+- `install.preferBrew`: 利用可能な場合にbrewインストーラーを優先します（デフォルト: true）。
+- `install.nodeManager`: nodeインストーラーの優先順位（`npm` | `pnpm` | `yarn` | `bun`、デフォルト: npm）。これは**スキルインストール**のみに影響します。Gatewayランタイムは依然としてNodeである必要があります（WhatsApp/TelegramではBunは推奨されません）。
+- `entries.<skillKey>`: スキルごとのオーバーライド。
+
+スキルごとのフィールド:
+- `enabled`: バンドル/インストールされている場合でもスキルを無効にするには`false`に設定します。
+- `env`: エージェント実行のために注入される環境変数（まだ設定されていない場合のみ）。
+- `apiKey`: プライマリ環境変数を宣言するスキルのオプションの便利機能。
+
+## 注意事項
+
+- `entries`の下のキーは、デフォルトでスキル名にマップされます。スキルが`metadata.openclaw.skillKey`を定義している場合は、そのキーを代わりに使用してください。
+- スキルへの変更は、ウォッチャーが有効になっている場合、次のエージェントターンで取得されます。
+
+### サンドボックススキル + 環境変数
+
+セッションが**サンドボックス化**されている場合、スキルプロセスはDocker内で実行されます。サンドボックスはホストの`process.env`を**継承しません**。
+
+次のいずれかを使用してください:
+- `agents.defaults.sandbox.docker.env`（またはエージェントごとの`agents.list[].sandbox.docker.env`）
+- カスタムサンドボックスイメージに環境変数を組み込む
+
+グローバル`env`と`skills.entries.<skill>.env/apiKey`は**ホスト**実行のみに適用されます。

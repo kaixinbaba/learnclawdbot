@@ -1,0 +1,49 @@
+---
+summary: "`openclaw config`のCLIリファレンス（設定値の取得/設定/削除）"
+read_when:
+  - 非対話的に設定を読み取りまたは編集したい場合
+---
+
+# `openclaw config`
+
+設定ヘルパー: パスで値を取得/設定/削除します。サブコマンドなしで実行すると、
+設定ウィザードを開きます（`openclaw configure`と同じ）。
+
+## 例
+
+```bash
+openclaw config get browser.executablePath
+openclaw config set browser.executablePath "/usr/bin/google-chrome"
+openclaw config set agents.defaults.heartbeat.every "2h"
+openclaw config set agents.list[0].tools.exec.node "node-id-or-name"
+openclaw config unset tools.web.search.apiKey
+```
+
+## パス
+
+パスはドットまたはブラケット記法を使用します:
+
+```bash
+openclaw config get agents.defaults.workspace
+openclaw config get agents.list[0].id
+```
+
+エージェントリストのインデックスを使用して、特定のエージェントをターゲットにします:
+
+```bash
+openclaw config get agents.list
+openclaw config set agents.list[1].tools.exec.node "node-id-or-name"
+```
+
+## 値
+
+値は可能な場合はJSON5として解析されます。それ以外の場合は文字列として扱われます。
+JSON5解析を必須にするには`--json`を使用します。
+
+```bash
+openclaw config set agents.defaults.heartbeat.every "0m"
+openclaw config set gateway.port 19001 --json
+openclaw config set channels.whatsapp.groups '["*"]' --json
+```
+
+編集後、gatewayを再起動してください。

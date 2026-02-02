@@ -30,7 +30,7 @@ export default async function DocsIndexPage({
 }) {
   const { locale } = await params;
   // For untranslated locales, show English docs with a translation notice
-  const hasLocaleDocs = locale === "en" || locale === "zh";
+  const hasLocaleDocs = locale === "en" || locale === "zh" || locale === "ja";
   const docsLocale = hasLocaleDocs ? locale : "en";
   const sections = await getDocSidebar(docsLocale);
 

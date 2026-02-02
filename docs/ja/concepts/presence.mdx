@@ -1,0 +1,88 @@
+---
+summary: "OpenClaw の presence entry（プレゼンスエントリ）がどのように生成、マージ、表示されるか"
+read_when:
+  - Instance tab をデバッグするとき
+  - Duplicate または stale instance row を調査するとき
+  - gateway WS connect または system-event beacon を変更するとき
+---
+# Presence
+
+OpenClaw の「presence」は、以下の lightweight、best-effort view です：
+- **Gateway** 自体、および
+- **Gateway に接続されている client**（mac app、WebChat、CLI など）
+
+Presence は主に macOS app の **Instance tab** をレンダリングし、quick operator visibility を提供するために使用されます。
+
+## Presence field（表示されるもの）
+
+Presence entry は以下のような field を持つ structured object です：
+
+- `instanceId`（オプションですが強く推奨）：stable client identity（通常は `connect.client.instanceId`）
+- `host`：human-friendly host name
+- `ip`：best-effort IP address
+- `version`：client version string
+- `deviceFamily` / `modelIdentifier`：hardware hint
+- `mode`：`ui`、`webchat`、`cli`、`backend`、`probe`、`test`、`node`、...
+- `lastInputSeconds`：「最後のユーザー入力からの秒数」（既知の場合）
+- `reason`：`self`、`connect`、`node-connected`、`periodic`、...
+- `ts`：最終更新 timestamp（epoch からの ms）
+
+## Producer（presence の出所）
+
+Presence entry は複数のソースによって生成され、**マージ**されます。
+
+### 1) Gateway self entry
+
+Gateway は startup 時に常に「self」entry を seed するため、client が接続する前でも UI は gateway host を表示します。
+
+### 2) WebSocket connect
+
+すべての WS client は `connect` request で開始します。Handshake が成功すると、Gateway はその connection の presence entry を upsert します。
+
+#### なぜ one-off CLI command が表示されないのか
+
+CLI は短い one-off command のために接続することがよくあります。Instance list をスパムしないように、`client.mode === "cli"` は presence entry に**変換されません**。
+
+### 3) `system-event` beacon
+
+Client は `system-event` method を介してより豊富な periodic beacon を送信できます。mac app はこれを使用して host name、IP、`lastInputSeconds` を報告します。
+
+### 4) Node connect（role: node）
+Node が `role: node` で Gateway WebSocket を介して接続すると、Gateway はその node の presence entry を upsert します（他の WS client と同じフロー）。
+
+## Merge + dedupe rule（なぜ `instanceId` が重要なのか）
+
+Presence entry は単一の in-memory map に保存されます：
+
+- Entry は **presence key** でキー付けされます。
+- 最適な key は、restart を生き延びる stable `instanceId`（`connect.client.instanceId` から）です。
+- Key は case-insensitive です。
+
+Client が stable `instanceId` なしで再接続すると、**duplicate** row として表示される場合があります。
+
+## TTL and bounded size
+
+Presence は意図的に ephemeral です：
+
+- **TTL**：5 分より古い entry は削除されます
+- **Max entry**：200（最も古いものが最初に削除）
+
+これにより、list が新鮮に保たれ、unbounded memory growth が回避されます。
+
+## Remote/tunnel caveat（loopback IP）
+
+Client が SSH tunnel / local port forward を介して接続すると、Gateway は remote address を `127.0.0.1` として見る場合があります。良好な client-report IP を上書きしないように、loopback remote address は無視されます。
+
+## Consumer
+
+### macOS Instance tab
+
+macOS app は `system-presence` の output をレンダリングし、最終更新の age に基づいて小さな status indicator（Active/Idle/Stale）を適用します。
+
+## Debugging tip
+
+- Raw list を確認するには、Gateway に対して `system-presence` を呼び出します。
+- Duplicate が表示される場合：
+  - client が handshake で stable `client.instanceId` を送信することを確認
+  - periodic beacon が同じ `instanceId` を使用することを確認
+  - connection-derived entry に `instanceId` が欠落していないか確認（duplicate が予想される）

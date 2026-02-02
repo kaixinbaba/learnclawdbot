@@ -1,0 +1,143 @@
+---
+summary: "チャットのためのセッション管理ルール、キー、および永続化"
+read_when:
+  - セッション処理またはストレージを変更する場合
+---
+# セッション管理
+
+OpenClawは**エージェントごとに1つの直接チャットセッション**をプライマリとして扱います。直接チャットは`agent:<agentId>:<mainKey>`（デフォルト`main`）に折りたたまれ、グループ/チャネルチャットは独自のキーを取得します。`session.mainKey`が優先されます。
+
+`session.dmScope`を使用して、**ダイレクトメッセージ**のグループ化方法を制御します：
+- `main`（デフォルト）：すべてのDMが連続性のためにメインセッションを共有。
+- `per-peer`：チャネル間で送信者IDによって分離。
+- `per-channel-peer`：チャネル + 送信者によって分離（マルチユーザー受信トレイに推奨）。
+- `per-account-channel-peer`：アカウント + チャネル + 送信者によって分離（マルチアカウント受信トレイに推奨）。
+`session.identityLinks`を使用して、プロバイダー接頭辞付きピアIDを正規のアイデンティティにマッピングし、`per-peer`、`per-channel-peer`、または`per-account-channel-peer`を使用する際に、同じ人がチャネル間でDMセッションを共有できるようにします。
+
+## ゲートウェイが信頼の源
+すべてのセッション状態は**ゲートウェイによって所有**されています（「マスター」OpenClaw）。UIクライアント（macOSアプリ、WebChatなど）は、ローカルファイルを読み取る代わりに、セッションリストとトークンカウントについてゲートウェイにクエリを実行する必要があります。
+
+- **リモートモード**では、気にするセッションストアはMacではなくリモートゲートウェイホスト上にあります。
+- UIに表示されるトークンカウントは、ゲートウェイのストアフィールド（`inputTokens`、`outputTokens`、`totalTokens`、`contextTokens`）から取得されます。クライアントはJSONLトランスクリプトを解析して合計を「修正」しません。
+
+## 状態の場所
+- **ゲートウェイホスト**上：
+  - ストアファイル：`~/.openclaw/agents/<agentId>/sessions/sessions.json`（エージェントごと）。
+- トランスクリプト：`~/.openclaw/agents/<agentId>/sessions/<SessionId>.jsonl`（Telegramトピックセッションは`.../<SessionId>-topic-<threadId>.jsonl`を使用）。
+- ストアは`sessionKey -> { sessionId, updatedAt, ... }`のマップです。エントリを削除しても安全です。必要に応じて再作成されます。
+- グループエントリには、UIでセッションにラベルを付けるための`displayName`、`channel`、`subject`、`room`、`space`が含まれる場合があります。
+- セッションエントリには`origin`メタデータ（ラベル + ルーティングヒント）が含まれ、UIがセッションの由来を説明できるようにします。
+- OpenClawはレガシーのPi/Tauセッションフォルダを**読み取りません**。
+
+## セッションプルーニング
+OpenClawはデフォルトで、LLM呼び出しの直前にメモリ内コンテキストから**古いツール結果**をトリミングします。
+これはJSONL履歴を書き換えることは**ありません**。[/concepts/session-pruning](/concepts/session-pruning)を参照してください。
+
+## コンパクション前のメモリフラッシュ
+セッションが自動コンパクションに近づくと、OpenClawは**サイレントメモリフラッシュ**ターンを実行し、モデルに永続的なノートをディスクに書き込むよう促すことができます。これはワークスペースが書き込み可能な場合にのみ実行されます。[Memory](/concepts/memory)および[Compaction](/concepts/compaction)を参照してください。
+
+## トランスポート → セッションキーのマッピング
+- 直接チャットは`session.dmScope`に従います（デフォルト`main`）。
+  - `main`：`agent:<agentId>:<mainKey>`（デバイス/チャネル間の連続性）。
+    - 複数の電話番号とチャネルが同じエージェントメインキーにマッピングできます。1つの会話へのトランスポートとして機能します。
+  - `per-peer`：`agent:<agentId>:dm:<peerId>`。
+  - `per-channel-peer`：`agent:<agentId>:<channel>:dm:<peerId>`。
+  - `per-account-channel-peer`：`agent:<agentId>:<channel>:<accountId>:dm:<peerId>`（accountIdはデフォルトで`default`）。
+  - `session.identityLinks`がプロバイダー接頭辞付きピアID（例：`telegram:123`）に一致する場合、正規のキーが`<peerId>`を置き換え、同じ人がチャネル間でセッションを共有します。
+- グループチャットは状態を分離：`agent:<agentId>:<channel>:group:<id>`（ルーム/チャネルは`agent:<agentId>:<channel>:channel:<id>`を使用）。
+  - Telegramフォーラムトピックは分離のためにグループIDに`:topic:<threadId>`を追加します。
+  - レガシー`group:<id>`キーは移行のために引き続き認識されます。
+- インバウンドコンテキストは引き続き`group:<id>`を使用する場合があります。チャネルは`Provider`から推測され、正規の`agent:<agentId>:<channel>:group:<id>`形式に正規化されます。
+- その他のソース：
+  - Cronジョブ：`cron:<job.id>`
+  - Webhook：`hook:<uuid>`（フックによって明示的に設定されていない限り）
+  - ノード実行：`node-<nodeId>`
+
+## ライフサイクル
+- リセットポリシー：セッションは有効期限が切れるまで再利用され、有効期限は次のインバウンドメッセージで評価されます。
+- 毎日のリセット：デフォルトでは**ゲートウェイホストのローカル時間で午前4時**。セッションは、最後の更新が最新の毎日のリセット時間より前の場合、古くなります。
+- アイドルリセット（オプション）：`idleMinutes`はスライディングアイドルウィンドウを追加します。毎日とアイドルの両方のリセットが設定されている場合、**どちらか先に期限切れになった方**が新しいセッションを強制します。
+- レガシーアイドルのみ：`session.reset`/`resetByType`設定なしで`session.idleMinutes`を設定すると、OpenClawは後方互換性のためにアイドルのみモードのままになります。
+- タイプごとのオーバーライド（オプション）：`resetByType`を使用すると、`dm`、`group`、`thread`セッションのポリシーをオーバーライドできます（thread = Slack/Discordスレッド、Telegramトピック、コネクタが提供する場合のMatrixスレッド）。
+- チャネルごとのオーバーライド（オプション）：`resetByChannel`はチャネルのリセットポリシーをオーバーライドします（そのチャネルのすべてのセッションタイプに適用され、`reset`/`resetByType`より優先されます）。
+- リセットトリガー：正確な`/new`または`/reset`（および`resetTriggers`の追加分）は新しいセッションIDを開始し、メッセージの残りを通過させます。`/new <model>`はモデルエイリアス、`provider/model`、またはプロバイダー名（ファジーマッチ）を受け入れて、新しいセッションモデルを設定します。`/new`または`/reset`が単独で送信された場合、OpenClawはリセットを確認するための短い「こんにちは」挨拶ターンを実行します。
+- 手動リセット：ストアから特定のキーを削除するか、JSONLトランスクリプトを削除します。次のメッセージで再作成されます。
+- 分離されたcronジョブは、実行ごとに常に新しい`sessionId`を作成します（アイドル再利用なし）。
+
+## 送信ポリシー（オプション）
+個々のIDをリストアップせずに、特定のセッションタイプの配信をブロックします。
+
+```json5
+{
+  session: {
+    sendPolicy: {
+      rules: [
+        { action: "deny", match: { channel: "discord", chatType: "group" } },
+        { action: "deny", match: { keyPrefix: "cron:" } }
+      ],
+      default: "allow"
+    }
+  }
+}
+```
+
+ランタイムオーバーライド（所有者のみ）：
+- `/send on` → このセッションを許可
+- `/send off` → このセッションを拒否
+- `/send inherit` → オーバーライドをクリアして設定ルールを使用
+これらをスタンドアロンメッセージとして送信して登録します。
+
+## 設定（オプションのリネーム例）
+```json5
+// ~/.openclaw/openclaw.json
+{
+  session: {
+    scope: "per-sender",      // グループキーを分離
+    dmScope: "main",          // DM連続性（共有受信トレイにはper-channel-peer/per-account-channel-peerを設定）
+    identityLinks: {
+      alice: ["telegram:123456789", "discord:987654321012345678"]
+    },
+    reset: {
+      // デフォルト：mode=daily、atHour=4（ゲートウェイホストのローカル時間）。
+      // idleMinutesも設定すると、どちらか先に期限切れになった方が優先されます。
+      mode: "daily",
+      atHour: 4,
+      idleMinutes: 120
+    },
+    resetByType: {
+      thread: { mode: "daily", atHour: 4 },
+      dm: { mode: "idle", idleMinutes: 240 },
+      group: { mode: "idle", idleMinutes: 120 }
+    },
+    resetByChannel: {
+      discord: { mode: "idle", idleMinutes: 10080 }
+    },
+    resetTriggers: ["/new", "/reset"],
+    store: "~/.openclaw/agents/{agentId}/sessions/sessions.json",
+    mainKey: "main",
+  }
+}
+```
+
+## 検査
+- `openclaw status` — ストアパスと最近のセッションを表示。
+- `openclaw sessions --json` — すべてのエントリをダンプ（`--active <minutes>`でフィルタリング）。
+- `openclaw gateway call sessions.list --params '{}'` — 実行中のゲートウェイからセッションを取得（リモートゲートウェイアクセスには`--url`/`--token`を使用）。
+- チャットでスタンドアロンメッセージとして`/status`を送信して、エージェントが到達可能かどうか、セッションコンテキストのどれだけが使用されているか、現在のthinking/verbose切り替え、WhatsApp web認証情報が最後に更新された時期を確認します（再リンクの必要性を見つけるのに役立ちます）。
+- `/context list`または`/context detail`を送信して、システムプロンプトと注入されたワークスペースファイルの内容（および最大のコンテキスト貢献者）を確認します。
+- スタンドアロンメッセージとして`/stop`を送信して、現在の実行を中止し、そのセッションのキューイングされたfollowupをクリアし、そこからスポーンされたサブエージェント実行を停止します（返信には停止カウントが含まれます）。
+- スタンドアロンメッセージとして`/compact`（オプションの指示）を送信して、古いコンテキストを要約し、ウィンドウスペースを解放します。[/concepts/compaction](/concepts/compaction)を参照してください。
+- JSONLトランスクリプトを直接開いて、完全なターンを確認できます。
+
+## ヒント
+- プライマリキーは1対1のトラフィック専用にします。グループには独自のキーを保持させます。
+- 自動クリーンアップを行う場合、他の場所のコンテキストを保持するために、ストア全体ではなく個々のキーを削除します。
+
+## セッションオリジンメタデータ
+各セッションエントリは、`origin`にどこから来たか（ベストエフォート）を記録します：
+- `label`：人間のラベル（会話ラベル + グループサブジェクト/チャネルから解決）
+- `provider`：正規化されたチャネルID（拡張機能を含む）
+- `from`/`to`：インバウンドエンベロープからの生のルーティングID
+- `accountId`：プロバイダーアカウントID（マルチアカウントの場合）
+- `threadId`：チャネルがサポートする場合のスレッド/トピックID
+オリジンフィールドは、ダイレクトメッセージ、チャネル、グループに対して入力されます。コネクタが配信ルーティングのみを更新する場合（例：DMメインセッションを新鮮に保つため）、セッションがその説明メタデータを保持するように、インバウンドコンテキストを提供する必要があります。拡張機能は、インバウンドコンテキストで`ConversationLabel`、`GroupSubject`、`GroupChannel`、`GroupSpace`、`SenderName`を送信し、`recordSessionMetaFromInbound`を呼び出す（または同じコンテキストを`updateLastRoute`に渡す）ことでこれを実行できます。

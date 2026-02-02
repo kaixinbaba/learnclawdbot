@@ -1,0 +1,200 @@
+---
+summary: "ClawdHubガイド: 公開スキルレジストリ + CLIワークフロー"
+read_when:
+  - 新規ユーザーにClawdHubを紹介する場合
+  - スキルのインストール、検索、または公開を行う場合
+  - ClawdHub CLIフラグと同期動作を説明する場合
+---
+
+# ClawdHub
+
+ClawdHubは **OpenClawの公開スキルレジストリ** です。無料サービスです: すべてのスキルは公開、オープンで、共有と再利用のために誰でも閲覧できます。スキルは `SKILL.md` ファイル（およびサポートテキストファイル）を含むフォルダーです。Webアプリでスキルを閲覧したり、CLIを使用してスキルの検索、インストール、更新、公開ができます。
+
+サイト: [clawdhub.com](https://clawdhub.com)
+
+## 対象者（初心者向け）
+
+OpenClawエージェントに新しい機能を追加したい場合、ClawdHubはスキルを見つけてインストールする最も簡単な方法です。バックエンドの仕組みを知る必要はありません。できること:
+
+- 平易な言葉でスキルを検索。
+- ワークスペースにスキルをインストール。
+- 後で1つのコマンドでスキルを更新。
+- 公開して自分のスキルをバックアップ。
+
+## クイックスタート（非技術者向け）
+
+1) CLIをインストール（次のセクション参照）。
+2) 必要なものを検索:
+   - `clawdhub search "calendar"`
+3) スキルをインストール:
+   - `clawdhub install <skill-slug>`
+4) 新しいOpenClawセッションを開始して、新しいスキルを取得します。
+
+## CLIのインストール
+
+いずれかを選択:
+
+```bash
+npm i -g clawdhub
+```
+
+```bash
+pnpm add -g clawdhub
+```
+
+## OpenClawへの統合
+
+デフォルトでは、CLIは現在の作業ディレクトリの下の `./skills` にスキルをインストールします。OpenClawワークスペースが設定されている場合、`clawdhub` は `--workdir`（または `CLAWDHUB_WORKDIR`）でオーバーライドしない限り、そのワークスペースにフォールバックします。OpenClawは `<workspace>/skills` からワークスペーススキルをロードし、**次の** セッションで取得します。`~/.openclaw/skills` またはバンドルスキルを既に使用している場合、ワークスペーススキルが優先されます。
+
+スキルのロード、共有、ゲートの詳細については、[スキル](/tools/skills)を参照してください。
+
+## サービスが提供する機能
+
+- スキルとその `SKILL.md` コンテンツの **公開閲覧**。
+- 埋め込み（ベクトル検索）を利用した **検索**（キーワードのみではありません）。
+- semver、変更履歴、タグ（`latest` を含む）による **バージョニング**。
+- バージョンごとのzipとしての **ダウンロード**。
+- コミュニティフィードバック用の **スターとコメント**。
+- 承認と監査のための **モデレーション** フック。
+- 自動化とスクリプト用の **CLI対応API**。
+
+## CLIコマンドとパラメータ
+
+グローバルオプション（すべてのコマンドに適用）:
+
+- `--workdir <dir>`: 作業ディレクトリ（デフォルト: 現在のディレクトリ。OpenClawワークスペースにフォールバック）。
+- `--dir <dir>`: スキルディレクトリ、workdirからの相対パス（デフォルト: `skills`）。
+- `--site <url>`: サイトベースURL（ブラウザログイン）。
+- `--registry <url>`: レジストリAPIベースURL。
+- `--no-input`: プロンプトを無効化（非対話型）。
+- `-V, --cli-version`: CLIバージョンを表示。
+
+認証:
+
+- `clawdhub login`（ブラウザフロー）または `clawdhub login --token <token>`
+- `clawdhub logout`
+- `clawdhub whoami`
+
+オプション:
+
+- `--token <token>`: APIトークンを貼り付け。
+- `--label <label>`: ブラウザログイントークン用に保存されるラベル（デフォルト: `CLI token`）。
+- `--no-browser`: ブラウザを開かない（`--token` が必要）。
+
+検索:
+
+- `clawdhub search "query"`
+- `--limit <n>`: 最大結果数。
+
+インストール:
+
+- `clawdhub install <slug>`
+- `--version <version>`: 特定のバージョンをインストール。
+- `--force`: フォルダーが既に存在する場合は上書き。
+
+更新:
+
+- `clawdhub update <slug>`
+- `clawdhub update --all`
+- `--version <version>`: 特定のバージョンに更新（単一slugのみ）。
+- `--force`: ローカルファイルが公開されたバージョンと一致しない場合に上書き。
+
+リスト:
+
+- `clawdhub list`（`.clawdhub/lock.json` を読み取り）
+
+公開:
+
+- `clawdhub publish <path>`
+- `--slug <slug>`: スキルslug。
+- `--name <name>`: 表示名。
+- `--version <version>`: Semverバージョン。
+- `--changelog <text>`: 変更履歴テキスト（空でも可）。
+- `--tags <tags>`: カンマ区切りのタグ（デフォルト: `latest`）。
+
+削除/削除解除（所有者/管理者のみ）:
+
+- `clawdhub delete <slug> --yes`
+- `clawdhub undelete <slug> --yes`
+
+同期（ローカルスキルをスキャン + 新規/更新を公開）:
+
+- `clawdhub sync`
+- `--root <dir...>`: 追加スキャンルート。
+- `--all`: プロンプトなしですべてをアップロード。
+- `--dry-run`: アップロードされる内容を表示。
+- `--bump <type>`: 更新用の `patch|minor|major`（デフォルト: `patch`）。
+- `--changelog <text>`: 非対話型更新用の変更履歴。
+- `--tags <tags>`: カンマ区切りのタグ（デフォルト: `latest`）。
+- `--concurrency <n>`: レジストリチェック（デフォルト: 4）。
+
+## エージェントの一般的なワークフロー
+
+### スキルを検索
+
+```bash
+clawdhub search "postgres backups"
+```
+
+### 新しいスキルをダウンロード
+
+```bash
+clawdhub install my-skill-pack
+```
+
+### インストール済みスキルを更新
+
+```bash
+clawdhub update --all
+```
+
+### スキルをバックアップ（公開または同期）
+
+単一のスキルフォルダー:
+
+```bash
+clawdhub publish ./my-skill --slug my-skill --name "My Skill" --version 1.0.0 --tags latest
+```
+
+一度に多くのスキルをスキャンしてバックアップ:
+
+```bash
+clawdhub sync --all
+```
+
+## 高度な詳細（技術的）
+
+### バージョニングとタグ
+
+- 各公開は新しい **semver** `SkillVersion` を作成します。
+- `latest` のようなタグはバージョンを指します。タグを移動するとロールバックできます。
+- 変更履歴はバージョンごとにアタッチされ、同期または公開更新時に空にできます。
+
+### ローカル変更とレジストリバージョン
+
+更新は、コンテンツハッシュを使用してローカルスキルコンテンツをレジストリバージョンと比較します。ローカルファイルが公開されたバージョンと一致しない場合、CLIは上書き前に確認します（または非対話型実行では `--force` が必要）。
+
+### スキャンとフォールバックルートの同期
+
+`clawdhub sync` はまず現在のworkdirをスキャンします。スキルが見つからない場合、既知のレガシーロケーション（例: `~/openclaw/skills` と `~/.openclaw/skills`）にフォールバックします。これは、追加フラグなしで古いスキルインストールを見つけるように設計されています。
+
+### ストレージとロックファイル
+
+- インストールされたスキルは、workdir下の `.clawdhub/lock.json` に記録されます。
+- 認証トークンはClawdHub CLI設定ファイルに保存されます（`CLAWDHUB_CONFIG_PATH` で上書き）。
+
+### テレメトリ（インストール数）
+
+ログイン中に `clawdhub sync` を実行すると、CLIは最小限のスナップショットを送信してインストール数を計算します。これを完全に無効にできます:
+
+```bash
+export CLAWDHUB_DISABLE_TELEMETRY=1
+```
+
+## 環境変数
+
+- `CLAWDHUB_SITE`: サイトURLを上書き。
+- `CLAWDHUB_REGISTRY`: レジストリAPIURLを上書き。
+- `CLAWDHUB_CONFIG_PATH`: CLIがトークン/設定を保存する場所を上書き。
+- `CLAWDHUB_WORKDIR`: デフォルトのworkdirを上書き。
+- `CLAWDHUB_DISABLE_TELEMETRY=1`: `sync` でテレメトリを無効化。

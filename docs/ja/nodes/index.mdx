@@ -1,0 +1,300 @@
+---
+summary: "ノード: ペアリング、機能、権限、および canvas/camera/screen/system 用の CLI ヘルパー"
+read_when:
+  - ゲートウェイに iOS/Android ノードをペアリングする場合
+  - エージェントコンテキストにノード canvas/camera を使用する場合
+  - 新しいノードコマンドまたは CLI ヘルパーを追加する場合
+---
+
+# ノード
+
+**ノード**は、Gateway **WebSocket**（オペレーターと同じポート）に `role: "node"` で接続し、`node.invoke` を介してコマンドサーフェス（例: `canvas.*`、`camera.*`、`system.*`）を公開するコンパニオンデバイス（macOS/iOS/Android/ヘッドレス）です。プロトコルの詳細: [Gateway プロトコル](/gateway/protocol)。
+
+レガシートランスポート: [Bridge プロトコル](/gateway/bridge-protocol)（TCP JSONL; 現在のノードでは非推奨/削除）。
+
+macOS は**ノードモード**でも実行できます: メニューバーアプリは Gateway の WS サーバーに接続し、ローカル canvas/camera コマンドをノードとして公開します（`openclaw nodes …` がこの Mac に対して機能します）。
+
+注意:
+- ノードは**周辺機器**であり、ゲートウェイではありません。ゲートウェイサービスを実行しません。
+- Telegram/WhatsApp/などのメッセージはノードではなく**ゲートウェイ**に到着します。
+
+## ペアリング + ステータス
+
+**WS ノードはデバイスペアリングを使用します。** ノードは `connect` 中にデバイス ID を提示します。Gateway は
+`role: node` のデバイスペアリングリクエストを作成します。デバイス CLI（または UI）を介して承認します。
+
+クイック CLI:
+
+```bash
+openclaw devices list
+openclaw devices approve <requestId>
+openclaw devices reject <requestId>
+openclaw nodes status
+openclaw nodes describe --node <idOrNameOrIp>
+```
+
+注意:
+- `nodes status` は、デバイスペアリングロールに `node` が含まれている場合、ノードを**ペアリング済み**としてマークします。
+- `node.pair.*`（CLI: `openclaw nodes pending/approve/reject`）は別個のゲートウェイ所有の
+  ノードペアリングストアです。WS `connect` ハンドシェイクをゲートしません。
+
+## リモートノードホスト（system.run）
+
+Gateway が1台のマシンで実行され、別のマシンでコマンドを実行したい場合は、**ノードホスト**を使用します。モデルは引き続き**ゲートウェイ**と通信します。ゲートウェイは `host=node` が選択されると `exec` 呼び出しを**ノードホスト**に転送します。
+
+### どこで何が実行されるか
+- **Gateway ホスト**: メッセージを受信し、モデルを実行し、ツール呼び出しをルーティングします。
+- **ノードホスト**: ノードマシンで `system.run`/`system.which` を実行します。
+- **承認**: `~/.openclaw/exec-approvals.json` を介してノードホストで強制されます。
+
+### ノードホストを開始（フォアグラウンド）
+
+ノードマシンで:
+
+```bash
+openclaw node run --host <gateway-host> --port 18789 --display-name "Build Node"
+```
+
+### ノードホストを開始（サービス）
+
+```bash
+openclaw node install --host <gateway-host> --port 18789 --display-name "Build Node"
+openclaw node restart
+```
+
+### ペアリングと名前付け
+
+ゲートウェイホストで:
+
+```bash
+openclaw nodes pending
+openclaw nodes approve <requestId>
+openclaw nodes list
+```
+
+名前付けオプション:
+- `openclaw node run` / `openclaw node install` の `--display-name`（ノードの `~/.openclaw/node.json` に永続化）。
+- `openclaw nodes rename --node <id|name|ip> --name "Build Node"`（ゲートウェイのオーバーライド）。
+
+### コマンドを許可リストに追加
+
+Exec 承認は**ノードホストごと**です。ゲートウェイから許可リストエントリを追加します:
+
+```bash
+openclaw approvals allowlist add --node <id|name|ip> "/usr/bin/uname"
+openclaw approvals allowlist add --node <id|name|ip> "/usr/bin/sw_vers"
+```
+
+承認はノードホストの `~/.openclaw/exec-approvals.json` に保存されます。
+
+### exec をノードに向ける
+
+デフォルトを設定（ゲートウェイ設定）:
+
+```bash
+openclaw config set tools.exec.host node
+openclaw config set tools.exec.security allowlist
+openclaw config set tools.exec.node "<id-or-name>"
+```
+
+またはセッションごと:
+
+```
+/exec host=node security=allowlist node=<id-or-name>
+```
+
+設定されると、`host=node` を持つ `exec` 呼び出しはノードホストで実行されます（ノードの許可リスト/承認に従います）。
+
+関連:
+- [ノードホスト CLI](/cli/node)
+- [Exec ツール](/tools/exec)
+- [Exec 承認](/tools/exec-approvals)
+
+## コマンドの呼び出し
+
+低レベル（生の RPC）:
+
+```bash
+openclaw nodes invoke --node <idOrNameOrIp> --command canvas.eval --params '{"javaScript":"location.href"}'
+```
+
+一般的な「エージェントに MEDIA 添付ファイルを提供する」ワークフローには高レベルのヘルパーが存在します。
+
+## スクリーンショット（canvas スナップショット）
+
+ノードが Canvas（WebView）を表示している場合、`canvas.snapshot` は `{ format, base64 }` を返します。
+
+CLI ヘルパー（一時ファイルに書き込み、`MEDIA:<path>` を出力）:
+
+```bash
+openclaw nodes canvas snapshot --node <idOrNameOrIp> --format png
+openclaw nodes canvas snapshot --node <idOrNameOrIp> --format jpg --max-width 1200 --quality 0.9
+```
+
+### Canvas コントロール
+
+```bash
+openclaw nodes canvas present --node <idOrNameOrIp> --target https://example.com
+openclaw nodes canvas hide --node <idOrNameOrIp>
+openclaw nodes canvas navigate https://example.com --node <idOrNameOrIp>
+openclaw nodes canvas eval --node <idOrNameOrIp> --js "document.title"
+```
+
+注意:
+- `canvas present` は URL またはローカルファイルパス（`--target`）を受け入れます。さらにオプションの `--x/--y/--width/--height` で配置できます。
+- `canvas eval` はインライン JS（`--js`）または位置引数を受け入れます。
+
+### A2UI（Canvas）
+
+```bash
+openclaw nodes canvas a2ui push --node <idOrNameOrIp> --text "Hello"
+openclaw nodes canvas a2ui push --node <idOrNameOrIp> --jsonl ./payload.jsonl
+openclaw nodes canvas a2ui reset --node <idOrNameOrIp>
+```
+
+注意:
+- A2UI v0.8 JSONL のみがサポートされています（v0.9/createSurface は拒否されます）。
+
+## 写真 + 動画（ノードカメラ）
+
+写真（`jpg`）:
+
+```bash
+openclaw nodes camera list --node <idOrNameOrIp>
+openclaw nodes camera snap --node <idOrNameOrIp>            # デフォルト: 両方の向き（2つの MEDIA 行）
+openclaw nodes camera snap --node <idOrNameOrIp> --facing front
+```
+
+動画クリップ（`mp4`）:
+
+```bash
+openclaw nodes camera clip --node <idOrNameOrIp> --duration 10s
+openclaw nodes camera clip --node <idOrNameOrIp> --duration 3000 --no-audio
+```
+
+注意:
+- `canvas.*` と `camera.*` の場合、ノードは**フォアグラウンド**である必要があります（バックグラウンド呼び出しは `NODE_BACKGROUND_UNAVAILABLE` を返します）。
+- クリップの期間はクランプされます（現在 `<= 60s`）、過大な base64 ペイロードを避けるため。
+- Android は可能な限り `CAMERA`/`RECORD_AUDIO` 権限を求めます。拒否された権限は `*_PERMISSION_REQUIRED` で失敗します。
+
+## 画面録画（ノード）
+
+ノードは `screen.record`（mp4）を公開します。例:
+
+```bash
+openclaw nodes screen record --node <idOrNameOrIp> --duration 10s --fps 10
+openclaw nodes screen record --node <idOrNameOrIp> --duration 10s --fps 10 --no-audio
+```
+
+注意:
+- `screen.record` はノードアプリがフォアグラウンドである必要があります。
+- Android は録画前にシステム画面キャプチャプロンプトを表示します。
+- 画面録画は `<= 60s` にクランプされます。
+- `--no-audio` はマイクキャプチャを無効にします（iOS/Android でサポート; macOS はシステムキャプチャオーディオを使用）。
+- 複数の画面が利用可能な場合、`--screen <index>` を使用してディスプレイを選択します。
+
+## 位置情報（ノード）
+
+設定で位置情報が有効な場合、ノードは `location.get` を公開します。
+
+CLI ヘルパー:
+
+```bash
+openclaw nodes location get --node <idOrNameOrIp>
+openclaw nodes location get --node <idOrNameOrIp> --accuracy precise --max-age 15000 --location-timeout 10000
+```
+
+注意:
+- 位置情報は**デフォルトでオフ**です。
+- 「常に」はシステム権限が必要です; バックグラウンドフェッチはベストエフォートです。
+- レスポンスには緯度/経度、精度（メートル）、タイムスタンプが含まれます。
+
+## SMS（Android ノード）
+
+Android ノードは、ユーザーが **SMS** 権限を付与し、デバイスがテレフォニーをサポートしている場合、`sms.send` を公開できます。
+
+低レベル呼び出し:
+
+```bash
+openclaw nodes invoke --node <idOrNameOrIp> --command sms.send --params '{"to":"+15555550123","message":"Hello from OpenClaw"}'
+```
+
+注意:
+- 機能が広告される前に、Android デバイスで権限プロンプトを承認する必要があります。
+- テレフォニーのない Wi-Fi 専用デバイスは `sms.send` を広告しません。
+
+## システムコマンド（ノードホスト / mac ノード）
+
+macOS ノードは `system.run`、`system.notify`、`system.execApprovals.get/set` を公開します。
+ヘッドレスノードホストは `system.run`、`system.which`、`system.execApprovals.get/set` を公開します。
+
+例:
+
+```bash
+openclaw nodes run --node <idOrNameOrIp> -- echo "Hello from mac node"
+openclaw nodes notify --node <idOrNameOrIp> --title "Ping" --body "Gateway ready"
+```
+
+注意:
+- `system.run` はペイロード内の stdout/stderr/終了コードを返します。
+- `system.notify` は macOS アプリの通知権限状態を尊重します。
+- `system.run` は `--cwd`、`--env KEY=VAL`、`--command-timeout`、`--needs-screen-recording` をサポートします。
+- `system.notify` は `--priority <passive|active|timeSensitive>` と `--delivery <system|overlay|auto>` をサポートします。
+- macOS ノードは `PATH` オーバーライドを削除します。ヘッドレスノードホストは、ノードホスト PATH の前に追加する場合のみ `PATH` を受け入れます。
+- macOS ノードモードでは、`system.run` は macOS アプリの exec 承認によってゲートされます（設定 → Exec 承認）。
+  Ask/allowlist/full はヘッドレスノードホストと同じように動作します。拒否されたプロンプトは `SYSTEM_RUN_DENIED` を返します。
+- ヘッドレスノードホストでは、`system.run` は exec 承認（`~/.openclaw/exec-approvals.json`）によってゲートされます。
+
+## Exec ノードバインディング
+
+複数のノードが利用可能な場合、exec を特定のノードにバインドできます。
+これにより、`exec host=node` のデフォルトノードが設定されます（エージェントごとにオーバーライド可能）。
+
+グローバルデフォルト:
+
+```bash
+openclaw config set tools.exec.node "node-id-or-name"
+```
+
+エージェントごとのオーバーライド:
+
+```bash
+openclaw config get agents.list
+openclaw config set agents.list[0].tools.exec.node "node-id-or-name"
+```
+
+任意のノードを許可するには設定解除:
+
+```bash
+openclaw config unset tools.exec.node
+openclaw config unset agents.list[0].tools.exec.node
+```
+
+## 権限マップ
+
+ノードは `node.list` / `node.describe` に `permissions` マップを含めることができます。権限名（例: `screenRecording`、`accessibility`）でキー化され、ブール値（`true` = 付与済み）を持ちます。
+
+## ヘッドレスノードホスト（クロスプラットフォーム）
+
+OpenClaw は、Gateway WebSocket に接続し、`system.run` / `system.which` を公開する**ヘッドレスノードホスト**（UI なし）を実行できます。これは Linux/Windows または最小限のノードをサーバーと一緒に実行するのに便利です。
+
+開始:
+
+```bash
+openclaw node run --host <gateway-host> --port 18789
+```
+
+注意:
+- ペアリングは依然として必要です（Gateway がノード承認プロンプトを表示します）。
+- ノードホストはノード ID、トークン、表示名、ゲートウェイ接続情報を `~/.openclaw/node.json` に保存します。
+- Exec 承認は `~/.openclaw/exec-approvals.json` を介してローカルで強制されます
+  （[Exec 承認](/tools/exec-approvals) を参照）。
+- macOS では、ヘッドレスノードホストは到達可能な場合はコンパニオンアプリ exec ホストを優先し、
+  アプリが利用できない場合はローカル実行にフォールバックします。`OPENCLAW_NODE_EXEC_HOST=app` を設定してアプリを要求するか、
+  `OPENCLAW_NODE_EXEC_FALLBACK=0` でフォールバックを無効にします。
+- Gateway WS が TLS を使用する場合は、`--tls` / `--tls-fingerprint` を追加します。
+
+## Mac ノードモード
+
+- macOS メニューバーアプリはノードとして Gateway WS サーバーに接続します（`openclaw nodes …` がこの Mac に対して機能します）。
+- リモートモードでは、アプリは Gateway ポート用の SSH トンネルを開き、`localhost` に接続します。

@@ -1,0 +1,46 @@
+---
+summary: "OpenClaw で Qwen OAuth（無料ティア）を使用する"
+read_when:
+  - OpenClaw で Qwen を使用したい
+  - Qwen Coder への無料ティア OAuth アクセスが必要
+---
+# Qwen
+
+Qwen は、Qwen Coder と Qwen Vision モデル用の無料ティア OAuth フローを提供しています（1日2,000リクエスト、Qwen のレート制限が適用されます）。
+
+## プラグインを有効化
+
+```bash
+openclaw plugins enable qwen-portal-auth
+```
+
+有効化後、ゲートウェイを再起動してください。
+
+## 認証
+
+```bash
+openclaw models auth login --provider qwen-portal --set-default
+```
+
+これにより、Qwen デバイスコード OAuth フローが実行され、`models.json` にプロバイダエントリが書き込まれます（さらに、素早く切り替えるための `qwen` エイリアスも追加されます）。
+
+## モデル ID
+
+- `qwen-portal/coder-model`
+- `qwen-portal/vision-model`
+
+モデルを切り替えるには：
+
+```bash
+openclaw models set qwen-portal/coder-model
+```
+
+## Qwen Code CLI ログインの再利用
+
+すでに Qwen Code CLI でログインしている場合、OpenClaw は認証ストアの読み込み時に `~/.qwen/oauth_creds.json` から認証情報を同期します。ただし、`models.providers.qwen-portal` エントリは必要です（作成するには上記のログインコマンドを使用してください）。
+
+## 注意事項
+
+- トークンは自動更新されます。更新が失敗したりアクセスが取り消された場合は、ログインコマンドを再実行してください。
+- デフォルトベース URL: `https://portal.qwen.ai/v1`（Qwen が別のエンドポイントを提供している場合は、`models.providers.qwen-portal.baseUrl` で上書きします）。
+- プロバイダ全体のルールについては、[モデルプロバイダ](/concepts/model-providers) を参照してください。

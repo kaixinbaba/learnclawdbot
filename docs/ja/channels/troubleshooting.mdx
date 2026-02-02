@@ -1,0 +1,25 @@
+---
+summary: "チャネル固有のトラブルシューティングショートカット（Discord/Telegram/WhatsApp）"
+read_when:
+  - チャネルは接続するがメッセージが流れない場合
+  - チャネルの設定ミス（インテント、権限、プライバシーモード）を調査する場合
+---
+# チャネルトラブルシューティング
+
+まず次を実行：
+
+```bash
+openclaw doctor
+openclaw channels status --probe
+```
+
+`channels status --probe`は、一般的なチャネル設定ミスを検出できる場合に警告を表示し、小さなライブチェック（認証情報、一部の権限/メンバーシップ）を含みます。
+
+## チャネル
+- Discord：[/channels/discord#troubleshooting](/channels/discord#troubleshooting)
+- Telegram：[/channels/telegram#troubleshooting](/channels/telegram#troubleshooting)
+- WhatsApp：[/channels/whatsapp#troubleshooting-quick](/channels/whatsapp#troubleshooting-quick)
+
+## Telegramクイックフィックス
+- ログに`HttpError: Network request for 'sendMessage' failed`または`sendChatAction`が表示される → IPv6 DNSを確認。`api.telegram.org`が最初にIPv6に解決され、ホストにIPv6エグレスがない場合、IPv4を強制するかIPv6を有効にします。[/channels/telegram#troubleshooting](/channels/telegram#troubleshooting)を参照。
+- ログに`setMyCommands failed`が表示される → `api.telegram.org`へのアウトバウンドHTTPSとDNS到達性を確認（ロックダウンされたVPSやプロキシで一般的）。

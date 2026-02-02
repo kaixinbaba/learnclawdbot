@@ -1,0 +1,117 @@
+---
+summary: "WKWebView + カスタムURLスキーム経由で埋め込まれたAgent制御のCanvasパネル"
+read_when:
+  - macOS Canvasパネルを実装する場合
+  - ビジュアルワークスペースのAgent制御を追加する場合
+  - WKWebView Canvas読み込みをデバッグする場合
+---
+# Canvas（macOSアプリ）
+
+macOSアプリは、`WKWebView`を使用してAgent制御の**Canvasパネル**を埋め込んでいます。これはHTML/CSS/JS、A2UI、小さなインタラクティブUIサーフェス用の軽量なビジュアルワークスペースです。
+
+## Canvasの場所
+
+Canvas状態はApplication Supportに保存されます:
+
+- `~/Library/Application Support/OpenClaw/canvas/<session>/...`
+
+Canvasパネルは**カスタムURLスキーム**経由でこれらのファイルを提供します:
+
+- `openclaw-canvas://<session>/<path>`
+
+例:
+- `openclaw-canvas://main/` → `<canvasRoot>/main/index.html`
+- `openclaw-canvas://main/assets/app.css` → `<canvasRoot>/main/assets/app.css`
+- `openclaw-canvas://main/widgets/todo/` → `<canvasRoot>/main/widgets/todo/index.html`
+
+ルートに`index.html`が存在しない場合、アプリは**組み込みのスキャフォールドページ**を表示します。
+
+## パネルの動作
+
+- メニューバー（またはマウスカーソル）の近くに固定されたボーダーレス、リサイズ可能なパネル。
+- セッションごとにサイズ/位置を記憶します。
+- ローカルCanvasファイルが変更されると自動リロードします。
+- 一度に1つのCanvasパネルのみが表示されます（必要に応じてセッションが切り替わります）。
+
+Canvasは設定 → **Allow Canvas**から無効化できます。無効の場合、Canvas nodeコマンドは`CANVAS_DISABLED`を返します。
+
+## Agent APIサーフェス
+
+Canvasは**Gateway WebSocket**経由で公開されるため、Agentは以下が可能:
+
+- パネルの表示/非表示
+- パスまたはURLへのナビゲート
+- JavaScriptの評価
+- スナップショット画像のキャプチャ
+
+CLI例:
+
+```bash
+openclaw nodes canvas present --node <id>
+openclaw nodes canvas navigate --node <id> --url "/"
+openclaw nodes canvas eval --node <id> --js "document.title"
+openclaw nodes canvas snapshot --node <id>
+```
+
+注:
+- `canvas.navigate`は**ローカルCanvasパス**、`http(s)` URL、`file://` URLを受け入れます。
+- `"/"`を渡すと、Canvasはローカルスキャフォールドまたは`index.html`を表示します。
+
+## CanvasでのA2UI
+
+A2UIはGateway Canvas hostによってホストされ、Canvasパネル内にレンダリングされます。
+GatewayがCanvas hostをアドバタイズすると、macOSアプリは最初のオープン時にA2UI hostページへ自動的にナビゲートします。
+
+デフォルトのA2UI host URL:
+
+```
+http://<gateway-host>:18793/__openclaw__/a2ui/
+```
+
+### A2UIコマンド（v0.8）
+
+Canvasは現在**A2UI v0.8** server→clientメッセージを受け入れます:
+
+- `beginRendering`
+- `surfaceUpdate`
+- `dataModelUpdate`
+- `deleteSurface`
+
+`createSurface`（v0.9）はサポートされていません。
+
+CLI例:
+
+```bash
+cat > /tmp/a2ui-v0.8.jsonl <<'EOFA2'
+{"surfaceUpdate":{"surfaceId":"main","components":[{"id":"root","component":{"Column":{"children":{"explicitList":["title","content"]}}}},{"id":"title","component":{"Text":{"text":{"literalString":"Canvas (A2UI v0.8)"},"usageHint":"h1"}}},{"id":"content","component":{"Text":{"text":{"literalString":"If you can read this, A2UI push works."},"usageHint":"body"}}}]}}
+{"beginRendering":{"surfaceId":"main","root":"root"}}
+EOFA2
+
+openclaw nodes canvas a2ui push --jsonl /tmp/a2ui-v0.8.jsonl --node <id>
+```
+
+クイックスモーク:
+
+```bash
+openclaw nodes canvas a2ui push --node <id> --text "Hello from A2UI"
+```
+
+## CanvasからのAgent実行トリガー
+
+Canvasはディープリンク経由で新しいAgent実行をトリガーできます:
+
+- `openclaw://agent?...`
+
+例（JSで）:
+
+```js
+window.location.href = "openclaw://agent?message=Review%20this%20design";
+```
+
+有効なキーが提供されない限り、アプリは確認を求めます。
+
+## セキュリティに関する注意
+
+- Canvasスキームはディレクトリトラバーサルをブロックします。ファイルはセッションルート配下に存在する必要があります。
+- ローカルCanvasコンテンツはカスタムスキームを使用します（loopbackサーバー不要）。
+- 外部`http(s)` URLは明示的にナビゲートされた場合のみ許可されます。

@@ -1,0 +1,102 @@
+---
+summary: "`openclaw node` の CLI リファレンス（ヘッドレスノードホスト）"
+read_when:
+  - ヘッドレスノードホストを実行する場合
+  - system.run 用に macOS 以外のノードをペアリングする場合
+---
+
+# `openclaw node`
+
+Gateway WebSocket に接続し、このマシン上で `system.run` / `system.which` を公開する**ヘッドレスノードホスト**を実行します。
+
+## なぜノードホストを使用するのか？
+
+ノードホストは、完全な macOS コンパニオンアプリをインストールせずに、ネットワーク内の**他のマシンでコマンドを実行**したい場合に使用します。
+
+一般的なユースケース：
+- リモート Linux/Windows マシン（ビルドサーバー、ラボマシン、NAS）でコマンドを実行します。
+- Gateway で exec を**サンドボックス化**しつつ、承認済みの実行を他のホストに委譲します。
+- 自動化や CI ノード用の軽量でヘッドレスな実行ターゲットを提供します。
+
+実行は依然として**exec 承認**とノードホスト上のエージェントごとの許可リストによって保護されているため、コマンドアクセスをスコープ化して明示的に保つことができます。
+
+## ブラウザプロキシ（ゼロ設定）
+
+ノードホストは、ノード上で `browser.enabled` が無効になっていない場合、自動的にブラウザプロキシをアドバタイズします。これにより、エージェントは追加設定なしでそのノード上でブラウザ自動化を使用できます。
+
+必要に応じてノード上で無効にします：
+
+```json5
+{
+  nodeHost: {
+    browserProxy: {
+      enabled: false
+    }
+  }
+}
+```
+
+## 実行（フォアグラウンド）
+
+```bash
+openclaw node run --host <gateway-host> --port 18789
+```
+
+オプション：
+- `--host <host>`：Gateway WebSocket ホスト（デフォルト：`127.0.0.1`）
+- `--port <port>`：Gateway WebSocket ポート（デフォルト：`18789`）
+- `--tls`：Gateway 接続に TLS を使用
+- `--tls-fingerprint <sha256>`：期待される TLS 証明書フィンガープリント（sha256）
+- `--node-id <id>`：ノード ID を上書き（ペアリングトークンをクリア）
+- `--display-name <name>`：ノード表示名を上書き
+
+## サービス（バックグラウンド）
+
+ヘッドレスノードホストをユーザーサービスとしてインストールします。
+
+```bash
+openclaw node install --host <gateway-host> --port 18789
+```
+
+オプション：
+- `--host <host>`：Gateway WebSocket ホスト（デフォルト：`127.0.0.1`）
+- `--port <port>`：Gateway WebSocket ポート（デフォルト：`18789`）
+- `--tls`：Gateway 接続に TLS を使用
+- `--tls-fingerprint <sha256>`：期待される TLS 証明書フィンガープリント（sha256）
+- `--node-id <id>`：ノード ID を上書き（ペアリングトークンをクリア）
+- `--display-name <name>`：ノード表示名を上書き
+- `--runtime <runtime>`：サービスランタイム（`node` または `bun`）
+- `--force`：既にインストールされている場合は再インストール/上書き
+
+サービスを管理：
+
+```bash
+openclaw node status
+openclaw node stop
+openclaw node restart
+openclaw node uninstall
+```
+
+フォアグラウンドノードホスト（サービスなし）には `openclaw node run` を使用します。
+
+サービスコマンドは、マシン可読出力用に `--json` を受け入れます。
+
+## ペアリング
+
+最初の接続時に Gateway 上で保留中のノードペアリクエストが作成されます。
+以下を使用して承認します：
+
+```bash
+openclaw nodes pending
+openclaw nodes approve <requestId>
+```
+
+ノードホストは、ノード ID、トークン、表示名、Gateway 接続情報を `~/.openclaw/node.json` に保存します。
+
+## Exec 承認
+
+`system.run` はローカル exec 承認によって制御されます：
+
+- `~/.openclaw/exec-approvals.json`
+- [Exec approvals](/tools/exec-approvals)
+- `openclaw approvals --node <id|name|ip>`（Gateway から編集）

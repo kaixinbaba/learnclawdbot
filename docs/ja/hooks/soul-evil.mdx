@@ -1,0 +1,64 @@
+---
+summary: "SOUL Evil フック（SOUL.md を SOUL_EVIL.md に交換）"
+read_when:
+  - SOUL Evil フックを有効化または調整したいとき
+  - パージウィンドウまたはランダムチャンスのペルソナ交換が必要なとき
+---
+
+# SOUL Evil フック
+
+SOUL Evil フックは、パージウィンドウ中またはランダムチャンスで、**注入された** `SOUL.md` のコンテンツを `SOUL_EVIL.md` に交換します。ディスク上のファイルは変更**しません**。
+
+## 動作原理
+
+`agent:bootstrap` が実行されると、フックはシステムプロンプトが組み立てられる前に、メモリ内の `SOUL.md` コンテンツを置き換えることができます。`SOUL_EVIL.md` が存在しないか空の場合、OpenClaw は警告をログに記録し、通常の `SOUL.md` を保持します。
+
+サブエージェントの実行には `SOUL.md` がブートストラップファイルに含まれて**いない**ため、このフックはサブエージェントには影響しません。
+
+## 有効化
+
+```bash
+openclaw hooks enable soul-evil
+```
+
+次に設定を行います：
+
+```json
+{
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "soul-evil": {
+          "enabled": true,
+          "file": "SOUL_EVIL.md",
+          "chance": 0.1,
+          "purge": { "at": "21:00", "duration": "15m" }
+        }
+      }
+    }
+  }
+}
+```
+
+エージェントワークスペースのルート（`SOUL.md` の隣）に `SOUL_EVIL.md` を作成してください。
+
+## オプション
+
+- `file`（文字列）：代替 SOUL ファイル名（デフォルト：`SOUL_EVIL.md`）
+- `chance`（0〜1 の数値）：実行ごとに `SOUL_EVIL.md` を使用するランダムチャンス
+- `purge.at`（HH:mm）：毎日のパージ開始時刻（24 時間表記）
+- `purge.duration`（期間）：ウィンドウの長さ（例：`30s`、`10m`、`1h`）
+
+**優先順位：** パージウィンドウがチャンスより優先されます。
+
+**タイムゾーン：** 設定されている場合は `agents.defaults.userTimezone` を使用します。それ以外の場合はホストのタイムゾーンを使用します。
+
+## 注記
+
+- ディスク上のファイルは書き込みや変更されません。
+- `SOUL.md` がブートストラップリストにない場合、フックは何もしません。
+
+## 関連項目
+
+- [フック](/hooks)

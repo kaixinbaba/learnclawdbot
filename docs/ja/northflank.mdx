@@ -1,0 +1,53 @@
+---
+title: Northflankへのデプロイ
+---
+
+ワンクリックテンプレートでNorthflankにOpenClawをデプロイし、ブラウザでセットアップを完了します。
+これは最も簡単な「サーバーでターミナル操作不要」の方法です。NorthflankがGatewayを実行し、
+すべての設定は `/setup` Web ウィザードで行います。
+
+## 始め方
+
+1. [Deploy OpenClaw](https://northflank.com/stacks/deploy-openclaw) をクリックしてテンプレートを開きます。  
+2. まだアカウントをお持ちでない場合は、[Northflankのアカウント](https://app.northflank.com/signup)を作成します。  
+3. **Deploy OpenClaw now** をクリックします。  
+4. 必須の環境変数を設定します：`SETUP_PASSWORD`。
+5. **Deploy stack** をクリックして、OpenClawテンプレートをビルドおよび実行します。
+6. デプロイが完了するまで待ち、**View resources** をクリックします。
+7. OpenClawサービスを開きます。
+8. OpenClawの公開URLを開き、`/setup` でセットアップを完了します。
+9. `/openclaw` でControl UIを開きます。
+
+## 提供されるもの
+
+- ホスティングされたOpenClaw Gateway + Control UI
+- `/setup` でのWebセットアップウィザード（ターミナルコマンド不要）
+- Northflank Volume (`/data`) による永続ストレージで、設定/認証情報/ワークスペースが再デプロイ後も保持されます
+
+## セットアップの流れ
+
+1) `https://<your-northflank-domain>/setup` にアクセスし、`SETUP_PASSWORD` を入力します。
+2) モデル/認証プロバイダーを選択し、APIキーを貼り付けます。
+3) （オプション）Telegram/Discord/Slackトークンを追加します。
+4) **Run setup** をクリックします。
+5) `https://<your-northflank-domain>/openclaw` でControl UIを開きます。
+
+Telegram DMがペアリングに設定されている場合、セットアップウィザードでペアリングコードを承認できます。
+
+## チャットトークンの取得
+
+### Telegram botトークン
+
+1) TelegramでBotFatherにメッセージを送信します
+2) `/newbot` を実行します
+3) トークンをコピーします（`123456789:AA...` のような形式）
+4) `/setup` に貼り付けます
+
+### Discord botトークン
+
+1) https://discord.com/developers/applications にアクセスします
+2) **New Application** → 名前を選択します
+3) **Bot** → **Add Bot**
+4) Bot → Privileged Gateway Intentsで **MESSAGE CONTENT INTENT** を有効にします（必須、これを有効にしないとbotが起動時にクラッシュします）
+5) **Bot Token** をコピーして `/setup` に貼り付けます
+6) botをサーバーに招待します（OAuth2 URL Generator、スコープ：`bot`、`applications.commands`）

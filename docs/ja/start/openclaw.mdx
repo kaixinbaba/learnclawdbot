@@ -1,0 +1,235 @@
+---
+summary: "安全上の注意を含む、OpenClawを個人アシスタントとして実行するためのエンドツーエンドガイド"
+read_when:
+  - 新しいアシスタントインスタンスをオンボーディングする時
+  - 安全/権限の影響を確認する時
+---
+# OpenClawで個人アシスタントを構築する
+
+OpenClawは、**Pi**エージェント向けのWhatsApp + Telegram + Discord + iMessage gatewayです。プラグインはMattermostを追加します。このガイドは「個人アシスタント」セットアップ：常時オンのエージェントのように動作する専用のWhatsApp番号を設定します。
+
+## ⚠️ 安全第一
+
+エージェントに以下の権限を与えることになります：
+- マシン上でコマンドを実行する（Piツールの設定によります）
+- ワークスペース内でファイルを読み書きする
+- WhatsApp/Telegram/Discord/Mattermost（プラグイン）経由でメッセージを送信する
+
+保守的に始めましょう：
+- 常に`channels.whatsapp.allowFrom`を設定してください（個人のMac上で全世界に開放された状態で実行しないでください）。
+- アシスタント用に専用のWhatsApp番号を使用してください。
+- ハートビートは現在デフォルトで30分ごとです。セットアップを信頼するまで、`agents.defaults.heartbeat.every: "0m"`を設定して無効にしてください。
+
+## 前提条件
+
+- Node **22+**
+- PATHで利用可能なOpenClaw（推奨：グローバルインストール）
+- アシスタント用の2番目の電話番号（SIM/eSIM/プリペイド）
+
+```bash
+npm install -g openclaw@latest
+# または: pnpm add -g openclaw@latest
+```
+
+ソースから（開発）：
+
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+pnpm install
+pnpm ui:build # 初回実行時にUI依存関係を自動インストール
+pnpm build
+pnpm link --global
+```
+
+## 2台の電話セットアップ（推奨）
+
+以下のようにしたいでしょう：
+
+```
+あなたの電話（個人用）        2台目の電話（アシスタント）
+┌─────────────────┐           ┌─────────────────┐
+│  あなたのWhatsApp  │  ──────▶  │  アシスタントWA   │
+│  +1-555-YOU     │  メッセージ │  +1-555-ASSIST  │
+└─────────────────┘           └────────┬────────┘
+                                       │ QRでリンク
+                                       ▼
+                              ┌─────────────────┐
+                              │  あなたのMac      │
+                              │  (openclaw)      │
+                              │    Piエージェント │
+                              └─────────────────┘
+```
+
+個人のWhatsAppをOpenClawにリンクすると、あなたへのすべてのメッセージが「エージェント入力」になります。これはあなたが望むものではないことがほとんどです。
+
+## 5分クイックスタート
+
+1) WhatsApp Webをペアリング（QRを表示；アシスタントの電話でスキャン）：
+
+```bash
+openclaw channels login
+```
+
+2) Gatewayを起動（実行したままにする）：
+
+```bash
+openclaw gateway --port 18789
+```
+
+3) `~/.openclaw/openclaw.json`に最小限の設定を配置：
+
+```json5
+{
+  channels: { whatsapp: { allowFrom: ["+15555550123"] } }
+}
+```
+
+これで、許可リストに登録されている電話からアシスタント番号にメッセージを送信します。
+
+オンボーディングが完了すると、gatewayトークンを含むダッシュボードが自動的に開き、トークン化されたリンクが印刷されます。後で再度開くには：`openclaw dashboard`。
+
+## エージェントにワークスペースを与える（AGENTS）
+
+OpenClawは、ワークスペースディレクトリから操作手順と「メモリ」を読み取ります。
+
+デフォルトでは、OpenClawはエージェントワークスペースとして`~/.openclaw/workspace`を使用し、セットアップ/最初のエージェント実行時に自動的に作成します（スターター`AGENTS.md`、`SOUL.md`、`TOOLS.md`、`IDENTITY.md`、`USER.md`を含む）。`BOOTSTRAP.md`は、ワークスペースが全く新しい場合にのみ作成されます（削除後に戻ってくるべきではありません）。
+
+ヒント：このフォルダをOpenClawの「メモリ」として扱い、gitリポジトリ（できれば非公開）にして、`AGENTS.md` + メモリファイルがバックアップされるようにしてください。gitがインストールされている場合、全く新しいワークスペースは自動的に初期化されます。
+
+```bash
+openclaw setup
+```
+
+完全なワークスペースレイアウト + バックアップガイド：[Agent workspace](/concepts/agent-workspace)
+メモリワークフロー：[Memory](/concepts/memory)
+
+オプション：`agents.defaults.workspace`で別のワークスペースを選択します（`~`をサポート）。
+
+```json5
+{
+  agent: {
+    workspace: "~/.openclaw/workspace"
+  }
+}
+```
+
+リポジトリから独自のワークスペースファイルを既に配布している場合は、ブートストラップファイルの作成を完全に無効にできます：
+
+```json5
+{
+  agent: {
+    skipBootstrap: true
+  }
+}
+```
+
+## 「アシスタント」に変える設定
+
+OpenClawは良好なアシスタントセットアップをデフォルトとしていますが、通常は以下を調整したいでしょう：
+- `SOUL.md`内のペルソナ/指示
+- 思考のデフォルト（必要に応じて）
+- ハートビート（信頼できるようになったら）
+
+例：
+
+```json5
+{
+  logging: { level: "info" },
+  agent: {
+    model: "anthropic/claude-opus-4-5",
+    workspace: "~/.openclaw/workspace",
+    thinkingDefault: "high",
+    timeoutSeconds: 1800,
+    // 0で始め、後で有効にする。
+    heartbeat: { every: "0m" }
+  },
+  channels: {
+    whatsapp: {
+      allowFrom: ["+15555550123"],
+      groups: {
+        "*": { requireMention: true }
+      }
+    }
+  },
+  routing: {
+    groupChat: {
+      mentionPatterns: ["@openclaw", "openclaw"]
+    }
+  },
+  session: {
+    scope: "per-sender",
+    resetTriggers: ["/new", "/reset"],
+    reset: {
+      mode: "daily",
+      atHour: 4,
+      idleMinutes: 10080
+    }
+  }
+}
+```
+
+## セッションとメモリ
+
+- セッションファイル：`~/.openclaw/agents/<agentId>/sessions/{{SessionId}}.jsonl`
+- セッションメタデータ（トークン使用量、最後のルートなど）：`~/.openclaw/agents/<agentId>/sessions/sessions.json`（レガシー：`~/.openclaw/sessions/sessions.json`）
+- `/new`または`/reset`は、そのチャットの新しいセッションを開始します（`resetTriggers`で設定可能）。単独で送信された場合、エージェントはリセットを確認する短い挨拶で応答します。
+- `/compact [instructions]`はセッションコンテキストを圧縮し、残りのコンテキスト予算を報告します。
+
+## ハートビート（プロアクティブモード）
+
+デフォルトでは、OpenClawは30分ごとに以下のプロンプトでハートビートを実行します：
+`Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.`
+`agents.defaults.heartbeat.every: "0m"`を設定して無効にします。
+
+- `HEARTBEAT.md`が存在するが事実上空（空白行とMarkdownヘッダーのみ`# Heading`など）の場合、OpenClawはAPI呼び出しを節約するためにハートビート実行をスキップします。
+- ファイルが存在しない場合でも、ハートビートは実行され、モデルが何をすべきかを決定します。
+- エージェントが`HEARTBEAT_OK`で応答する場合（オプションで短いパディング付き；`agents.defaults.heartbeat.ackMaxChars`を参照）、OpenClawはそのハートビートのアウトバウンド配信を抑制します。
+- ハートビートは完全なエージェントターンを実行します — 短い間隔はより多くのトークンを消費します。
+
+```json5
+{
+  agent: {
+    heartbeat: { every: "30m" }
+  }
+}
+```
+
+## メディアの入出力
+
+インバウンド添付ファイル（画像/オーディオ/ドキュメント）は、テンプレートを介してコマンドに表示できます：
+- `{{MediaPath}}`（ローカル一時ファイルパス）
+- `{{MediaUrl}}`（疑似URL）
+- `{{Transcript}}`（オーディオ文字起こしが有効な場合）
+
+エージェントからのアウトバウンド添付ファイル：`MEDIA:<path-or-url>`を独自の行に含めます（スペースなし）。例：
+
+```
+スクリーンショットです。
+MEDIA:/tmp/screenshot.png
+```
+
+OpenClawはこれらを抽出し、テキストと一緒にメディアとして送信します。
+
+## 運用チェックリスト
+
+```bash
+openclaw status          # ローカルステータス（認証情報、セッション、キューに入れられたイベント）
+openclaw status --all    # 完全な診断（読み取り専用、貼り付け可能）
+openclaw status --deep   # gatewayヘルスプローブを追加（Telegram + Discord）
+openclaw health --json   # gatewayヘルススナップショット（WS）
+```
+
+ログは`/tmp/openclaw/`の下にあります（デフォルト：`openclaw-YYYY-MM-DD.log`）。
+
+## 次のステップ
+
+- WebChat：[WebChat](/web/webchat)
+- Gateway運用：[Gateway runbook](/gateway)
+- Cron + ウェイクアップ：[Cron jobs](/automation/cron-jobs)
+- macOSメニューバーコンパニオン：[OpenClaw macOS app](/platforms/macos)
+- iOSノードアプリ：[iOS app](/platforms/ios)
+- Androidノードアプリ：[Android app](/platforms/android)
+- Windowsステータス：[Windows (WSL2)](/platforms/windows)
+- Linuxステータス：[Linux app](/platforms/linux)
+- セキュリティ：[Security](/gateway/security)
