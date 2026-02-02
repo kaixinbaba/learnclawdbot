@@ -1,7 +1,7 @@
 import FeatureBadge from "@/components/shared/FeatureBadge";
 import { Button } from "@/components/ui/button";
 import { Link as I18nLink } from "@/i18n/routing";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function Hero() {
@@ -49,6 +49,19 @@ export default function Hero() {
               >
                 <BookOpen className="w-4 h-4" />
                 {t("viewDocs")}
+              </I18nLink>
+            </Button>
+            <Button
+              className="h-11 rounded-xl px-8 py-2 bg-white hover:bg-background text-primary hover:text-primary/80 border-2"
+              variant="outline"
+              asChild
+            >
+              <I18nLink
+                href="/openclaw-development-timeline"
+                className="flex items-center gap-2"
+              >
+                <Clock className="w-4 h-4" />
+                {t("timeline")}
               </I18nLink>
             </Button>
           </div>

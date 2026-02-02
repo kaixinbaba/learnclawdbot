@@ -10,7 +10,8 @@
     "getStarted": "学習を開始",
     "getStartedLink": "/blog/guide",
     "viewDocs": "ブログを読む",
-    "viewDocsLink": "/blog"
+    "viewDocsLink": "/blog",
+    "timeline": "開発タイムライン"
   },
   "Features": {
     "badge": {
