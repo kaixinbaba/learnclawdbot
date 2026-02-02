@@ -1,5 +1,8 @@
 import HomeComponent from "@/components/home";
 
-export default function Home() {
-  return <HomeComponent />;
+type Params = Promise<{ locale: string }>;
+
+export default async function Home({ params }: { params: Params }) {
+  const { locale } = await params;
+  return <HomeComponent locale={locale} />;
 }

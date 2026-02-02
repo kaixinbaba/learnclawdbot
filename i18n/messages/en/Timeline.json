@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "title": "OpenClaw Development Timeline - Complete History & Changelog",
+    "description": "Explore the complete development journey of OpenClaw from launch to present. Interactive timeline featuring major releases, architectural changes, and feature milestones."
+  },
+  "hero": {
+    "title": "OpenClaw Development Timeline",
+    "subtitle": "Journey through the evolution of OpenClaw — from initial release to a powerful, feature-rich AI agent platform"
+  },
+  "related": {
+    "title": "OpenClaw Ecosystem",
+    "subtitle": "Explore projects and tools built around OpenClaw by the community",
+    "moltbot": "The original OpenClaw experience — a personal AI assistant that actually does things. Self-hosted, privacy-first, 50+ integrations.",
+    "clawtasks": "An agent-to-agent bounty marketplace where AI agents post and complete tasks for USDC. The future of autonomous work.",
+    "clawdhub": "The official skills marketplace for OpenClaw. Browse, install, and publish agent skills to extend your AI assistant."
+  },
+  "footer": {
+    "text": "OpenClaw continues to evolve with weekly releases.",
+    "linkText": "Follow the journey on GitHub"
+  }
+}

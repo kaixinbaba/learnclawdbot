@@ -10,7 +10,8 @@
     "getStarted": "开始学习",
     "getStartedLink": "/blog/guide",
     "viewDocs": "阅读博客",
-    "viewDocsLink": "/blog"
+    "viewDocsLink": "/blog",
+    "timeline": "发展时间线"
   },
   "Features": {
     "badge": {
