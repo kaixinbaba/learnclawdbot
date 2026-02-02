@@ -1,0 +1,193 @@
+[
+  {
+    "id": "launch",
+    "type": "milestone",
+    "date": "2026-01-12",
+    "version": "v2026.1.11",
+    "title": "OpenClaw 初回リリース",
+    "description": "OpenClaw がメモリー検索、プラグインシステム、マルチチャネルサポートなどの画期的な機能とともにリリースされました。",
+    "highlights": [
+      "エージェントメモリーのベクトル検索",
+      "音声通話対応のプラグインアーキテクチャ",
+      "マルチチャネルメッセージング（Slack、Telegram、Discord、WhatsApp）",
+      "高度な圧縮とセーフガードモード"
+    ],
+    "category": "launch",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-12",
+    "type": "major",
+    "date": "2026-01-13",
+    "version": "v2026.1.12",
+    "title": "チャネルアーキテクチャとメモリーシステム",
+    "description": "大規模なアーキテクチャの変更：チャットプロバイダーが「チャネル」に改名され、自動マイグレーションに対応。メモリーシステムがベクトル検索で強化されました。",
+    "highlights": [
+      "チャネルアーキテクチャの統合",
+      "SQLite ベースのベクトルメモリーインデックス",
+      "合成プロバイダーのサポート",
+      "Cron スケジューリングの改善"
+    ],
+    "category": "architecture",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-14",
+    "type": "major",
+    "date": "2026-01-15",
+    "version": "v2026.1.14",
+    "title": "Web ツールとブラウザコントロール",
+    "description": "Brave API による web_search と web_fetch ツール、ブラウザ自動化のための Chrome 拡張リレーが導入されました。",
+    "highlights": [
+      "Brave API 統合による Web 検索",
+      "Chrome 拡張リレーのテイクオーバーモード",
+      "CLI 経由のリモートブラウザ制御",
+      "HTTP フックを備えたチャネルプラグイン"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-15",
+    "type": "major",
+    "date": "2026-01-16",
+    "version": "v2026.1.15",
+    "title": "セキュリティとプロバイダー認証",
+    "description": "プロバイダー認証レジストリ、暗号化トークンストレージ、改善されたリモート CDP サポートによるセキュリティの強化。",
+    "highlights": [
+      "プラグイン用の OAuth/API key フロー",
+      "暗号化された認証トークン（Keychain/SecurePrefs）",
+      "リモート Browserless/CDP サポート",
+      "エージェント毎のハートビート設定"
+    ],
+    "category": "security",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-16",
+    "type": "major",
+    "date": "2026-01-17",
+    "version": "v2026.1.16",
+    "title": "フックシステムとメディア理解",
+    "description": "バンドルフックと包括的なメディア理解（画像/音声/動画）を備えた革新的なフックシステム。",
+    "highlights": [
+      "CLI ツール付きフックシステム",
+      "インバウンドメディア理解",
+      "セッション ID のクロスリンク",
+      "Zalo Personal プラグインサポート"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-20",
+    "type": "major",
+    "date": "2026-01-21",
+    "version": "v2026.1.20",
+    "title": "Control UI リフレッシュと ACP 統合",
+    "description": "強化された TUI、メモリーツール、IDE 統合のための ACP（Agent Communication Protocol）による大規模な UI 改修。",
+    "highlights": [
+      "Markdown としてコピー機能付きの刷新された Control UI",
+      "TUI でのシンタックスハイライト",
+      "IDE 統合のための ACP",
+      "ハイブリッド BM25 + ベクトルメモリー検索"
+    ],
+    "category": "ui",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-21",
+    "type": "major",
+    "date": "2026-01-22",
+    "version": "v2026.1.21",
+    "title": "ID と承認システム",
+    "description": "アバター付きカスタムアシスタント ID、実行承認システム、および大幅なキャッシュ最適化。",
+    "highlights": [
+      "Control UI でのカスタム ID アバター",
+      "昇格モード付き実行承認ゲート",
+      "キャッシュ TTL 最適化",
+      "Signal の入力中表示/既読通知"
+    ],
+    "category": "feature",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-22",
+    "type": "release",
+    "date": "2026-01-23",
+    "version": "v2026.1.22",
+    "title": "圧縮セーフガード強化",
+    "description": "圧縮のための適応型チャンキングとプログレッシブフォールバックにより、信頼性が向上しました。",
+    "highlights": [
+      "適応型圧縮チャンキング",
+      "Antigravity 使用状況トラッキング",
+      "BlueBubbles ボイスメモサポート"
+    ],
+    "category": "improvement",
+    "impact": "low"
+  },
+  {
+    "id": "v2026-1-23",
+    "type": "major",
+    "date": "2026-01-24",
+    "version": "v2026.1.23",
+    "title": "TTS コアと HTTP ツール API",
+    "description": "テキスト読み上げがコアに移動し、モデル駆動のタグに対応。直接ツール呼び出し用の新しい HTTP エンドポイント。",
+    "highlights": [
+      "表現力豊かなタグ付きコア TTS",
+      "/tools/invoke HTTP API",
+      "チャネル毎のハートビート制御",
+      "Tlon/Urbit チャネルプラグイン"
+    ],
+    "category": "feature",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-24",
+    "type": "release",
+    "date": "2026-01-25",
+    "version": "v2026.1.24",
+    "title": "Ollama と LINE サポート",
+    "description": "ドキュメント付き Ollama ディスカバリーと LINE メッセージング API プラグイン。",
+    "highlights": [
+      "Ollama ローカルモデルディスカバリー",
+      "LINE Messaging API プラグイン",
+      "Edge TTS フォールバック",
+      "Telegram DM トピックをセッションとして扱う"
+    ],
+    "category": "integration",
+    "impact": "low"
+  },
+  {
+    "id": "v2026-1-29",
+    "type": "major",
+    "date": "2026-01-30",
+    "version": "v2026.1.29",
+    "title": "OpenClaw リブランド",
+    "description": "Clawdbot から OpenClaw への完全なリブランド。セキュリティの強化とゲートウェイの改善を実施。",
+    "highlights": [
+      "npm パッケージを 'openclaw' に改名",
+      "拡張機能を @openclaw/* スコープに移動",
+      "ゲートウェイ認証の強制",
+      "Venice API key 統合"
+    ],
+    "category": "rebrand",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-30",
+    "type": "release",
+    "date": "2026-01-31",
+    "version": "v2026.1.30",
+    "title": "CLI 補完とビルド最適化",
+    "description": "シェル補完コマンドと tsdown/tsgo による高速 TypeScript ビルド。",
+    "highlights": [
+      "シェル補完（Zsh/Bash/PowerShell/Fish）",
+      "Kimi K2.5 モデルサポート",
+      "MiniMax OAuth 統合",
+      "TypeScript ビルド速度の改善"
+    ],
+    "category": "improvement",
+    "impact": "low"
+  }
+]

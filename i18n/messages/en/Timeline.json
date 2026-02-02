@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "title": "OpenClaw Development Timeline - Complete History & Changelog",
+    "description": "Explore the complete development journey of OpenClaw from launch to present. Interactive timeline featuring major releases, architectural changes, and feature milestones."
+  },
+  "hero": {
+    "title": "OpenClaw Development Timeline",
+    "subtitle": "Journey through the evolution of OpenClaw — from initial release to a powerful, feature-rich AI agent platform"
+  },
+  "footer": {
+    "text": "OpenClaw continues to evolve with weekly releases.",
+    "linkText": "Follow the journey on GitHub"
+  }
+}

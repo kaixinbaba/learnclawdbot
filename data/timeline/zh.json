@@ -1,0 +1,193 @@
+[
+  {
+    "id": "launch",
+    "type": "milestone",
+    "date": "2026-01-12",
+    "version": "v2026.1.11",
+    "title": "OpenClaw 首次发布",
+    "description": "OpenClaw 正式发布,带来包括记忆搜索、插件系统和多渠道支持在内的突破性功能。",
+    "highlights": [
+      "智能体记忆的向量搜索",
+      "支持语音通话的插件架构",
+      "多渠道消息支持(Slack、Telegram、Discord、WhatsApp)",
+      "高级压缩与保护模式"
+    ],
+    "category": "launch",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-12",
+    "type": "major",
+    "date": "2026-01-13",
+    "version": "v2026.1.12",
+    "title": "渠道架构与记忆系统",
+    "description": "重大架构调整: 聊天提供者统一重命名为渠道并支持自动迁移。记忆系统增强向量搜索功能。",
+    "highlights": [
+      "渠道架构统一",
+      "基于 SQLite 的向量记忆索引",
+      "合成提供者支持",
+      "Cron 调度改进"
+    ],
+    "category": "architecture",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-14",
+    "type": "major",
+    "date": "2026-01-15",
+    "version": "v2026.1.14",
+    "title": "Web 工具与浏览器控制",
+    "description": "引入由 Brave API 驱动的 web_search 和 web_fetch 工具,以及用于浏览器自动化的 Chrome 扩展中继。",
+    "highlights": [
+      "集成 Brave API 的网页搜索",
+      "Chrome 扩展中继接管模式",
+      "通过 CLI 进行远程浏览器控制",
+      "支持 HTTP 钩子的渠道插件"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-15",
+    "type": "major",
+    "date": "2026-01-16",
+    "version": "v2026.1.15",
+    "title": "安全性与提供者认证",
+    "description": "通过提供者认证注册表、加密令牌存储和改进的远程 CDP 支持增强安全性。",
+    "highlights": [
+      "插件的 OAuth/API key 流程",
+      "加密认证令牌(Keychain/SecurePrefs)",
+      "远程 Browserless/CDP 支持",
+      "按智能体配置心跳"
+    ],
+    "category": "security",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-16",
+    "type": "major",
+    "date": "2026-01-17",
+    "version": "v2026.1.16",
+    "title": "钩子系统与媒体理解",
+    "description": "革命性的钩子系统,支持捆绑钩子和全面的媒体理解(图像/音频/视频)。",
+    "highlights": [
+      "带 CLI 工具的钩子系统",
+      "入站媒体理解",
+      "会话身份交叉链接",
+      "Zalo Personal 插件支持"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-20",
+    "type": "major",
+    "date": "2026-01-21",
+    "version": "v2026.1.20",
+    "title": "控制界面刷新与 ACP 集成",
+    "description": "重大 UI 改版,增强 TUI、记忆工具,并引入用于 IDE 集成的 ACP(Agent Communication Protocol)。",
+    "highlights": [
+      "刷新的控制界面,支持复制为 Markdown",
+      "TUI 中的语法高亮",
+      "用于 IDE 集成的 ACP",
+      "混合 BM25 + 向量记忆搜索"
+    ],
+    "category": "ui",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-21",
+    "type": "major",
+    "date": "2026-01-22",
+    "version": "v2026.1.21",
+    "title": "身份与审批系统",
+    "description": "自定义助手身份与头像、执行审批系统,以及重大缓存优化。",
+    "highlights": [
+      "控制界面中的自定义身份头像",
+      "带提升模式的执行审批门控",
+      "缓存 TTL 优化",
+      "Signal 输入状态/已读回执"
+    ],
+    "category": "feature",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-22",
+    "type": "release",
+    "date": "2026-01-23",
+    "version": "v2026.1.22",
+    "title": "压缩保护增强",
+    "description": "自适应分块与渐进式回退压缩,提高可靠性。",
+    "highlights": [
+      "自适应压缩分块",
+      "Antigravity 使用跟踪",
+      "BlueBubbles 语音备忘录支持"
+    ],
+    "category": "improvement",
+    "impact": "low"
+  },
+  {
+    "id": "v2026-1-23",
+    "type": "major",
+    "date": "2026-01-24",
+    "version": "v2026.1.23",
+    "title": "TTS 核心与 HTTP 工具 API",
+    "description": "文本转语音移至核心,支持模型驱动的标签。新增用于直接工具调用的 HTTP 端点。",
+    "highlights": [
+      "带表达标签的核心 TTS",
+      "/tools/invoke HTTP API",
+      "按渠道控制心跳",
+      "Tlon/Urbit 渠道插件"
+    ],
+    "category": "feature",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-24",
+    "type": "release",
+    "date": "2026-01-25",
+    "version": "v2026.1.24",
+    "title": "Ollama 与 LINE 支持",
+    "description": "Ollama 发现功能及文档,以及 LINE 消息 API 插件。",
+    "highlights": [
+      "Ollama 本地模型发现",
+      "LINE Messaging API 插件",
+      "Edge TTS 后备方案",
+      "Telegram DM 主题作为会话"
+    ],
+    "category": "integration",
+    "impact": "low"
+  },
+  {
+    "id": "v2026-1-29",
+    "type": "major",
+    "date": "2026-01-30",
+    "version": "v2026.1.29",
+    "title": "OpenClaw 品牌重塑",
+    "description": "从 Clawdbot 完全更名为 OpenClaw,同时加强安全性和网关改进。",
+    "highlights": [
+      "npm 包重命名为 openclaw",
+      "扩展移至 @openclaw/* 作用域",
+      "网关认证强制执行",
+      "Venice API key 集成"
+    ],
+    "category": "rebrand",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-30",
+    "type": "release",
+    "date": "2026-01-31",
+    "version": "v2026.1.30",
+    "title": "CLI 补全与构建优化",
+    "description": "Shell 补全命令和通过 tsdown/tsgo 实现的更快 TypeScript 构建。",
+    "highlights": [
+      "Shell 补全(Zsh/Bash/PowerShell/Fish)",
+      "Kimi K2.5 模型支持",
+      "MiniMax OAuth 集成",
+      "TypeScript 构建速度提升"
+    ],
+    "category": "improvement",
+    "impact": "low"
+  }
+]

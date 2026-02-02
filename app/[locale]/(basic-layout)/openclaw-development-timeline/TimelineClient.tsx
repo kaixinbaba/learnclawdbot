@@ -14,7 +14,10 @@ import {
   Sparkles
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import timelineData from "@/data/openclaw-timeline.json";
+import { useTranslations } from "next-intl";
+import enTimelineData from "@/data/timeline/en.json";
+import zhTimelineData from "@/data/timeline/zh.json";
+import jaTimelineData from "@/data/timeline/ja.json";
 
 // Icon mapping based on category
 const categoryIcons = {
@@ -52,7 +55,15 @@ interface TimelineNode {
   impact: "high" | "medium" | "low";
 }
 
-function TimelineNode({ node, index }: { node: TimelineNode; index: number }) {
+function TimelineNode({ 
+  node, 
+  index, 
+  locale 
+}: { 
+  node: TimelineNode; 
+  index: number;
+  locale: string;
+}) {
   const [ref, inView] = useInView({
     threshold: 0.3,
     triggerOnce: true,
@@ -60,6 +71,23 @@ function TimelineNode({ node, index }: { node: TimelineNode; index: number }) {
 
   const Icon = categoryIcons[node.category] || GitBranch;
   const isMajor = node.type === "milestone" || node.impact === "high";
+
+  // Format date based on locale
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    
+    if (locale === "zh") {
+      return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+    } else if (locale === "ja") {
+      return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+    } else {
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -94,11 +122,7 @@ function TimelineNode({ node, index }: { node: TimelineNode; index: number }) {
                 {node.version}
               </span>
               <span className={`text-xs ${isMajor ? "text-white/80" : "text-gray-500"}`}>
-                {new Date(node.date).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {formatDate(node.date)}
               </span>
             </div>
 
@@ -158,9 +182,10 @@ function TimelineNode({ node, index }: { node: TimelineNode; index: number }) {
   );
 }
 
-export default function TimelineClient() {
+export default function TimelineClient({ locale }: { locale: string }) {
   const { scrollYProgress } = useScroll();
   const [mounted, setMounted] = useState(false);
+  const t = useTranslations("Timeline");
 
   useEffect(() => {
     setMounted(true);
@@ -178,7 +203,19 @@ export default function TimelineClient() {
     ]
   );
 
-  const nodes = timelineData as TimelineNode[];
+  // Load timeline data based on locale
+  const getTimelineData = () => {
+    switch (locale) {
+      case "zh":
+        return zhTimelineData;
+      case "ja":
+        return jaTimelineData;
+      default:
+        return enTimelineData;
+    }
+  };
+
+  const nodes = getTimelineData() as TimelineNode[];
 
   if (!mounted) {
     return null;
@@ -198,11 +235,10 @@ export default function TimelineClient() {
           className="text-center mb-16 lg:mb-24"
         >
           <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6">
-            OpenClaw Development Timeline
+            {t("hero.title")}
           </h1>
           <p className="text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto">
-            Journey through the evolution of OpenClaw — from initial release to a powerful, 
-            feature-rich AI agent platform
+            {t("hero.subtitle")}
           </p>
         </motion.div>
 
@@ -219,7 +255,7 @@ export default function TimelineClient() {
           {/* Timeline Nodes */}
           <div className="relative">
             {nodes.map((node, index) => (
-              <TimelineNode key={node.id} node={node} index={index} />
+              <TimelineNode key={node.id} node={node} index={index} locale={locale} />
             ))}
           </div>
         </div>
@@ -232,14 +268,14 @@ export default function TimelineClient() {
           className="text-center mt-16 lg:mt-24 pb-16"
         >
           <p className="text-gray-400 text-lg">
-            OpenClaw continues to evolve with weekly releases.{" "}
+            {t("footer.text")}{" "}
             <a
               href="https://github.com/openclaw/openclaw"
               target="_blank"
               rel="noopener noreferrer"
               className="text-cyan-400 hover:text-cyan-300 underline"
             >
-              Follow the journey on GitHub
+              {t("footer.linkText")}
             </a>
           </p>
         </motion.div>
