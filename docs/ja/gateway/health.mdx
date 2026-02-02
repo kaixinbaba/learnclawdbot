@@ -1,0 +1,29 @@
+---
+summary: "チャネル接続性のヘルスチェック手順"
+read_when:
+  - WhatsAppチャネルヘルスを診断する場合
+---
+# ヘルスチェック (CLI)
+
+推測せずにチャネル接続を確認する簡潔なガイド。
+
+## クイックチェック
+- `openclaw status` — ローカルサマリー: Gateway到達可能性/モード、アップデート提示、リンクされたチャネル認証期間、セッション + 最近のアクティビティ。
+- `openclaw status --all` — 完全なローカル診断(読み取り専用、カラー、デバッグ用の貼り付けに安全)。
+- `openclaw status --deep` — 実行中のGatewayも調査します(サポートされている場合、チャネルごとのプローブ)。
+- `openclaw health --json` — 実行中のGatewayに完全なヘルススナップショットを要求します(WSのみ、Baileys直接ソケットなし)。
+- WhatsApp/WebChatでスタンドアロンメッセージとして `/status` を送信すると、エージェントを呼び出さずにステータス応答が得られます。
+- ログ: `/tmp/openclaw/openclaw-*.log` を監視し、`web-heartbeat`、`web-reconnect`、`web-auto-reply`、`web-inbound` でフィルタリングします。
+
+## 深い診断
+- ディスク上の認証情報: `ls -l ~/.openclaw/credentials/whatsapp/<accountId>/creds.json` (mtimeは最近である必要があります)。
+- セッションストア: `ls -l ~/.openclaw/agents/<agentId>/sessions/sessions.json` (パスは設定でオーバーライド可能)。カウントと最近の受信者は `status` で表示されます。
+- 再リンクフロー: ログにステータスコード409–515または `loggedOut` が表示される場合、`openclaw channels logout && openclaw channels login --verbose` を実行します。(注: QRログインフローはペアリング後、ステータス515に対して一度自動再起動します。)
+
+## 何かが失敗した場合
+- `logged out` またはステータス409–515 → `openclaw channels logout` してから `openclaw channels login` で再リンクします。
+- Gatewayに到達できない → 起動します: `openclaw gateway --port 18789` (ポートが使用中の場合は `--force` を使用)。
+- インバウンドメッセージなし → リンクされた電話がオンラインで、送信者が許可されていることを確認します(`channels.whatsapp.allowFrom`)。グループチャットの場合、許可リスト + メンション規則が一致することを確認します(`channels.whatsapp.groups`、`agents.list[].groupChat.mentionPatterns`)。
+
+## 専用の "health" コマンド
+`openclaw health --json` は実行中のGatewayにヘルススナップショットを要求します(CLIから直接のチャネルソケットはありません)。利用可能な場合、リンクされた認証情報/認証期間、チャネルごとのプローブサマリー、セッションストアサマリー、プローブ期間を報告します。Gatewayに到達できないか、プローブが失敗/タイムアウトした場合、非ゼロで終了します。10秒のデフォルトをオーバーライドするには `--timeout <ms>` を使用します。

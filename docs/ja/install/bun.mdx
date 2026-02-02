@@ -1,0 +1,58 @@
+---
+summary: "Bunワークフロー（実験的）: pnpmとの違いとインストールの注意点"
+read_when:
+  - 最速のローカル開発ループが必要な場合（bun + watch）
+  - Bunのインストール/パッチ/ライフサイクルスクリプトの問題に遭遇した場合
+---
+
+# Bun（実験的）
+
+目標: このリポジトリを**Bun**で実行する（オプション、WhatsApp/Telegramには非推奨）
+pnpmワークフローから逸脱せずに。
+
+⚠️ **Gatewayランタイムには非推奨**（WhatsApp/Telegramのバグ）。本番環境ではNodeを使用してください。
+
+## ステータス
+
+- BunはTypeScriptを直接実行するためのオプションのローカルランタイムです（`bun run ...`、`bun --watch ...`）。
+- `pnpm`はビルドのデフォルトであり、完全にサポートされています（一部のドキュメントツールで使用）。
+- Bunは`pnpm-lock.yaml`を使用できず、無視します。
+
+## インストール
+
+デフォルト:
+
+```sh
+bun install
+```
+
+注意: `bun.lock`/`bun.lockb`はgitignoreされているため、どちらの方法でもリポジトリの変更はありません。*ロックファイルの書き込みを行わない*場合:
+
+```sh
+bun install --no-save
+```
+
+## ビルド / テスト（Bun）
+
+```sh
+bun run build
+bun run vitest run
+```
+
+## Bunライフサイクルスクリプト（デフォルトでブロック）
+
+Bunは明示的に信頼されない限り（`bun pm untrusted` / `bun pm trust`）、依存関係のライフサイクルスクリプトをブロックする場合があります。
+このリポジトリでは、一般的にブロックされるスクリプトは必須ではありません:
+
+- `@whiskeysockets/baileys` `preinstall`: Node major >= 20をチェック（Node 22+を実行）。
+- `protobufjs` `postinstall`: 互換性のないバージョンスキームに関する警告を出力（ビルド成果物なし）。
+
+これらのスクリプトが必要な実際のランタイム問題に遭遇した場合は、明示的に信頼してください:
+
+```sh
+bun pm trust @whiskeysockets/baileys protobufjs
+```
+
+## 注意事項
+
+- 一部のスクリプトはまだpnpmをハードコード（例: `docs:build`、`ui:*`、`protocol:check`）。当分の間、それらはpnpm経由で実行してください。

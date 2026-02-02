@@ -1,0 +1,58 @@
+---
+summary: "OpenClaw がサポートするモデルプロバイダ（LLM）"
+read_when:
+  - モデルプロバイダを選択したい
+  - サポートされている LLM バックエンドの概要が必要
+---
+# モデルプロバイダ
+
+OpenClaw は多くの LLM プロバイダを使用できます。プロバイダを選択し、認証してから、デフォルトモデルを `provider/model` として設定します。
+
+チャットチャネルドキュメント（WhatsApp/Telegram/Discord/Slack/Mattermost（プラグイン）など）をお探しですか？[チャネル](/channels) を参照してください。
+
+## ハイライト: Venius（Venice AI）
+
+Venius は、難しいタスクに Opus を使用するオプション付きで、プライバシー重視の推論を実現する推奨の Venice AI セットアップです。
+
+- デフォルト: `venice/llama-3.3-70b`
+- 総合ベスト: `venice/claude-opus-45`（Opus は依然として最強）
+
+[Venice AI](/providers/venice) を参照してください。
+
+## クイックスタート
+
+1) プロバイダで認証します（通常は `openclaw onboard` 経由）。
+2) デフォルトモデルを設定：
+
+```json5
+{
+  agents: { defaults: { model: { primary: "anthropic/claude-opus-4-5" } } }
+}
+```
+
+## プロバイダドキュメント
+
+- [OpenAI（API + Codex）](/providers/openai)
+- [Anthropic（API + Claude Code CLI）](/providers/anthropic)
+- [Qwen（OAuth）](/providers/qwen)
+- [OpenRouter](/providers/openrouter)
+- [Vercel AI Gateway](/providers/vercel-ai-gateway)
+- [Moonshot AI（Kimi + Kimi Code）](/providers/moonshot)
+- [OpenCode Zen](/providers/opencode)
+- [Amazon Bedrock](/bedrock)
+- [Z.AI](/providers/zai)
+- [Xiaomi](/providers/xiaomi)
+- [GLM モデル](/providers/glm)
+- [MiniMax](/providers/minimax)
+- [Venius（Venice AI、プライバシー重視）](/providers/venice)
+- [Ollama（ローカルモデル）](/providers/ollama)
+
+## 文字起こしプロバイダ
+
+- [Deepgram（音声文字起こし）](/providers/deepgram)
+
+## コミュニティツール
+
+- [Claude Max API Proxy](/providers/claude-max-api-proxy) - Claude Max/Pro サブスクリプションを OpenAI 互換 API エンドポイントとして使用
+
+完全なプロバイダカタログ（xAI、Groq、Mistral など）と高度な設定については、[モデルプロバイダ](/concepts/model-providers) を参照してください。

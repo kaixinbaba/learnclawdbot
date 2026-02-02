@@ -1,0 +1,2616 @@
+---
+summary: "OpenClawのセットアップ、設定、使用に関するよくある質問"
+---
+# FAQ
+
+実際の環境（ローカル開発、VPS、マルチエージェント、OAuth/APIキー、モデルフェイルオーバー）での詳細なトラブルシューティングと簡単な回答。ランタイム診断については、[トラブルシューティング](/gateway/troubleshooting)を参照してください。設定の完全なリファレンスについては、[設定](/gateway/configuration)を参照してください。
+
+## 目次
+
+- [クイックスタートと初期セットアップ](#quick-start-and-firstrun-setup)
+  - [困っています - 最速で問題を解決する方法は？](#im-stuck-whats-the-fastest-way-to-get-unstuck)
+  - [OpenClawをインストールしてセットアップする推奨方法は？](#whats-the-recommended-way-to-install-and-set-up-openclaw)
+  - [オンボーディング後にダッシュボードを開く方法は？](#how-do-i-open-the-dashboard-after-onboarding)
+  - [localhostとリモートでダッシュボード（トークン）を認証する方法は？](#how-do-i-authenticate-the-dashboard-token-on-localhost-vs-remote)
+  - [必要なランタイムは何ですか？](#what-runtime-do-i-need)
+  - [Raspberry Piで動作しますか？](#does-it-run-on-raspberry-pi)
+  - [Raspberry Piインストールのヒントはありますか？](#any-tips-for-raspberry-pi-installs)
+  - [「wake up my friend」で止まっている / オンボーディングが孵化しません。どうすればよいですか？](#it-is-stuck-on-wake-up-my-friend-onboarding-will-not-hatch-what-now)
+  - [オンボーディングをやり直さずに新しいマシン（Mac mini）にセットアップを移行できますか？](#can-i-migrate-my-setup-to-a-new-machine-mac-mini-without-redoing-onboarding)
+  - [最新バージョンの新機能はどこで確認できますか？](#where-do-i-see-whats-new-in-the-latest-version)
+  - [docs.openclaw.aiにアクセスできません（SSLエラー）。どうすればよいですか？](#i-cant-access-docsopenclawai-ssl-error-what-now)
+  - [stableとbetaの違いは何ですか？](#whats-the-difference-between-stable-and-beta)
+- [betaバージョンをインストールする方法と、betaとdevの違いは？](#how-do-i-install-the-beta-version-and-whats-the-difference-between-beta-and-dev)
+  - [最新版を試すにはどうすればよいですか？](#how-do-i-try-the-latest-bits)
+  - [インストールとオンボーディングには通常どのくらい時間がかかりますか？](#how-long-does-install-and-onboarding-usually-take)
+  - [インストーラーが止まっている？詳細なフィードバックを得るには？](#installer-stuck-how-do-i-get-more-feedback)
+  - [Windowsインストールでgitが見つからない、またはopenclawが認識されないと表示されます](#windows-install-says-git-not-found-or-openclaw-not-recognized)
+  - [ドキュメントで質問に答えられませんでした - より良い答えを得るには？](#the-docs-didnt-answer-my-question-how-do-i-get-a-better-answer)
+  - [LinuxにOpenClawをインストールする方法は？](#how-do-i-install-openclaw-on-linux)
+  - [VPSにOpenClawをインストールする方法は？](#how-do-i-install-openclaw-on-a-vps)
+  - [クラウド/VPSインストールガイドはどこにありますか？](#where-are-the-cloudvps-install-guides)
+  - [OpenClawに自己更新を依頼できますか？](#can-i-ask-openclaw-to-update-itself)
+  - [オンボーディングウィザードは実際に何をしますか？](#what-does-the-onboarding-wizard-actually-do)
+  - [これを実行するにはClaudeまたはOpenAIのサブスクリプションが必要ですか？](#do-i-need-a-claude-or-openai-subscription-to-run-this)
+  - [APIキーなしでClaude Maxサブスクリプションを使用できますか？](#can-i-use-claude-max-subscription-without-an-api-key)
+  - [Anthropicの「setup-token」認証はどのように機能しますか？](#how-does-anthropic-setuptoken-auth-work)
+  - [Anthropicのsetup-tokenはどこで見つけられますか？](#where-do-i-find-an-anthropic-setuptoken)
+  - [Claudeサブスクリプション認証（Claude Code OAuth）をサポートしていますか？](#do-you-support-claude-subscription-auth-claude-code-oauth)
+  - [Anthropicから「HTTP 429: rate_limit_error」が表示されるのはなぜですか？](#why-am-i-seeing-http-429-ratelimiterror-from-anthropic)
+  - [AWS Bedrockはサポートされていますか？](#is-aws-bedrock-supported)
+  - [Codex認証はどのように機能しますか？](#how-does-codex-auth-work)
+  - [OpenAIサブスクリプション認証（Codex OAuth）をサポートしていますか？](#do-you-support-openai-subscription-auth-codex-oauth)
+  - [Gemini CLI OAuthをセットアップするには？](#how-do-i-set-up-gemini-cli-oauth)
+  - [カジュアルなチャットにはローカルモデルで十分ですか？](#is-a-local-model-ok-for-casual-chats)
+  - [ホスト型モデルのトラフィックを特定の地域に保つには？](#how-do-i-keep-hosted-model-traffic-in-a-specific-region)
+  - [これをインストールするにはMac Miniを購入する必要がありますか？](#do-i-have-to-buy-a-mac-mini-to-install-this)
+  - [iMessageサポートにはMac miniが必要ですか？](#do-i-need-a-mac-mini-for-imessage-support)
+  - [OpenClawを実行するためにMac miniを購入した場合、MacBook Proに接続できますか？](#if-i-buy-a-mac-mini-to-run-openclaw-can-i-connect-it-to-my-macbook-pro)
+  - [Bunを使用できますか？](#can-i-use-bun)
+  - [Telegram: `allowFrom`には何を入れますか？](#telegram-what-goes-in-allowfrom)
+  - [複数の人が異なるOpenClawインスタンスで1つのWhatsApp番号を使用できますか？](#can-multiple-people-use-one-whatsapp-number-with-different-openclaw-instances)
+  - [「高速チャット」エージェントと「コーディング用Opus」エージェントを実行できますか？](#can-i-run-a-fast-chat-agent-and-an-opus-for-coding-agent)
+  - [HomebrewはLinuxで動作しますか？](#does-homebrew-work-on-linux)
+  - [ハッカブル（git）インストールとnpmインストールの違いは何ですか？](#whats-the-difference-between-the-hackable-git-install-and-npm-install)
+  - [後でnpmとgitインストールを切り替えることはできますか？](#can-i-switch-between-npm-and-git-installs-later)
+  - [GatewayはノートPCとVPSのどちらで実行すべきですか？](#should-i-run-the-gateway-on-my-laptop-or-a-vps)
+  - [専用マシンでOpenClawを実行することはどのくらい重要ですか？](#how-important-is-it-to-run-openclaw-on-a-dedicated-machine)
+  - [VPSの最小要件と推奨OSは何ですか？](#what-are-the-minimum-vps-requirements-and-recommended-os)
+  - [VMでOpenClawを実行できますか？要件は何ですか？](#can-i-run-openclaw-in-a-vm-and-what-are-the-requirements)
+- [OpenClawとは？](#what-is-openclaw)
+  - [OpenClawとは何ですか、一段落で？](#what-is-openclaw-in-one-paragraph)
+  - [価値提案は何ですか？](#whats-the-value-proposition)
+  - [セットアップしました - 最初に何をすべきですか？](#i-just-set-it-up-what-should-i-do-first)
+  - [OpenClawの日常的な使用例トップ5は何ですか？](#what-are-the-top-five-everyday-use-cases-for-openclaw)
+  - [OpenClawはSaaSのリード獲得、アウトリーチ、広告、ブログに役立ちますか？](#can-openclaw-help-with-lead-gen-outreach-ads-and-blogs-for-a-saas)
+  - [Web開発においてClaude Codeと比較した利点は何ですか？](#what-are-the-advantages-vs-claude-code-for-web-development)
+- [スキルと自動化](#skills-and-automation)
+  - [リポジトリをダーティに保たずにスキルをカスタマイズするには？](#how-do-i-customize-skills-without-keeping-the-repo-dirty)
+  - [カスタムフォルダーからスキルを読み込めますか？](#can-i-load-skills-from-a-custom-folder)
+  - [異なるタスクに異なるモデルを使用するには？](#how-can-i-use-different-models-for-different-tasks)
+  - [重い作業をしているとボットがフリーズします。それをオフロードするには？](#the-bot-freezes-while-doing-heavy-work-how-do-i-offload-that)
+  - [Cronやリマインダーが起動しません。何を確認すべきですか？](#cron-or-reminders-do-not-fire-what-should-i-check)
+  - [Linuxにスキルをインストールするには？](#how-do-i-install-skills-on-linux)
+  - [OpenClawはスケジュールに従ってまたは継続的にバックグラウンドでタスクを実行できますか？](#can-openclaw-run-tasks-on-a-schedule-or-continuously-in-the-background)
+  - [LinuxからApple/macOS専用スキルを実行できますか？](#can-i-run-applemacosonly-skills-from-linux)
+  - [NotionまたはHeyGen統合はありますか？](#do-you-have-a-notion-or-heygen-integration)
+  - [ブラウザ乗っ取り用のChrome拡張機能をインストールするには？](#how-do-i-install-the-chrome-extension-for-browser-takeover)
+- [サンドボックスとメモリ](#sandboxing-and-memory)
+  - [専用のサンドボックスドキュメントはありますか？](#is-there-a-dedicated-sandboxing-doc)
+  - [ホストフォルダーをサンドボックスにバインドするには？](#how-do-i-bind-a-host-folder-into-the-sandbox)
+  - [メモリはどのように機能しますか？](#how-does-memory-work)
+  - [メモリが物事を忘れ続けます。それを定着させるには？](#memory-keeps-forgetting-things-how-do-i-make-it-stick)
+  - [メモリは永遠に保持されますか？制限は何ですか？](#does-memory-persist-forever-what-are-the-limits)
+  - [セマンティックメモリ検索にはOpenAI APIキーが必要ですか？](#does-semantic-memory-search-require-an-openai-api-key)
+- [ディスク上の保存場所](#where-things-live-on-disk)
+  - [OpenClawで使用されるすべてのデータはローカルに保存されますか？](#is-all-data-used-with-openclaw-saved-locally)
+  - [OpenClawはデータをどこに保存しますか？](#where-does-openclaw-store-its-data)
+  - [AGENTS.md / SOUL.md / USER.md / MEMORY.mdはどこに置くべきですか？](#where-should-agentsmd-soulmd-usermd-memorymd-live)
+  - [推奨されるバックアップ戦略は何ですか？](#whats-the-recommended-backup-strategy)
+  - [OpenClawを完全にアンインストールするには？](#how-do-i-completely-uninstall-openclaw)
+  - [エージェントはワークスペース外で作業できますか？](#can-agents-work-outside-the-workspace)
+  - [リモートモードです - セッションストアはどこにありますか？](#im-in-remote-mode-where-is-the-session-store)
+- [設定の基本](#config-basics)
+  - [設定のフォーマットは？どこにありますか？](#what-format-is-the-config-where-is-it)
+  - [`gateway.bind: "lan"`（または`"tailnet"`）を設定したら、何もリッスンしなくなった / UIが未承認と表示します](#i-set-gatewaybind-lan-or-tailnet-and-now-nothing-listens-the-ui-says-unauthorized)
+  - [なぜlocalhost上でトークンが必要になったのですか？](#why-do-i-need-a-token-on-localhost-now)
+  - [設定変更後に再起動する必要がありますか？](#do-i-have-to-restart-after-changing-config)
+  - [Web検索（およびWebフェッチ）を有効にするには？](#how-do-i-enable-web-search-and-web-fetch)
+  - [config.applyが設定を消去しました。復旧して回避するには？](#configapply-wiped-my-config-how-do-i-recover-and-avoid-this)
+  - [複数のデバイスで専門的なワーカーを持つ中央Gatewayを実行するには？](#how-do-i-run-a-central-gateway-with-specialized-workers-across-devices)
+  - [OpenClawブラウザはヘッドレスで実行できますか？](#can-the-openclaw-browser-run-headless)
+  - [ブラウザ制御にBraveを使用するには？](#how-do-i-use-brave-for-browser-control)
+- [リモートゲートウェイ + ノード](#remote-gateways-nodes)
+  - [Telegram、Gateway、ノード間でコマンドはどのように伝播しますか？](#how-do-commands-propagate-between-telegram-the-gateway-and-nodes)
+  - [Gatewayがリモートでホストされている場合、エージェントは私のコンピュータにどのようにアクセスできますか？](#how-can-my-agent-access-my-computer-if-the-gateway-is-hosted-remotely)
+  - [Tailscaleは接続されていますが、返信がありません。どうすればよいですか？](#tailscale-is-connected-but-i-get-no-replies-what-now)
+  - [2つのOpenClawインスタンス（ローカル + VPS）は互いに通信できますか？](#can-two-openclaw-instances-talk-to-each-other-local-vps)
+  - [複数のエージェントに個別のVPSが必要ですか？](#do-i-need-separate-vpses-for-multiple-agents)
+  - [VPSからのSSHの代わりに個人用ノートPCでノードを使用する利点はありますか？](#is-there-a-benefit-to-using-a-node-on-my-personal-laptop-instead-of-ssh-from-a-vps)
+  - [ノードはGatewayサービスを実行しますか？](#do-nodes-run-a-gateway-service)
+  - [設定を適用するAPI / RPC方法はありますか？](#is-there-an-api-rpc-way-to-apply-config)
+  - [初回インストールの最小限の「健全な」設定は何ですか？](#whats-a-minimal-sane-config-for-a-first-install)
+  - [VPSでTailscaleをセットアップしてMacから接続するには？](#how-do-i-set-up-tailscale-on-a-vps-and-connect-from-my-mac)
+  - [MacノードをリモートGateway（Tailscale Serve）に接続するには？](#how-do-i-connect-a-mac-node-to-a-remote-gateway-tailscale-serve)
+  - [2台目のノートPCにインストールすべきか、それともノードを追加するだけですか？](#should-i-install-on-a-second-laptop-or-just-add-a-node)
+- [環境変数と.env読み込み](#env-vars-and-env-loading)
+  - [OpenClawは環境変数をどのようにロードしますか？](#how-does-openclaw-load-environment-variables)
+  - [「サービス経由でGatewayを起動したら、環境変数が消えました。」どうすればよいですか？](#i-started-the-gateway-via-the-service-and-my-env-vars-disappeared-what-now)
+  - [`COPILOT_GITHUB_TOKEN`を設定しましたが、モデルのステータスに「Shell env: off.」と表示されます。なぜですか？](#i-set-copilotgithubtoken-but-models-status-shows-shell-env-off-why)
+- [セッションと複数チャット](#sessions-multiple-chats)
+  - [新しい会話を開始するには？](#how-do-i-start-a-fresh-conversation)
+  - [`/new`を送信しない場合、セッションは自動的にリセットされますか？](#do-sessions-reset-automatically-if-i-never-send-new)
+  - [OpenClawインスタンスのチーム（1人のCEOと多数のエージェント）を作る方法はありますか？](#is-there-a-way-to-make-a-team-of-openclaw-instances-one-ceo-and-many-agents)
+  - [タスク途中でコンテキストが切り詰められました。どうすれば防げますか？](#why-did-context-get-truncated-midtask-how-do-i-prevent-it)
+  - [OpenClawを完全にリセットしつつインストール状態を保つには？](#how-do-i-completely-reset-openclaw-but-keep-it-installed)
+  - [「context too large」エラーが出ています - リセットまたは圧縮するには？](#im-getting-context-too-large-errors-how-do-i-reset-or-compact)
+  - [「LLM request rejected: messages.N.content.X.tool_use.input: Field required」と表示されるのはなぜですか？](#why-am-i-seeing-llm-request-rejected-messagesncontentxtooluseinput-field-required)
+  - [30分ごとにハートビートメッセージが届くのはなぜですか？](#why-am-i-getting-heartbeat-messages-every-30-minutes)
+  - [WhatsAppグループに「ボットアカウント」を追加する必要がありますか？](#do-i-need-to-add-a-bot-account-to-a-whatsapp-group)
+  - [WhatsAppグループのJIDを取得するには？](#how-do-i-get-the-jid-of-a-whatsapp-group)
+  - [OpenClawがグループで返信しないのはなぜですか？](#why-doesnt-openclaw-reply-in-a-group)
+  - [グループ/スレッドはDMとコンテキストを共有しますか？](#do-groupsthreads-share-context-with-dms)
+  - [いくつのワークスペースとエージェントを作成できますか？](#how-many-workspaces-and-agents-can-i-create)
+  - [複数のボットまたはチャットを同時に実行できますか（Slack）、またそれをどのようにセットアップすべきですか？](#can-i-run-multiple-bots-or-chats-at-the-same-time-slack-and-how-should-i-set-that-up)
+- [モデル: デフォルト、選択、エイリアス、切り替え](#models-defaults-selection-aliases-switching)
+  - [「デフォルトモデル」とは何ですか？](#what-is-the-default-model)
+  - [どのモデルを推奨しますか？](#what-model-do-you-recommend)
+  - [設定を消去せずにモデルを切り替えるには？](#how-do-i-switch-models-without-wiping-my-config)
+  - [自己ホスト型モデル（llama.cpp、vLLM、Ollama）を使用できますか？](#can-i-use-selfhosted-models-llamacpp-vllm-ollama)
+  - [OpenClaw、Flawd、Krillはモデルに何を使用していますか？](#what-do-openclaw-flawd-and-krill-use-for-models)
+  - [モデルをその場で（再起動せずに）切り替えるには？](#how-do-i-switch-models-on-the-fly-without-restarting)
+  - [日常タスクにGPT 5.2を使用し、コーディングにCodex 5.2を使用できますか？](#can-i-use-gpt-52-for-daily-tasks-and-codex-52-for-coding)
+  - [「Model … is not allowed」と表示されて返信がないのはなぜですか？](#why-do-i-see-model-is-not-allowed-and-then-no-reply)
+  - [「Unknown model: minimax/MiniMax-M2.1」と表示されるのはなぜですか？](#why-do-i-see-unknown-model-minimaxminimaxm21)
+  - [MiniMaxをデフォルトにして、複雑なタスクにOpenAIを使用できますか？](#can-i-use-minimax-as-my-default-and-openai-for-complex-tasks)
+  - [opus / sonnet / gptは組み込みのショートカットですか？](#are-opus-sonnet-gpt-builtin-shortcuts)
+  - [モデルショートカット（エイリアス）を定義/上書きするには？](#how-do-i-defineoverride-model-shortcuts-aliases)
+  - [OpenRouterやZ.AIなどの他のプロバイダーからモデルを追加するには？](#how-do-i-add-models-from-other-providers-like-openrouter-or-zai)
+- [モデルフェイルオーバーと「All models failed」](#model-failover-and-all-models-failed)
+  - [フェイルオーバーはどのように機能しますか？](#how-does-failover-work)
+  - [このエラーはどういう意味ですか？](#what-does-this-error-mean)
+  - [`No credentials found for profile "anthropic:default"`の修正チェックリスト](#fix-checklist-for-no-credentials-found-for-profile-anthropicdefault)
+  - [Google Geminiも試行して失敗したのはなぜですか？](#why-did-it-also-try-google-gemini-and-fail)
+- [認証プロファイル: それは何か、どのように管理するか](#auth-profiles-what-they-are-and-how-to-manage-them)
+  - [認証プロファイルとは何ですか？](#what-is-an-auth-profile)
+  - [典型的なプロファイルIDは何ですか？](#what-are-typical-profile-ids)
+  - [どの認証プロファイルが最初に試行されるかを制御できますか？](#can-i-control-which-auth-profile-is-tried-first)
+  - [OAuthとAPIキー: 違いは何ですか？](#oauth-vs-api-key-whats-the-difference)
+- [Gateway: ポート、「すでに実行中」、リモートモード](#gateway-ports-already-running-and-remote-mode)
+  - [Gatewayはどのポートを使用しますか？](#what-port-does-the-gateway-use)
+  - [`openclaw gateway status`が`Runtime: running`と表示するのに、`RPC probe: failed`なのはなぜですか？](#why-does-openclaw-gateway-status-say-runtime-running-but-rpc-probe-failed)
+  - [`openclaw gateway status`が異なる`Config (cli)`と`Config (service)`を表示するのはなぜですか？](#why-does-openclaw-gateway-status-show-config-cli-and-config-service-different)
+  - [「another gateway instance is already listening」とはどういう意味ですか？](#what-does-another-gateway-instance-is-already-listening-mean)
+  - [リモートモードでOpenClawを実行するには（クライアントが別の場所のGatewayに接続）？](#how-do-i-run-openclaw-in-remote-mode-client-connects-to-a-gateway-elsewhere)
+  - [コントロールUIが「unauthorized」と表示（または再接続を繰り返す）します。どうすればよいですか？](#the-control-ui-says-unauthorized-or-keeps-reconnecting-what-now)
+  - [`gateway.bind: "tailnet"`を設定しましたが、バインドできない / 何もリッスンしません](#i-set-gatewaybind-tailnet-but-it-cant-bind-nothing-listens)
+  - [同じホストで複数のGatewayを実行できますか？](#can-i-run-multiple-gateways-on-the-same-host)
+  - [「invalid handshake」/ code 1008とはどういう意味ですか？](#what-does-invalid-handshake-code-1008-mean)
+- [ロギングとデバッグ](#logging-and-debugging)
+  - [ログはどこにありますか？](#where-are-logs)
+  - [Gatewayサービスを開始/停止/再起動するには？](#how-do-i-startstoprestart-the-gateway-service)
+  - [Windowsでターミナルを閉じてしまいました - OpenClawを再起動するには？](#i-closed-my-terminal-on-windows-how-do-i-restart-openclaw)
+  - [Gatewayは起動していますが、返信が届きません。何を確認すべきですか？](#the-gateway-is-up-but-replies-never-arrive-what-should-i-check)
+  - [「Disconnected from gateway: no reason」- どうすればよいですか？](#disconnected-from-gateway-no-reason-what-now)
+  - [Telegram setMyCommandsがネットワークエラーで失敗します。何を確認すべきですか？](#telegram-setmycommands-fails-with-network-errors-what-should-i-check)
+  - [TUIが出力を表示しません。何を確認すべきですか？](#tui-shows-no-output-what-should-i-check)
+  - [Gatewayを完全に停止してから起動するには？](#how-do-i-completely-stop-then-start-the-gateway)
+  - [5歳児向け解説: `openclaw gateway restart`対`openclaw gateway`](#eli5-openclaw-gateway-restart-vs-openclaw-gateway)
+  - [何かが失敗したときに詳細を取得する最速の方法は？](#whats-the-fastest-way-to-get-more-details-when-something-fails)
+- [メディアと添付ファイル](#media-attachments)
+  - [スキルが画像/PDFを生成しましたが、何も送信されませんでした](#my-skill-generated-an-imagepdf-but-nothing-was-sent)
+- [セキュリティとアクセス制御](#security-and-access-control)
+  - [OpenClawをインバウンドDMに公開しても安全ですか？](#is-it-safe-to-expose-openclaw-to-inbound-dms)
+  - [プロンプトインジェクションは公開ボットだけの懸念事項ですか？](#is-prompt-injection-only-a-concern-for-public-bots)
+  - [ボットに独自のメール、GitHubアカウント、または電話番号を持たせるべきですか？](#should-my-bot-have-its-own-email-github-account-or-phone-number)
+  - [テキストメッセージに対する自律性を与えても安全ですか？](#can-i-give-it-autonomy-over-my-text-messages-and-is-that-safe)
+  - [パーソナルアシスタントタスクに安価なモデルを使用できますか？](#can-i-use-cheaper-models-for-personal-assistant-tasks)
+  - [Telegramで`/start`を実行しましたが、ペアリングコードが届きませんでした](#i-ran-start-in-telegram-but-didnt-get-a-pairing-code)
+  - [WhatsApp: 連絡先にメッセージを送りますか？ペアリングはどのように機能しますか？](#whatsapp-will-it-message-my-contacts-how-does-pairing-work)
+- [チャットコマンド、タスクの中止、「止まらない」](#chat-commands-aborting-tasks-and-it-wont-stop)
+  - [チャットに表示される内部システムメッセージを停止するには？](#how-do-i-stop-internal-system-messages-from-showing-in-chat)
+  - [実行中のタスクを停止/キャンセルするには？](#how-do-i-stopcancel-a-running-task)
+  - [TelegramからDiscordメッセージを送信するには？（「Cross-context messaging denied」）](#how-do-i-send-a-discord-message-from-telegram-crosscontext-messaging-denied)
+  - [ボットが連続したメッセージを「無視」しているように感じるのはなぜですか？](#why-does-it-feel-like-the-bot-ignores-rapidfire-messages)
+
+## 何か問題が発生した場合の最初の60秒
+
+1) **クイックステータス（最初のチェック）**
+   ```bash
+   openclaw status
+   ```
+   高速ローカル概要: OS + アップデート、Gateway/サービスの到達可能性、エージェント/セッション、プロバイダー設定 + ランタイムの問題（Gatewayが到達可能な場合）。
+
+2) **共有可能なレポート（共有しても安全）**
+   ```bash
+   openclaw status --all
+   ```
+   ログテール付きの読み取り専用診断（トークンは編集済み）。
+
+3) **デーモン + ポート状態**
+   ```bash
+   openclaw gateway status
+   ```
+   スーパーバイザーランタイム対RPC到達可能性、プローブターゲットURL、およびサービスが使用した可能性のある設定を表示します。
+
+4) **詳細プローブ**
+   ```bash
+   openclaw status --deep
+   ```
+   Gatewayヘルスチェック + プロバイダープローブを実行します（到達可能なGatewayが必要）。[ヘルス](/gateway/health)を参照してください。
+
+5) **最新のログをテール**
+   ```bash
+   openclaw logs --follow
+   ```
+   RPCがダウンしている場合は、次のようにフォールバック:
+   ```bash
+   tail -f "$(ls -t /tmp/openclaw/openclaw-*.log | head -1)"
+   ```
+   ファイルログはサービスログとは別です。[ログ](/logging)および[トラブルシューティング](/gateway/troubleshooting)を参照してください。
+
+6) **ドクターの実行（修復）**
+   ```bash
+   openclaw doctor
+   ```
+   設定/状態の修復/移行 + ヘルスチェックを実行します。[ドクター](/gateway/doctor)を参照してください。
+
+7) **Gatewayスナップショット**
+   ```bash
+   openclaw health --json
+   openclaw health --verbose   # エラー時にターゲットURL + 設定パスを表示
+   ```
+   実行中のGatewayにフルスナップショットを要求します（WSのみ）。[ヘルス](/gateway/health)を参照してください。
+
+## クイックスタートと初期セットアップ
+
+### 困っています - 最速で問題を解決する方法は？
+
+**あなたのマシンを見ることができる**ローカルAIエージェントを使用してください。これは、Discordで質問するよりもはるかに効果的です。なぜなら、ほとんどの「困っている」ケースは、リモートヘルパーが検査できない**ローカル設定または環境の問題**だからです。
+
+- **Claude Code**: https://www.anthropic.com/claude-code/
+- **OpenAI Codex**: https://openai.com/codex/
+
+これらのツールは、リポジトリを読み、コマンドを実行し、ログを検査し、マシンレベルのセットアップ（PATH、サービス、権限、認証ファイル）の修正を支援できます。ハッカブル（git）インストールを介して**完全なソースチェックアウト**を提供してください:
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --install-method git
+```
+
+これにより、OpenClawが**gitチェックアウトから**インストールされるため、エージェントはコード + ドキュメントを読み、実行している正確なバージョンについて推論できます。後で`--install-method git`なしでインストーラーを再実行することで、いつでもstableに戻すことができます。
+
+ヒント: エージェントに修正を**計画して監督**させ（ステップバイステップ）、必要なコマンドのみを実行させます。これにより、変更を小さく保ち、監査しやすくなります。
+
+実際のバグや修正を発見した場合は、GitHubの問題を報告するかPRを送信してください:
+https://github.com/openclaw/openclaw/issues
+https://github.com/openclaw/openclaw/pulls
+
+これらのコマンドから始めてください（ヘルプを求める際に出力を共有してください）:
+
+```bash
+openclaw status
+openclaw models status
+openclaw doctor
+```
+
+これらが行うこと:
+- `openclaw status`: Gateway/エージェントの健全性 + 基本設定の迅速なスナップショット。
+- `openclaw models status`: プロバイダー認証 + モデルの可用性を確認します。
+- `openclaw doctor`: 一般的な設定/状態の問題を検証して修復します。
+
+その他の便利なCLIチェック: `openclaw status --all`、`openclaw logs --follow`、`openclaw gateway status`、`openclaw health --verbose`。
+
+クイックデバッグループ: [何か問題が発生した場合の最初の60秒](#first-60-seconds-if-somethings-broken)。
+インストールドキュメント: [インストール](/install)、[インストーラーフラグ](/install/installer)、[更新](/install/updating)。
+
+### OpenClawをインストールしてセットアップする推奨方法は？
+
+リポジトリは、ソースから実行してオンボーディングウィザードを使用することを推奨しています:
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash
+openclaw onboard --install-daemon
+```
+
+ウィザードはUIアセットも自動的にビルドできます。オンボーディング後、通常はポート**18789**でGatewayを実行します。
+
+ソースから（貢献者/開発者）:
+
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+pnpm install
+pnpm build
+pnpm ui:build # 初回実行時にUI依存関係を自動インストール
+openclaw onboard
+```
+
+まだグローバルインストールがない場合は、`pnpm openclaw onboard`で実行してください。
+
+### オンボーディング後にダッシュボードを開く方法は？
+
+ウィザードは現在、オンボーディング直後にトークン付きダッシュボードURLでブラウザを開き、サマリーに完全なリンク（トークン付き）も印刷します。そのタブを開いたままにしておいてください。起動しなかった場合は、同じマシン上で印刷されたURLをコピー/ペーストしてください。トークンはホストローカルのままで、ブラウザから何も取得されません。
+
+### localhostとリモートでダッシュボード（トークン）を認証する方法は？
+
+**Localhost（同じマシン）:**
+- `http://127.0.0.1:18789/`を開きます。
+- 認証を求められた場合は、`openclaw dashboard`を実行してトークン付きリンク（`?token=...`）を使用します。
+- トークンは`gateway.auth.token`（または`OPENCLAW_GATEWAY_TOKEN`）と同じ値で、最初の読み込み後にUIによって保存されます。
+
+**localhost以外:**
+- **Tailscale Serve**（推奨）: bindをloopbackのままにし、`openclaw gateway --tailscale serve`を実行し、`https://<magicdns>/`を開きます。`gateway.auth.allowTailscale`が`true`の場合、IDヘッダーが認証を満たします（トークン不要）。
+- **Tailnetバインド**: `openclaw gateway --bind tailnet --token "<token>"`を実行し、`http://<tailscale-ip>:18789/`を開き、ダッシュボード設定にトークンをペーストします。
+- **SSHトンネル**: `ssh -N -L 18789:127.0.0.1:18789 user@host`してから、`openclaw dashboard`から`http://127.0.0.1:18789/?token=...`を開きます。
+
+バインドモードと認証の詳細については、[ダッシュボード](/web/dashboard)および[Webサーフェス](/web)を参照してください。
+
+### 必要なランタイムは何ですか？
+
+Node **>= 22**が必要です。`pnpm`が推奨されます。BunはGatewayには**推奨されません**。
+
+### Raspberry Piで動作しますか？
+
+はい。Gatewayは軽量です - ドキュメントでは、個人使用に十分なものとして**512MB-1GB RAM**、**1コア**、約**500MB**のディスクをリストしており、**Raspberry Pi 4で実行できる**と記載しています。
+
+追加の余裕（ログ、メディア、その他のサービス）が必要な場合は、**2GBが推奨**されますが、ハードな最小値ではありません。
+
+ヒント: 小さなPi/VPSがGatewayをホストでき、ローカルの画面/カメラ/キャンバスやコマンド実行のために、ノートPC/電話に**ノード**をペアリングできます。[ノード](/nodes)を参照してください。
+
+### Raspberry Piインストールのヒントはありますか？
+
+短いバージョン: 動作しますが、粗削りな部分もあります。
+
+- **64ビット**OSを使用し、Node >= 22を維持します。
+- **ハッカブル（git）インストール**を推奨します。そうすれば、ログを確認して迅速に更新できます。
+- チャンネル/スキルなしで開始し、1つずつ追加します。
+- 奇妙なバイナリの問題が発生した場合、通常は**ARM互換性**の問題です。
+
+ドキュメント: [Linux](/platforms/linux)、[インストール](/install)。
+
+### 「wake up my friend」で止まっている / オンボーディングが孵化しません。どうすればよいですか？
+
+その画面は、Gatewayが到達可能で認証されていることに依存しています。TUIも最初の孵化時に「Wake up, my friend!」を自動的に送信します。その行が**返信なし**で表示され、トークンが0のままの場合、エージェントは実行されませんでした。
+
+1) Gatewayを再起動します:
+```bash
+openclaw gateway restart
+```
+2) ステータス + 認証を確認します:
+```bash
+openclaw status
+openclaw models status
+openclaw logs --follow
+```
+3) それでもハングする場合は、実行します:
+```bash
+openclaw doctor
+```
+
+Gatewayがリモートの場合、トンネル/Tailscale接続が稼働していて、UIが正しいGatewayを指していることを確認してください。[リモートアクセス](/gateway/remote)を参照してください。
+
+### オンボーディングをやり直さずに新しいマシン（Mac mini）にセットアップを移行できますか？
+
+はい。**状態ディレクトリ**と**ワークスペース**をコピーしてから、一度Doctorを実行します。これにより、**両方**の場所をコピーする限り、ボットを「まったく同じ」（メモリ、セッション履歴、認証、チャンネル状態）に保つことができます:
+
+1) 新しいマシンにOpenClawをインストールします。
+2) 古いマシンから`$OPENCLAW_STATE_DIR`（デフォルト: `~/.openclaw`）をコピーします。
+3) ワークスペース（デフォルト: `~/.openclaw/workspace`）をコピーします。
+4) `openclaw doctor`を実行し、Gatewayサービスを再起動します。
+
+これにより、設定、認証プロファイル、WhatsApp資格情報、セッション、メモリが保持されます。リモートモードの場合、Gatewayホストがセッションストアとワークスペースを所有していることに注意してください。
+
+**重要:** ワークスペースだけをGitHubにコミット/プッシュする場合、バックアップしているのは**メモリ + ブートストラップファイル**だけであり、**セッション履歴や認証は含まれません**。それらは`~/.openclaw/`（例: `~/.openclaw/agents/<agentId>/sessions/`）の下にあります。
+
+関連: [移行](/install/migrating)、[ディスク上の保存場所](/help/faq#where-does-openclaw-store-its-data)、[エージェントワークスペース](/concepts/agent-workspace)、[ドクター](/gateway/doctor)、[リモートモード](/gateway/remote)。
+
+### 最新バージョンの新機能はどこで確認できますか？
+
+GitHubのチェンジログを確認してください:  
+https://github.com/openclaw/openclaw/blob/main/CHANGELOG.md
+
+最新のエントリが一番上にあります。一番上のセクションが**Unreleased**とマークされている場合、次の日付付きセクションが最新の出荷バージョンです。エントリは**Highlights**、**Changes**、**Fixes**（必要に応じてドキュメント/その他のセクション）でグループ化されています。
+
+### docs.openclaw.aiにアクセスできません（SSLエラー）。どうすればよいですか？
+
+一部のComcast/Xfinity接続は、Xfinity Advanced Securityを介して`docs.openclaw.ai`を誤ってブロックします。それを無効にするか、`docs.openclaw.ai`を許可リストに追加してから、再試行してください。詳細: [トラブルシューティング](/help/troubleshooting#docsopenclawai-shows-an-ssl-error-comcastxfinity)。
+ここに報告してブロック解除を支援してください: https://spa.xfinity.com/check_url_status。
+
+それでもサイトにアクセスできない場合、ドキュメントはGitHubにミラーリングされています:
+https://github.com/openclaw/openclaw/tree/main/docs
+
+### stableとbetaの違いは何ですか？
+
+**Stable**と**beta**は**npm dist-tag**であり、別個のコードラインではありません:
+- `latest` = stable
+- `beta` = テスト用の早期ビルド
+
+私たちは**beta**にビルドを出荷し、テストし、ビルドが安定したら**同じバージョンを`latest`に昇格**させます。そのため、betaとstableは**同じバージョン**を指すことができます。
+
+変更内容を確認してください:  
+https://github.com/openclaw/openclaw/blob/main/CHANGELOG.md
+
+### betaバージョンをインストールする方法と、betaとdevの違いは？
+
+**Beta**はnpm dist-tag `beta`（`latest`と一致する場合があります）。  
+**Dev**は`main`の移動ヘッド（git）；公開されると、npm dist-tag `dev`を使用します。
+
+ワンライナー（macOS/Linux）:
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.bot/install.sh | bash -s -- --beta
+```
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.bot/install.sh | bash -s -- --install-method git
+```
+
+Windowsインストーラー（PowerShell）:
+https://openclaw.ai/install.ps1
+
+詳細: [開発チャンネル](/install/development-channels)および[インストーラーフラグ](/install/installer)。
+
+### インストールとオンボーディングには通常どのくらい時間がかかりますか？
+
+大まかなガイド:
+- **インストール:** 2-5分
+- **オンボーディング:** 設定するチャンネル/モデルの数に応じて5-15分
+
+ハングした場合は、[インストーラーが止まっている](/help/faq#installer-stuck-how-do-i-get-more-feedback)と[困っています](/help/faq#im-stuck--whats-the-fastest-way-to-get-unstuck)の高速デバッグループを使用してください。
+
+### 最新版を試すにはどうすればよいですか？
+
+2つのオプション:
+
+1) **Devチャンネル（gitチェックアウト）:**
+```bash
+openclaw update --channel dev
+```
+これは`main`ブランチに切り替えて、ソースから更新します。
+
+2) **ハッカブルインストール（インストーラーサイトから）:**
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --install-method git
+```
+これにより、編集可能なローカルリポジトリが得られ、その後gitで更新できます。
+
+手動でクリーンなクローンを作成する場合は、次を使用します:
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+pnpm install
+pnpm build
+```
+
+ドキュメント: [更新](/cli/update)、[開発チャンネル](/install/development-channels)、[インストール](/install)。
+
+### インストーラーが止まっている？詳細なフィードバックを得るには？
+
+**詳細出力**でインストーラーを再実行します:
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --verbose
+```
+
+詳細付きbetaインストール:
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --beta --verbose
+```
+
+ハッカブル（git）インストールの場合:
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --install-method git --verbose
+```
+
+その他のオプション: [インストーラーフラグ](/install/installer)。
+
+### Windowsインストールでgitが見つからない、またはopenclawが認識されないと表示されます
+
+Windowsの一般的な2つの問題:
+
+**1) npmエラー spawn git / gitが見つかりません**
+- **Git for Windows**をインストールし、`git`がPATHにあることを確認してください。
+- PowerShellを閉じて再度開き、インストーラーを再実行します。
+
+**2) インストール後にopenclawが認識されません**
+- npmグローバルbinフォルダーがPATHにありません。
+- パスを確認します:
+  ```powershell
+  npm config get prefix
+  ```
+- `<prefix>\\bin`がPATHにあることを確認します（ほとんどのシステムでは`%AppData%\\npm`です）。
+- PATH更新後にPowerShellを閉じて再度開きます。
+
+最もスムーズなWindowsセットアップが必要な場合は、ネイティブWindowsではなく**WSL2**を使用してください。
+ドキュメント: [Windows](/platforms/windows)。
+
+### ドキュメントで質問に答えられませんでした - より良い答えを得るには？
+
+**ハッカブル（git）インストール**を使用して、完全なソースとドキュメントをローカルに配置し、そのフォルダーからボット（またはClaude/Codex）に*尋ねる*と、リポジトリを読んで正確に答えることができます。
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --install-method git
+```
+
+詳細: [インストール](/install)および[インストーラーフラグ](/install/installer)。
+
+### LinuxにOpenClawをインストールする方法は？
+
+短い答え: Linuxガイドに従い、オンボーディングウィザードを実行します。
+
+- Linuxクイックパス + サービスインストール: [Linux](/platforms/linux)。
+- 完全なウォークスルー: [はじめに](/start/getting-started)。
+- インストーラー + 更新: [インストールと更新](/install/updating)。
+
+### VPSにOpenClawをインストールする方法は？
+
+任意のLinux VPSが動作します。サーバーにインストールしてから、SSH/TailscaleでGatewayにアクセスします。
+
+ガイド: [exe.dev](/platforms/exe-dev)、[Hetzner](/platforms/hetzner)、[Fly.io](/platforms/fly)。  
+リモートアクセス: [Gatewayリモート](/gateway/remote)。
+
+### クラウド/VPSインストールガイドはどこにありますか？
+
+一般的なプロバイダーを含む**ホスティングハブ**があります。1つを選んでガイドに従ってください:
+
+- [VPSホスティング](/vps)（すべてのプロバイダーが1か所に）
+- [Fly.io](/platforms/fly)
+- [Hetzner](/platforms/hetzner)
+- [exe.dev](/platforms/exe-dev)
+
+クラウドでの仕組み: **Gatewayはサーバー上で実行**され、コントロールUI（またはTailscale/SSH）を介してノートPC/電話からアクセスします。状態 + ワークスペースはサーバー上に存在するため、ホストを信頼できるソースとして扱い、バックアップしてください。
+
+**ノード**（Mac/iOS/Android/ヘッドレス）をそのクラウドGatewayにペアリングして、ノートPC上でコマンドを実行しながら、ローカルの画面/カメラ/キャンバスにアクセスし、Gatewayをクラウドに保持できます。
+
+ハブ: [プラットフォーム](/platforms)。リモートアクセス: [Gatewayリモート](/gateway/remote)。
+ノード: [ノード](/nodes)、[ノードCLI](/cli/nodes)。
+
+### OpenClawに自己更新を依頼できますか？
+
+短い答え: **可能ですが、推奨されません**。更新フローはGatewayを再起動する可能性があり（アクティブセッションがドロップします）、クリーンなgitチェックアウトが必要な場合があり、確認を求める可能性があります。より安全: オペレーターとしてシェルから更新を実行します。
+
+CLIを使用します:
+
+```bash
+openclaw update
+openclaw update status
+openclaw update --channel stable|beta|dev
+openclaw update --tag <dist-tag|version>
+openclaw update --no-restart
+```
+
+エージェントから自動化する必要がある場合:
+
+```bash
+openclaw update --yes --no-restart
+openclaw gateway restart
+```
+
+ドキュメント: [更新](/cli/update)、[更新中](/install/updating)。
+
+### オンボーディングウィザードは実際に何をしますか？
+
+`openclaw onboard`は推奨されるセットアップパスです。**ローカルモード**では、次の手順を案内します:
+
+- **モデル/認証セットアップ**（Claudeサブスクリプションには**setup-token**推奨、OpenAI Codex OAuthサポート、APIキーオプション、LM Studioローカルモデルサポート）
+- **ワークスペース**の場所 + ブートストラップファイル
+- **Gateway設定**（bind/port/auth/tailscale）
+- **プロバイダー**（WhatsApp、Telegram、Discord、Mattermost（プラグイン）、Signal、iMessage）
+- **デーモンインストール**（macOSのLaunchAgent；Linux/WSL2のsystemdユーザーユニット）
+- **ヘルスチェック**と**スキル**選択
+
+設定されたモデルが不明または認証が欠落している場合は警告も表示されます。
+
+### これを実行するにはClaudeまたはOpenAIのサブスクリプションが必要ですか？
+
+いいえ。**APIキー**（Anthropic/OpenAI/その他）または**ローカルのみのモデル**でOpenClawを実行できるため、データはデバイス上に残ります。サブスクリプション（Claude Pro/MaxまたはOpenAI Codex）は、これらのプロバイダーを認証するオプションの方法です。
+
+ドキュメント: [Anthropic](/providers/anthropic)、[OpenAI](/providers/openai)、[ローカルモデル](/gateway/local-models)、[モデル](/concepts/models)。
+
+### APIキーなしでClaude Maxサブスクリプションを使用できますか？
+
+はい。APIキーの代わりに**setup-token**で認証できます。これがサブスクリプションパスです。
+
+Claude Pro/Maxサブスクリプションには**APIキーが含まれていません**ので、これがサブスクリプションアカウントの正しいアプローチです。重要: Anthropicのサブスクリプションポリシーと規約の下でこの使用が許可されていることを確認する必要があります。最も明示的でサポートされているパスが必要な場合は、Anthropic APIキーを使用してください。
+
+### Anthropicの「setup-token」認証はどのように機能しますか？
+
+`claude setup-token`はClaude Code CLI（Webコンソールでは利用できません）を介して**トークン文字列**を生成します。**任意のマシン**で実行できます。ウィザードで**Anthropic token (paste setup-token)**を選択するか、`openclaw models auth paste-token --provider anthropic`でペーストします。トークンは**anthropic**プロバイダーの認証プロファイルとして保存され、APIキーのように使用されます（自動更新なし）。詳細: [OAuth](/concepts/oauth)。
+
+### Anthropicのsetup-tokenはどこで見つけられますか？
+
+Anthropicコンソールには**ありません**。setup-tokenは**任意のマシン**上の**Claude Code CLI**によって生成されます:
+
+```bash
+claude setup-token
+```
+
+印刷されたトークンをコピーしてから、ウィザードで**Anthropic token (paste setup-token)**を選択します。Gatewayホスト上で実行する場合は、`openclaw models auth setup-token --provider anthropic`を使用します。別の場所で`claude setup-token`を実行した場合は、Gatewayホスト上で`openclaw models auth paste-token --provider anthropic`でペーストします。[Anthropic](/providers/anthropic)を参照してください。
+
+### Claudeサブスクリプション認証（Claude Pro/Max）をサポートしていますか？
+
+はい - **setup-token**経由で。OpenClawはClaude Code CLI OAuthトークンを再利用しなくなりました；setup-tokenまたはAnthropic APIキーを使用してください。トークンをどこでも生成し、Gatewayホストにペーストします。[Anthropic](/providers/anthropic)および[OAuth](/concepts/oauth)を参照してください。
+
+注: Claudeサブスクリプションアクセスは、Anthropicの規約によって管理されます。本番環境またはマルチユーザーワークロードの場合、APIキーは通常より安全な選択です。
+
+### Anthropicから「HTTP 429: rate_limit_error」が表示されるのはなぜですか？
+
+これは、現在のウィンドウで**Anthropicのクォータ/レート制限**が使い果たされたことを意味します。**Claudeサブスクリプション**（setup-tokenまたはClaude Code OAuth）を使用している場合は、ウィンドウがリセットされるのを待つか、プランをアップグレードしてください。**Anthropic APIキー**を使用している場合は、Anthropicコンソールで使用量/請求を確認し、必要に応じて制限を引き上げてください。
+
+ヒント: **フォールバックモデル**を設定すると、プロバイダーがレート制限されている間もOpenClawが応答を続けることができます。
+[モデル](/cli/models)および[OAuth](/concepts/oauth)を参照してください。
+
+### AWS Bedrockはサポートされていますか？
+
+はい - **手動設定**でpi-aiの**Amazon Bedrock (Converse)**プロバイダー経由で。Gatewayホスト上でAWS資格情報/リージョンを提供し、モデル設定にBedrockプロバイダーエントリを追加する必要があります。[Amazon Bedrock](/bedrock)および[モデルプロバイダー](/providers/models)を参照してください。管理されたキーフローを希望する場合、Bedrockの前にOpenAI互換プロキシを配置することも依然として有効なオプションです。
+
+### Codex認証はどのように機能しますか？
+
+OpenClawはOAuth（ChatGPTサインイン）経由で**OpenAI Code (Codex)**をサポートしています。ウィザードはOAuthフローを実行でき、適切な場合はデフォルトモデルを`openai-codex/gpt-5.2`に設定します。[モデルプロバイダー](/concepts/model-providers)および[ウィザード](/start/wizard)を参照してください。
+
+### OpenAIサブスクリプション認証（Codex OAuth）をサポートしていますか？
+
+はい。OpenClawは**OpenAI Code (Codex) subscription OAuth**を完全にサポートしています。オンボーディングウィザードがOAuthフローを実行できます。
+
+[OAuth](/concepts/oauth)、[モデルプロバイダー](/concepts/model-providers)、および[ウィザード](/start/wizard)を参照してください。
+
+### Gemini CLI OAuthをセットアップするには？
+
+Gemini CLIは`openclaw.json`のクライアントIDまたはシークレットではなく、**プラグイン認証フロー**を使用します。
+
+手順:
+1) プラグインを有効にします: `openclaw plugins enable google-gemini-cli-auth`
+2) ログイン: `openclaw models auth login --provider google-gemini-cli --set-default`
+
+これにより、OAuthトークンがGatewayホスト上の認証プロファイルに保存されます。詳細: [モデルプロバイダー](/concepts/model-providers)。
+
+### カジュアルなチャットにはローカルモデルで十分ですか？
+
+通常はいいえ。OpenClawには大きなコンテキスト + 強力な安全性が必要です；小さなカードは切り詰められてリークします。どうしても必要な場合は、ローカルで実行できる**最大の** MiniMax M2.1ビルド（LM Studio）を実行し、[/gateway/local-models](/gateway/local-models)を参照してください。小さい/量子化されたモデルはプロンプトインジェクションリスクを高めます - [セキュリティ](/gateway/security)を参照してください。
+
+### ホスト型モデルのトラフィックを特定の地域に保つには？
+
+地域固定エンドポイントを選択します。OpenRouterは、MiniMax、Kimi、GLMのUS-hostedオプションを公開しています；US-hostedバリアントを選択してデータを地域内に保持します。`models.mode: "merge"`を使用することで、AnthropicまたはOpenAIをこれらと一緒にリストできるため、選択した地域指定プロバイダーを尊重しながら、フォールバックは利用可能なままです。
+
+### これをインストールするにはMac Miniを購入する必要がありますか？
+
+いいえ。OpenClawはmacOSまたはLinux（WindowsはWSL2経由）で動作します。Mac miniはオプションです - 常時稼働のホストとして購入する人もいますが、小さなVPS、ホームサーバー、またはRaspberry Pi クラスのボックスも機能します。
+
+**macOS専用ツール**にのみMacが必要です。iMessageの場合、Gatewayを Linux上に保持し、SSH経由で任意のMac上で`imsg`を実行できます。`channels.imessage.cliPath`をSSHラッパーに向けます。
+他のmacOS専用ツールが必要な場合は、Mac上でGatewayを実行するか、macOSノードをペアリングします。
+
+ドキュメント: [iMessage](/channels/imessage)、[ノード](/nodes)、[Macリモートモード](/platforms/mac/remote)。
+
+### iMessageサポートにはMac miniが必要ですか？
+
+Messagesにサインインしている**何らかのmacOSデバイス**が必要です。Mac miniである必要は**ありません** - どのMacでも動作します。OpenClawのiMessage統合はmacOS（BlueBubblesまたは`imsg`）上で実行されますが、Gatewayはどこでも実行できます。
+
+一般的なセットアップ:
+- Linux/VPS上でGatewayを実行し、`channels.imessage.cliPath`をMac上で`imsg`を実行するSSHラッパーに向けます。
+- 最もシンプルな単一マシンセットアップが必要な場合は、Mac上ですべてを実行します。
+
+ドキュメント: [iMessage](/channels/imessage)、[BlueBubbles](/channels/bluebubbles)、[Macリモートモード](/platforms/mac/remote)。
+
+### OpenClawを実行するためにMac miniを購入した場合、MacBook Proに接続できますか？
+
+はい。**Mac miniがGatewayを実行**でき、MacBook Proは**ノード**（コンパニオンデバイス）として接続できます。ノードはGatewayを実行しません - そのデバイス上の画面/カメラ/キャンバスや`system.run`などの追加機能を提供します。
+
+一般的なパターン:
+- Mac mini上のGateway（常時稼働）。
+- MacBook ProはmacOSアプリまたはノードホストを実行し、Gatewayにペアリングします。
+- `openclaw nodes status` / `openclaw nodes list`を使用して確認します。
+
+ドキュメント: [ノード](/nodes)、[ノードCLI](/cli/nodes)。
+
+### Bunを使用できますか？
+
+Bunは**推奨されません**。特にWhatsAppとTelegramでランタイムバグが発生します。
+安定したGatewayには**Node**を使用してください。
+
+それでもBunで実験したい場合は、WhatsApp/Telegramを使用しない非本番Gatewayで行ってください。
+
+### Telegram: `allowFrom`には何を入れますか？
+
+`channels.telegram.allowFrom`は**人間の送信者のTelegramユーザーID**（数値、推奨）または`@username`です。ボットのユーザー名ではありません。
+
+より安全（サードパーティボットなし）:
+- ボットにDMを送信してから、`openclaw logs --follow`を実行して`from.id`を読み取ります。
+
+公式Bot API:
+- ボットにDMを送信してから、`https://api.telegram.org/bot<bot_token>/getUpdates`を呼び出して`message.from.id`を読み取ります。
+
+サードパーティ（プライバシーが低い）:
+- `@userinfobot`または`@getidsbot`にDMを送信します。
+
+[/channels/telegram](/channels/telegram#access-control-dms--groups)を参照してください。
+
+### 複数の人が異なるOpenClawインスタンスで1つのWhatsApp番号を使用できますか？
+
+はい、**マルチエージェントルーティング**経由で。各送信者のWhatsApp **DM**（ピア`kind: "dm"`、送信者E.164（`+15551234567`など））を異なる`agentId`にバインドすると、各人が独自のワークスペースとセッションストアを取得します。返信は依然として**同じWhatsAppアカウント**から送信され、DMアクセス制御（`channels.whatsapp.dmPolicy` / `channels.whatsapp.allowFrom`）はWhatsAppアカウントごとにグローバルです。[マルチエージェントルーティング](/concepts/multi-agent)および[WhatsApp](/channels/whatsapp)を参照してください。
+
+### 「高速チャット」エージェントと「コーディング用Opus」エージェントを実行できますか？
+
+はい。マルチエージェントルーティングを使用します: 各エージェントに独自のデフォルトモデルを与え、インバウンドルート（プロバイダーアカウントまたは特定のピア）を各エージェントにバインドします。設定例は[マルチエージェントルーティング](/concepts/multi-agent)にあります。[モデル](/concepts/models)および[設定](/gateway/configuration)も参照してください。
+
+### HomebrewはLinuxで動作しますか？
+
+はい。HomebrewはLinux（Linuxbrew）をサポートしています。クイックセットアップ:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.profile
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+brew install <formula>
+```
+
+systemd経由でOpenClawを実行する場合は、サービスPATHに`/home/linuxbrew/.linuxbrew/bin`（またはbrewプレフィックス）が含まれていることを確認して、`brew`でインストールされたツールが非ログインシェルで解決されるようにしてください。
+最近のビルドでは、Linux systemdサービス上の一般的なユーザーbinディレクトリ（例: `~/.local/bin`、`~/.npm-global/bin`、`~/.local/share/pnpm`、`~/.bun/bin`）も先頭に追加され、設定されている場合は`PNPM_HOME`、`NPM_CONFIG_PREFIX`、`BUN_INSTALL`、`VOLTA_HOME`、`ASDF_DATA_DIR`、`NVM_DIR`、`FNM_DIR`を尊重します。
+
+### ハッカブル（git）インストールとnpmインストールの違いは何ですか？
+
+- **ハッカブル（git）インストール:** 完全なソースチェックアウト、編集可能、貢献者に最適。
+  ローカルでビルドを実行し、コード/ドキュメントにパッチを当てることができます。
+- **npmインストール:** グローバルCLIインストール、リポジトリなし、「ただ実行する」に最適。
+  更新はnpm dist-tagから提供されます。
+
+ドキュメント: [はじめに](/start/getting-started)、[更新中](/install/updating)。
+
+### 後でnpmとgitインストールを切り替えることはできますか？
+
+はい。別のフレーバーをインストールしてから、Gatewayサービスが新しいエントリーポイントを指すようにDoctorを実行します。
+これは**データを削除しません** - OpenClawコードのインストールのみを変更します。状態（`~/.openclaw`）とワークスペース（`~/.openclaw/workspace`）は変更されません。
+
+
+git → npm から:
+
+```bash
+npm install -g openclaw@latest
+openclaw doctor
+openclaw gateway restart
+```
+
+Doctor は Gateway サービスのエントリーポイントの不一致を検出し、現在のインストールに合わせてサービス設定を書き換えることを提案します（自動化では `--repair` を使用）。
+
+バックアップのヒント: [バックアップ戦略](/help/faq#whats-the-recommended-backup-strategy)を参照してください。
+
+### ラップトップと VPS のどちらで Gateway を実行すべきか
+
+簡単に言うと：**24時間365日の信頼性が必要な場合は VPS を使用してください**。最も手間がかからず、スリープ/再起動を許容できる場合は、ローカルで実行してください。
+
+**ラップトップ（ローカル Gateway）**
+- **利点:** サーバーコストなし、ローカルファイルへの直接アクセス、ライブブラウザウィンドウ。
+- **欠点:** スリープ/ネットワーク切断 = 接続断、OS アップデート/再起動が中断、起動状態を維持する必要がある。
+
+**VPS / クラウド**
+- **利点:** 常時稼働、安定したネットワーク、ラップトップのスリープ問題なし、稼働状態の維持が容易。
+- **欠点:** 多くの場合ヘッドレスで実行（スクリーンショットを使用）、リモートファイルアクセスのみ、更新には SSH が必要。
+
+**OpenClaw 固有の注意事項:** WhatsApp/Telegram/Slack/Mattermost (plugin)/Discord はすべて VPS から問題なく動作します。唯一の実際のトレードオフは**ヘッドレスブラウザ**と可視ウィンドウです。[Browser](/tools/browser)を参照してください。
+
+**推奨デフォルト:** 以前に Gateway 接続断があった場合は VPS。Mac を積極的に使用していて、ローカルファイルアクセスや可視ブラウザでの UI 自動化が必要な場合はローカルが最適です。
+
+### 専用マシンで OpenClaw を実行することはどれくらい重要か
+
+必須ではありませんが、**信頼性と分離のために推奨されます**。
+
+- **専用ホスト（VPS/Mac mini/Pi）:** 常時稼働、スリープ/再起動の中断が少ない、よりクリーンな権限、稼働状態の維持が容易。
+- **共有ラップトップ/デスクトップ:** テストやアクティブな使用には全く問題ありませんが、マシンがスリープまたは更新されるときに一時停止が予想されます。
+
+両方の長所を得たい場合は、専用ホストに Gateway を置き、ラップトップをローカルの screen/camera/exec ツール用の**ノード**としてペアリングしてください。[Nodes](/nodes)を参照してください。
+セキュリティガイダンスについては、[Security](/gateway/security)を参照してください。
+
+### VPS の最小要件と推奨 OS は何か
+
+OpenClaw は軽量です。基本的な Gateway + 1つのチャットチャンネルの場合：
+
+- **絶対最小:** 1 vCPU、1GB RAM、約500MB ディスク。
+- **推奨:** 1-2 vCPU、2GB RAM 以上の余裕（ログ、メディア、複数チャンネル用）。Node ツールとブラウザ自動化はリソースを大量に消費する可能性があります。
+
+OS: **Ubuntu LTS**（または任意の最新の Debian/Ubuntu）を使用してください。Linux インストールパスはそこで最もテストされています。
+
+ドキュメント: [Linux](/platforms/linux)、[VPS hosting](/vps)。
+
+### VM で OpenClaw を実行できるか、要件は何か
+
+はい。VM を VPS と同じように扱ってください：常時稼働し、到達可能で、Gateway と有効にするチャンネルに十分な RAM が必要です。
+
+基本的なガイダンス：
+- **絶対最小:** 1 vCPU、1GB RAM。
+- **推奨:** 複数のチャンネル、ブラウザ自動化、またはメディアツールを実行する場合は 2GB RAM 以上。
+- **OS:** Ubuntu LTS または他の最新の Debian/Ubuntu。
+
+Windows を使用している場合、**WSL2 が最も簡単な VM スタイルのセットアップ**であり、最高のツール互換性があります。[Windows](/platforms/windows)、[VPS hosting](/vps)を参照してください。
+macOS を VM で実行している場合は、[macOS VM](/platforms/macos-vm)を参照してください。
+
+## OpenClaw とは何か？
+
+### OpenClaw を一段落で説明すると
+
+OpenClaw は、自分のデバイス上で実行する個人用 AI アシスタントです。すでに使用しているメッセージングサーフェス（WhatsApp、Telegram、Slack、Mattermost (plugin)、Discord、Google Chat、Signal、iMessage、WebChat）で応答し、サポートされているプラットフォームでは音声 + ライブ Canvas も使用できます。**Gateway** は常時稼働のコントロールプレーンで、アシスタントが製品です。
+
+### 価値提案は何か
+
+OpenClaw は「単なる Claude のラッパー」ではありません。**ローカルファーストのコントロールプレーン**であり、**自分自身のハードウェア**上で有能なアシスタントを実行でき、すでに使用しているチャットアプリから到達可能で、ステートフルセッション、メモリ、ツールを備えています - ワークフローのコントロールをホストされた SaaS に渡すことなく。
+
+ハイライト：
+- **あなたのデバイス、あなたのデータ:** Gateway を好きな場所（Mac、Linux、VPS）で実行し、ワークスペース + セッション履歴をローカルに保持します。
+- **実際のチャンネル、Web サンドボックスではない:** WhatsApp/Telegram/Slack/Discord/Signal/iMessage など、さらにサポートされているプラットフォームでのモバイル音声と Canvas。
+- **モデルに依存しない:** Anthropic、OpenAI、MiniMax、OpenRouter などを使用でき、エージェントごとのルーティングとフェイルオーバーが可能。
+- **ローカルのみのオプション:** ローカルモデルを実行することで、**すべてのデータをデバイス上に保持できます**（希望する場合）。
+- **マルチエージェントルーティング:** チャンネル、アカウント、またはタスクごとに個別のエージェント、それぞれが独自のワークスペースとデフォルトを持ちます。
+- **オープンソースでハック可能:** ベンダーロックインなしで検査、拡張、セルフホストできます。
+
+ドキュメント: [Gateway](/gateway)、[Channels](/channels)、[Multi‑agent](/concepts/multi-agent)、[Memory](/concepts/memory)。
+
+### セットアップしたばかりですが、最初に何をすべきですか
+
+良い最初のプロジェクト：
+- ウェブサイトを構築する（WordPress、Shopify、またはシンプルな静的サイト）。
+- モバイルアプリのプロトタイプを作成する（アウトライン、画面、API プラン）。
+- ファイルとフォルダを整理する（クリーンアップ、命名、タグ付け）。
+- Gmail を接続して要約やフォローアップを自動化する。
+
+大規模なタスクを処理できますが、フェーズに分割してサブエージェントを並列作業に使用すると最もうまく機能します。
+
+### OpenClaw の日常的な上位5つのユースケースは何か
+
+日常的な成功は通常次のようなものです：
+- **個人ブリーフィング:** 受信トレイ、カレンダー、気になるニュースの要約。
+- **調査と下書き:** クイック調査、要約、メールやドキュメントの最初の下書き。
+- **リマインダーとフォローアップ:** cron またはハートビート駆動のナッジとチェックリスト。
+- **ブラウザ自動化:** フォームの記入、データ収集、Web タスクの繰り返し。
+- **クロスデバイス調整:** 携帯電話からタスクを送信し、Gateway にサーバー上で実行させ、チャットで結果を受け取ります。
+
+### OpenClaw は SaaS のリード生成、アウトリーチ、広告、ブログに役立ちますか
+
+**調査、資格認定、下書き**には役立ちます。サイトをスキャンし、ショートリストを作成し、見込み客を要約し、アウトリーチや広告コピーの下書きを書くことができます。
+
+**アウトリーチや広告実行**の場合は、人間をループに入れてください。スパムを避け、地域の法律とプラットフォームポリシーに従い、送信前に何でもレビューしてください。最も安全なパターンは、OpenClaw に下書きさせ、あなたが承認することです。
+
+ドキュメント: [Security](/gateway/security)。
+
+### Web 開発における Claude Code との利点は何か
+
+OpenClaw は**個人アシスタント**および調整レイヤーであり、IDE の代替ではありません。リポジトリ内での最速の直接コーディングループには Claude Code または Codex を使用してください。永続的なメモリ、クロスデバイスアクセス、ツールオーケストレーションが必要な場合は OpenClaw を使用してください。
+
+利点：
+- セッション間の**永続的なメモリ + ワークスペース**
+- **マルチプラットフォームアクセス**（WhatsApp、Telegram、TUI、WebChat）
+- **ツールオーケストレーション**（ブラウザ、ファイル、スケジューリング、フック）
+- **常時稼働の Gateway**（VPS で実行、どこからでも対話）
+- ローカルブラウザ/スクリーン/カメラ/exec 用の**ノード**
+
+ショーケース: https://openclaw.ai/showcase
+
+## スキルと自動化
+
+### リポジトリをダーティに保たずにスキルをカスタマイズする方法
+
+リポジトリコピーを編集する代わりに、管理されたオーバーライドを使用してください。変更を `~/.openclaw/skills/<name>/SKILL.md` に配置します（または `~/.openclaw/openclaw.json` の `skills.load.extraDirs` を介してフォルダを追加）。優先順位は `<workspace>/skills` > `~/.openclaw/skills` > バンドルなので、管理されたオーバーライドが git に触れることなく勝ちます。アップストリームに値する編集のみがリポジトリに存在し、PR として出されるべきです。
+
+### カスタムフォルダからスキルをロードできますか
+
+はい。`~/.openclaw/openclaw.json` の `skills.load.extraDirs` を介して追加ディレクトリを追加します（最低優先順位）。デフォルトの優先順位は維持されます：`<workspace>/skills` → `~/.openclaw/skills` → バンドル → `skills.load.extraDirs`。`clawdhub` はデフォルトで `./skills` にインストールされ、OpenClaw はこれを `<workspace>/skills` として扱います。
+
+### 異なるタスクに異なるモデルを使用する方法
+
+現在サポートされているパターンは次のとおりです：
+- **Cron ジョブ**: 分離されたジョブは、ジョブごとに `model` オーバーライドを設定できます。
+- **サブエージェント**: 異なるデフォルトモデルを持つ個別のエージェントにタスクをルーティングします。
+- **オンデマンド切り替え**: `/model` を使用して、いつでも現在のセッションモデルを切り替えます。
+
+[Cron jobs](/automation/cron-jobs)、[Multi-Agent Routing](/concepts/multi-agent)、および [Slash commands](/tools/slash-commands)を参照してください。
+
+### ボットが重い作業中にフリーズします。オフロードする方法は？
+
+長いタスクや並列タスクには**サブエージェント**を使用してください。サブエージェントは独自のセッションで実行され、要約を返し、メインチャットの応答性を維持します。
+
+ボットに「このタスクのためにサブエージェントを生成して」と依頼するか、`/subagents` を使用してください。
+チャットで `/status` を使用して、Gateway が現在何をしているか（および忙しいかどうか）を確認してください。
+
+トークンのヒント: 長いタスクとサブエージェントの両方がトークンを消費します。コストが懸念される場合は、`agents.defaults.subagents.model` を介してサブエージェントにより安価なモデルを設定してください。
+
+ドキュメント: [Sub-agents](/tools/subagents)。
+
+### Cron またはリマインダーが起動しません。何を確認すべきですか？
+
+Cron は Gateway プロセス内で実行されます。Gateway が継続的に実行されていない場合、スケジュールされたジョブは実行されません。
+
+チェックリスト：
+- cron が有効になっていることを確認します（`cron.enabled`）、`OPENCLAW_SKIP_CRON` が設定されていないこと。
+- Gateway が 24時間365日実行されていることを確認します（スリープ/再起動なし）。
+- ジョブのタイムゾーン設定を確認します（`--tz` 対 ホストタイムゾーン）。
+
+デバッグ：
+```bash
+openclaw cron run <jobId> --force
+openclaw cron runs --id <jobId> --limit 50
+```
+
+ドキュメント: [Cron jobs](/automation/cron-jobs)、[Cron vs Heartbeat](/automation/cron-vs-heartbeat)。
+
+### Linux でスキルをインストールする方法
+
+**ClawdHub**（CLI）を使用するか、ワークスペースにスキルをドロップしてください。macOS Skills UI は Linux では利用できません。
+スキルは https://clawdhub.com で閲覧できます。
+
+ClawdHub CLI をインストールします（パッケージマネージャーを1つ選択）：
+
+```bash
+npm i -g clawdhub
+```
+
+```bash
+pnpm add -g clawdhub
+```
+
+### OpenClaw はスケジュールまたは継続的にバックグラウンドでタスクを実行できますか
+
+はい。Gateway スケジューラを使用します：
+
+- スケジュールまたは繰り返しタスクには**Cron ジョブ**（再起動間で永続化）。
+- 「メインセッション」の定期的なチェックには**ハートビート**。
+- 要約を投稿したりチャットに配信したりする自律エージェントには**分離ジョブ**。
+
+ドキュメント: [Cron jobs](/automation/cron-jobs)、[Cron vs Heartbeat](/automation/cron-vs-heartbeat)、[Heartbeat](/gateway/heartbeat)。
+
+### Linux から Apple macOS 専用スキルを実行できますか
+
+直接はできません。macOS スキルは `metadata.openclaw.os` と必要なバイナリによってゲートされ、スキルは **Gateway ホスト**で適格な場合にのみシステムプロンプトに表示されます。Linux では、`darwin` 専用スキル（`imsg`、`apple-notes`、`apple-reminders` など）は、ゲーティングをオーバーライドしない限りロードされません。
+
+サポートされている3つのパターンがあります：
+
+**オプション A - Mac で Gateway を実行する（最も簡単）。**
+macOS バイナリが存在する場所で Gateway を実行し、[リモートモード](#how-do-i-run-openclaw-in-remote-mode-client-connects-to-a-gateway-elsewhere)または Tailscale 経由で Linux から接続します。Gateway ホストが macOS であるため、スキルは正常にロードされます。
+
+**オプション B - macOS ノードを使用する（SSH なし）。**
+Linux で Gateway を実行し、macOS ノード（メニューバーアプリ）をペアリングし、Mac で **Node Run Commands** を「常に確認」または「常に許可」に設定します。必要なバイナリがノードに存在する場合、OpenClaw は macOS 専用スキルを適格として扱うことができます。エージェントは `nodes` ツールを介してこれらのスキルを実行します。「常に確認」を選択した場合、プロンプトで「常に許可」を承認すると、そのコマンドが許可リストに追加されます。
+
+**オプション C - SSH 経由で macOS バイナリをプロキシする（高度）。**
+Gateway を Linux に保持しますが、必要な CLI バイナリが Mac 上で実行される SSH ラッパーに解決されるようにします。次に、スキルをオーバーライドして Linux を許可し、適格のままにします。
+
+1) バイナリ用の SSH ラッパーを作成します（例：`imsg`）：
+   ```bash
+   #!/usr/bin/env bash
+   set -euo pipefail
+   exec ssh -T user@mac-host /opt/homebrew/bin/imsg "$@"
+   ```
+2) Linux ホストの `PATH` にラッパーを配置します（例：`~/bin/imsg`）。
+3) スキルメタデータをオーバーライドして Linux を許可します（ワークスペースまたは `~/.openclaw/skills`）：
+   ```markdown
+   ---
+   name: imsg
+   description: iMessage/SMS CLI for listing chats, history, watch, and sending.
+   metadata: {"openclaw":{"os":["darwin","linux"],"requires":{"bins":["imsg"]}}}
+   ---
+   ```
+4) 新しいセッションを開始して、スキルスナップショットを更新します。
+
+iMessage 専用には、SSH ラッパーに `channels.imessage.cliPath` を指定することもできます（OpenClaw は stdio のみが必要です）。[iMessage](/channels/imessage)を参照してください。
+
+### Notion または HeyGen の統合はありますか
+
+現在は組み込まれていません。
+
+オプション：
+- **カスタムスキル / プラグイン:** 信頼性の高い API アクセスに最適（Notion/HeyGen 両方に API があります）。
+- **ブラウザ自動化:** コードなしで動作しますが、遅くて脆弱です。
+
+クライアントごとにコンテキストを保持したい場合（エージェンシーワークフロー）、シンプルなパターンは：
+- クライアントごとに1つの Notion ページ（コンテキスト + 設定 + アクティブな作業）。
+- セッションの開始時にエージェントにそのページを取得するよう依頼します。
+
+ネイティブ統合が必要な場合は、機能リクエストを開くか、それらの API をターゲットとするスキルを構築してください。
+
+スキルのインストール：
+
+```bash
+clawdhub install <skill-slug>
+clawdhub update --all
+```
+
+ClawdHub は現在のディレクトリの下の `./skills` にインストールします（または設定された OpenClaw ワークスペースにフォールバック）；OpenClaw は次のセッションでこれを `<workspace>/skills` として扱います。エージェント間で共有されるスキルの場合は、`~/.openclaw/skills/<name>/SKILL.md` に配置してください。一部のスキルは Homebrew 経由でインストールされたバイナリを期待しています；Linux ではこれは Linuxbrew を意味します（上記の Homebrew Linux FAQ エントリを参照）。[Skills](/tools/skills) および [ClawdHub](/tools/clawdhub) を参照してください。
+
+### ブラウザ乗っ取り用の Chrome 拡張機能をインストールする方法
+
+組み込みインストーラを使用してから、Chrome に解凍された拡張機能をロードします：
+
+```bash
+openclaw browser extension install
+openclaw browser extension path
+```
+
+次に Chrome → `chrome://extensions` → 「デベロッパーモード」を有効にする → 「パッケージ化されていない拡張機能を読み込む」 → そのフォルダを選択します。
+
+完全ガイド（リモート Gateway + セキュリティノートを含む）：[Chrome extension](/tools/chrome-extension)
+
+Gateway が Chrome と同じマシンで実行されている場合（デフォルトのセットアップ）、通常**追加のものは必要ありません**。
+Gateway が別の場所で実行されている場合は、ブラウザマシンでノードホストを実行して、Gateway がブラウザアクションをプロキシできるようにします。
+それでも、制御したいタブで拡張機能ボタンをクリックする必要があります（自動的にアタッチしません）。
+
+## サンドボックスとメモリ
+
+### 専用のサンドボックスドキュメントはありますか
+
+はい。[Sandboxing](/gateway/sandboxing)を参照してください。Docker 固有のセットアップ（Docker の完全な Gateway またはサンドボックスイメージ）については、[Docker](/install/docker)を参照してください。
+
+### DM を個人用に保ち、グループを1つのエージェントでパブリックサンドボックスにできますか
+
+はい - プライベートトラフィックが **DM** で、パブリックトラフィックが**グループ**の場合。
+
+`agents.defaults.sandbox.mode: "non-main"` を使用して、グループ/チャンネルセッション（非メインキー）が Docker で実行され、メイン DM セッションはホスト上に留まるようにします。次に、`tools.sandbox.tools` を介してサンドボックスセッションで利用可能なツールを制限します。
+
+セットアップウォークスルー + 設定例：[Groups: personal DMs + public groups](/concepts/groups#pattern-personal-dms-public-groups-single-agent)
+
+キー設定リファレンス：[Gateway configuration](/gateway/configuration#agentsdefaultssandbox)
+
+### ホストフォルダをサンドボックスにバインドする方法
+
+`agents.defaults.sandbox.docker.binds` を `["host:path:mode"]` に設定します（例：`"/home/user/src:/src:ro"`）。グローバル + エージェントごとのバインドはマージされます；`scope: "shared"` の場合、エージェントごとのバインドは無視されます。機密性の高いものには `:ro` を使用し、バインドはサンドボックスファイルシステムの壁をバイパスすることを覚えておいてください。例と安全性のメモについては、[Sandboxing](/gateway/sandboxing#custom-bind-mounts) および [Sandbox vs Tool Policy vs Elevated](/gateway/sandbox-vs-tool-policy-vs-elevated#bind-mounts-security-quick-check) を参照してください。
+
+### メモリはどのように機能しますか
+
+OpenClaw メモリは、エージェントワークスペース内の Markdown ファイルにすぎません：
+- `memory/YYYY-MM-DD.md` の日次ノート
+- `MEMORY.md` の厳選された長期ノート（メイン/プライベートセッションのみ）
+
+OpenClaw は、自動圧縮前にモデルに永続的なノートを書くように思い出させるための**サイレント事前圧縮メモリフラッシュ**も実行します。これは、ワークスペースが書き込み可能な場合にのみ実行されます（読み取り専用サンドボックスはスキップします）。[Memory](/concepts/memory)を参照してください。
+
+### メモリが物事を忘れ続けます。定着させる方法は？
+
+ボットに**メモリに事実を書く**よう依頼してください。長期ノートは `MEMORY.md` に、短期コンテキストは `memory/YYYY-MM-DD.md` に入ります。
+
+これはまだ改善中の領域です。モデルにメモリを保存するよう思い出させると役立ちます；それは何をすべきか知っています。忘れ続ける場合は、Gateway が毎回実行時に同じワークスペースを使用していることを確認してください。
+
+ドキュメント: [Memory](/concepts/memory)、[Agent workspace](/concepts/agent-workspace)。
+
+### セマンティックメモリ検索には OpenAI API キーが必要ですか
+
+**OpenAI embeddings** を使用する場合のみです。Codex OAuth はチャット/補完をカバーし、embeddings アクセスを**付与しません**ので、**Codex でサインイン（OAuth または Codex CLI ログイン）**してもセマンティックメモリ検索には役立ちません。OpenAI embeddings には実際の API キー（`OPENAI_API_KEY` または `models.providers.openai.apiKey`）がまだ必要です。
+
+プロバイダーを明示的に設定しない場合、OpenClaw は API キーを解決できるときにプロバイダーを自動選択します（auth プロファイル、`models.providers.*.apiKey`、または env vars）。OpenAI キーが解決される場合は OpenAI を優先し、そうでない場合は Gemini キーが解決される場合は Gemini を優先します。どちらのキーも利用できない場合、設定するまでメモリ検索は無効のままです。ローカルモデルパスが設定されており存在する場合、OpenClaw は `local` を優先します。
+
+ローカルに留まりたい場合は、`memorySearch.provider = "local"` を設定します（およびオプションで `memorySearch.fallback = "none"`）。Gemini embeddings が必要な場合は、`memorySearch.provider = "gemini"` を設定し、`GEMINI_API_KEY`（または `memorySearch.remote.apiKey`）を提供します。**OpenAI、Gemini、またはローカル**の埋め込みモデルをサポートしています - セットアップの詳細については [Memory](/concepts/memory) を参照してください。
+
+### メモリは永久に保持されますか。制限は何ですか
+
+メモリファイルはディスク上に存在し、削除するまで保持されます。制限はストレージであり、モデルではありません。**セッションコンテキスト**はモデルのコンテキストウィンドウによって制限されているため、長い会話は圧縮または切り捨てられる可能性があります。これがメモリ検索が存在する理由です - 関連部分のみをコンテキストに引き戻します。
+
+ドキュメント: [Memory](/concepts/memory)、[Context](/concepts/context)。
+
+## ディスク上のものの保存場所
+
+### OpenClaw で使用されるすべてのデータはローカルに保存されますか
+
+いいえ - **OpenClaw の状態はローカル**ですが、**外部サービスには送信したものが見えます**。
+
+- **デフォルトでローカル:** セッション、メモリファイル、設定、ワークスペースは Gateway ホスト上に存在します（`~/.openclaw` + ワークスペースディレクトリ）。
+- **必然的にリモート:** モデルプロバイダー（Anthropic/OpenAI など）に送信するメッセージはそれらの API に送られ、チャットプラットフォーム（WhatsApp/Telegram/Slack など）はメッセージデータをサーバーに保存します。
+- **フットプリントを制御できます:** ローカルモデルを使用すると、プロンプトはマシン上に保持されますが、チャンネルトラフィックはチャンネルのサーバーを経由します。
+
+関連: [Agent workspace](/concepts/agent-workspace)、[Memory](/concepts/memory)。
+
+### OpenClaw はデータをどこに保存しますか
+
+すべては `$OPENCLAW_STATE_DIR`（デフォルト：`~/.openclaw`）の下に存在します：
+
+| パス | 目的 |
+|------|---------|
+| `$OPENCLAW_STATE_DIR/openclaw.json` | メイン設定（JSON5） |
+| `$OPENCLAW_STATE_DIR/credentials/oauth.json` | レガシー OAuth インポート（初回使用時に auth プロファイルにコピー） |
+| `$OPENCLAW_STATE_DIR/agents/<agentId>/agent/auth-profiles.json` | Auth プロファイル（OAuth + API キー） |
+| `$OPENCLAW_STATE_DIR/agents/<agentId>/agent/auth.json` | ランタイム auth キャッシュ（自動管理） |
+| `$OPENCLAW_STATE_DIR/credentials/` | プロバイダー状態（例：`whatsapp/<accountId>/creds.json`） |
+| `$OPENCLAW_STATE_DIR/agents/` | エージェントごとの状態（agentDir + セッション） |
+| `$OPENCLAW_STATE_DIR/agents/<agentId>/sessions/` | 会話履歴と状態（エージェントごと） |
+| `$OPENCLAW_STATE_DIR/agents/<agentId>/sessions/sessions.json` | セッションメタデータ（エージェントごと） |
+
+レガシーシングルエージェントパス：`~/.openclaw/agent/*`（`openclaw doctor` によって移行）。
+
+**ワークスペース**（AGENTS.md、メモリファイル、スキルなど）は別で、`agents.defaults.workspace` を介して設定されます（デフォルト：`~/.openclaw/workspace`）。
+
+### AGENTS.md、SOUL.md、USER.md、MEMORY.md はどこに配置すべきですか
+
+これらのファイルは `~/.openclaw` ではなく、**エージェントワークスペース**に存在します。
+
+
+- **ワークスペース（エージェントごと）**: `AGENTS.md`、`SOUL.md`、`IDENTITY.md`、`USER.md`、`MEMORY.md`（または `memory.md`）、`memory/YYYY-MM-DD.md`、オプションの `HEARTBEAT.md`。
+- **状態ディレクトリ（`~/.openclaw`）**: 設定、認証情報、auth プロファイル、セッション、ログ、および共有スキル（`~/.openclaw/skills`）。
+
+デフォルトのワークスペースは `~/.openclaw/workspace` で、以下を介して設定可能です：
+
+```json5
+{
+  agents: { defaults: { workspace: "~/.openclaw/workspace" } }
+}
+```
+
+再起動後にボットが「忘れる」場合は、Gateway が起動ごとに同じワークスペースを使用していることを確認してください（そして覚えておいてください：リモートモードは**ゲートウェイホストの**ワークスペースを使用し、ローカルのラップトップではありません）。
+
+ヒント：永続的な動作や設定が必要な場合は、チャット履歴に頼るのではなく、ボットに **AGENTS.md または MEMORY.md に書き込む**よう依頼してください。
+
+[Agent workspace](/concepts/agent-workspace) および [Memory](/concepts/memory)を参照してください。
+
+### 推奨されるバックアップ戦略は何ですか
+
+**エージェントワークスペース**を**プライベート** git リポジトリに配置し、プライベートな場所（例：GitHub プライベート）にバックアップします。これにより、メモリ + AGENTS/SOUL/USER ファイルがキャプチャされ、後でアシスタントの「心」を復元できます。
+
+`~/.openclaw` 配下のもの（認証情報、セッション、トークン）は**コミットしないでください**。完全な復元が必要な場合は、ワークスペースと状態ディレクトリの両方を個別にバックアップします（上記の移行に関する質問を参照）。
+
+ドキュメント: [Agent workspace](/concepts/agent-workspace)。
+
+### OpenClaw を完全にアンインストールする方法
+
+専用ガイドを参照してください：[Uninstall](/install/uninstall)。
+
+### エージェントはワークスペース外で作業できますか
+
+はい。ワークスペースは**デフォルトの cwd** およびメモリアンカーであり、ハードサンドボックスではありません。相対パスはワークスペース内で解決されますが、サンドボックスが有効になっていない限り、絶対パスは他のホストロケーションにアクセスできます。分離が必要な場合は、[`agents.defaults.sandbox`](/gateway/sandboxing) またはエージェントごとのサンドボックス設定を使用してください。リポジトリをデフォルトの作業ディレクトリにしたい場合は、そのエージェントの `workspace` をリポジトリルートに向けます。OpenClaw リポジトリは単なるソースコードです；意図的にエージェントがその中で作業することを望まない限り、ワークスペースは別に保ちましょう。
+
+例（リポジトリをデフォルト cwd として）：
+
+```json5
+{
+  agents: {
+    defaults: {
+      workspace: "~/Projects/my-repo"
+    }
+  }
+}
+```
+
+### リモートモードではセッションストアはどこにありますか
+
+セッション状態は**ゲートウェイホスト**が所有します。リモートモードの場合、気にするセッションストアはローカルのラップトップではなく、リモートマシン上にあります。[Session management](/concepts/session)を参照してください。
+
+## 設定の基本
+
+### 設定のフォーマットは何ですか。どこにありますか？
+
+OpenClaw は `$OPENCLAW_CONFIG_PATH`（デフォルト：`~/.openclaw/openclaw.json`）からオプションの **JSON5** 設定を読み取ります：
+
+```
+$OPENCLAW_CONFIG_PATH
+```
+
+ファイルが存在しない場合は、安全なデフォルト（`~/.openclaw/workspace` のデフォルトワークスペースを含む）を使用します。
+
+### gateway.bind を lan または tailnet に設定したら何も待ち受けなくなり、UI が unauthorized と表示します
+
+非ループバックバインドは**認証が必要**です。`gateway.auth.mode` + `gateway.auth.token`（または `OPENCLAW_GATEWAY_TOKEN` を使用）を設定します。
+
+```json5
+{
+  gateway: {
+    bind: "lan",
+    auth: {
+      mode: "token",
+      token: "replace-me"
+    }
+  }
+}
+```
+
+注意：
+- `gateway.remote.token` は**リモート CLI 呼び出し**専用です；ローカルゲートウェイ認証を有効にしません。
+- Control UI は `connect.params.auth.token` を介して認証します（アプリ/UI 設定に保存）。URL にトークンを入れることは避けてください。
+
+### なぜ localhost でもトークンが必要になったのですか
+
+ウィザードはデフォルトで（ループバック上でも）ゲートウェイトークンを生成するため、**ローカル WS クライアントは認証する必要があります**。これにより、他のローカルプロセスが Gateway を呼び出すことがブロックされます。Control UI 設定（またはクライアント設定）にトークンを貼り付けて接続します。
+
+本当にオープンなループバックが必要な場合は、設定から `gateway.auth` を削除してください。Doctor はいつでもトークンを生成できます：`openclaw doctor --generate-gateway-token`。
+
+### 設定を変更した後に再起動する必要がありますか
+
+Gateway は設定を監視し、ホットリロードをサポートします：
+
+- `gateway.reload.mode: "hybrid"`（デフォルト）：安全な変更はホット適用、重要なものは再起動
+- `hot`、`restart`、`off` もサポートされています
+
+### Web 検索と Web フェッチを有効にする方法
+
+`web_fetch` は API キーなしで動作します。`web_search` には Brave Search API キーが必要です。**推奨:** `openclaw configure --section web` を実行して `tools.web.search.apiKey` に保存します。環境の代替：Gateway プロセス用に `BRAVE_API_KEY` を設定します。
+
+```json5
+{
+  tools: {
+    web: {
+      search: {
+        enabled: true,
+        apiKey: "BRAVE_API_KEY_HERE",
+        maxResults: 5
+      },
+      fetch: {
+        enabled: true
+      }
+    }
+  }
+}
+```
+
+注意：
+- 許可リストを使用する場合は、`web_search`/`web_fetch` または `group:web` を追加します。
+- `web_fetch` はデフォルトで有効です（明示的に無効にしない限り）。
+- デーモンは `~/.openclaw/.env`（またはサービス環境）から env vars を読み取ります。
+
+ドキュメント: [Web tools](/tools/web)。
+
+### デバイス間で専門化されたワーカーを持つ中央 Gateway を実行する方法
+
+一般的なパターンは、**1つの Gateway**（例：Raspberry Pi）+ **ノード**と**エージェント**です：
+
+- **Gateway（中央）:** チャンネル（Signal/WhatsApp）、ルーティング、セッションを所有。
+- **ノード（デバイス）:** Mac/iOS/Android が周辺機器として接続し、ローカルツール（`system.run`、`canvas`、`camera`）を公開。
+- **エージェント（ワーカー）:** 特別な役割のための個別の頭脳/ワークスペース（例：「Hetzner ops」、「Personal data」）。
+- **サブエージェント:** 並列処理が必要なときにメインエージェントからバックグラウンド作業を生成。
+- **TUI:** Gateway に接続してエージェント/セッションを切り替え。
+
+ドキュメント: [Nodes](/nodes)、[Remote access](/gateway/remote)、[Multi-Agent Routing](/concepts/multi-agent)、[Sub-agents](/tools/subagents)、[TUI](/tui)。
+
+### OpenClaw ブラウザはヘッドレスで実行できますか
+
+はい。設定オプションです：
+
+```json5
+{
+  browser: { headless: true },
+  agents: {
+    defaults: {
+      sandbox: { browser: { headless: true } }
+    }
+  }
+}
+```
+
+デフォルトは `false`（ヘッドフル）です。ヘッドレスは一部のサイトでアンチボットチェックをトリガーする可能性が高くなります。[Browser](/tools/browser)を参照してください。
+
+ヘッドレスは**同じ Chromium エンジン**を使用し、ほとんどの自動化（フォーム、クリック、スクレイピング、ログイン）で動作します。主な違い：
+- 可視ブラウザウィンドウなし（ビジュアルが必要な場合はスクリーンショットを使用）。
+- 一部のサイトはヘッドレスモードでの自動化についてより厳格です（CAPTCHA、アンチボット）。
+  例えば、X/Twitter はしばしばヘッドレスセッションをブロックします。
+
+### ブラウザ制御に Brave を使用する方法
+
+`browser.executablePath` を Brave バイナリ（または任意の Chromium ベースのブラウザ）に設定し、Gateway を再起動します。
+[Browser](/tools/browser#use-brave-or-another-chromium-based-browser)の完全な設定例を参照してください。
+
+## リモート Gateway + ノード
+
+### コマンドは Telegram、Gateway、ノード間でどのように伝播しますか
+
+Telegram メッセージは **Gateway** によって処理されます。Gateway はエージェントを実行し、ノードツールが必要な場合にのみ **Gateway WebSocket** 経由でノードを呼び出します：
+
+Telegram → Gateway → Agent → `node.*` → Node → Gateway → Telegram
+
+ノードはインバウンドプロバイダートラフィックを見ません；ノード RPC 呼び出しのみを受信します。
+
+### Gateway がリモートでホストされている場合、エージェントはどのようにコンピューターにアクセスできますか
+
+簡単に言うと：**コンピューターをノードとしてペアリングします**。Gateway は他の場所で実行されますが、Gateway WebSocket 経由でローカルマシン上の `node.*` ツール（screen、camera、system）を呼び出すことができます。
+
+典型的なセットアップ：
+1) 常時稼働ホスト（VPS/ホームサーバー）で Gateway を実行します。
+2) Gateway ホスト + コンピューターを同じ tailnet に配置します。
+3) Gateway WS が到達可能であることを確認します（tailnet バインドまたは SSH トンネル）。
+4) ローカルで macOS アプリを開き、**Remote over SSH** モード（または直接 tailnet）で接続します
+
+はい。これは設定オプションです：
+
+```json5
+{
+  browser: { headless: true },
+  agents: {
+    defaults: {
+      sandbox: { browser: { headless: true } }
+    }
+  }
+}
+```
+
+デフォルトは `false`（headful）です。Headlessモードは一部のサイトで自動化対策に引っかかりやすくなります。詳細は [Browser](/tools/browser) を参照してください。
+
+Headlessは**同じChromiumエンジン**を使用し、ほとんどの自動化（フォーム、クリック、スクレイピング、ログイン）で機能します。主な違い：
+- ブラウザウィンドウが表示されない（必要な場合はスクリーンショットを使用）。
+- 一部のサイトではheadlessモードでの自動化に対してより厳格（CAPTCHA、自動化対策）。
+  例えば、X/Twitterはheadlessセッションをブロックすることが多いです。
+
+### Braveをブラウザコントロールに使用する方法
+
+`browser.executablePath` をBraveバイナリ（または任意のChromiumベースのブラウザ）に設定し、Gatewayを再起動してください。
+完全な設定例は [Browser](/tools/browser#use-brave-or-another-chromium-based-browser) を参照してください。
+
+## リモートgateway + nodes
+
+### コマンドはTelegramとgatewayとnodesの間でどのように伝播されますか
+
+Telegramメッセージは**gateway**で処理されます。gatewayはagentを実行し、
+nodeツールが必要な場合にのみ**Gateway WebSocket**経由でnodesを呼び出します：
+
+Telegram → Gateway → Agent → `node.*` → Node → Gateway → Telegram
+
+Nodesは受信プロバイダートラフィックを見ません。node RPC呼び出しのみを受信します。
+
+### Gatewayがリモートでホストされている場合、agentはどのようにコンピュータにアクセスできますか
+
+簡単な答え：**コンピュータをnodeとしてペアリング**します。Gatewayは別の場所で実行されますが、
+Gateway WebSocket経由でローカルマシン上の `node.*` ツール（画面、カメラ、システム）を呼び出すことができます。
+
+典型的なセットアップ：
+1) 常時稼働ホスト（VPS/ホームサーバー）でGatewayを実行。
+2) Gatewayホストとコンピュータを同じtailnetに配置。
+3) Gateway WSが到達可能であることを確認（tailnetバインドまたはSSHトンネル）。
+4) macOSアプリをローカルで開き、**Remote over SSH**モードで接続
+   （またはダイレクトtailnet）してnodeとして登録できるようにします。
+5) Gateway上でnodeを承認：
+   ```bash
+   openclaw nodes pending
+   openclaw nodes approve <requestId>
+   ```
+
+別個のTCPブリッジは不要です。nodesはGateway WebSocket経由で接続します。
+
+セキュリティ注意：macOS nodeをペアリングすると、そのマシン上で `system.run` が許可されます。信頼できるデバイスのみをペアリングし、[Security](/gateway/security) を確認してください。
+
+ドキュメント：[Nodes](/nodes)、[Gateway protocol](/gateway/protocol)、[macOS remote mode](/platforms/mac/remote)、[Security](/gateway/security)。
+
+### Tailscaleは接続されているのに返信がありません。どうすればいいですか
+
+基本を確認してください：
+- Gatewayが実行中：`openclaw gateway status`
+- Gatewayヘルス：`openclaw status`
+- チャネルヘルス：`openclaw channels status`
+
+次に認証とルーティングを確認：
+- Tailscale Serveを使用する場合、`gateway.auth.allowTailscale` が正しく設定されているか確認してください。
+- SSHトンネル経由で接続する場合、ローカルトンネルが稼働していて正しいポートを指しているか確認してください。
+- allowlists（DMまたはグループ）にアカウントが含まれているか確認してください。
+
+ドキュメント：[Tailscale](/gateway/tailscale)、[Remote access](/gateway/remote)、[Channels](/channels)。
+
+### 2つのOpenClawインスタンスが互いに通信できますか（ローカル・VPS）
+
+はい。組み込みの「bot-to-bot」ブリッジはありませんが、いくつかの
+信頼性の高い方法で接続できます：
+
+**最もシンプル：** 両方のbotがアクセスできる通常のチャットチャネル（Telegram/Slack/WhatsApp）を使用。
+Bot AがBot Bにメッセージを送信し、Bot Bが通常通り返信します。
+
+**CLIブリッジ（汎用）：** 他方のGatewayを呼び出すスクリプトを実行し、
+`openclaw agent --message ... --deliver` を使用して、他方のbotが
+リッスンしているチャットをターゲットにします。一方のbotがリモートVPS上にある場合、
+SSH/Tailscale経由でそのリモートGatewayにCLIを向けます（[Remote access](/gateway/remote) 参照）。
+
+パターン例（ターゲットGatewayに到達できるマシンから実行）：
+```bash
+openclaw agent --message "Hello from local bot" --deliver --channel telegram --reply-to <chat-id>
+```
+
+ヒント：2つのbotが無限にループしないようにガードレールを追加してください（メンション専用、チャネル
+allowlists、または「botメッセージには返信しない」ルール）。
+
+ドキュメント：[Remote access](/gateway/remote)、[Agent CLI](/cli/agent)、[Agent send](/tools/agent-send)。
+
+### 複数のagentに個別のVPSが必要ですか
+
+いいえ。1つのGatewayは複数のagentをホストでき、それぞれが独自のworkspace、モデルデフォルト、
+およびルーティングを持ちます。これが通常のセットアップであり、VPSごとに1つのagentを実行するよりもはるかに安価でシンプルです。
+
+個別のVPSを使用するのは、ハード分離（セキュリティ境界）または共有したくない
+非常に異なる設定が必要な場合のみです。それ以外の場合は、1つのGatewayを維持し、
+複数のagentまたはsub-agentを使用してください。
+
+### 個人用ラップトップでnodeを使用することは、VPSからSSHするより利点がありますか
+
+はい - nodesはリモートGatewayからラップトップに到達する第一級の方法であり、
+シェルアクセス以上のものを解放します。GatewayはmacOS/Linux（WindowsはWSL2経由）で実行され、
+軽量です（小型VPSまたはRaspberry Piクラスのボックスで十分。4 GB RAMで十分）。そのため、一般的な
+セットアップは常時稼働ホスト + ラップトップをnodeとして使用することです。
+
+- **受信SSHが不要。** NodesはGateway WebSocketに接続し、デバイスペアリングを使用します。
+- **より安全な実行制御。** `system.run` はそのラップトップ上のnode allowlists/approvalsによって保護されます。
+- **より多くのデバイスツール。** Nodesは `system.run` に加えて `canvas`、`camera`、`screen` を公開します。
+- **ローカルブラウザ自動化。** GatewayをVPS上に維持しながら、Chromeをローカルで実行し、
+  Chrome拡張機能 + ラップトップ上のnodeホストで制御をリレーします。
+
+SSHはアドホックなシェルアクセスには適していますが、継続的なagentワークフローと
+デバイス自動化にはnodesがよりシンプルです。
+
+ドキュメント：[Nodes](/nodes)、[Nodes CLI](/cli/nodes)、[Chrome extension](/tools/chrome-extension)。
+
+### 2台目のラップトップにインストールすべきか、単にnodeとして追加すべきか
+
+2台目のラップトップで**ローカルツール**（画面/カメラ/exec）のみが必要な場合は、
+**node**として追加してください。これにより、単一のGatewayを維持し、重複した設定を回避できます。ローカルnodeツールは
+現在macOSのみですが、他のOSへの拡張を計画しています。
+
+2つ目のGatewayをインストールするのは、**ハード分離**または2つの完全に独立したbotが必要な場合のみです。
+
+ドキュメント：[Nodes](/nodes)、[Nodes CLI](/cli/nodes)、[Multiple gateways](/gateway/multiple-gateways)。
+
+### Nodesはgatewayサービスを実行しますか
+
+いいえ。意図的に分離されたプロファイルを実行する場合を除き（[Multiple gateways](/gateway/multiple-gateways) 参照）、ホストごとに**1つのgateway**のみが実行されるべきです。Nodesは
+gatewayに接続する周辺機器です（iOS/Android nodes、またはmacOS「nodeモード」のメニューバーアプリ）。ヘッドレスnode
+ホストとCLI制御については、[Node host CLI](/cli/node) を参照してください。
+
+`gateway`、`discovery`、`canvasHost` の変更には完全な再起動が必要です。
+
+### 設定を適用するAPIやRPC方法はありますか
+
+はい。`config.apply` は完全な設定を検証 + 書き込みし、操作の一部としてGatewayを再起動します。
+
+### config.applyで設定が消えました。復旧方法と回避方法は
+
+`config.apply` は**設定全体**を置き換えます。部分的なオブジェクトを送信すると、他のすべてが
+削除されます。
+
+復旧：
+- バックアップから復元（gitまたはコピーした `~/.openclaw/openclaw.json`）。
+- バックアップがない場合は、`openclaw doctor` を再実行し、チャネル/モデルを再設定してください。
+- これが予期しない場合は、バグを報告し、最後に既知の設定またはバックアップを含めてください。
+- ローカルコーディングagentは、多くの場合、ログや履歴から動作する設定を再構築できます。
+
+回避：
+- 小さな変更には `openclaw config set` を使用してください。
+- 対話的な編集には `openclaw configure` を使用してください。
+
+ドキュメント：[Config](/cli/config)、[Configure](/cli/configure)、[Doctor](/gateway/doctor)。
+
+### 初回インストールに適切な最小限の設定は何ですか
+
+```json5
+{
+  agents: { defaults: { workspace: "~/.openclaw/workspace" } },
+  channels: { whatsapp: { allowFrom: ["+15555550123"] } }
+}
+```
+
+これはworkspaceを設定し、botをトリガーできるユーザーを制限します。
+
+### VPS上でTailscaleをセットアップし、Macから接続する方法
+
+最小限の手順：
+
+1) **VPSにインストール + ログイン**
+   ```bash
+   curl -fsSL https://tailscale.com/install.sh | sh
+   sudo tailscale up
+   ```
+2) **Macにインストール + ログイン**
+   - Tailscaleアプリを使用し、同じtailnetにサインインします。
+3) **MagicDNSを有効化（推奨）**
+   - Tailscale管理コンソールでMagicDNSを有効にして、VPSが安定した名前を持つようにします。
+4) **tailnetホスト名を使用**
+   - SSH：`ssh user@your-vps.tailnet-xxxx.ts.net`
+   - Gateway WS：`ws://your-vps.tailnet-xxxx.ts.net:18789`
+
+SSHなしでControl UIを使用したい場合は、VPS上でTailscale Serveを使用：
+```bash
+openclaw gateway --tailscale serve
+```
+これによりgatewayはloopbackにバインドされ、Tailscale経由でHTTPSを公開します。[Tailscale](/gateway/tailscale) を参照してください。
+
+### MacノードをリモートGateway（Tailscale Serve）に接続する方法
+
+Serveは**Gateway Control UI + WS**を公開します。Nodesは同じGateway WSエンドポイント経由で接続します。
+
+推奨セットアップ：
+1) **VPS + Macが同じtailnet上にあることを確認**。
+2) **macOSアプリをRemoteモードで使用**（SSHターゲットはtailnetホスト名にできます）。
+   アプリはGatewayポートをトンネルし、nodeとして接続します。
+3) **Gateway上でnodeを承認**：
+   ```bash
+   openclaw nodes pending
+   openclaw nodes approve <requestId>
+   ```
+
+ドキュメント：[Gateway protocol](/gateway/protocol)、[Discovery](/gateway/discovery)、[macOS remote mode](/platforms/mac/remote)。
+
+## 環境変数と.envの読み込み
+
+### OpenClawはどのように環境変数を読み込みますか
+
+OpenClawは親プロセス（シェル、launchd/systemd、CIなど）から環境変数を読み取り、さらに以下を読み込みます：
+
+- 現在の作業ディレクトリの `.env`
+- `~/.openclaw/.env`（別名 `$OPENCLAW_STATE_DIR/.env`）からのグローバルフォールバック `.env`
+
+どちらの `.env` ファイルも既存の環境変数を上書きしません。
+
+設定でインライン環境変数を定義することもできます（プロセス環境から欠落している場合にのみ適用）：
+
+```json5
+{
+  env: {
+    OPENROUTER_API_KEY: "sk-or-...",
+    vars: { GROQ_API_KEY: "gsk-..." }
+  }
+}
+```
+
+完全な優先順位とソースについては [/environment](/environment) を参照してください。
+
+### サービス経由でGatewayを起動したら環境変数が消えました。どうすればいいですか
+
+一般的な2つの修正方法：
+
+1) 欠落しているキーを `~/.openclaw/.env` に配置して、サービスがシェル環境を継承しない場合でも取得されるようにします。
+2) シェルインポートを有効化（オプトイン便利機能）：
+
+```json5
+{
+  env: {
+    shellEnv: {
+      enabled: true,
+      timeoutMs: 15000
+    }
+  }
+}
+```
+
+これによりログインシェルを実行し、欠落している予想されるキーのみをインポートします（上書きは決してしません）。環境変数の同等物：
+`OPENCLAW_LOAD_SHELL_ENV=1`、`OPENCLAW_SHELL_ENV_TIMEOUT_MS=15000`。
+
+### COPILOT_GITHUB_TOKENを設定したのに、models statusでShell env offと表示されるのはなぜですか
+
+`openclaw models status` は**シェル環境インポート**が有効かどうかを報告します。「Shell env: off」は
+環境変数が欠落していることを意味**しません** - OpenClawがログインシェルを
+自動的に読み込まないことを意味するだけです。
+
+Gatewayがサービス（launchd/systemd）として実行されている場合、シェル
+環境を継承しません。次のいずれかで修正してください：
+
+1) トークンを `~/.openclaw/.env` に配置：
+   ```
+   COPILOT_GITHUB_TOKEN=...
+   ```
+2) またはシェルインポートを有効化（`env.shellEnv.enabled: true`）。
+3) または設定の `env` ブロックに追加（欠落している場合にのみ適用）。
+
+次にgatewayを再起動して再確認：
+```bash
+openclaw models status
+```
+
+Copilotトークンは `COPILOT_GITHUB_TOKEN`（および `GH_TOKEN` / `GITHUB_TOKEN`）から読み取られます。
+[/concepts/model-providers](/concepts/model-providers) と [/environment](/environment) を参照してください。
+
+## セッションと複数チャット
+
+### 新しい会話を始める方法
+
+スタンドアロンメッセージとして `/new` または `/reset` を送信してください。[Session management](/concepts/session) を参照してください。
+
+### /newを送信しない場合、セッションは自動的にリセットされますか
+
+はい。セッションは `session.idleMinutes`（デフォルト**60**）後に期限切れになります。**次の**
+メッセージはそのチャットキーの新しいセッションIDを開始します。これはトランスクリプトを削除しません - 単に新しいセッションを開始するだけです。
+
+```json5
+{
+  session: {
+    idleMinutes: 240
+  }
+}
+```
+
+### 1人のCEOと多くのagentからなるOpenClawインスタンスのチームを作る方法はありますか
+
+はい、**マルチagentルーティング**と**sub-agents**を使用します。1つのコーディネーター
+agentと、独自のworkspaceとモデルを持つ複数のワーカーagentを作成できます。
+
+とはいえ、これは**楽しい実験**として最もよく見られます。トークンを多く消費し、多くの場合
+個別のセッションを持つ1つのbotを使用するよりも効率的ではありません。私たちが想定する典型的なモデルは、
+並列作業のために異なるセッションを持つ、話しかける1つのbotです。そのbotは必要に応じてsub-agentを生成することもできます。
+
+ドキュメント：[Multi-agent routing](/concepts/multi-agent)、[Sub-agents](/tools/subagents)、[Agents CLI](/cli/agents)。
+
+### タスク中にコンテキストが切り捨てられたのはなぜですか。どうすれば防げますか
+
+セッションコンテキストはモデルウィンドウによって制限されます。長いチャット、大きなツール出力、または多くの
+ファイルは圧縮または切り捨てをトリガーする可能性があります。
+
+役立つこと：
+- 現在の状態を要約してファイルに書き込むようbotに依頼してください。
+- 長いタスクの前に `/compact` を使用し、トピックを切り替えるときに `/new` を使用してください。
+- 重要なコンテキストをworkspaceに保存し、botに読み返すように依頼してください。
+- メインチャットを小さく保つために、長いまたは並列作業にはsub-agentを使用してください。
+- これが頻繁に発生する場合は、より大きなコンテキストウィンドウを持つモデルを選択してください。
+
+### OpenClawを完全にリセットするがインストールは維持する方法
+
+resetコマンドを使用：
+
+```bash
+openclaw reset
+```
+
+非対話的な完全リセット：
+
+```bash
+openclaw reset --scope full --yes --non-interactive
+```
+
+次にオンボーディングを再実行：
+
+```bash
+openclaw onboard --install-daemon
+```
+
+注意：
+- オンボーディングウィザードは、既存の設定を検出した場合**Reset**も提供します。[Wizard](/start/wizard) を参照してください。
+- プロファイル（`--profile` / `OPENCLAW_PROFILE`）を使用した場合、各状態ディレクトリをリセットしてください（デフォルトは `~/.openclaw-<profile>`）。
+- 開発リセット：`openclaw gateway --dev --reset`（開発のみ。開発設定 + 認証情報 + セッション + workspaceを消去）。
+
+### 「context too large」エラーが出ます。リセットまたは圧縮する方法は
+
+これらのいずれかを使用してください：
+
+- **Compact**（会話を保持しますが、古いターンを要約）：
+  ```
+  /compact
+  ```
+  または `/compact <instructions>` で要約を導きます。
+
+- **Reset**（同じチャットキーの新しいセッションID）：
+  ```
+  /new
+  /reset
+  ```
+
+これが続く場合：
+- **セッションプルーニング**（`agents.defaults.contextPruning`）を有効化または調整して、古いツール出力をトリムします。
+- より大きなコンテキストウィンドウを持つモデルを使用してください。
+
+ドキュメント：[Compaction](/concepts/compaction)、[Session pruning](/concepts/session-pruning)、[Session management](/concepts/session)。
+
+### 「LLM request rejected」「content[X].tool_use.input Field required」というメッセージが表示されるのはなぜですか
+
+これはプロバイダー検証エラーです：モデルが必要な `input` なしで `tool_use` ブロックを出力しました。
+通常、これはセッション履歴が古いか破損している（長いスレッドまたはツール/スキーマ変更後）ことを意味します。
+
+修正：`/new`（スタンドアロンメッセージ）で新しいセッションを開始してください。
+
+### 30分ごとにハートビートメッセージが表示されるのはなぜですか
+
+ハートビートはデフォルトで**30分**ごとに実行されます。調整または無効化：
+
+```json5
+{
+  agents: {
+    defaults: {
+      heartbeat: {
+        every: "2h"   // または無効化するには "0m"
+      }
+    }
+  }
+}
+```
+
+`HEARTBEAT.md` が存在するが実質的に空（空白行とmarkdownヘッダー `# Heading` のみ）の場合、OpenClawはAPIコールを節約するためにハートビート実行をスキップします。
+ファイルが欠落している場合でも、ハートビートは実行され、モデルが何をするかを決定します。
+
+エージェント毎のオーバーライドは `agents.list[].heartbeat` を使用します。ドキュメント：[Heartbeat](/gateway/heartbeat)。
+
+### WhatsAppグループにbotアカウントを追加する必要がありますか
+
+いいえ。OpenClawは**あなた自身のアカウント**で実行されるため、グループに参加していれば、OpenClawはそれを見ることができます。
+デフォルトでは、送信者を許可する（`groupPolicy: "allowlist"`）まで、グループ返信はブロックされます。
+
+**あなただけ**がグループ返信をトリガーできるようにしたい場合：
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["+15551234567"]
+    }
+  }
+}
+```
+
+### WhatsAppグループのJIDを取得する方法
+
+オプション1（最速）：ログをtailして、グループでテストメッセージを送信：
+
+```bash
+openclaw logs --follow --json
+```
+
+`@g.us` で終わる `chatId`（または `from`）を探します。例：
+`1234567890-1234567890@g.us`。
+
+オプション2（既に設定/allowlistされている場合）：設定からグループをリスト：
+
+```bash
+openclaw directory groups list --channel whatsapp
+```
+
+ドキュメント：[WhatsApp](/channels/whatsapp)、[Directory](/cli/directory)、[Logs](/cli/logs)。
+
+### OpenClawがグループで返信しないのはなぜですか
+
+2つの一般的な原因：
+- メンションゲーティングがオン（デフォルト）。bot を @メンション（または `mentionPatterns` にマッチ）する必要があります。
+- `channels.whatsapp.groups` を `"*"` なしで設定し、グループがallowlistに含まれていない。
+
+[Groups](/concepts/groups) と [Group messages](/concepts/group-messages) を参照してください。
+
+### グループ/スレッドはDMとコンテキストを共有しますか
+
+ダイレクトチャットはデフォルトでメインセッションに集約されます。グループ/チャネルには独自のセッションキーがあり、Telegramトピック/Discordスレッドは別のセッションです。[Groups](/concepts/groups) と [Group messages](/concepts/group-messages) を参照してください。
+
+### いくつのworkspaceとagentを作成できますか
+
+ハード制限はありません。数十（さらには数百）でも問題ありませんが、注意すべき点：
+
+- **ディスク増加：** セッション + トランスクリプトは `~/.openclaw/agents/<agentId>/sessions/` 下に保存されます。
+- **トークンコスト：** より多くのagentは、より多くの同時モデル使用を意味します。
+- **運用オーバーヘッド：** agent毎の認証プロファイル、workspace、およびチャネルルーティング。
+
+ヒント：
+- agent毎に1つの**アクティブ**workspace（`agents.defaults.workspace`）を維持してください。
+- ディスクが増加したら古いセッションをプルーニング（JSONLまたはストアエントリを削除）してください。
+- `openclaw doctor` を使用して、迷子のworkspaceとプロファイルの不一致を発見してください。
+
+### 複数のbotまたはチャットを同時に実行できますか（Slackなど）、どのようにセットアップすればいいですか
+
+はい。**マルチエージェントルーティング**を使用して複数の分離されたagentを実行し、
+チャネル/アカウント/ピアによって受信メッセージをルーティングします。Slackはチャネルとしてサポートされており、特定のagentにバインドできます。
+
+ブラウザアクセスは強力ですが、「人間ができることは何でも」できるわけではありません - 自動化対策、CAPTCHA、MFAは
+依然として自動化をブロックする可能性があります。最も信頼性の高いブラウザ制御のためには、
+ブラウザを実行するマシン上でChrome拡張機能リレーを使用してください（Gatewayはどこにでも配置できます）。
+
+ベストプラクティスセットアップ：
+- 常時稼働Gatewayホスト（VPS/Mac mini）。
+- 役割毎に1つのagent（バインディング）。
+- それらのagentにバインドされたSlackチャネル。
+- 必要に応じて拡張機能リレー（またはnode）経由のローカルブラウザ。
+
+ドキュメント：[Multi‑Agent Routing](/concepts/multi-agent)、[Slack](/channels/slack)、
+[Browser](/tools/browser)、[Chrome extension](/tools/chrome-extension)、[Nodes](/nodes)。
+
+## モデル：デフォルト、選択、エイリアス、切り替え
+
+### デフォルトモデルは何ですか
+
+OpenClawのデフォルトモデルは、以下に設定したものです：
+
+```
+agents.defaults.model.primary
+```
+
+モデルは `provider/model` として参照されます（例：`anthropic/claude-opus-4-5`）。providerを省略すると、OpenClawは現在、一時的な非推奨フォールバックとして `anthropic` を想定しますが、依然として **明示的に** `provider/model` を設定すべきです。
+
+### どのモデルを推奨しますか
+
+**推奨デフォルト：** `anthropic/claude-opus-4-5`。  
+**良い代替：** `anthropic/claude-sonnet-4-5`。  
+**信頼性の高い（キャラクターは少ない）：** `openai/gpt-5.2` - Opusとほぼ同じくらい優れていますが、個性は少ないです。  
+**予算：** `zai/glm-4.7`。
+
+MiniMax M2.1には独自のドキュメントがあります：[MiniMax](/providers/minimax) と
+[Local models](/gateway/local-models)。
+
+経験則：重要な作業には**できるだけ最高のモデル**を使用し、
+ルーチンチャットや要約には安価なモデルを使用してください。agent毎にモデルをルーティングし、sub-agentを使用して
+長いタスクを並列化できます（各sub-agentはトークンを消費します）。[Models](/concepts/models) と
+[Sub-agents](/tools/subagents) を参照してください。
+
+強い警告：弱い/過度に量子化されたモデルは、プロンプト
+インジェクションと安全でない動作に対してより脆弱です。[Security](/gateway/security) を参照してください。
+
+詳細：[Models](/concepts/models)。
+
+### セルフホスト型モデル（llama.cpp、vLLM、Ollama）を使用できますか
+
+はい。ローカルサーバーがOpenAI互換APIを公開している場合、
+カスタムプロバイダーをそれに向けることができます。Ollamaは直接サポートされており、最も簡単なパスです。
+
+セキュリティ注意：小さいまたは大幅に量子化されたモデルは、プロンプト
+インジェクションに対してより脆弱です。ツールを使用できるbotには**大規模モデル**を強く推奨します。
+それでも小さなモデルを使用したい場合は、サンドボックス化と厳格なツールallowlistを有効にしてください。
+
+ドキュメント：[Ollama](/providers/ollama)、[Local models](/gateway/local-models)、
+[Model providers](/concepts/model-providers)、[Security](/gateway/security)、
+[Sandboxing](/gateway/sandboxing)。
+
+### 設定を消去せずにモデルを切り替える方法
+
+**モデルコマンド**を使用するか、**model**フィールドのみを編集してください。完全な設定置換は避けてください。
+
+安全なオプション：
+- チャットで `/model`（クイック、セッション毎）
+- `openclaw models set ...`（モデル設定のみを更新）
+- `openclaw configure --section models`（対話的）
+- `~/.openclaw/openclaw.json` の `agents.defaults.model` を編集
+
+完全な設定を置き換えるつもりでない限り、部分的なオブジェクトで `config.apply` を避けてください。
+設定を上書きした場合は、バックアップから復元するか、`openclaw doctor` を再実行して修復してください。
+
+ドキュメント：[Models](/concepts/models)、[Configure](/cli/configure)、[Config](/cli/config)、[Doctor](/gateway/doctor)。
+
+### OpenClaw、Flawd、Krillはモデルに何を使用していますか
+
+- **OpenClaw + Flawd：** Anthropic Opus（`anthropic/claude-opus-4-5`） - [Anthropic](/providers/anthropic) を参照。
+- **Krill：** MiniMax M2.1（`minimax/MiniMax-M2.1`） - [MiniMax](/providers/minimax) を参照。
+
+### 再起動せずにその場でモデルを切り替える方法
+
+スタンドアロンメッセージとして `/model` コマンドを使用：
+
+```
+/model sonnet
+/model haiku
+/model opus
+/model gpt
+/model gpt-mini
+/model gemini
+/model gemini-flash
+```
+
+利用可能なモデルは `/model`、`/model list`、または `/model status` でリストできます。
+
+`/model`（および `/model list`）はコンパクトな番号付きピッカーを表示します。番号で選択：
+
+```
+/model 3
+```
+
+プロバイダーの特定の認証プロファイルを強制することもできます（セッション毎）：
+
+```
+/model opus@anthropic:default
+/model opus@anthropic:work
+```
+
+ヒント：`/model status` は、どのagentがアクティブか、どの `auth-profiles.json` ファイルが使用されているか、次に試行される認証プロファイルを表示します。
+利用可能な場合、設定されたプロバイダーエンドポイント（`baseUrl`）とAPIモード（`api`）も表示されます。
+
+**@profileで設定したプロファイルを解除する方法**
+
+`@profile` サフィックスなしで `/model` を再実行してください：
+
+```
+/model anthropic/claude-opus-4-5
+```
+
+デフォルトに戻したい場合は、`/model` から選択してください（または `/model <default provider/model>` を送信）。
+どの認証プロファイルがアクティブかを確認するには `/model status` を使用してください。
+
+### 日常タスクにGPT 5.2を使用し、コーディングにCodex 5.2を使用できますか
+
+はい。1つをデフォルトに設定し、必要に応じて切り替えてください：
+
+- **クイック切り替え（セッション毎）：** 日常タスクに `/model gpt-5.2`、コーディングに `/model gpt-5.2-codex`。
+- **デフォルト + 切り替え：** `agents.defaults.model.primary` を `openai-codex/gpt-5.2` に設定し、コーディング時に `openai-codex/gpt-5.2-codex` に切り替え（または逆）。
+- **Sub-agents：** コーディングタスクを異なるデフォルトモデルを持つsub-agentにルーティング。
+
+[Models](/concepts/models) と [Slash commands](/tools/slash-commands) を参照してください。
+
+### 「Model is not allowed」と表示され、その後返信がないのはなぜですか
+
+`agents.defaults.models` が設定されている場合、それは `/model` と任意の
+セッションオーバーライドの**allowlist**になります。そのリストにないモデルを選択すると：
+
+```
+Model "provider/model" is not allowed. Use /model to list available models.
+```
+
+このエラーは通常の返信の**代わりに**返されます。修正：モデルを
+`agents.defaults.models` に追加するか、allowlistを削除するか、`/model list` からモデルを選択してください。
+
+### 「Unknown model minimax/MiniMax-M2.1」と表示されるのはなぜですか
+
+これは**プロバイダーが設定されていない**ことを意味します（MiniMaxプロバイダー設定または認証
+プロファイルが見つからなかった）、そのためモデルを解決できません。この検出の修正は
+**2026.1.12**（執筆時点では未リリース）にあります。
+
+修正チェックリスト：
+1) **2026.1.12**（またはソース `main` から実行）にアップグレードし、gatewayを再起動してください。
+2) MiniMaxが設定されている（ウィザードまたはJSON）、またはMiniMax APIキーが
+   env/認証プロファイルに存在してプロバイダーを注入できることを確認してください。
+3) 正確なモデルID（大文字小文字区別）を使用してください：`minimax/MiniMax-M2.1` または
+   `minimax/MiniMax-M2.1-lightning`。
+4) 実行：
+   ```bash
+   openclaw models list
+   ```
+   リストから選択してください（またはチャットで `/model list`）。
+
+[MiniMax](/providers/minimax) と [Models](/concepts/models) を参照してください。
+
+### MiniMaxをデフォルトとして使用し、複雑なタスクにOpenAIを使用できますか
+
+はい。**MiniMaxをデフォルト**として使用し、必要に応じて**セッション毎**にモデルを切り替えてください。
+フォールバックは**エラー**用であり、「難しいタスク」用ではないため、`/model` または別のagentを使用してください。
+
+**オプションA：セッション毎に切り替え**
+```json5
+{
+  env: { MINIMAX_API_KEY: "sk-...", OPENAI_API_KEY: "sk-..." },
+  agents: {
+    defaults: {
+      model: { primary: "minimax/MiniMax-M2.1" },
+      models: {
+        "minimax/MiniMax-M2.1": { alias: "minimax" },
+        "openai/gpt-5.2": { alias: "gpt" }
+      }
+    }
+  }
+}
+```
+
+次に：
+```
+/model gpt
+```
+
+**オプションB：別々のagent**
+- Agent Aデフォルト：MiniMax
+- Agent Bデフォルト：OpenAI
+- agentでルーティングするか、`/agent` を使用して切り替え
+
+ドキュメント：[Models](/concepts/models)、[Multi-Agent Routing](/concepts/multi-agent)、[MiniMax](/providers/minimax)、[OpenAI](/providers/openai)。
+
+### opus、sonnet、gptは組み込みショートカットですか
+
+はい。OpenClawはいくつかのデフォルトショートハンドを提供します（モデルが `agents.defaults.models` に存在する場合にのみ適用）：
+
+- `opus` → `anthropic/claude-opus-4-5`
+- `sonnet` → `anthropic/claude-sonnet-4-5`
+- `gpt` → `openai/gpt-5.2`
+- `gpt-mini` → `openai/gpt-5-mini`
+- `gemini` → `google/gemini-3-pro-preview`
+- `gemini-flash` → `google/gemini-3-flash-preview`
+
+同じ名前で独自のaliasを設定すると、あなたの値が優先されます。
+
+### モデルショートカット/エイリアスを定義/オーバーライドする方法
+
+エイリアスは `agents.defaults.models.<modelId>.alias` から来ます。例：
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: { primary: "anthropic/claude-opus-4-5" },
+      models: {
+        "anthropic/claude-opus-4-5": { alias: "opus" },
+        "anthropic/claude-sonnet-4-5": { alias: "sonnet" },
+        "anthropic/claude-haiku-4-5": { alias: "haiku" }
+      }
+    }
+  }
+}
+```
+
+次に `/model sonnet`（またはサポートされている場合は `/<alias>`）がそのモデルIDに解決されます。
+
+### OpenRouterやZAIなどの他のプロバイダーからモデルを追加する方法
+
+OpenRouter（従量課金制、多くのモデル）：
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: { primary: "openrouter/anthropic/claude-sonnet-4-5" },
+      models: { "openrouter/anthropic/claude-sonnet-4-5": {} }
+    }
+  },
+  env: { OPENROUTER_API_KEY: "sk-or-..." }
+}
+```
+
+Z.AI（GLMモデル）：
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: { primary: "zai/glm-4.7" },
+      models: { "zai/glm-4.7": {} }
+    }
+  },
+  env: { ZAI_API_KEY: "..." }
+}
+```
+
+provider/modelを参照しても必要なプロバイダーキーが欠落している場合、ランタイム認証エラーが発生します（例：`No API key found for provider "zai"`）。
+
+**新しいagentを追加した後に「No API key found for provider」が表示される**
+
+これは通常、**新しいagent**が空の認証ストアを持っていることを意味します。認証はagent毎で、
+以下に保存されます：
+
+```
+~/.openclaw/agents/<agentId>/agent/auth-profiles.json
+```
+
+修正オプション：
+- `openclaw agents add <id>` を実行し、ウィザード中に認証を設定してください。
+- またはメインagentの `agentDir` から新しいagentの `agentDir` に `auth-profiles.json` をコピーしてください。
+
+agent間で `agentDir` を再利用**しないでください**。認証/セッションの衝突が発生します。
+
+## モデルフェイルオーバーと「All models failed」
+
+### フェイルオーバーはどのように機能しますか
+
+フェイルオーバーは2つの段階で発生します：
+
+1) 同じプロバイダー内での**認証プロファイルローテーション**。
+2) `agents.defaults.model.fallbacks` の次のモデルへの**モデルフォールバック**。
+
+クールダウンは失敗したプロファイルに適用されます（指数バックオフ）、そのためOpenClawはプロバイダーがレート制限されているか一時的に失敗している場合でも応答を続けることができます。
+
+### このエラーの意味は何ですか
+
+```
+No credentials found for profile "anthropic:default"
+```
+
+システムが認証プロファイルID `anthropic:default` を使用しようとしましたが、予想される認証ストアで認証情報を見つけることができなかったことを意味します。
+
+### 「No credentials found for profile anthropic:default」の修正チェックリスト
+
+- **認証プロファイルがどこにあるか確認**（新規 vs レガシーパス）
+  - 現在：`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+  - レガシー：`~/.openclaw/agent/*`（`openclaw doctor` によって移行）
+- **env変数がGatewayによって読み込まれているか確認**
+  - シェルで `ANTHROPIC_API_KEY` を設定したが、systemd/launchd経由でGatewayを実行している場合、継承されない可能性があります。`~/.openclaw/.env` に配置するか、`env.shellEnv` を有効にしてください。
+- **正しいagentを編集していることを確認**
+  - マルチagentセットアップでは、複数の `auth-profiles.json` ファイルが存在する可能性があります。
+- **モデル/認証ステータスを健全性チェック**
+  - `openclaw models status` を使用して、設定されたモデルとプロバイダーが認証されているかを確認してください。
+
+**「No credentials found for profile anthropic」の修正チェックリスト**
+
+これは、実行がAnthropic認証プロファイルに固定されているが、Gateway
+がその認証ストアで見つけることができないことを意味します。
+
+- **setup-tokenを使用**
+  - `claude setup-token` を実行し、`openclaw models auth setup-token --provider anthropic` で貼り付けてください。
+  - トークンが別のマシンで作成された場合は、`openclaw models auth paste-token --provider anthropic` を使用してください。
+- **代わりにAPIキーを使用したい場合**
+  - **gateway host**の `~/.openclaw/.env` に `ANTHROPIC_API_KEY` を配置してください。
+  - 欠落しているプロファイルを強制する固定順序をクリア：
+    ```bash
+    openclaw models auth order clear --provider anthropic
+    ```
+- **gatewayホストでコマンドを実行していることを確認**
+  - リモートモードでは、認証プロファイルはgatewayマシン上にあり、ラップトップ上にはありません。
+
+### Google Geminiも試行して失敗したのはなぜですか
+
+モデル設定にフォールバックとしてGoogle Geminiが含まれている場合（またはGeminiショートハンドに切り替えた場合）、OpenClawはモデルフォールバック中にそれを試行します。Google認証情報を設定していない場合、`No API key found for provider "google"` が表示されます。
+
+修正：Google認証を提供するか、`agents.defaults.model.fallbacks` / エイリアスからGoogleモデルを削除/回避して、フォールバックがそこにルーティングされないようにしてください。
+
+**「LLM request rejected message thinking signature required google antigravity」**
+
+原因：セッション履歴に**署名なしのthinkingブロック**が含まれている（中断/部分的なストリームから発生することが多い）。Google Antigravityはthinkingブロックに署名を必要とします。
+
+修正：OpenClawはGoogle Antigravity Claude用に署名なしthinkingブロックを削除するようになりました。それでも表示される場合は、**新しいセッション**を開始するか、そのagentに `/thinking off` を設定してください。
+
+## 認証プロファイル：それらが何か、どのように管理するか
+
+関連：[/concepts/oauth](/concepts/oauth)（OAuthフロー、トークンストレージ、マルチアカウントパターン）
+
+### 認証プロファイルとは何ですか
+
+認証プロファイルは、プロバイダーに関連付けられた名前付き認証情報レコード（OAuthまたはAPIキー）です。プロファイルは以下に保存されます：
+
+```
+~/.openclaw/agents/<agentId>/agent/auth-profiles.json
+```
+
+### 典型的なプロファイルIDは何ですか
+
+OpenClawはプロバイダー接頭辞付きIDを使用します：
+
+- `anthropic:default`（emailアイデンティティが存在しない場合に一般的）
+- OAuth identities用の `anthropic:<email>`
+- 選択したカスタムID（例：`anthropic:work`）
+
+### どの認証プロファイルが最初に試行されるかを制御できますか
+
+はい。設定はプロファイルのオプションのメタデータと、プロバイダー毎の順序（`auth.order.<provider>`）をサポートします。これは秘密を保存**しません**。IDをprovider/modeにマッピングし、ローテーション順序を設定します。
+
+OpenClawは、プロファイルが短い**クールダウン**（レート制限/タイムアウト/認証失敗）またはより長い**無効**状態（請求/クレジット不足）にある場合、一時的にスキップする場合があります。これを検査するには、`openclaw models status --json` を実行し、`auth.unusableProfiles` を確認してください。調整：`auth.cooldowns.billingBackoffHours*`。
+
+CLI経由で**agent毎**の順序オーバーライド（そのagentの `auth-profiles.json` に保存）を設定することもできます：
+
+```bash
+# 設定されたデフォルトagentにデフォルト（--agentを省略）
+openclaw models auth order get --provider anthropic
+
+# 単一プロファイルにローテーションをロック（これのみを試行）
+openclaw models auth order set --provider anthropic anthropic:default
+
+# または明示的な順序を設定（プロバイダー内のフォールバック）
+openclaw models auth order set --provider anthropic anthropic:work anthropic:default
+
+# オーバーライドをクリア（config auth.order / round-robinにフォールバック）
+openclaw models auth order clear --provider anthropic
+```
+
+特定のagentをターゲットにするには：
+
+```bash
+openclaw models auth order set --provider anthropic --agent main anthropic:default
+```
+
+### OAuthとAPIキーの違いは何ですか
+
+OpenClawは両方をサポートします：
+
+- **OAuth**は多くの場合、サブスクリプションアクセスを活用します（該当する場合）。
+- **APIキー**は従量課金制を使用します。
+
+ウィザードはAnthropicのsetup-tokenとOpenAI Codex OAuthを明示的にサポートし、APIキーを保存できます。
+
+## Gateway：ポート、「already running」、リモートモード
+
+### Gatewayはどのポートを使用しますか
+
+`gateway.port` はWebSocket + HTTP（Control UI、フックなど）の単一多重化ポートを制御します。
+
+優先順位：
+
+```
+--port > OPENCLAW_GATEWAY_PORT > gateway.port > default 18789
+```
+
+### なぜ「openclaw gateway status」が「Runtime running」と表示するのに「RPC probe failed」なのですか
+
+「running」は**スーパーバイザー**の視点（launchd/systemd/schtasks）だからです。RPCプローブは、CLIが実際にgateway WebSocketに接続して `status` を呼び出すことです。
+
+`openclaw gateway status` を使用し、これらの行を信頼してください：
+- `Probe target:`（プローブが実際に使用したURL）
+- `Listening:`（ポートで実際にバインドされているもの）
+- `Last gateway error:`（プロセスは生きているがポートがリッスンしていない場合の一般的な根本原因）
+
+### なぜ「openclaw gateway status」が「Config cli」と「Config service」が異なると表示するのですか
+
+サービスが別の設定ファイルを実行している間に1つの設定ファイルを編集しています（多くの場合、`--profile` / `OPENCLAW_STATE_DIR` の不一致）。
+
+修正：
+```bash
+openclaw gateway install --force
+```
+サービスに使用したい `--profile` / 環境と同じものからそれを実行してください。
+
+### 「another gateway instance is already listening」とはどういう意味ですか
+
+OpenClawは起動時にすぐにWebSocketリスナーをバインドすることでランタイムロックを強制します（デフォルト `ws://127.0.0.1:18789`）。バインドが `EADDRINUSE` で失敗すると、別のインスタンスが既にリッスンしていることを示す `GatewayLockError` をスローします。
+
+修正：他のインスタンスを停止するか、ポートを解放するか、`openclaw gateway --port <port>` で実行してください。
+
+### OpenClawをリモートモードで実行する方法（クライアントが別の場所のGatewayに接続）
+
+`gateway.mode: "remote"` を設定し、リモートWebSocket URLを指定します。オプションでtoken/passwordを使用：
+
+```json5
+{
+  gateway: {
+    mode: "remote",
+    remote: {
+      url: "ws://gateway.tailnet:18789",
+      token: "your-token",
+      password: "your-password"
+    }
+  }
+}
+```
+
+注意：
+- `openclaw gateway` は `gateway.mode` が `local` の場合のみ起動します（またはオーバーライドフラグを渡す）。
+- macOSアプリは設定ファイルを監視し、これらの値が変更されるとライブでモードを切り替えます。
+
+### Control UIが「unauthorized」と表示するか再接続し続けます。どうすればいいですか
+
+gatewayが認証有効（`gateway.auth.*`）で実行されていますが、UIが一致するtoken/passwordを送信していません。
+
+事実（コードから）：
+- Control UIはトークンをブラウザlocalStorageキー `openclaw.control.settings.v1` に保存します。
+- UIは `?token=...`（および/または `?password=...`）を一度インポートし、URLから削除します。
+
+修正：
+- 最速：`openclaw dashboard`（トークン化されたリンクを印刷 + コピー、開こうとする。ヘッドレスの場合はSSHヒントを表示）。
+- まだトークンがない場合：`openclaw doctor --generate-gateway-token`。
+- リモートの場合、最初にトンネル：`ssh -N -L 18789:127.0.0.1:18789 user@host` 次に `http://127.0.0.1:18789/?token=...` を開く。
+- gatewayホストで `gateway.auth.token`（または `OPENCLAW_GATEWAY_TOKEN`）を設定してください。
+- Control UI設定で同じトークンを貼り付けてください（または1回限りの `?token=...` リンクで更新）。
+- まだ困っていますか？ `openclaw status --all` を実行し、[Troubleshooting](/gateway/troubleshooting) に従ってください。認証の詳細については [Dashboard](/web/dashboard) を参照してください。
+
+### 「gateway.bind: tailnet」を設定したがバインドできません。何もリッスンしません
+
+`tailnet` bindはネットワークインターフェースからTailscale IP（100.64.0.0/10）を選択します。マシンがTailscale上にない場合（またはインターフェースがダウンしている場合）、バインドするものがありません。
+
+修正：
+- そのホストでTailscaleを起動して（100.xアドレスを持つように）、または
+- `gateway.bind: "loopback"` / `"lan"` に切り替えてください。
+  
+注意：`tailnet` は明示的です。`auto` はloopbackを優先します。tailnetのみのバインドが必要な場合は `gateway.bind: "tailnet"` を使用してください。
+
+### 同じホスト上で複数のGatewayを実行できますか
+
+通常はいいえ - 1つのGatewayは複数のメッセージングチャネルとagentを実行できます。冗長性（例：レスキューbot）またはハード分離が必要な場合にのみ複数のGatewayを使用してください。
+
+はい、ただし分離する必要があります：
+
+- `OPENCLAW_CONFIG_PATH`（インスタンス毎の設定）
+- `OPENCLAW_STATE_DIR`（インスタンス毎の状態）
+- `agents.defaults.workspace`（workspace分離）
+- `gateway.port`（一意のポート）
+
+クイックセットアップ（推奨）：
+- インスタンス毎に `openclaw --profile <name> …` を使用（`~/.openclaw-<name>` を自動作成）。
+- 各プロファイル設定で一意の `gateway.port` を設定（または手動実行用に `--port` を渡す）。
+- プロファイル毎のサービスをインストール：`openclaw --profile <name> gateway install`。
+
+プロファイルはサービス名にもサフィックスを付けます（`bot.molt.<profile>`。レガシー `com.openclaw.*`、`openclaw-gateway-<profile>.service`、`OpenClaw Gateway (<profile>)`）。
+完全ガイド：[Multiple gateways](/gateway/multiple-gateways)。
+
+### 「invalid handshake code 1008」とはどういう意味ですか
+
+Gatewayは**WebSocketサーバー**であり、最初のメッセージが
+`connect` フレームであることを期待しています。他のものを受信すると、
+**code 1008**（ポリシー違反）で接続を閉じます。
+
+一般的な原因：
+- WSクライアントの代わりにブラウザで**HTTP** URLを開いた（`http://...`）。
+- 間違ったポートまたはパスを使用した。
+- プロキシまたはトンネルが認証ヘッダーを削除したか、Gateway以外のリクエストを送信した。
+
+クイック修正：
+1) WS URLを使用：`ws://<host>:18789`（またはHTTPSの場合は `wss://...`）。
+2) 通常のブラウザタブでWSポートを開かないでください。
+3) 認証がオンの場合、`connect` フレームにtoken/passwordを含めてください。
+
+CLIまたはTUIを使用している場合、URLは次のようになります：
+```
+openclaw tui --url ws://<host>:18789 --token <token>
+```
+
+プロトコルの詳細：[Gateway protocol](/gateway/protocol)。
+
+## ロギングとデバッグ
+
+### ログはどこにありますか
+
+ファイルログ（構造化）：
+
+```
+/tmp/openclaw/openclaw-YYYY-MM-DD.log
+```
+
+`logging.file` で安定したパスを設定できます。ファイルログレベルは `logging.level` で制御されます。コンソールの詳細度は `--verbose` と `logging.consoleLevel` で制御されます。
+
+最速のログtail：
+
+```bash
+openclaw logs --follow
+```
+
+サービス/スーパーバイザーログ（gatewayがlaunchd/systemd経由で実行される場合）：
+- macOS：`$OPENCLAW_STATE_DIR/logs/gateway.log` と `gateway.err.log`（デフォルト：`~/.openclaw/logs/...`。プロファイルは `~/.openclaw-<profile>/logs/...` を使用）
+- Linux：`journalctl --user -u openclaw-gateway[-<profile>].service -n 200 --no-pager`
+- Windows：`schtasks /Query /TN "OpenClaw Gateway (<profile>)" /V /FO LIST`
+
+詳細は [Troubleshooting](/gateway/troubleshooting#log-locations) を参照してください。
+
+### Gatewayサービスを開始/停止/再起動する方法
+
+gatewayヘルパーを使用：
+
+```bash
+openclaw gateway status
+openclaw gateway restart
+```
+
+gatewayを手動で実行している場合、`openclaw gateway --force` でポートを再取得できます。[Gateway](/gateway) を参照してください。
+
+### Windowsでターミナルを閉じました。OpenClawを再起動する方法
+
+**2つのWindowsインストールモード**があります：
+
+**1) WSL2（推奨）：** GatewayはLinux内で実行されます。
+
+PowerShellを開き、WSLに入り、再起動：
+
+```powershell
+wsl
+openclaw gateway status
+openclaw gateway restart
+```
+
+サービスをインストールしたことがない場合は、フォアグラウンドで起動：
+
+```bash
+openclaw gateway run
+```
+
+**2) ネイティブWindows（推奨しません）：** GatewayはWindowsで直接実行されます。
+
+PowerShellを開いて実行：
+
+```powershell
+openclaw gateway status
+openclaw gateway restart
+```
+
+手動で実行している場合（サービスなし）、使用：
+
+```powershell
+openclaw gateway run
+```
+
+ドキュメント：[Windows (WSL2)](/platforms/windows)、[Gateway service runbook](/gateway)。
+
+### Gatewayは起動しているが返信が届きません。何を確認すべきですか
+
+クイックヘルススイープから開始：
+
+```bash
+openclaw status
+openclaw models status
+openclaw channels status
+openclaw logs --follow
+```
+
+一般的な原因：
+- **gateway host**でモデル認証が読み込まれていない（`models status` を確認）。
+- チャネルペアリング/allowlistが返信をブロックしている（チャネル設定 + ログを確認）。
+- WebChat/Dashboardが正しいトークンなしで開かれている。
+
+リモートの場合、トンネル/Tailscale接続が稼働していて、
+Gateway WebSocketが到達可能であることを確認してください。
+
+ドキュメント：[Channels](/channels)、[Troubleshooting](/gateway/troubleshooting)、[Remote access](/gateway/remote)。
+
+### 理由なく「Disconnected from gateway」。どうすればいいですか
+
+これは通常、UIがWebSocket接続を失ったことを意味します。確認：
+
+1) Gatewayは実行中ですか？ `openclaw gateway status`
+2) Gatewayは健全ですか？ `openclaw status`
+3) UIは正しいトークンを持っていますか？ `openclaw dashboard`
+4) リモートの場合、トンネル/Tailscaleリンクは稼働していますか？
+
+次にログをtail：
+
+```bash
+openclaw logs --follow
+```
+
+ドキュメント：[Dashboard](/web/dashboard)、[Remote access](/gateway/remote)、[Troubleshooting](/gateway/troubleshooting)。
+
+### 「Telegram setMyCommands」がネットワークエラーで失敗します。何を確認すべきですか
+
+ログとチャネルステータスから開始：
+
+```bash
+openclaw channels status
+openclaw channels logs --channel telegram
+```
+
+VPS上またはプロキシの背後にいる場合、アウトバウンドHTTPSが許可されDNSが機能することを確認してください。
+Gatewayがリモートの場合、Gatewayホスト上のログを確認していることを確認してください。
+
+ドキュメント：[Telegram](/channels/telegram)、[Channel troubleshooting](/channels/troubleshooting)。
+
+### TUIが出力を表示しません。何を確認すべきですか
+
+まずGatewayが到達可能でagentが実行できることを確認：
+
+```bash
+openclaw status
+openclaw models status
+openclaw logs --follow
+```
+
+TUIで `/status` を使用して現在の状態を確認してください。チャット
+チャネルで返信を期待する場合、配信が有効になっていることを確認してください（`/deliver on`）。
+
+ドキュメント：[TUI](/tui)、[Slash commands](/tools/slash-commands)。
+
+### Gatewayを完全に停止してから起動する方法
+
+サービスをインストールした場合：
+
+```bash
+openclaw gateway stop
+openclaw gateway start
+```
+
+これは**監視されたサービス**（macOSのlaunchd、Linuxのsystemd）を停止/起動します。
+Gatewayがバックグラウンドでデーモンとして実行されている場合にこれを使用してください。
+
+フォアグラウンドで実行している場合は、Ctrl‑Cで停止し、次に：
+
+```bash
+openclaw gateway run
+```
+
+ドキュメント：[Gateway service runbook](/gateway)。
+
+### 「openclaw gateway restart」と「openclaw gateway」のELI5
+
+- `openclaw gateway restart`：**バックグラウンドサービス**（launchd/systemd）を再起動します。
+- `openclaw gateway`：このターミナルセッション用にgatewayを**フォアグラウンド**で実行します。
+
+サービスをインストールした場合は、gatewayコマンドを使用してください。1回限りのフォアグラウンド実行が必要な場合は `openclaw gateway` を使用してください。
+
+### 何かが失敗したときに詳細を取得する最速の方法は何ですか
+
+`--verbose` でGatewayを起動して、より多くのコンソール詳細を取得してください。次にチャネル認証、モデルルーティング、RPCエラーのログファイルを検査してください。
+
+## メディアと添付ファイル
+
+### スキルが画像/PDFを生成したのに何も送信されませんでした
+
+agentからのアウトバウンド添付ファイルには、`MEDIA:<path-or-url>` 行（独自の行）を含める必要があります。[OpenClaw assistant setup](/start/openclaw) と [Agent send](/tools/agent-send) を参照してください。
+
+CLI送信：
+
+```bash
+openclaw message send --target +15555550123 --message "Here you go" --media /path/to/file.png
+```
+
+また確認：
+- ターゲットチャネルがアウトバウンドメディアをサポートし、allowlistsによってブロックされていない。
+- ファイルがプロバイダーのサイズ制限内にある（画像は最大2048pxにリサイズされます）。
+
+[Images](/nodes/images) を参照してください。
+
+## セキュリティとアクセス制御
+
+### OpenClawを受信DMに公開しても安全ですか
+
+受信DMを信頼できない入力として扱ってください。デフォルトはリスクを軽減するように設計されています：
+
+- DM対応チャネルでのデフォルトの動作は**ペアリング**です：
+  - 未知の送信者はペアリングコードを受け取ります。botはメッセージを処理しません。
+  - 承認：`openclaw pairing approve <channel> <code>`
+  - 保留中のリクエストは**チャネルあたり3つ**に制限されます。コードが届かなかった場合は `openclaw pairing list <channel>` を確認してください。
+- DMを公開するには明示的なオプトイン（`dmPolicy: "open"` とallowlist `"*"`）が必要です。
+
+リスクのあるDMポリシーを表面化するには `openclaw doctor` を実行してください。
+
+### プロンプトインジェクションは公開botだけの懸念事項ですか
+
+いいえ。プロンプトインジェクションは**信頼できないコンテンツ**に関するものであり、誰がbotにDMできるかだけではありません。
+モデルを乗っ取るために使用される可能性があります。これは**あなたが唯一の送信者である場合でも**発生する可能性があります。
+
+最大のリスクはツールが有効になっている場合です：モデルはコンテキストを流出させたり、あなたに代わってツールを呼び出したりするように騙される可能性があります。以下の方法で影響範囲を縮小してください：
+- 信頼できないコンテンツを要約するために、読み取り専用またはツール無効化された「reader」エージェントを使用する
+- ツール有効化されたエージェントでは `web_search` / `web_fetch` / `browser` をオフにする
+- サンドボックス化と厳格なツール許可リスト
+
+詳細：[Security](/gateway/security)
+
+### 自分のbotに専用のメールアカウント、GitHubアカウント、または電話番号を持たせるべきですか
+
+はい、ほとんどのセットアップではそうすべきです。botを個別のアカウントと電話番号で隔離することで、問題が発生した場合の影響範囲を縮小できます。これにより、個人アカウントに影響を与えることなく、認証情報をローテーションしたりアクセスを取り消したりすることが容易になります。
+
+小さく始めてください。実際に必要なツールとアカウントにのみアクセス権を与え、必要に応じて後で拡張してください。
+
+ドキュメント：[Security](/gateway/security)、[Pairing](/start/pairing)
+
+### テキストメッセージに対する自律性を与えても安全ですか
+
+個人メッセージに対する完全な自律性を与えることは**推奨しません**。最も安全なパターンは：
+- DMを**pairingモード**または厳格な許可リストに保つ
+- あなたに代わってメッセージを送信させたい場合は**別の番号またはアカウント**を使用する
+- 下書きさせてから、**送信前に承認する**
+
+実験したい場合は、専用のアカウントで行い、隔離された状態を保ってください。[Security](/gateway/security)を参照してください。
+
+### パーソナルアシスタントタスクに安価なモデルを使用できますか
+
+はい、**エージェントがチャットのみで、入力が信頼できる場合**は可能です。小規模なティアは命令ハイジャックに対してより脆弱であるため、ツール有効化されたエージェントや信頼できないコンテンツを読み取る場合は避けてください。小規模なモデルを使用する必要がある場合は、ツールをロックダウンし、サンドボックス内で実行してください。[Security](/gateway/security)を参照してください。
+
+### Telegramでstartを実行しましたが、pairingコードが届きません
+
+pairingコードは、未知の送信者がbotにメッセージを送り、`dmPolicy: "pairing"` が有効になっている場合に**のみ**送信されます。`/start` 単体ではコードは生成されません。
+
+保留中のリクエストを確認してください：
+```bash
+openclaw pairing list telegram
+```
+
+即座にアクセスしたい場合は、送信者IDを許可リストに追加するか、そのアカウントの `dmPolicy: "open"` を設定してください。
+
+### WhatsAppは連絡先にメッセージを送信しますか？pairingはどのように機能しますか
+
+いいえ。デフォルトのWhatsApp DMポリシーは**pairing**です。未知の送信者はpairingコードのみを受け取り、そのメッセージは**処理されません**。OpenClawは受信したチャット、またはあなたが明示的にトリガーした送信にのみ応答します。
+
+pairingを承認する：
+
+```bash
+openclaw pairing approve whatsapp <code>
+```
+
+保留中のリクエストをリスト表示：
+
+```bash
+openclaw pairing list whatsapp
+```
+
+ウィザードの電話番号プロンプト：これはあなたの**許可リスト/所有者**を設定するために使用されるため、あなた自身のDMが許可されます。自動送信には使用されません。個人のWhatsApp番号で実行している場合は、その番号を使用し、`channels.whatsapp.selfChatMode` を有効にしてください。
+
+## チャットコマンド、タスクの中止、および「止まらない」問題
+
+### チャットに表示される内部システムメッセージを停止するにはどうすればよいですか
+
+ほとんどの内部メッセージまたはツールメッセージは、そのセッションで**verbose**または**reasoning**が有効になっている場合にのみ表示されます。
+
+表示されているチャットで修正：
+```
+/verbose off
+/reasoning off
+```
+
+それでも多い場合は、Control UIでセッション設定を確認し、verboseを**inherit**に設定してください。また、設定で `verboseDefault` が `on` に設定されたbotプロファイルを使用していないことを確認してください。
+
+ドキュメント：[Thinking and verbose](/tools/thinking)、[Security](/gateway/security#reasoning--verbose-output-in-groups)
+
+### 実行中のタスクを停止/キャンセルするにはどうすればよいですか
+
+以下のいずれかを**単独のメッセージとして**送信してください（スラッシュなし）：
+
+```
+stop
+abort
+esc
+wait
+exit
+interrupt
+```
+
+これらは中止トリガーです（スラッシュコマンドではありません）。
+
+バックグラウンドプロセス（execツールから）の場合、エージェントに実行を依頼できます：
+
+```
+process action:kill sessionId:XXX
+```
+
+スラッシュコマンドの概要：[Slash commands](/tools/slash-commands)を参照してください。
+
+ほとんどのコマンドは `/` で始まる**単独の**メッセージとして送信する必要がありますが、いくつかのショートカット（`/status` など）は許可リストの送信者に対してインラインでも機能します。
+
+### TelegramからDiscordメッセージを送信するにはどうすればよいですか？Cross-context messaging deniedエラーが出ます
+
+OpenClawはデフォルトで**クロスプロバイダー**メッセージングをブロックします。ツール呼び出しがTelegramにバインドされている場合、明示的に許可しない限りDiscordには送信されません。
+
+エージェントのクロスプロバイダーメッセージングを有効にする：
+
+```json5
+{
+  agents: {
+    defaults: {
+      tools: {
+        message: {
+          crossContext: {
+            allowAcrossProviders: true,
+            marker: { enabled: true, prefix: "[from {channel}] " }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+設定を編集した後、Gatewayを再起動してください。単一のエージェントにのみこれを設定したい場合は、代わりに `agents.list[].tools.message` の下に設定してください。
+
+### 連続でメッセージを送ると、botが無視しているように感じるのはなぜですか
+
+queueモードは、新しいメッセージが実行中のランとどのように相互作用するかを制御します。`/queue` を使用してモードを変更します：
+
+- `steer` - 新しいメッセージが現在のタスクをリダイレクト
+- `followup` - メッセージを一度に1つずつ実行
+- `collect` - メッセージをバッチ処理して一度に応答（デフォルト）
+- `steer-backlog` - 今すぐステアリングし、その後バックログを処理
+- `interrupt` - 現在の実行を中止して新規開始
+
+followupモードでは `debounce:2s cap:25 drop:summarize` のようなオプションを追加できます。
+
+## スクリーンショット/チャットログからの正確な質問に回答
+
+**Q: 「AnthropicでAPIキーを使用する場合のデフォルトモデルは何ですか？」**
+
+**A:** OpenClawでは、認証情報とモデル選択は別々です。`ANTHROPIC_API_KEY` を設定する（またはAnthropicのAPIキーを認証プロファイルに保存する）ことで認証が有効になりますが、実際のデフォルトモデルは `agents.defaults.model.primary` で設定したもの（例：`anthropic/claude-sonnet-4-5` または `anthropic/claude-opus-4-5`）です。`No credentials found for profile "anthropic:default"` が表示される場合、実行中のエージェントの期待される `auth-profiles.json` でGatewayがAnthropic認証情報を見つけられなかったことを意味します。
+
+---
+
+まだ解決しませんか？[Discord](https://discord.com/invite/clawd)で質問するか、[GitHub discussion](https://github.com/openclaw/openclaw/discussions)を開いてください。

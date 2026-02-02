@@ -1,0 +1,95 @@
+---
+summary: "Nixで宣言的にOpenClawをインストールする"
+read_when:
+  - 再現可能なロールバック可能なインストールが必要な場合
+  - すでにNix/NixOS/Home Managerを使用している場合
+  - すべてをピン留めして宣言的に管理したい場合
+---
+
+# Nixインストール
+
+NixでOpenClawを実行する推奨方法は、**[nix-openclaw](https://github.com/openclaw/nix-openclaw)** — バッテリー同梱のHome Managerモジュールを使用することです。
+
+## クイックスタート
+
+AIエージェント（Claude、Cursorなど）にこれを貼り付けてください:
+
+```text
+Macでnix-openclawをセットアップしたいです。
+リポジトリ: github:openclaw/nix-openclaw
+
+必要な作業:
+1. Determinate Nixがインストールされているか確認（ない場合はインストール）
+2. templates/agent-first/flake.nixを使用して~/code/openclaw-localにローカルflakeを作成
+3. Telegramボット（@BotFather）を作成してチャットIDを取得（@userinfobot）をサポート
+4. シークレットをセットアップ（ボットトークン、AnthropicキーなどREQUIREMENTS.md参照）- ~/.secrets/のプレーンファイルで問題なし
+5. テンプレートのプレースホルダーを入力してhome-manager switchを実行
+6. 検証: launchd実行中、ボットがメッセージに応答
+
+モジュールオプションについてはnix-openclaw READMEを参照してください。
+```
+
+> **📦 完全ガイド: [github.com/openclaw/nix-openclaw](https://github.com/openclaw/nix-openclaw)**
+>
+> nix-openclawリポジトリがNixインストールの正式な情報源です。このページは簡単な概要です。
+
+## 提供される機能
+
+- Gateway + macOSアプリ + ツール（whisper、spotify、カメラ） — すべてピン留め
+- 再起動に耐えるLaunchdサービス
+- 宣言的設定を持つプラグインシステム
+- 即座にロールバック: `home-manager switch --rollback`
+
+---
+
+## Nixモードのランタイム動作
+
+`OPENCLAW_NIX_MODE=1`が設定されている場合（nix-openclawで自動）:
+
+OpenClawは設定を決定論的にし、自動インストールフローを無効にする**Nixモード**をサポートしています。
+以下をエクスポートして有効化:
+
+```bash
+OPENCLAW_NIX_MODE=1
+```
+
+macOSでは、GUIアプリは自動的にシェル環境変数を継承しません。
+defaults経由でNixモードを有効にすることもできます:
+
+```bash
+defaults write bot.molt.mac openclaw.nixMode -bool true
+```
+
+### 設定 + ステートパス
+
+OpenClawは`OPENCLAW_CONFIG_PATH`からJSON5設定を読み取り、可変データを`OPENCLAW_STATE_DIR`に保存します。
+
+- `OPENCLAW_STATE_DIR`（デフォルト: `~/.openclaw`）
+- `OPENCLAW_CONFIG_PATH`（デフォルト: `$OPENCLAW_STATE_DIR/openclaw.json`）
+
+Nix下で実行する場合は、これらを明示的にNix管理された場所に設定して、ランタイムステートと設定が
+不変ストアの外に留まるようにしてください。
+
+### Nixモードでのランタイム動作
+
+- 自動インストールと自己変異フローは無効化されます
+- 不足している依存関係はNix固有の修復メッセージを表示します
+- UIは存在する場合に読み取り専用のNixモードバナーを表示します
+
+## パッケージングメモ（macOS）
+
+macOSパッケージングフローは、以下の安定したInfo.plistテンプレートを期待します:
+
+```
+apps/macos/Sources/OpenClaw/Resources/Info.plist
+```
+
+[`scripts/package-mac-app.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/package-mac-app.sh)はこのテンプレートをアプリバンドルにコピーし、動的フィールドをパッチします
+（バンドルID、バージョン/ビルド、Git SHA、Sparkleキー）。これにより、plistがSwiftPM
+パッケージングとNixビルド（完全なXcodeツールチェーンに依存しない）のために決定論的に保たれます。
+
+## 関連項目
+
+- [nix-openclaw](https://github.com/openclaw/nix-openclaw) — 完全なセットアップガイド
+- [Wizard](/start/wizard) — 非NixCLIセットアップ
+- [Docker](/install/docker) — コンテナ化されたセットアップ

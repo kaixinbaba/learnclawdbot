@@ -1,0 +1,78 @@
+---
+title: "Node.js + npm（PATH健全性）"
+summary: "Node.js + npmインストールの健全性: バージョン、PATH、グローバルインストール"
+read_when:
+  - "OpenClawをインストールしたが`openclaw`が"command not found""
+  - "新しいマシンでNode.js/npmをセットアップしている"
+  - "npm install -g ...がパーミッションまたはPATHの問題で失敗する"
+---
+
+# Node.js + npm（PATH健全性）
+
+OpenClawのランタイムベースラインは**Node 22+**です。
+
+`npm install -g openclaw@latest`を実行できるが、後で`openclaw: command not found`が表示される場合、ほぼ常に**PATH**の問題です: npmがグローバルバイナリを配置するディレクトリがシェルのPATH上にありません。
+
+## クイック診断
+
+実行:
+
+```bash
+node -v
+npm -v
+npm prefix -g
+echo "$PATH"
+```
+
+`$(npm prefix -g)/bin`（macOS/Linux）または`$(npm prefix -g)`（Windows）が`echo "$PATH"`内に**存在しない**場合、シェルはnpmグローバルバイナリ（`openclaw`を含む）を見つけられません。
+
+## 修正: npmのグローバルbinディレクトリをPATHに配置
+
+1) グローバルnpmプレフィックスを見つける:
+
+```bash
+npm prefix -g
+```
+
+2) シェル起動ファイルにグローバルnpm binディレクトリを追加:
+
+- zsh: `~/.zshrc`
+- bash: `~/.bashrc`
+
+例（`npm prefix -g`の出力でパスを置き換える）:
+
+```bash
+# macOS / Linux
+export PATH="/path/from/npm/prefix/bin:$PATH"
+```
+
+次に**新しいターミナル**を開いてください（またはzshで`rehash` / bashで`hash -r`を実行）。
+
+Windowsでは、`npm prefix -g`の出力をPATHに追加してください。
+
+## 修正: `sudo npm install -g` / パーミッションエラー（Linux）の回避
+
+`npm install -g ...`が`EACCES`で失敗する場合は、npmのグローバルプレフィックスをユーザー書き込み可能なディレクトリに切り替えます:
+
+```bash
+mkdir -p "$HOME/.npm-global"
+npm config set prefix "$HOME/.npm-global"
+export PATH="$HOME/.npm-global/bin:$PATH"
+```
+
+シェル起動ファイルに`export PATH=...`行を永続化してください。
+
+## 推奨Nodeインストールオプション
+
+Node/npmが以下のようにインストールされていると、最も問題が少なくなります:
+
+- Nodeを更新し続ける（22+）
+- グローバルnpm binディレクトリを安定させ、新しいシェルでPATH上に配置
+
+一般的な選択肢:
+
+- macOS: Homebrew（`brew install node`）またはバージョンマネージャー
+- Linux: 好みのバージョンマネージャー、またはNode 22+を提供するディストリサポートのインストール
+- Windows: 公式Nodeインストーラー、`winget`、またはWindows Nodeバージョンマネージャー
+
+バージョンマネージャー（nvm/fnm/asdf/など）を使用する場合は、日常的に使用するシェル（zsh vs bash）で初期化されていることを確認してください。そうすることで、インストーラーを実行するときに設定したPATHが存在します。

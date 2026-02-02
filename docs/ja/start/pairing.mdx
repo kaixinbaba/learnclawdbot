@@ -1,0 +1,83 @@
+---
+summary: "ペアリングの概要：DMを送信できる人 + 参加できるノードを承認する"
+read_when:
+  - DMアクセス制御を設定する時
+  - 新しいiOS/Androidノードをペアリングする時
+  - OpenClawのセキュリティ体制を確認する時
+---
+
+# ペアリング
+
+「ペアリング」は、OpenClawの明示的な**所有者承認**ステップです。
+2つの場所で使用されます：
+
+1) **DMペアリング**（ボットと話すことを許可される人）
+2) **ノードペアリング**（gatewayネットワークへの参加を許可されるデバイス/ノード）
+
+セキュリティコンテキスト：[Security](/gateway/security)
+
+## 1) DMペアリング（インバウンドチャットアクセス）
+
+チャネルがDMポリシー`pairing`で設定されている場合、未知の送信者は短いコードを取得し、承認されるまでメッセージは**処理されません**。
+
+デフォルトのDMポリシーは以下に文書化されています：[Security](/gateway/security)
+
+ペアリングコード：
+- 8文字、大文字、曖昧な文字なし（`0O1I`）。
+- **1時間後に期限切れ**。ボットは新しいリクエストが作成されたときにのみペアリングメッセージを送信します（送信者ごとにおよそ1時間に1回）。
+- 保留中のDMペアリングリクエストは、デフォルトで**チャネルごとに3つ**に制限されています；追加のリクエストは、1つが期限切れになるか承認されるまで無視されます。
+
+### 送信者を承認する
+
+```bash
+openclaw pairing list telegram
+openclaw pairing approve telegram <CODE>
+```
+
+サポートされているチャネル：`telegram`、`whatsapp`、`signal`、`imessage`、`discord`、`slack`。
+
+### 状態が保存される場所
+
+`~/.openclaw/credentials/`の下に保存されます：
+- 保留中のリクエスト：`<channel>-pairing.json`
+- 承認された許可リストストア：`<channel>-allowFrom.json`
+
+これらを機密として扱ってください（アシスタントへのアクセスをゲートします）。
+
+
+## 2) ノードデバイスペアリング（iOS/Android/macOS/ヘッドレスノード）
+
+ノードは`role: node`を持つ**デバイス**としてGatewayに接続します。Gatewayは
+承認される必要があるデバイスペアリングリクエストを作成します。
+
+### ノードデバイスを承認する
+
+```bash
+openclaw devices list
+openclaw devices approve <requestId>
+openclaw devices reject <requestId>
+```
+
+### 状態が保存される場所
+
+`~/.openclaw/devices/`の下に保存されます：
+- `pending.json`（短命；保留中のリクエストは期限切れになります）
+- `paired.json`（ペアリングされたデバイス + トークン）
+
+### 注意事項
+
+- レガシー`node.pair.*` API（CLI：`openclaw nodes pending/approve`）は
+  別のgateway所有のペアリングストアです。WSノードはまだデバイスペアリングが必要です。
+
+
+## 関連ドキュメント
+
+- セキュリティモデル + プロンプトインジェクション：[Security](/gateway/security)
+- 安全に更新する（doctorを実行）：[Updating](/install/updating)
+- チャネル設定：
+  - Telegram：[Telegram](/channels/telegram)
+  - WhatsApp：[WhatsApp](/channels/whatsapp)
+  - Signal：[Signal](/channels/signal)
+  - iMessage：[iMessage](/channels/imessage)
+  - Discord：[Discord](/channels/discord)
+  - Slack：[Slack](/channels/slack)

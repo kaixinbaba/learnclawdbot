@@ -1,0 +1,359 @@
+---
+summary: "WhatsApp（Webチャネル）統合：ログイン、受信トレイ、返信、メディア、および運用"
+read_when:
+  - WhatsApp/Webチャネルの動作または受信トレイルーティングに関する作業時
+---
+# WhatsApp (Webチャネル)
+
+ステータス：Baileysを介したWhatsApp Webのみ。ゲートウェイがセッションを所有します。
+
+## クイックセットアップ（初心者向け）
+1) 可能であれば**別の電話番号**を使用します（推奨）。
+2) `~/.openclaw/openclaw.json`でWhatsAppを設定します。
+3) `openclaw channels login`を実行してQRコードをスキャンします（リンク済みデバイス）。
+4) ゲートウェイを起動します。
+
+最小限の設定：
+```json5
+{
+  channels: {
+    whatsapp: {
+      dmPolicy: "allowlist",
+      allowFrom: ["+15551234567"]
+    }
+  }
+}
+```
+
+## 目標
+- 1つのゲートウェイプロセスで複数のWhatsAppアカウント（マルチアカウント）。
+- 決定論的ルーティング：返信はWhatsAppに戻り、モデルルーティングはありません。
+- モデルは引用返信を理解するのに十分なコンテキストを見ます。
+
+## 設定の書き込み
+デフォルトでは、WhatsAppは`/config set|unset`によってトリガーされる設定更新を書き込むことが許可されています（`commands.config: true`が必要）。
+
+無効にするには：
+```json5
+{
+  channels: { whatsapp: { configWrites: false } }
+}
+```
+
+## アーキテクチャ（誰が何を所有するか）
+- **ゲートウェイ**がBaileysソケットと受信トレイループを所有します。
+- **CLI / macOSアプリ**はゲートウェイと通信します。直接Baileysを使用しません。
+- **アクティブリスナー**がアウトバウンド送信に必要です。そうでない場合、送信は即座に失敗します。
+
+## 電話番号の取得（2つのモード）
+
+WhatsAppは検証のために実際の携帯電話番号が必要です。VoIPと仮想番号は通常ブロックされます。OpenClawをWhatsAppで実行するための2つのサポートされた方法があります：
+
+### 専用番号（推奨）
+OpenClaw用に**別の電話番号**を使用します。最高のUX、クリーンなルーティング、セルフチャットの癖なし。理想的なセットアップ：**予備/古いAndroid電話 + eSIM**。Wi-Fiと電源に接続したままにし、QR経由でリンクします。
+
+**WhatsApp Business：** 同じデバイスで異なる番号でWhatsApp Businessを使用できます。個人のWhatsAppを別に保つのに最適 — WhatsApp Businessをインストールし、そこでOpenClaw番号を登録します。
+
+**サンプル設定（専用番号、単一ユーザー許可リスト）：**
+```json5
+{
+  channels: {
+    whatsapp: {
+      dmPolicy: "allowlist",
+      allowFrom: ["+15551234567"]
+    }
+  }
+}
+```
+
+**ペアリングモード（オプション）：**
+許可リストの代わりにペアリングが必要な場合は、`channels.whatsapp.dmPolicy`を`pairing`に設定します。不明な送信者はペアリングコードを受け取ります。承認は：
+`openclaw pairing approve whatsapp <code>`
+
+### 個人番号（フォールバック）
+クイックフォールバック：**自分の番号**でOpenClawを実行します。テストのために自分自身にメッセージを送信します（WhatsAppの「自分にメッセージ」）連絡先にスパムしないように。セットアップと実験中にメイン電話で確認コードを読む必要があります。**セルフチャットモードを有効にする必要があります。**
+ウィザードが個人のWhatsApp番号を尋ねる場合、アシスタント番号ではなく、メッセージを送信する電話（所有者/送信者）を入力します。
+
+**サンプル設定（個人番号、セルフチャット）：**
+```json
+{
+  "whatsapp": {
+    "selfChatMode": true,
+    "dmPolicy": "allowlist",
+    "allowFrom": ["+15551234567"]
+  }
+}
+```
+
+セルフチャット返信は、`messages.responsePrefix`が設定されていない場合、設定されているときは`[{identity.name}]`（そうでなければ`[openclaw]`）にデフォルト設定されます。プレフィックスをカスタマイズまたは無効にするには明示的に設定します（削除するには`""`を使用）。
+
+### 番号調達のヒント
+- **ローカルeSIM** 自国のモバイルキャリアから（最も信頼性が高い）
+  - オーストリア：[hot.at](https://www.hot.at)
+  - 英国：[giffgaff](https://www.giffgaff.com) — 無料SIM、契約なし
+- **プリペイドSIM** — 安価、検証のために1つのSMSを受信するだけで済む
+
+**避ける：** TextNow、Google Voice、ほとんどの「無料SMS」サービス — WhatsAppはこれらを積極的にブロックします。
+
+**ヒント：** 番号は1つの検証SMSを受信するだけで済みます。その後、WhatsApp Webセッションは`creds.json`を介して永続化されます。
+
+## なぜTwilioではないのか？
+- 初期のOpenClawビルドはTwilioのWhatsApp Business統合をサポートしていました。
+- WhatsApp Business番号は個人アシスタントには不適切です。
+- Metaは24時間の返信ウィンドウを強制します。過去24時間に応答していない場合、ビジネス番号は新しいメッセージを開始できません。
+- 大量または「おしゃべり」な使用は積極的なブロックをトリガーします。ビジネスアカウントは数十の個人アシスタントメッセージを送信することを意図していないためです。
+- 結果：信頼性の低い配信と頻繁なブロック、そのためサポートが削除されました。
+
+## ログイン + 認証情報
+- ログインコマンド：`openclaw channels login`（リンク済みデバイス経由のQR）。
+- マルチアカウントログイン：`openclaw channels login --account <id>`（`<id>` = `accountId`）。
+- デフォルトアカウント（`--account`が省略された場合）：存在する場合は`default`、そうでなければ最初の設定されたアカウントID（ソート済み）。
+- 認証情報は`~/.openclaw/credentials/whatsapp/<accountId>/creds.json`に保存されます。
+- `creds.json.bak`にバックアップコピー（破損時に復元）。
+- レガシー互換性：古いインストールはBaileysファイルを`~/.openclaw/credentials/`に直接保存していました。
+- ログアウト：`openclaw channels logout`（または`--account <id>`）はWhatsApp認証状態を削除します（ただし共有の`oauth.json`は保持）。
+- ログアウトされたソケット => エラーが再リンクを指示します。
+
+## インバウンドフロー（DM + グループ）
+- WhatsAppイベントは`messages.upsert`（Baileys）から来ます。
+- 受信トレイリスナーはシャットダウン時にデタッチされ、テスト/再起動でイベントハンドラーが蓄積するのを避けます。
+- ステータス/ブロードキャストチャットは無視されます。
+- ダイレクトチャットはE.164を使用します。グループはグループJIDを使用します。
+- **DMポリシー**：`channels.whatsapp.dmPolicy`がダイレクトチャットアクセスを制御します（デフォルト：`pairing`）。
+  - ペアリング：不明な送信者はペアリングコードを受け取ります（`openclaw pairing approve whatsapp <code>`で承認。コードは1時間後に期限切れ）。
+  - オープン：`channels.whatsapp.allowFrom`に`"*"`を含める必要があります。
+  - リンクされたWhatsApp番号は暗黙的に信頼されているため、セルフメッセージは⁠`channels.whatsapp.dmPolicy`および`channels.whatsapp.allowFrom`チェックをスキップします。
+
+### 個人番号モード（フォールバック）
+**個人のWhatsApp番号**でOpenClawを実行する場合、`channels.whatsapp.selfChatMode`を有効にします（上記のサンプルを参照）。
+
+動作：
+- アウトバウンドDMはペアリング返信をトリガーしません（連絡先へのスパムを防ぐ）。
+- インバウンドの不明な送信者は引き続き`channels.whatsapp.dmPolicy`に従います。
+- セルフチャットモード（allowFromに自分の番号を含む）は自動既読通知を回避し、メンションJIDを無視します。
+- 非セルフチャットDMの既読通知が送信されます。
+
+## 既読通知
+デフォルトでは、ゲートウェイは受け入れられた後、インバウンドWhatsAppメッセージを既読（青いチェックマーク）としてマークします。
+
+グローバルに無効化：
+```json5
+{
+  channels: { whatsapp: { sendReadReceipts: false } }
+}
+```
+
+アカウントごとに無効化：
+```json5
+{
+  channels: {
+    whatsapp: {
+      accounts: {
+        personal: { sendReadReceipts: false }
+      }
+    }
+  }
+}
+```
+
+注意：
+- セルフチャットモードは常に既読通知をスキップします。
+
+## WhatsApp FAQ：メッセージ送信 + ペアリング
+
+**WhatsAppをリンクしたときにOpenClawはランダムな連絡先にメッセージを送りますか？**  
+いいえ。デフォルトのDMポリシーは**ペアリング**なので、不明な送信者はペアリングコードのみを受け取り、メッセージは**処理されません**。OpenClawは受信したチャット、または明示的にトリガーした送信（エージェント/CLI）にのみ返信します。
+
+**WhatsAppでペアリングはどのように機能しますか？**  
+ペアリングは不明な送信者のためのDMゲートです：
+- 新しい送信者からの最初のDMは短いコードを返します（メッセージは処理されません）。
+- 承認：`openclaw pairing approve whatsapp <code>`（`openclaw pairing list whatsapp`でリスト）。
+- コードは1時間後に期限切れ。保留中のリクエストはチャネルごとに3つに制限されます。
+
+**複数の人が1つのWhatsApp番号で異なるOpenClawインスタンスを使用できますか？**  
+はい、`bindings`を介して各送信者を異なるエージェントにルーティングします（ピア`kind: "dm"`、送信者E.164は`+15551234567`のような）。返信は引き続き**同じWhatsAppアカウント**から来て、ダイレクトチャットは各エージェントのメインセッションに統合されるため、**人ごとに1つのエージェント**を使用してください。DMアクセス制御（`dmPolicy`/`allowFrom`）はWhatsAppアカウントごとにグローバルです。[マルチエージェントルーティング](/concepts/multi-agent)を参照してください。
+
+**ウィザードでなぜ電話番号を尋ねるのですか？**  
+ウィザードはそれを使用して**許可リスト/所有者**を設定し、自分のDMが許可されるようにします。自動送信には使用されません。個人のWhatsApp番号で実行する場合は、同じ番号を使用し、`channels.whatsapp.selfChatMode`を有効にします。
+
+## メッセージの正規化（モデルが見るもの）
+- `Body`はエンベロープ付きの現在のメッセージ本文です。
+- 引用返信コンテキストは**常に追加されます**：
+  ```
+  [Replying to +1555 id:ABC123]
+  <引用テキストまたは<media:...>>
+  [/Replying]
+  ```
+- 返信メタデータも設定されます：
+  - `ReplyToId` = stanzaId
+  - `ReplyToBody` = 引用本文またはメディアプレースホルダー
+  - `ReplyToSender` = 既知の場合はE.164
+- メディアのみのインバウンドメッセージはプレースホルダーを使用します：
+  - `<media:image|video|audio|document|sticker>`
+
+## グループ
+- グループは`agent:<agentId>:whatsapp:group:<jid>`セッションにマップされます。
+- グループポリシー：`channels.whatsapp.groupPolicy = open|disabled|allowlist`（デフォルト`allowlist`）。
+- アクティベーションモード：
+  - `mention`（デフォルト）：@メンションまたは正規表現マッチが必要。
+  - `always`：常にトリガー。
+- `/activation mention|always`は所有者のみで、スタンドアロンメッセージとして送信する必要があります。
+- 所有者 = `channels.whatsapp.allowFrom`（設定されていない場合はセルフE.164）。
+- **履歴注入**（保留のみ）：
+  - 最近の*未処理*メッセージ（デフォルト50）が以下に挿入されます：
+    `[Chat messages since your last reply - for context]`（セッションに既に存在するメッセージは再注入されません）
+  - 現在のメッセージは以下に：
+    `[Current message - respond to this]`
+  - 送信者サフィックスが追加されます：`[from: Name (+E164)]`
+- グループメタデータは5分キャッシュされます（件名 + 参加者）。
+
+## 返信配信（スレッド）
+- WhatsApp Webは標準メッセージを送信します（現在のゲートウェイには引用返信スレッドはありません）。
+- 返信タグはこのチャネルでは無視されます。
+
+## 確認リアクション（受信時の自動リアクション）
+
+WhatsAppは、ボットが返信を生成する前に、受信時に即座に受信メッセージに絵文字リアクションを自動的に送信できます。これにより、ユーザーにメッセージが受信されたことの即座のフィードバックを提供します。
+
+**設定：**
+```json
+{
+  "whatsapp": {
+    "ackReaction": {
+      "emoji": "👀",
+      "direct": true,
+      "group": "mentions"
+    }
+  }
+}
+```
+
+**オプション：**
+- `emoji`（文字列）：確認に使用する絵文字（例：「👀」、「✅」、「📨」）。空または省略 = 機能無効。
+- `direct`（ブール値、デフォルト：`true`）：ダイレクト/DMチャットでリアクションを送信。
+- `group`（文字列、デフォルト：`"mentions"`）：グループチャットの動作：
+  - `"always"`：すべてのグループメッセージにリアクション（@メンションなしでも）
+  - `"mentions"`：ボットが@メンションされたときのみリアクション
+  - `"never"`：グループでは決してリアクションしない
+
+**アカウントごとの上書き：**
+```json
+{
+  "whatsapp": {
+    "accounts": {
+      "work": {
+        "ackReaction": {
+          "emoji": "✅",
+          "direct": false,
+          "group": "always"
+        }
+      }
+    }
+  }
+}
+```
+
+**動作の注意事項：**
+- リアクションは、タイピングインジケーターやボット返信の前に、メッセージ受信時に**即座に**送信されます。
+- `requireMention: false`（アクティベーション：常に）のグループでは、`group: "mentions"`はすべてのメッセージにリアクションします（@メンションだけでなく）。
+- ファイア＆フォーゲット：リアクション失敗はログに記録されますが、ボットの返信を妨げません。
+- 参加者JIDはグループリアクションに自動的に含まれます。
+- WhatsAppは`messages.ackReaction`を無視します。代わりに`channels.whatsapp.ackReaction`を使用してください。
+
+## エージェントツール（リアクション）
+- ツール：`react`アクション（`chatJid`、`messageId`、`emoji`、オプションの`remove`）を持つ`whatsapp`。
+- オプション：`participant`（グループ送信者）、`fromMe`（自分のメッセージにリアクション）、`accountId`（マルチアカウント）。
+- リアクション削除セマンティクス：[/tools/reactions](/tools/reactions)を参照。
+- ツールゲート：`channels.whatsapp.actions.reactions`（デフォルト：有効）。
+
+## 制限
+- アウトバウンドテキストは`channels.whatsapp.textChunkLimit`（デフォルト4000）にチャンク化されます。
+- オプションの改行チャンク化：`channels.whatsapp.chunkMode="newline"`を設定すると、長さチャンク化の前に空白行（段落境界）で分割します。
+- インバウンドメディア保存は`channels.whatsapp.mediaMaxMb`（デフォルト50 MB）で制限されます。
+- アウトバウンドメディアアイテムは`agents.defaults.mediaMaxMb`（デフォルト5 MB）で制限されます。
+
+## アウトバウンド送信（テキスト + メディア）
+- アクティブWebリスナーを使用します。ゲートウェイが実行されていない場合はエラー。
+- テキストチャンク化：メッセージあたり最大4k（`channels.whatsapp.textChunkLimit`で設定可能、オプションで`channels.whatsapp.chunkMode`）。
+- メディア：
+  - 画像/ビデオ/音声/ドキュメントをサポート。
+  - 音声はPTTとして送信。`audio/ogg` => `audio/ogg; codecs=opus`。
+  - キャプションは最初のメディアアイテムのみ。
+  - メディアフェッチはHTTP(S)とローカルパスをサポート。
+  - アニメーションGIF：WhatsAppはインラインループのために`gifPlayback: true`を持つMP4を期待します。
+    - CLI：`openclaw message send --media <mp4> --gif-playback`
+    - ゲートウェイ：`send`パラメーターに`gifPlayback: true`を含む
+
+## ボイスノート（PTT音声）
+WhatsAppは音声を**ボイスノート**（PTTバブル）として送信します。
+- 最良の結果：OGG/Opus。OpenClawは`audio/ogg`を`audio/ogg; codecs=opus`に書き換えます。
+- `[[audio_as_voice]]`はWhatsAppでは無視されます（音声は既にボイスノートとして配信されます）。
+
+## メディア制限 + 最適化
+- デフォルトのアウトバウンドキャップ：5 MB（メディアアイテムごと）。
+- 上書き：`agents.defaults.mediaMaxMb`。
+- 画像はキャップ以下のJPEGに自動最適化されます（リサイズ + 品質スイープ）。
+- オーバーサイズメディア => エラー。メディア返信はテキスト警告にフォールバックします。
+
+## ハートビート
+- **ゲートウェイハートビート**は接続の健全性をログに記録します（`web.heartbeatSeconds`、デフォルト60秒）。
+- **エージェントハートビート**はエージェントごとに設定できます（`agents.list[].heartbeat`）またはグローバルに
+  `agents.defaults.heartbeat`経由で（エージェントごとのエントリが設定されていない場合のフォールバック）。
+  - 設定されたハートビートプロンプト（デフォルト：`Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.`）+ `HEARTBEAT_OK`スキップ動作を使用します。
+  - 配信は最後に使用されたチャネル（または設定されたターゲット）にデフォルト設定されます。
+
+## 再接続動作
+- バックオフポリシー：`web.reconnect`：
+  - `initialMs`、`maxMs`、`factor`、`jitter`、`maxAttempts`。
+- maxAttemptsに達すると、Web監視が停止します（デグレード）。
+- ログアウト => 停止し、再リンクが必要。
+
+## 設定クイックマップ
+- `channels.whatsapp.dmPolicy`（DMポリシー：pairing/allowlist/open/disabled）。
+- `channels.whatsapp.selfChatMode`（同じ電話セットアップ。ボットは個人のWhatsApp番号を使用）。
+- `channels.whatsapp.allowFrom`（DM許可リスト）。WhatsAppはE.164電話番号を使用します（ユーザー名なし）。
+- `channels.whatsapp.mediaMaxMb`（インバウンドメディア保存キャップ）。
+- `channels.whatsapp.ackReaction`（メッセージ受信時の自動リアクション：`{emoji, direct, group}`）。
+- `channels.whatsapp.accounts.<accountId>.*`（アカウントごとの設定 + オプションの`authDir`）。
+- `channels.whatsapp.accounts.<accountId>.mediaMaxMb`（アカウントごとのインバウンドメディアキャップ）。
+- `channels.whatsapp.accounts.<accountId>.ackReaction`（アカウントごとの確認リアクション上書き）。
+- `channels.whatsapp.groupAllowFrom`（グループ送信者許可リスト）。
+- `channels.whatsapp.groupPolicy`（グループポリシー）。
+- `channels.whatsapp.historyLimit` / `channels.whatsapp.accounts.<accountId>.historyLimit`（グループ履歴コンテキスト。`0`で無効化）。
+- `channels.whatsapp.dmHistoryLimit`（ユーザーターンでのDM履歴制限）。ユーザーごとの上書き：`channels.whatsapp.dms["<phone>"].historyLimit`。
+- `channels.whatsapp.groups`（グループ許可リスト + メンション制御デフォルト。すべてを許可するには`"*"`を使用）
+- `channels.whatsapp.actions.reactions`（WhatsAppツールリアクションをゲート）。
+- `agents.list[].groupChat.mentionPatterns`（または`messages.groupChat.mentionPatterns`）
+- `messages.groupChat.historyLimit`
+- `channels.whatsapp.messagePrefix`（インバウンドプレフィックス。アカウントごと：`channels.whatsapp.accounts.<accountId>.messagePrefix`。非推奨：`messages.messagePrefix`）
+- `messages.responsePrefix`（アウトバウンドプレフィックス）
+- `agents.defaults.mediaMaxMb`
+- `agents.defaults.heartbeat.every`
+- `agents.defaults.heartbeat.model`（オプションの上書き）
+- `agents.defaults.heartbeat.target`
+- `agents.defaults.heartbeat.to`
+- `agents.defaults.heartbeat.session`
+- `agents.list[].heartbeat.*`（エージェントごとの上書き）
+- `session.*`（scope、idle、store、mainKey）
+- `web.enabled`（falseの場合、チャネル起動を無効化）
+- `web.heartbeatSeconds`
+- `web.reconnect.*`
+
+## ログ + トラブルシューティング
+- サブシステム：`whatsapp/inbound`、`whatsapp/outbound`、`web-heartbeat`、`web-reconnect`。
+- ログファイル：`/tmp/openclaw/openclaw-YYYY-MM-DD.log`（設定可能）。
+- トラブルシューティングガイド：[ゲートウェイトラブルシューティング](/gateway/troubleshooting)。
+
+## トラブルシューティング（クイック）
+
+**リンクされていない / QRログインが必要**
+- 症状：`channels status`が`linked: false`を表示するか、「リンクされていません」と警告。
+- 修正：ゲートウェイホストで`openclaw channels login`を実行し、QRをスキャンします（WhatsApp → 設定 → リンク済みデバイス）。
+
+**リンクされているが切断 / 再接続ループ**
+- 症状：`channels status`が`running, disconnected`を表示するか、「リンクされているが切断されています」と警告。
+- 修正：`openclaw doctor`（またはゲートウェイを再起動）。持続する場合は、`channels login`経由で再リンクし、`openclaw logs --follow`を検査します。
+
+**Bunランタイム**
+- Bunは**推奨されません**。WhatsApp（Baileys）とTelegramはBunで信頼性がありません。
+  ゲートウェイを**Node**で実行してください。（はじめにのランタイム注記を参照）

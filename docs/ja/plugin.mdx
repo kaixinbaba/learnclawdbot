@@ -1,0 +1,606 @@
+---
+summary: "OpenClaw プラグイン/エクステンション: 検出、設定、および安全性"
+read_when:
+  - プラグイン/エクステンションを追加または変更する場合
+  - プラグインのインストールまたはロードルールをドキュメント化する場合
+---
+# プラグイン（エクステンション）
+
+## クイックスタート（プラグインが初めて？）
+
+プラグインは、OpenClaw に追加機能（コマンド、ツール、Gateway RPC）を拡張する **小さなコードモジュール** です。
+
+ほとんどの場合、プラグインは、コア OpenClaw にまだ組み込まれていない機能が必要な場合（またはオプション機能をメインインストールから除外したい場合）に使用します。
+
+高速パス:
+
+1) すでにロードされているものを確認:
+
+```bash
+openclaw plugins list
+```
+
+2) 公式プラグインをインストール（例: Voice Call）:
+
+```bash
+openclaw plugins install @openclaw/voice-call
+```
+
+3) Gateway を再起動し、`plugins.entries.<id>.config` で設定します。
+
+具体的なプラグインの例については [Voice Call](/plugins/voice-call) を参照してください。
+
+## 利用可能なプラグイン（公式）
+
+- Microsoft Teams は 2026.1.15 以降プラグインのみです。Teams を使用する場合は `@openclaw/msteams` をインストールしてください。
+- Memory (Core) — バンドルされたメモリ検索プラグイン（`plugins.slots.memory` 経由でデフォルトで有効）
+- Memory (LanceDB) — バンドルされた長期メモリプラグイン（自動リコール/キャプチャ; `plugins.slots.memory = "memory-lancedb"` を設定）
+- [Voice Call](/plugins/voice-call) — `@openclaw/voice-call`
+- [Zalo Personal](/plugins/zalouser) — `@openclaw/zalouser`
+- [Matrix](/channels/matrix) — `@openclaw/matrix`
+- [Nostr](/channels/nostr) — `@openclaw/nostr`
+- [Zalo](/channels/zalo) — `@openclaw/zalo`
+- [Microsoft Teams](/channels/msteams) — `@openclaw/msteams`
+- Google Antigravity OAuth (provider auth) — `google-antigravity-auth` としてバンドル（デフォルトで無効）
+- Gemini CLI OAuth (provider auth) — `google-gemini-cli-auth` としてバンドル（デフォルトで無効）
+- Qwen OAuth (provider auth) — `qwen-portal-auth` としてバンドル（デフォルトで無効）
+- Copilot Proxy (provider auth) — ローカル VS Code Copilot Proxy ブリッジ。組み込みの `github-copilot` デバイスログインとは異なります（バンドル、デフォルトで無効）
+
+OpenClaw プラグインは、jiti を介して実行時にロードされる **TypeScript モジュール** です。**設定検証はプラグインコードを実行しません**。代わりにプラグインマニフェストと JSON Schema を使用します。[プラグインマニフェスト](/plugins/manifest) を参照してください。
+
+プラグインは以下を登録できます:
+
+- Gateway RPC メソッド
+- Gateway HTTP ハンドラ
+- エージェントツール
+- CLI コマンド
+- バックグラウンドサービス
+- オプションの設定検証
+- **スキル**（プラグインマニフェストに `skills` ディレクトリをリスト）
+- **自動返信コマンド**（AI エージェントを呼び出さずに実行）
+
+プラグインは Gateway と **インプロセス** で実行されるため、信頼できるコードとして扱ってください。
+ツール作成ガイド: [プラグインエージェントツール](/plugins/agent-tools)。
+
+## ランタイムヘルパー
+
+プラグインは `api.runtime` を介して選択されたコアヘルパーにアクセスできます。テレフォニー TTS の場合:
+
+```ts
+const result = await api.runtime.tts.textToSpeechTelephony({
+  text: "Hello from OpenClaw",
+  cfg: api.config,
+});
+```
+
+注記:
+- コア `messages.tts` 設定（OpenAI または ElevenLabs）を使用します。
+- PCM オーディオバッファ + サンプルレートを返します。プラグインはプロバイダー用にリサンプル/エンコードする必要があります。
+- Edge TTS はテレフォニーではサポートされていません。
+
+## 検出と優先順位
+
+OpenClaw は順番にスキャンします:
+
+1) 設定パス
+- `plugins.load.paths`（ファイルまたはディレクトリ）
+
+2) ワークスペースエクステンション
+- `<workspace>/.openclaw/extensions/*.ts`
+- `<workspace>/.openclaw/extensions/*/index.ts`
+
+3) グローバルエクステンション
+- `~/.openclaw/extensions/*.ts`
+- `~/.openclaw/extensions/*/index.ts`
+
+4) バンドルされたエクステンション（OpenClaw に同梱、**デフォルトで無効**）
+- `<openclaw>/extensions/*`
+
+バンドルされたプラグインは、`plugins.entries.<id>.enabled` または `openclaw plugins enable <id>` を介して明示的に有効にする必要があります。インストールされたプラグインはデフォルトで有効ですが、同じ方法で無効にできます。
+
+各プラグインは、そのルートに `openclaw.plugin.json` ファイルを含める必要があります。パスがファイルを指している場合、プラグインルートはファイルのディレクトリであり、マニフェストを含める必要があります。
+
+複数のプラグインが同じ id に解決される場合、上記の順序で最初に一致したものが優先され、優先順位の低いコピーは無視されます。
+
+### パッケージパック
+
+プラグインディレクトリには、`openclaw.extensions` を含む `package.json` を含めることができます:
+
+```json
+{
+  "name": "my-pack",
+  "openclaw": {
+    "extensions": ["./src/safety.ts", "./src/tools.ts"]
+  }
+}
+```
+
+各エントリはプラグインになります。パックが複数のエクステンションをリストする場合、プラグイン id は `name/<fileBase>` になります。
+
+プラグインが npm の依存関係をインポートする場合、そのディレクトリにインストールして `node_modules` を利用可能にします（`npm install` / `pnpm install`）。
+
+### チャンネルカタログメタデータ
+
+チャンネルプラグインは、`openclaw.channel` を介してオンボーディングメタデータを、`openclaw.install` を介してインストールヒントをアドバタイズできます。これにより、コアカタログデータがフリーになります。
+
+例:
+
+```json
+{
+  "name": "@openclaw/nextcloud-talk",
+  "openclaw": {
+    "extensions": ["./index.ts"],
+    "channel": {
+      "id": "nextcloud-talk",
+      "label": "Nextcloud Talk",
+      "selectionLabel": "Nextcloud Talk (self-hosted)",
+      "docsPath": "/channels/nextcloud-talk",
+      "docsLabel": "nextcloud-talk",
+      "blurb": "Self-hosted chat via Nextcloud Talk webhook bots.",
+      "order": 65,
+      "aliases": ["nc-talk", "nc"]
+    },
+    "install": {
+      "npmSpec": "@openclaw/nextcloud-talk",
+      "localPath": "extensions/nextcloud-talk",
+      "defaultChoice": "npm"
+    }
+  }
+}
+```
+
+OpenClaw は **外部チャンネルカタログ** をマージすることもできます（例: MPM レジストリエクスポート）。以下のいずれかに JSON ファイルをドロップします:
+- `~/.openclaw/mpm/plugins.json`
+- `~/.openclaw/mpm/catalog.json`
+- `~/.openclaw/plugins/catalog.json`
+
+または、`OPENCLAW_PLUGIN_CATALOG_PATHS`（または `OPENCLAW_MPM_CATALOG_PATHS`）を 1 つ以上の JSON ファイルに向けます（カンマ/セミコロン/`PATH` 区切り）。各ファイルには `{ "entries": [ { "name": "@scope/pkg", "openclaw": { "channel": {...}, "install": {...} } } ] }` が含まれている必要があります。
+
+## プラグイン ID
+
+デフォルトのプラグイン id:
+
+- パッケージパック: `package.json` `name`
+- スタンドアロンファイル: ファイルベース名（`~/.../voice-call.ts` → `voice-call`）
+
+プラグインが `id` をエクスポートする場合、OpenClaw はそれを使用しますが、設定された id と一致しない場合は警告します。
+
+## 設定
+
+```json5
+{
+  plugins: {
+    enabled: true,
+    allow: ["voice-call"],
+    deny: ["untrusted-plugin"],
+    load: { paths: ["~/Projects/oss/voice-call-extension"] },
+    entries: {
+      "voice-call": { enabled: true, config: { provider: "twilio" } }
+    }
+  }
+}
+```
+
+フィールド:
+- `enabled`: マスタートグル（デフォルト: true）
+- `allow`: 許可リスト（オプション）
+- `deny`: 拒否リスト（オプション; deny が優先）
+- `load.paths`: 追加のプラグインファイル/ディレクトリ
+- `entries.<id>`: プラグインごとのトグル + 設定
+
+設定の変更には **ゲートウェイの再起動が必要** です。
+
+検証ルール（厳格）:
+- `entries`、`allow`、`deny`、または `slots` の未知のプラグイン id は **エラー** です。
+- プラグインマニフェストがチャンネル id を宣言していない限り、未知の `channels.<id>` キーは **エラー** です。
+- プラグイン設定は、`openclaw.plugin.json`（`configSchema`）に埋め込まれた JSON Schema を使用して検証されます。
+- プラグインが無効になっている場合、その設定は保持され、**警告** が発行されます。
+
+## プラグインスロット（排他的カテゴリ）
+
+一部のプラグインカテゴリは **排他的** です（一度に 1 つだけアクティブ）。`plugins.slots` を使用して、どのプラグインがスロットを所有するかを選択します:
+
+```json5
+{
+  plugins: {
+    slots: {
+      memory: "memory-core" // または "none" でメモリプラグインを無効化
+    }
+  }
+}
+```
+
+複数のプラグインが `kind: "memory"` を宣言している場合、選択されたもののみがロードされます。他のプラグインは診断付きで無効になります。
+
+## Control UI（スキーマ + ラベル）
+
+Control UI は `config.schema`（JSON Schema + `uiHints`）を使用して、より良いフォームをレンダリングします。
+
+OpenClaw は、検出されたプラグインに基づいて実行時に `uiHints` を拡張します:
+
+- `plugins.entries.<id>` / `.enabled` / `.config` のプラグインごとのラベルを追加
+- オプションのプラグイン提供の設定フィールドヒントを以下にマージ:
+  `plugins.entries.<id>.config.<field>`
+
+プラグイン設定フィールドに適切なラベル/プレースホルダーを表示し（秘密を機密としてマーク）、プラグインマニフェストの JSON Schema と一緒に `uiHints` を提供します。
+
+例:
+
+```json
+{
+  "id": "my-plugin",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "apiKey": { "type": "string" },
+      "region": { "type": "string" }
+    }
+  },
+  "uiHints": {
+    "apiKey": { "label": "API Key", "sensitive": true },
+    "region": { "label": "Region", "placeholder": "us-east-1" }
+  }
+}
+```
+
+## CLI
+
+```bash
+openclaw plugins list
+openclaw plugins info <id>
+openclaw plugins install <path>                 # ローカルファイル/ディレクトリを ~/.openclaw/extensions/<id> にコピー
+openclaw plugins install ./extensions/voice-call # 相対パス可
+openclaw plugins install ./plugin.tgz           # ローカル tarball からインストール
+openclaw plugins install ./plugin.zip           # ローカル zip からインストール
+openclaw plugins install -l ./extensions/voice-call # 開発用にリンク（コピーなし）
+openclaw plugins install @openclaw/voice-call # npm からインストール
+openclaw plugins update <id>
+openclaw plugins update --all
+openclaw plugins enable <id>
+openclaw plugins disable <id>
+openclaw plugins doctor
+```
+
+`plugins update` は `plugins.installs` で追跡されている npm インストールでのみ機能します。
+
+プラグインは独自のトップレベルコマンドを登録することもできます（例: `openclaw voicecall`）。
+
+## プラグイン API（概要）
+
+プラグインは以下のいずれかをエクスポートします:
+
+- 関数: `(api) => { ... }`
+- オブジェクト: `{ id, name, configSchema, register(api) { ... } }`
+
+## プラグインフック
+
+プラグインはフックを同梱し、実行時に登録できます。これにより、プラグインは別のフックパックのインストールなしでイベント駆動型の自動化をバンドルできます。
+
+### 例
+
+```
+import { registerPluginHooksFromDir } from "openclaw/plugin-sdk";
+
+export default function register(api) {
+  registerPluginHooksFromDir(api, "./hooks");
+}
+```
+
+注記:
+- フックディレクトリは通常のフック構造に従います（`HOOK.md` + `handler.ts`）。
+- フック適格性ルールは引き続き適用されます（OS/bins/env/config 要件）。
+- プラグイン管理のフックは `openclaw hooks list` に `plugin:<id>` と表示されます。
+- `openclaw hooks` を介してプラグイン管理のフックを有効/無効にすることはできません。代わりにプラグインを有効/無効にしてください。
+
+## プロバイダープラグイン（モデル認証）
+
+プラグインは **モデルプロバイダー認証** フローを登録できるため、ユーザーは OpenClaw 内で OAuth または API キーのセットアップを実行できます（外部スクリプトは不要）。
+
+`api.registerProvider(...)` を介してプロバイダーを登録します。各プロバイダーは 1 つ以上の認証方法（OAuth、API キー、デバイスコードなど）を公開します。これらのメソッドは以下を駆動します:
+
+- `openclaw models auth login --provider <id> [--method <id>]`
+
+例:
+
+```ts
+api.registerProvider({
+  id: "acme",
+  label: "AcmeAI",
+  auth: [
+    {
+      id: "oauth",
+      label: "OAuth",
+      kind: "oauth",
+      run: async (ctx) => {
+        // OAuth フローを実行し、認証プロファイルを返します。
+        return {
+          profiles: [
+            {
+              profileId: "acme:default",
+              credential: {
+                type: "oauth",
+                provider: "acme",
+                access: "...",
+                refresh: "...",
+                expires: Date.now() + 3600 * 1000,
+              },
+            },
+          ],
+          defaultModel: "acme/opus-1",
+        };
+      },
+    },
+  ],
+});
+```
+
+注記:
+- `run` は、`prompter`、`runtime`、`openUrl`、`oauth.createVpsAwareHandlers` ヘルパーを含む `ProviderAuthContext` を受け取ります。
+- デフォルトモデルまたはプロバイダー設定を追加する必要がある場合は、`configPatch` を返します。
+- `--set-default` がエージェントのデフォルトを更新できるように、`defaultModel` を返します。
+
+### メッセージングチャンネルを登録
+
+プラグインは、組み込みチャンネル（WhatsApp、Telegram など）のように動作する **チャンネルプラグイン** を登録できます。チャンネル設定は `channels.<id>` の下に存在し、チャンネルプラグインコードによって検証されます。
+
+```ts
+const myChannel = {
+  id: "acmechat",
+  meta: {
+    id: "acmechat",
+    label: "AcmeChat",
+    selectionLabel: "AcmeChat (API)",
+    docsPath: "/channels/acmechat",
+    blurb: "demo channel plugin.",
+    aliases: ["acme"],
+  },
+  capabilities: { chatTypes: ["direct"] },
+  config: {
+    listAccountIds: (cfg) => Object.keys(cfg.channels?.acmechat?.accounts ?? {}),
+    resolveAccount: (cfg, accountId) =>
+      (cfg.channels?.acmechat?.accounts?.[accountId ?? "default"] ?? { accountId }),
+  },
+  outbound: {
+    deliveryMode: "direct",
+    sendText: async () => ({ ok: true }),
+  },
+};
+
+export default function (api) {
+  api.registerChannel({ plugin: myChannel });
+}
+```
+
+注記:
+- `channels.<id>` の下に設定を配置します（`plugins.entries` ではありません）。
+- `meta.label` は CLI/UI リストのラベルに使用されます。
+- `meta.aliases` は、正規化と CLI 入力用の代替 id を追加します。
+- `meta.preferOver` は、両方が設定されている場合に自動有効化をスキップするチャンネル id をリストします。
+- `meta.detailLabel` と `meta.systemImage` により、UI はより豊富なチャンネルラベル/アイコンを表示できます。
+
+### 新しいメッセージングチャンネルを書く（ステップバイステップ）
+
+**新しいチャットサーフェス**（「メッセージングチャンネル」）が必要な場合にこれを使用します。モデルプロバイダーではありません。
+モデルプロバイダーのドキュメントは `/providers/*` にあります。
+
+1) id + 設定形状を選択
+- すべてのチャンネル設定は `channels.<id>` の下にあります。
+- マルチアカウントセットアップには `channels.<id>.accounts.<accountId>` を優先します。
+
+2) チャンネルメタデータを定義
+- `meta.label`、`meta.selectionLabel`、`meta.docsPath`、`meta.blurb` は CLI/UI リストを制御します。
+- `meta.docsPath` は `/channels/<id>` のようなドキュメントページを指す必要があります。
+- `meta.preferOver` により、プラグインは別のチャンネルを置き換えることができます（自動有効化はそれを優先します）。
+- `meta.detailLabel` と `meta.systemImage` は、UI によって詳細テキスト/アイコンに使用されます。
+
+3) 必要なアダプターを実装
+- `config.listAccountIds` + `config.resolveAccount`
+- `capabilities`（チャットタイプ、メディア、スレッドなど）
+- `outbound.deliveryMode` + `outbound.sendText`（基本送信用）
+
+4) 必要に応じてオプションのアダプターを追加
+- `setup`（ウィザード）、`security`（DM ポリシー）、`status`（ヘルス/診断）
+- `gateway`（start/stop/login）、`mentions`、`threading`、`streaming`
+- `actions`（メッセージアクション）、`commands`（ネイティブコマンド動作）
+
+5) プラグインでチャンネルを登録
+- `api.registerChannel({ plugin })`
+
+最小設定例:
+
+```json5
+{
+  channels: {
+    acmechat: {
+      accounts: {
+        default: { token: "ACME_TOKEN", enabled: true }
+      }
+    }
+  }
+}
+```
+
+最小チャンネルプラグイン（アウトバウンドのみ）:
+
+```ts
+const plugin = {
+  id: "acmechat",
+  meta: {
+    id: "acmechat",
+    label: "AcmeChat",
+    selectionLabel: "AcmeChat (API)",
+    docsPath: "/channels/acmechat",
+    blurb: "AcmeChat messaging channel.",
+    aliases: ["acme"],
+  },
+  capabilities: { chatTypes: ["direct"] },
+  config: {
+    listAccountIds: (cfg) => Object.keys(cfg.channels?.acmechat?.accounts ?? {}),
+    resolveAccount: (cfg, accountId) =>
+      (cfg.channels?.acmechat?.accounts?.[accountId ?? "default"] ?? { accountId }),
+  },
+  outbound: {
+    deliveryMode: "direct",
+    sendText: async ({ text }) => {
+      // ここでチャンネルに `text` を配信
+      return { ok: true };
+    },
+  },
+};
+
+export default function (api) {
+  api.registerChannel({ plugin });
+}
+```
+
+プラグインをロードし（エクステンションディレクトリまたは `plugins.load.paths`）、ゲートウェイを再起動してから、設定で `channels.<id>` を設定します。
+
+### エージェントツール
+
+専用ガイドを参照してください: [プラグインエージェントツール](/plugins/agent-tools)。
+
+### Gateway RPC メソッドを登録
+
+```ts
+export default function (api) {
+  api.registerGatewayMethod("myplugin.status", ({ respond }) => {
+    respond(true, { ok: true });
+  });
+}
+```
+
+### CLI コマンドを登録
+
+```ts
+export default function (api) {
+  api.registerCli(({ program }) => {
+    program.command("mycmd").action(() => {
+      console.log("Hello");
+    });
+  }, { commands: ["mycmd"] });
+}
+```
+
+### 自動返信コマンドを登録
+
+プラグインは、**AI エージェントを呼び出さずに** 実行されるカスタムスラッシュコマンドを登録できます。これは、トグルコマンド、ステータスチェック、または LLM 処理を必要としない迅速なアクションに役立ちます。
+
+```ts
+export default function (api) {
+  api.registerCommand({
+    name: "mystatus",
+    description: "Show plugin status",
+    handler: (ctx) => ({
+      text: `Plugin is running! Channel: ${ctx.channel}`,
+    }),
+  });
+}
+```
+
+コマンドハンドラーコンテキスト:
+
+- `senderId`: 送信者の ID（利用可能な場合）
+- `channel`: コマンドが送信されたチャンネル
+- `isAuthorizedSender`: 送信者が認証ユーザーかどうか
+- `args`: コマンドの後に渡された引数（`acceptsArgs: true` の場合）
+- `commandBody`: 完全なコマンドテキスト
+- `config`: 現在の OpenClaw 設定
+
+コマンドオプション:
+
+- `name`: コマンド名（先頭の `/` なし）
+- `description`: コマンドリストに表示されるヘルプテキスト
+- `acceptsArgs`: コマンドが引数を受け入れるかどうか（デフォルト: false）。false で引数が提供された場合、コマンドは一致せず、メッセージは他のハンドラーにフォールスルーされます
+- `requireAuth`: 認証された送信者を要求するかどうか（デフォルト: true）
+- `handler`: `{ text: string }` を返す関数（async 可）
+
+認証と引数を含む例:
+
+```ts
+api.registerCommand({
+  name: "setmode",
+  description: "Set plugin mode",
+  acceptsArgs: true,
+  requireAuth: true,
+  handler: async (ctx) => {
+    const mode = ctx.args?.trim() || "default";
+    await saveMode(mode);
+    return { text: `Mode set to: ${mode}` };
+  },
+});
+```
+
+注記:
+- プラグインコマンドは、組み込みコマンドと AI エージェント **の前に** 処理されます
+- コマンドはグローバルに登録され、すべてのチャンネルで機能します
+- コマンド名は大文字と小文字を区別しません（`/MyStatus` は `/mystatus` に一致します）
+- コマンド名は文字で始まり、文字、数字、ハイフン、アンダースコアのみを含む必要があります
+- 予約されたコマンド名（`help`、`status`、`reset` など）はプラグインでオーバーライドできません
+- プラグイン間でのコマンドの重複登録は、診断エラーで失敗します
+
+### バックグラウンドサービスを登録
+
+```ts
+export default function (api) {
+  api.registerService({
+    id: "my-service",
+    start: () => api.logger.info("ready"),
+    stop: () => api.logger.info("bye"),
+  });
+}
+```
+
+## 命名規則
+
+- Gateway メソッド: `pluginId.action`（例: `voicecall.status`）
+- ツール: `snake_case`（例: `voice_call`）
+- CLI コマンド: ケバブまたはキャメル、ただしコアコマンドとの衝突を避ける
+
+## スキル
+
+プラグインは、リポジトリにスキルを同梱できます（`skills/<name>/SKILL.md`）。
+`plugins.entries.<id>.enabled`（または他の設定ゲート）で有効にし、ワークスペース/管理されたスキルの場所に存在することを確認します。
+
+## 配布（npm）
+
+推奨されるパッケージング:
+
+- メインパッケージ: `openclaw`（このリポジトリ）
+- プラグイン: `@openclaw/*` の下の個別の npm パッケージ（例: `@openclaw/voice-call`）
+
+公開契約:
+
+- プラグイン `package.json` には、1 つ以上のエントリファイルを含む `openclaw.extensions` を含める必要があります。
+- エントリファイルは `.js` または `.ts` にできます（jiti は実行時に TS をロードします）。
+- `openclaw plugins install <npm-spec>` は `npm pack` を使用し、`~/.openclaw/extensions/<id>/` に抽出して、設定で有効にします。
+- 設定キーの安定性: スコープ付きパッケージは、`plugins.entries.*` の **スコープなし** id に正規化されます。
+
+## プラグインの例: Voice Call
+
+このリポジトリには、voice-call プラグイン（Twilio またはログフォールバック）が含まれています:
+
+- ソース: `extensions/voice-call`
+- スキル: `skills/voice-call`
+- CLI: `openclaw voicecall start|status`
+- ツール: `voice_call`
+- RPC: `voicecall.start`、`voicecall.status`
+- 設定（twilio）: `provider: "twilio"` + `twilio.accountSid/authToken/from`（オプション `statusCallbackUrl`、`twimlUrl`）
+- 設定（dev）: `provider: "log"`（ネットワークなし）
+
+セットアップと使用法については、[Voice Call](/plugins/voice-call) と `extensions/voice-call/README.md` を参照してください。
+
+## 安全性ノート
+
+プラグインは Gateway とインプロセスで実行されます。信頼できるコードとして扱ってください:
+
+- 信頼できるプラグインのみをインストールしてください。
+- `plugins.allow` 許可リストを優先してください。
+- 変更後に Gateway を再起動してください。
+
+## プラグインのテスト
+
+プラグインはテストを同梱できます（同梱すべきです）:
+
+- リポジトリ内プラグインは、`src/**` の下に Vitest テストを保持できます（例: `src/plugins/voice-call.plugin.test.ts`）。
+- 個別に公開されたプラグインは、独自の CI（lint/build/test）を実行し、`openclaw.extensions` がビルドされたエントリポイント（`dist/index.js`）を指していることを検証する必要があります。

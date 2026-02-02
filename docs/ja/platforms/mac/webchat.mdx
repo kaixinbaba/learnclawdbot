@@ -1,0 +1,34 @@
+---
+summary: "Mac アプリがゲートウェイ WebChat を埋め込む方法とデバッグ方法"
+read_when:
+  - Mac WebChat ビューまたはループバックポートをデバッグする場合
+---
+# WebChat（macOS アプリ）
+
+macOS メニューバーアプリは、WebChat UI をネイティブ SwiftUI ビューとして埋め込みます。Gateway に接続し、選択されたエージェントの **main セッション** にデフォルト設定されます（他のセッション用のセッションスイッチャー付き）。
+
+- **ローカルモード**: ローカル Gateway WebSocket に直接接続します。
+- **リモートモード**: SSH 経由で Gateway コントロールポートを転送し、そのトンネルをデータプレーンとして使用します。
+
+## 起動とデバッグ
+
+- 手動: Lobster メニュー → "Open Chat"。
+- テスト用の自動オープン:
+  ```bash
+  dist/OpenClaw.app/Contents/MacOS/OpenClaw --webchat
+  ```
+- ログ: `./scripts/clawlog.sh`（サブシステム `bot.molt`、カテゴリ `WebChatSwiftUI`）。
+
+## 配線方法
+
+- データプレーン: Gateway WS メソッド `chat.history`, `chat.send`, `chat.abort`, `chat.inject` とイベント `chat`, `agent`, `presence`, `tick`, `health`。
+- セッション: プライマリセッション（`main`、またはスコープがグローバルの場合は `global`）にデフォルト設定されます。UI はセッション間で切り替えることができます。
+- オンボーディングは、初回実行セットアップを別に保つために専用セッションを使用します。
+
+## セキュリティ表面
+
+- リモートモードは、SSH 経由で Gateway WebSocket コントロールポートのみを転送します。
+
+## 既知の制限事項
+
+- UI はチャットセッション用に最適化されています（完全なブラウザサンドボックスではありません）。

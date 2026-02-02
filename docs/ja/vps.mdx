@@ -1,0 +1,38 @@
+---
+summary: "OpenClaw用のVPSホスティングハブ（Oracle/Fly/Hetzner/GCP/exe.dev）"
+read_when:
+  - クラウドでGatewayを実行したい場合
+  - VPS/ホスティングガイドのクイックマップが必要な場合
+---
+# VPSホスティング
+
+このハブは、サポートされているVPS/ホスティングガイドにリンクし、クラウドデプロイメントが高レベルでどのように機能するかを説明します。
+
+## プロバイダーを選択
+
+- **Railway**（ワンクリック + ブラウザセットアップ）：[Railway](/railway)
+- **Northflank**（ワンクリック + ブラウザセットアップ）：[Northflank](/northflank)
+- **Oracle Cloud（Always Free）**：[Oracle](/platforms/oracle) — $0/月（Always Free、ARM、容量/サインアップが難しい場合があります）
+- **Fly.io**：[Fly.io](/platforms/fly)
+- **Hetzner（Docker）**：[Hetzner](/platforms/hetzner)
+- **GCP（Compute Engine）**：[GCP](/platforms/gcp)
+- **exe.dev**（VM + HTTPSプロキシ）：[exe.dev](/platforms/exe-dev)
+- **AWS（EC2/Lightsail/無料利用枠）**：こちらもよく機能します。ビデオガイド：
+  https://x.com/techfrenAJ/status/2014934471095812547
+
+## クラウドセットアップの仕組み
+
+- **GatewayはVPS上で実行され**、状態 + ワークスペースを所有します。
+- **Control UI** または **Tailscale/SSH** を介してラップトップ/スマートフォンから接続します。
+- VPSを信頼できる情報源として扱い、状態 + ワークスペースを **バックアップ** します。
+- セキュアなデフォルト：Gatewayをループバックに保持し、SSHトンネルまたはTailscale Serve経由でアクセスします。
+  `lan`/`tailnet` にバインドする場合は、`gateway.auth.token` または `gateway.auth.password` を要求します。
+
+リモートアクセス：[Gatewayリモート](/gateway/remote)  
+プラットフォームハブ：[プラットフォーム](/platforms)
+
+## VPSでnodesを使用
+
+Gatewayをクラウドに保持し、ローカルデバイス（Mac/iOS/Android/ヘッドレス）に **nodes** をペアリングできます。NodesはローカルのScreen/camera/canvasおよび `system.run` 機能を提供し、Gatewayはクラウドに留まります。
+
+ドキュメント：[Nodes](/nodes)、[Nodes CLI](/cli/nodes)

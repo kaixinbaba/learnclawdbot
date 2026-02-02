@@ -1,0 +1,50 @@
+---
+summary: "直接 `openclaw agent` CLI 実行（オプションで配信機能付き）"
+read_when:
+  - エージェントCLIエントリーポイントの追加または変更時
+---
+# `openclaw agent`（直接エージェント実行）
+
+`openclaw agent` は、受信チャットメッセージなしで単一のエージェントターンを実行します。
+デフォルトでは **Gateway経由** で実行されます。現在のマシンの組み込みランタイムを強制するには `--local` を追加します。
+
+## 動作
+
+- 必須: `--message <text>`
+- セッション選択:
+  - `--to <dest>` はセッションキーを導出します（グループ/チャネルターゲットは分離を保持、ダイレクトチャットは `main` に統合）、**または**
+  - `--session-id <id>` は既存のセッションIDでセッションを再利用します、**または**
+  - `--agent <id>` は設定済みエージェントを直接ターゲットにします（そのエージェントの `main` セッションキーを使用）
+- 通常の受信返信と同じ組み込みエージェントランタイムを実行します。
+- Thinking/verboseフラグはセッションストアに永続化されます。
+- 出力:
+  - デフォルト: 返信テキストを出力（`MEDIA:<url>` 行も含む）
+  - `--json`: 構造化ペイロード + メタデータを出力
+- `--deliver` + `--channel` でチャネルへのオプション配信（ターゲット形式は `openclaw message --target` と一致）。
+- セッションを変更せずに配信をオーバーライドするには `--reply-channel`/`--reply-to`/`--reply-account` を使用します。
+
+Gateway に到達できない場合、CLI は組み込みローカル実行に **フォールバック** します。
+
+## 例
+
+```bash
+openclaw agent --to +15555550123 --message "status update"
+openclaw agent --agent ops --message "Summarize logs"
+openclaw agent --session-id 1234 --message "Summarize inbox" --thinking medium
+openclaw agent --to +15555550123 --message "Trace logs" --verbose on --json
+openclaw agent --to +15555550123 --message "Summon reply" --deliver
+openclaw agent --agent ops --message "Generate report" --deliver --reply-channel slack --reply-to "#reports"
+```
+
+## フラグ
+
+- `--local`: ローカルで実行（シェルにモデルプロバイダーAPIキーが必要）
+- `--deliver`: 選択したチャネルに返信を送信
+- `--channel`: 配信チャネル（`whatsapp|telegram|discord|googlechat|slack|signal|imessage`、デフォルト: `whatsapp`）
+- `--reply-to`: 配信ターゲットのオーバーライド
+- `--reply-channel`: 配信チャネルのオーバーライド
+- `--reply-account`: 配信アカウントIDのオーバーライド
+- `--thinking <off|minimal|low|medium|high|xhigh>`: thinking レベルを永続化（GPT-5.2 + Codex モデルのみ）
+- `--verbose <on|full|off>`: verbose レベルを永続化
+- `--timeout <seconds>`: エージェントタイムアウトをオーバーライド
+- `--json`: 構造化JSONを出力

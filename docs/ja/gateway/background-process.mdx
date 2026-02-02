@@ -1,0 +1,82 @@
+---
+summary: "バックグラウンド実行とプロセス管理"
+read_when:
+  - バックグラウンド実行動作の追加または変更時
+  - 長時間実行される exec タスクのデバッグ時
+---
+
+# Background Exec + Process Tool（バックグラウンド実行 + プロセスツール）
+
+OpenClaw は `exec` ツールを通じてシェルコマンドを実行し、長時間実行されるタスクをメモリに保持します。`process` ツールはこれらのバックグラウンドセッションを管理します。
+
+## exec ツール
+
+主要なパラメータ：
+- `command`（必須）
+- `yieldMs`（デフォルト 10000）：この遅延後に自動的にバックグラウンド化
+- `background`（bool）：即座にバックグラウンド化
+- `timeout`（秒、デフォルト 1800）：このタイムアウト後にプロセスを強制終了
+- `elevated`（bool）：elevated モードが有効/許可されている場合、ホストで実行
+- 本物の TTY が必要な場合は `pty: true` を設定してください。
+- `workdir`、`env`
+
+動作：
+- フォアグラウンド実行は出力を直接返します。
+- バックグラウンド化された場合（明示的またはタイムアウト）、ツールは `status: "running"` + `sessionId` と短い末尾を返します。
+- 出力はセッションがポーリングまたはクリアされるまでメモリに保持されます。
+- `process` ツールが許可されていない場合、`exec` は同期的に実行され、`yieldMs`/`background` を無視します。
+
+## 子プロセスブリッジング
+
+exec/process ツールの外部で長時間実行される子プロセスを生成する場合（例：CLI の再生成やゲートウェイヘルパー）、子プロセスブリッジヘルパーをアタッチして、終了シグナルが転送され、exit/error 時にリスナーがデタッチされるようにしてください。これにより、systemd 上で孤立したプロセスを回避し、プラットフォーム間でシャットダウン動作を一貫させることができます。
+
+環境変数オーバーライド：
+- `PI_BASH_YIELD_MS`：デフォルトの yield（ミリ秒）
+- `PI_BASH_MAX_OUTPUT_CHARS`：メモリ内出力上限（文字数）
+- `OPENCLAW_BASH_PENDING_MAX_OUTPUT_CHARS`：ストリームごとの保留中の stdout/stderr 上限（文字数）
+- `PI_BASH_JOB_TTL_MS`：完了したセッションの TTL（ミリ秒、1分〜3時間に制限）
+
+設定（推奨）：
+- `tools.exec.backgroundMs`（デフォルト 10000）
+- `tools.exec.timeoutSec`（デフォルト 1800）
+- `tools.exec.cleanupMs`（デフォルト 1800000）
+ - `tools.exec.notifyOnExit`（デフォルト true）：バックグラウンド化された exec が終了した際にシステムイベントをエンキューし、ハートビートをリクエストします。
+
+## process ツール
+
+アクション：
+- `list`：実行中および完了したセッション
+- `poll`：セッションの新しい出力をドレイン（終了ステータスも報告）
+- `log`：集約された出力を読み取り（`offset` + `limit` をサポート）
+- `write`：標準入力を送信（`data`、オプションで `eof`）
+- `kill`：バックグラウンドセッションを終了
+- `clear`：メモリから完了したセッションを削除
+- `remove`：実行中の場合は kill、完了している場合は clear
+
+注意事項：
+- バックグラウンド化されたセッションのみがメモリにリスト/永続化されます。
+- セッションはプロセス再起動時に失われます（ディスクへの永続化なし）。
+- セッションログは、`process poll/log` を実行し、ツール結果が記録された場合のみチャット履歴に保存されます。
+- `process` はエージェントごとにスコープされており、そのエージェントが開始したセッションのみが表示されます。
+- `process list` には、クイックスキャン用に派生した `name`（コマンド動詞 + ターゲット）が含まれます。
+- `process log` は行ベースの `offset`/`limit` を使用します（`offset` を省略すると最後の N 行を取得）。
+
+## 例
+
+長時間のタスクを実行し、後でポーリング：
+```json
+{"tool": "exec", "command": "sleep 5 && echo done", "yieldMs": 1000}
+```
+```json
+{"tool": "process", "action": "poll", "sessionId": "<id>"}
+```
+
+即座にバックグラウンドで開始：
+```json
+{"tool": "exec", "command": "npm run build", "background": true}
+```
+
+標準入力を送信：
+```json
+{"tool": "process", "action": "write", "sessionId": "<id>", "data": "y\n"}
+```

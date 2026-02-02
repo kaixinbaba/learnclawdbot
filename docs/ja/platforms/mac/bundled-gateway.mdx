@@ -1,0 +1,62 @@
+---
+summary: "macOS上のGatewayランタイム（外部launchdサービス）"
+read_when:
+  - OpenClaw.appをパッケージ化する場合
+  - macOS Gateway launchdサービスをデバッグする場合
+  - macOS用Gateway CLIをインストールする場合
+---
+
+# Gateway on macOS（外部launchd）
+
+OpenClaw.appはもはやNode/BunやGatewayランタイムをバンドルしていません。macOSアプリは**外部**の`openclaw` CLIインストールを期待し、Gatewayを子プロセスとして生成せず、ユーザー毎のlaunchdサービスを管理してGatewayを実行し続けます（または既に実行中のローカルGatewayに接続します）。
+
+## CLIをインストール（ローカルモードに必要）
+
+Mac上でNode 22+が必要で、その後`openclaw`をグローバルにインストール:
+
+```bash
+npm install -g openclaw@<version>
+```
+
+macOSアプリの**Install CLI**ボタンは、npm/pnpm経由で同じフローを実行します（Gatewayランタイムにはbunは推奨されません）。
+
+## Launchd（GatewayをLaunchAgentとして）
+
+ラベル:
+- `bot.molt.gateway`（または`bot.molt.<profile>`; レガシーの`com.openclaw.*`が残る場合があります）
+
+Plist位置（ユーザー毎）:
+- `~/Library/LaunchAgents/bot.molt.gateway.plist`
+  （または`~/Library/LaunchAgents/bot.molt.<profile>.plist`）
+
+マネージャー:
+- macOSアプリがローカルモードでLaunchAgentのインストール/更新を所有します。
+- CLIもインストール可能: `openclaw gateway install`。
+
+動作:
+- 「OpenClaw Active」がLaunchAgentを有効/無効にします。
+- アプリ終了はGatewayを**停止しません**（launchdが生き続けます）。
+- 設定されたポートでGatewayが既に実行中の場合、アプリは新しいものを開始する代わりにそれに接続します。
+
+ログ:
+- launchdのstdout/err: `/tmp/openclaw/openclaw-gateway.log`
+
+## バージョン互換性
+
+macOSアプリはGatewayバージョンを自身のバージョンと照合します。互換性がない場合は、グローバルCLIをアプリバージョンに合わせて更新してください。
+
+## スモークチェック
+
+```bash
+openclaw --version
+
+OPENCLAW_SKIP_CHANNELS=1 \
+OPENCLAW_SKIP_CANVAS_HOST=1 \
+openclaw gateway --port 18999 --bind loopback
+```
+
+その後:
+
+```bash
+openclaw gateway call health --url ws://127.0.0.1:18999 --timeout 3000
+```

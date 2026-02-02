@@ -1,0 +1,79 @@
+---
+summary: "Gateway HTTPエンドポイント経由で単一のツールを直接呼び出す"
+read_when:
+  - 完全なエージェントターンを実行せずにツールを呼び出す場合
+  - ツールポリシー適用が必要な自動化を構築する場合
+---
+# ツール呼び出し(HTTP)
+
+OpenClawのGatewayは、単一のツールを直接呼び出すためのシンプルなHTTPエンドポイントを公開しています。これは常に有効ですが、Gateway認証とツールポリシーによって制御されます。
+
+- `POST /tools/invoke`
+- Gateway(WS + HTTPマルチプレックス)と同じポート: `http://<gateway-host>:<port>/tools/invoke`
+
+デフォルトの最大ペイロードサイズは2 MBです。
+
+## 認証
+
+Gateway認証設定を使用します。bearerトークンを送信してください:
+
+- `Authorization: Bearer <token>`
+
+注意:
+- `gateway.auth.mode="token"`の場合、`gateway.auth.token`(または`OPENCLAW_GATEWAY_TOKEN`)を使用します。
+- `gateway.auth.mode="password"`の場合、`gateway.auth.password`(または`OPENCLAW_GATEWAY_PASSWORD`)を使用します。
+
+## リクエストボディ
+
+```json
+{
+  "tool": "sessions_list",
+  "action": "json",
+  "args": {},
+  "sessionKey": "main",
+  "dryRun": false
+}
+```
+
+フィールド:
+- `tool`(string、必須): 呼び出すツール名。
+- `action`(string、オプション): ツールスキーマが`action`をサポートし、argsペイロードが省略されている場合、argsにマップされます。
+- `args`(object、オプション): ツール固有の引数。
+- `sessionKey`(string、オプション): ターゲットセッションキー。省略または`"main"`の場合、Gatewayは設定されたメインセッションキーを使用します(`session.mainKey`とデフォルトエージェントを尊重、またはグローバルスコープで`global`)。
+- `dryRun`(boolean、オプション): 将来の使用のために予約。現在は無視されます。
+
+## ポリシーとルーティング動作
+
+ツールの可用性は、Gatewayエージェントが使用するのと同じポリシーチェーンでフィルタリングされます:
+- `tools.profile` / `tools.byProvider.profile`
+- `tools.allow` / `tools.byProvider.allow`
+- `agents.<id>.tools.allow` / `agents.<id>.tools.byProvider.allow`
+- グループポリシー(セッションキーがグループまたはチャネルにマップされている場合)
+- サブエージェントポリシー(サブエージェントセッションキーで呼び出す場合)
+
+ツールがポリシーで許可されていない場合、エンドポイントは**404**を返します。
+
+グループポリシーがコンテキストを解決するのを助けるために、オプションで以下を設定できます:
+- `x-openclaw-message-channel: <channel>`(例: `slack`、`telegram`)
+- `x-openclaw-account-id: <accountId>`(複数のアカウントが存在する場合)
+
+## レスポンス
+
+- `200` → `{ ok: true, result }`
+- `400` → `{ ok: false, error: { type, message } }`(無効なリクエストまたはツールエラー)
+- `401` → 認証されていない
+- `404` → ツールが利用できない(見つからないまたは許可リストにない)
+- `405` → メソッドが許可されていない
+
+## 例
+
+```bash
+curl -sS http://127.0.0.1:18789/tools/invoke \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "tool": "sessions_list",
+    "action": "json",
+    "args": {}
+  }'
+```

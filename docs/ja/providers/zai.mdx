@@ -1,0 +1,32 @@
+---
+summary: "OpenClaw で Z.AI（GLM モデル）を使用する"
+read_when:
+  - OpenClaw で Z.AI / GLM モデルを使用したい
+  - シンプルな ZAI_API_KEY のセットアップが必要
+---
+# Z.AI
+
+Z.AI は **GLM** モデル用の API プラットフォームです。GLM 用の REST API を提供し、認証に API キーを使用します。Z.AI コンソールで API キーを作成してください。OpenClaw は Z.AI API キーで `zai` プロバイダを使用します。
+
+## CLI セットアップ
+
+```bash
+openclaw onboard --auth-choice zai-api-key
+# または非対話的に
+openclaw onboard --zai-api-key "$ZAI_API_KEY"
+```
+
+## 設定スニペット
+
+```json5
+{
+  env: { ZAI_API_KEY: "sk-..." },
+  agents: { defaults: { model: { primary: "zai/glm-4.7" } } }
+}
+```
+
+## 注意事項
+
+- GLM モデルは `zai/<model>` として利用可能です（例：`zai/glm-4.7`）。
+- モデルファミリーの概要については、[/providers/glm](/providers/glm) を参照してください。
+- Z.AI は API キーで Bearer 認証を使用します。

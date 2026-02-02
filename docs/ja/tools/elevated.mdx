@@ -1,0 +1,49 @@
+---
+summary: "エレベーテッドモードと /elevated ディレクティブ"
+read_when:
+  - エレベーテッドモードのデフォルト、許可リスト、またはスラッシュコマンド動作を調整する場合
+---
+# エレベーテッドモード（/elevated ディレクティブ）
+
+## 機能
+- `/elevated on` はgatewayホストで実行し、exec承認を保持します（`/elevated ask` と同じ）。
+- `/elevated full` はgatewayホストで実行し、execを自動承認します（exec承認をスキップ）。
+- `/elevated ask` はgatewayホストで実行しますが、exec承認を保持します（`/elevated on` と同じ）。
+- `on`/`ask` は `exec.security=full` を強制 **しません**。設定されたセキュリティ/askポリシーが引き続き適用されます。
+- エージェントが **サンドボックス化** されている場合のみ動作を変更します（それ以外の場合、execは既にホストで実行されています）。
+- ディレクティブ形式: `/elevated on|off|ask|full`、`/elev on|off|ask|full`。
+- `on|off|ask|full` のみが受け入れられます。それ以外はヒントを返し、状態を変更しません。
+
+## 制御するもの（しないもの）
+- **可用性ゲート**: `tools.elevated` がグローバルベースラインです。`agents.list[].tools.elevated` はエージェントごとにさらにelevatedを制限できます（両方が許可する必要があります）。
+- **セッションごとの状態**: `/elevated on|off|ask|full` は現在のセッションキーのelevatedレベルを設定します。
+- **インラインディレクティブ**: メッセージ内の `/elevated on|ask|full` はそのメッセージのみに適用されます。
+- **グループ**: グループチャットでは、エージェントがメンションされている場合のみelevatedディレクティブが適用されます。メンション要件をバイパスするコマンドのみのメッセージはメンションされたものとして扱われます。
+- **ホスト実行**: elevatedは `exec` をgatewayホストに強制します。`full` は `security=full` も設定します。
+- **承認**: `full` はexec承認をスキップします。`on`/`ask` は許可リスト/ask規則が要求する場合に承認を適用します。
+- **サンドボックス化されていないエージェント**: 場所に対してno-op。ゲート、ログ、ステータスにのみ影響します。
+- **ツールポリシーは引き続き適用**: `exec` がツールポリシーで拒否されている場合、elevatedは使用できません。
+- **`/exec` とは別**: `/exec` は承認された送信者のセッションごとのデフォルトを調整し、elevatedを必要としません。
+
+## 解決順序
+1. メッセージのインラインディレクティブ（そのメッセージのみに適用）。
+2. セッションオーバーライド（ディレクティブのみのメッセージを送信して設定）。
+3. グローバルデフォルト（設定の `agents.defaults.elevatedDefault`）。
+
+## セッションデフォルトの設定
+- **ディレクティブのみ** のメッセージ（空白は許可）、例: `/elevated full` を送信します。
+- 確認返信が送信されます（`Elevated mode set to full...` / `Elevated mode disabled.`）。
+- elevatedアクセスが無効または送信者が承認された許可リストにない場合、ディレクティブは実行可能なエラーで返信し、セッション状態を変更しません。
+- 引数なしで `/elevated`（または `/elevated:`）を送信すると、現在のelevatedレベルが表示されます。
+
+## 可用性 + 許可リスト
+- 機能ゲート: `tools.elevated.enabled`（コードがサポートしていても、設定でデフォルトをオフにできます）。
+- 送信者許可リスト: プロバイダーごとの許可リスト（例: `discord`、`whatsapp`）を含む `tools.elevated.allowFrom`。
+- エージェントごとのゲート: `agents.list[].tools.elevated.enabled`（オプション。さらに制限のみ可能）。
+- エージェントごとの許可リスト: `agents.list[].tools.elevated.allowFrom`（オプション。設定時、送信者は **グローバル + エージェントごと** の両方の許可リストに一致する必要があります）。
+- Discordフォールバック: `tools.elevated.allowFrom.discord` が省略されている場合、`channels.discord.dm.allowFrom` リストがフォールバックとして使用されます。上書きするには `tools.elevated.allowFrom.discord`（`[]` でも可）を設定します。エージェントごとの許可リストはフォールバックを使用 **しません**。
+- すべてのゲートが通過する必要があります。そうでなければelevatedは利用不可として扱われます。
+
+## ログ + ステータス
+- Elevated exec呼び出しはinfoレベルでログに記録されます。
+- セッションステータスにはelevatedモードが含まれます（例: `elevated=ask`、`elevated=full`）。

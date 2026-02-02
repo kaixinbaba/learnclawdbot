@@ -1,0 +1,151 @@
+---
+summary: "コンテキスト：モデルが見るもの、構築方法、および検査方法"
+read_when:
+  - OpenClaw における「コンテキスト」の意味を理解したい場合
+  - モデルが何かを「知っている」（または忘れた）理由をデバッグしている場合
+  - コンテキストオーバーヘッドを削減したい場合（/context、/status、/compact）
+---
+# Context（コンテキスト）
+
+「コンテキスト」は、**OpenClaw が実行のためにモデルに送信するすべてのもの**です。モデルの **context window**（コンテキストウィンドウ）（トークン制限）によって制限されます。
+
+初心者向けメンタルモデル：
+- **System prompt**（システムプロンプト）（OpenClaw 構築）：ルール、ツール、スキルリスト、時刻/ランタイム、および注入されたワークスペースファイル。
+- **Conversation history**（会話履歴）：このセッションのあなたのメッセージ + assistant のメッセージ。
+- **Tool calls/results + attachments**（ツール呼び出し/結果 + 添付ファイル）：コマンド出力、ファイル読み取り、画像/オーディオなど。
+
+コンテキストは「メモリ（memory）」と*同じではありません*：メモリはディスクに保存して後で再ロードできます。コンテキストは、モデルの現在のウィンドウ内にあるものです。
+
+## クイックスタート（コンテキストの検査）
+
+- `/status` → 「ウィンドウがどれだけいっぱいか？」の簡単なビュー + セッション設定。
+- `/context list` → 何が注入されているか + おおよそのサイズ（ファイルごと + 合計）。
+- `/context detail` → より深い内訳：ファイルごと、ツールスキーマごとのサイズ、スキルエントリごとのサイズ、およびシステムプロンプトのサイズ。
+- `/usage tokens` → 通常の応答にリプライごとの使用状況フッターを追加。
+- `/compact` → 古い履歴をコンパクトなエントリに要約して、ウィンドウスペースを解放。
+
+参照：[Slash commands](/tools/slash-commands)、[Token use & costs](/token-use)、[Compaction](/concepts/compaction)。
+
+## 出力例
+
+値は、モデル、プロバイダー、ツールポリシー、およびワークスペース内のものによって異なります。
+
+### `/context list`
+
+```
+🧠 Context breakdown
+Workspace: <workspaceDir>
+Bootstrap max/file: 20,000 chars
+Sandbox: mode=non-main sandboxed=false
+System prompt (run): 38,412 chars (~9,603 tok) (Project Context 23,901 chars (~5,976 tok))
+
+Injected workspace files:
+- AGENTS.md: OK | raw 1,742 chars (~436 tok) | injected 1,742 chars (~436 tok)
+- SOUL.md: OK | raw 912 chars (~228 tok) | injected 912 chars (~228 tok)
+- TOOLS.md: TRUNCATED | raw 54,210 chars (~13,553 tok) | injected 20,962 chars (~5,241 tok)
+- IDENTITY.md: OK | raw 211 chars (~53 tok) | injected 211 chars (~53 tok)
+- USER.md: OK | raw 388 chars (~97 tok) | injected 388 chars (~97 tok)
+- HEARTBEAT.md: MISSING | raw 0 | injected 0
+- BOOTSTRAP.md: OK | raw 0 chars (~0 tok) | injected 0 chars (~0 tok)
+
+Skills list (system prompt text): 2,184 chars (~546 tok) (12 skills)
+Tools: read, edit, write, exec, process, browser, message, sessions_send, …
+Tool list (system prompt text): 1,032 chars (~258 tok)
+Tool schemas (JSON): 31,988 chars (~7,997 tok) (counts toward context; not shown as text)
+Tools: (same as above)
+
+Session tokens (cached): 14,250 total / ctx=32,000
+```
+
+### `/context detail`
+
+```
+🧠 Context breakdown (detailed)
+…
+Top skills (prompt entry size):
+- frontend-design: 412 chars (~103 tok)
+- oracle: 401 chars (~101 tok)
+… (+10 more skills)
+
+Top tools (schema size):
+- browser: 9,812 chars (~2,453 tok)
+- exec: 6,240 chars (~1,560 tok)
+… (+N more tools)
+```
+
+## コンテキストウィンドウにカウントされるもの
+
+モデルが受け取るすべてのものがカウントされます。以下を含みます：
+- システムプロンプト（すべてのセクション）。
+- 会話履歴。
+- ツール呼び出し + ツール結果。
+- 添付ファイル/トランスクリプト（画像/オーディオ/ファイル）。
+- コンパクションサマリーとプルーニングアーティファクト。
+- プロバイダーの「ラッパー」または非表示ヘッダー（表示されないが、カウントされる）。
+
+## OpenClaw がシステムプロンプトを構築する方法
+
+システムプロンプトは **OpenClaw 所有**であり、実行ごとに再構築されます。以下を含みます：
+- ツールリスト + 簡単な説明。
+- スキルリスト（メタデータのみ。以下を参照）。
+- ワークスペースの場所。
+- 時刻（UTC + 設定されている場合は変換されたユーザー時刻）。
+- ランタイムメタデータ（host/OS/model/thinking）。
+- **Project Context** の下に注入されたワークスペースブートストラップファイル。
+
+完全な内訳：[System Prompt](/concepts/system-prompt)。
+
+## 注入されたワークスペースファイル（Project Context）
+
+デフォルトでは、OpenClaw は固定セットのワークスペースファイル（存在する場合）を注入します：
+- `AGENTS.md`
+- `SOUL.md`
+- `TOOLS.md`
+- `IDENTITY.md`
+- `USER.md`
+- `HEARTBEAT.md`
+- `BOOTSTRAP.md`（初回実行のみ）
+
+大きなファイルは、`agents.defaults.bootstrapMaxChars`（デフォルト `20000` 文字）を使用してファイルごとに切り捨てられます。`/context` は**生 vs 注入**サイズと、切り捨てが発生したかどうかを表示します。
+
+## スキル：何が注入され、オンデマンドでロードされるか
+
+システムプロンプトには、コンパクトな**スキルリスト**（名前 + 説明 + 場所）が含まれます。このリストには実際のオーバーヘッドがあります。
+
+スキルの指示はデフォルトでは含まれません。モデルは、**必要な場合にのみ**スキルの `SKILL.md` を `read` することが期待されます。
+
+## ツール：2 つのコストがあります
+
+ツールは 2 つの方法でコンテキストに影響します：
+1) システムプロンプト内の**ツールリストテキスト**（「Tooling」として表示されるもの）。
+2) **ツールスキーマ**（JSON）。これらはモデルがツールを呼び出せるようにモデルに送信されます。プレーンテキストとして表示されませんが、コンテキストにカウントされます。
+
+`/context detail` は、最大のツールスキーマを分解して、何が支配的かを確認できるようにします。
+
+## コマンド、ディレクティブ、および「インラインショートカット」
+
+スラッシュコマンドは Gateway によって処理されます。いくつかの異なる動作があります：
+- **スタンドアロンコマンド**：`/...` のみのメッセージはコマンドとして実行されます。
+- **ディレクティブ**：`/think`、`/verbose`、`/reasoning`、`/elevated`、`/model`、`/queue` は、モデルがメッセージを見る前に削除されます。
+  - ディレクティブのみのメッセージはセッション設定を永続化します。
+  - 通常のメッセージ内のインラインディレクティブは、メッセージごとのヒントとして機能します。
+- **インラインショートカット**（許可リスト送信者のみ）：通常のメッセージ内の特定の `/...` トークンは即座に実行できます（例：「hey /status」）、モデルが残りのテキストを見る前に削除されます。
+
+詳細：[Slash commands](/tools/slash-commands)。
+
+## セッション、コンパクション、およびプルーニング（何が永続化されるか）
+
+メッセージ間で何が永続化されるかは、メカニズムによって異なります：
+- **通常の履歴**は、ポリシーによってコンパクト/プルーニングされるまで、セッショントランスクリプトに永続化されます。
+- **コンパクション**は、トランスクリプトにサマリーを永続化し、最近のメッセージはそのまま保持します。
+- **プルーニング**は、実行のための*インメモリ*プロンプトから古いツール結果を削除しますが、トランスクリプトを書き換えません。
+
+ドキュメント：[Session](/concepts/session)、[Compaction](/concepts/compaction)、[Session pruning](/concepts/session-pruning)。
+
+## `/context` が実際にレポートするもの
+
+`/context` は、利用可能な場合、最新の**実行構築**システムプロンプトレポートを優先します：
+- `System prompt (run)` = 最後の埋め込み（ツール対応）実行からキャプチャされ、セッションストアに永続化されます。
+- `System prompt (estimate)` = 実行レポートが存在しない場合（またはレポートを生成しない CLI バックエンド経由で実行している場合）に、その場で計算されます。
+
+いずれにしても、サイズと主な貢献者を報告します。完全なシステムプロンプトまたはツールスキーマをダンプ**しません**。

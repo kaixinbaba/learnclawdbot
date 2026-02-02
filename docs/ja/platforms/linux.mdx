@@ -1,0 +1,87 @@
+---
+summary: "Linuxサポート + コンパニオンアプリステータス"
+read_when:
+  - Linuxコンパニオンアプリのステータスを探している時
+  - プラットフォームカバレッジまたは貢献を計画する時
+---
+# Linuxアプリ
+
+GatewayはLinux上で完全にサポートされています。**Nodeが推奨ランタイムです**。
+BunはGatewayには推奨されません（WhatsApp/Telegramのバグがあります）。
+
+ネイティブLinuxコンパニオンアプリは計画中です。構築を手伝いたい場合は、貢献を歓迎します。
+
+## 初心者向けクイックパス（VPS）
+
+1) Node 22+をインストール  
+2) `npm i -g openclaw@latest`  
+3) `openclaw onboard --install-daemon`  
+4) ラップトップから：`ssh -N -L 18789:127.0.0.1:18789 <user>@<host>`  
+5) `http://127.0.0.1:18789/`を開いてトークンを貼り付け
+
+ステップバイステップVPSガイド：[exe.dev](/platforms/exe-dev)
+
+## インストール
+- [はじめに](/start/getting-started)
+- [インストール & 更新](/install/updating)
+- オプションフロー：[Bun（実験的）](/install/bun)、[Nix](/install/nix)、[Docker](/install/docker)
+
+## Gateway
+- [Gatewayランブック](/gateway)
+- [設定](/gateway/configuration)
+
+## Gatewayサービスインストール（CLI）
+
+以下のいずれかを使用：
+
+```
+openclaw onboard --install-daemon
+```
+
+または：
+
+```
+openclaw gateway install
+```
+
+または：
+
+```
+openclaw configure
+```
+
+プロンプトが表示されたら**Gateway service**を選択します。
+
+修復/移行：
+
+```
+openclaw doctor
+```
+
+## システム制御（systemdユーザーユニット）
+OpenClawはデフォルトでsystemd **user**サービスをインストールします。共有または常時稼働サーバーには**system**サービスを使用してください。完全なユニット例とガイダンスは[Gatewayランブック](/gateway)にあります。
+
+最小セットアップ：
+
+`~/.config/systemd/user/openclaw-gateway[-<profile>].service`を作成：
+
+```
+[Unit]
+Description=OpenClaw Gateway (profile: <profile>, v<version>)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/openclaw gateway --port 18789
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+```
+
+有効化：
+
+```
+systemctl --user enable --now openclaw-gateway[-<profile>].service
+```

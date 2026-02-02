@@ -1,0 +1,146 @@
+---
+summary: "ローカルLLM(LM Studio、vLLM、LiteLLM、カスタムOpenAIエンドポイント)でOpenClawを実行"
+read_when:
+  - 自分のGPUマシンからモデルを提供したい場合
+  - LM StudioまたはOpenAI互換プロキシを接続する場合
+  - 最も安全なローカルモデルのガイダンスが必要な場合
+---
+# ローカルモデル
+
+ローカル実行は可能ですが、OpenClawは大規模なコンテキストとプロンプトインジェクションに対する強力な防御を必要とします。小規模なGPUはコンテキストを切り詰め、セキュリティが漏れます。高いスペックを目指してください：**≥2台のフルスペックMac Studioまたは同等のGPUリグ(約$30k+)**。単一の**24 GB** GPUは、軽量なプロンプトでのみ動作し、レイテンシが高くなります。**実行可能な最大の/フルサイズのモデルバリアント**を使用してください。積極的に量子化された、または「小型」チェックポイントは、プロンプトインジェクションのリスクを高めます([セキュリティ](/gateway/security)を参照)。
+
+## 推奨: LM Studio + MiniMax M2.1 (Responses API、フルサイズ)
+
+現在最良のローカルスタックです。LM StudioにMiniMax M2.1をロードし、ローカルサーバーを有効にし(デフォルト`http://127.0.0.1:1234`)、Responses APIを使用して推論を最終テキストから分離します。
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: { primary: "lmstudio/minimax-m2.1-gs32" },
+      models: {
+        "anthropic/claude-opus-4-5": { alias: "Opus" },
+        "lmstudio/minimax-m2.1-gs32": { alias: "Minimax" }
+      }
+    }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      lmstudio: {
+        baseUrl: "http://127.0.0.1:1234/v1",
+        apiKey: "lmstudio",
+        api: "openai-responses",
+        models: [
+          {
+            id: "minimax-m2.1-gs32",
+            name: "MiniMax M2.1 GS32",
+            reasoning: false,
+            input: ["text"],
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+            contextWindow: 196608,
+            maxTokens: 8192
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+**セットアップチェックリスト**
+- LM Studioをインストール: https://lmstudio.ai
+- LM Studioで**利用可能な最大のMiniMax M2.1ビルド**をダウンロード(「small」/大幅に量子化されたバリアントは避ける)、サーバーを起動し、`http://127.0.0.1:1234/v1/models`にリストされていることを確認。
+- モデルをロードしたままにする。コールドロードは起動レイテンシを追加します。
+- LM Studioのビルドが異なる場合は、`contextWindow`/`maxTokens`を調整してください。
+- WhatsAppの場合、Responses APIを使用して最終テキストのみが送信されるようにします。
+
+ローカル実行中でもホストされたモデルを設定したままにしてください。`models.mode: "merge"`を使用することで、フォールバックが利用可能な状態を維持できます。
+
+### ハイブリッド構成: ホストされたプライマリ、ローカルフォールバック
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "anthropic/claude-sonnet-4-5",
+        fallbacks: ["lmstudio/minimax-m2.1-gs32", "anthropic/claude-opus-4-5"]
+      },
+      models: {
+        "anthropic/claude-sonnet-4-5": { alias: "Sonnet" },
+        "lmstudio/minimax-m2.1-gs32": { alias: "MiniMax Local" },
+        "anthropic/claude-opus-4-5": { alias: "Opus" }
+      }
+    }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      lmstudio: {
+        baseUrl: "http://127.0.0.1:1234/v1",
+        apiKey: "lmstudio",
+        api: "openai-responses",
+        models: [
+          {
+            id: "minimax-m2.1-gs32",
+            name: "MiniMax M2.1 GS32",
+            reasoning: false,
+            input: ["text"],
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+            contextWindow: 196608,
+            maxTokens: 8192
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### ローカル優先でホストされたセーフティネット
+
+プライマリとフォールバックの順序を入れ替えます。同じプロバイダーブロックと`models.mode: "merge"`を維持することで、ローカルマシンがダウンしたときにSonnetまたはOpusにフォールバックできます。
+
+### リージョナルホスティング/データルーティング
+
+- ホストされたMiniMax/Kimi/GLMバリアントもOpenRouter上にリージョン固定エンドポイントで存在します(例: US-hosted)。そこでリージョナルバリアントを選択することで、Anthropic/OpenAIフォールバックに`models.mode: "merge"`を使用しながら、選択した管轄内でトラフィックを維持できます。
+- ローカルのみが最も強力なプライバシーパスです。ホストされたリージョナルルーティングは、プロバイダー機能が必要でありながらデータフローを制御したい場合の中間的な選択肢です。
+
+## その他のOpenAI互換ローカルプロキシ
+
+vLLM、LiteLLM、OAI-proxy、またはカスタムゲートウェイは、OpenAIスタイルの`/v1`エンドポイントを公開していれば機能します。上記のプロバイダーブロックをエンドポイントとモデルIDに置き換えてください:
+
+```json5
+{
+  models: {
+    mode: "merge",
+    providers: {
+      local: {
+        baseUrl: "http://127.0.0.1:8000/v1",
+        apiKey: "sk-local",
+        api: "openai-responses",
+        models: [
+          {
+            id: "my-local-model",
+            name: "Local Model",
+            reasoning: false,
+            input: ["text"],
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+            contextWindow: 120000,
+            maxTokens: 8192
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+`models.mode: "merge"`を維持して、ホストされたモデルがフォールバックとして利用可能な状態を保ちます。
+
+## トラブルシューティング
+- Gatewayがプロキシに到達できるか確認: `curl http://127.0.0.1:1234/v1/models`。
+- LM Studioのモデルがアンロードされていないか確認。リロードしてください。コールドスタートは一般的な「ハング」の原因です。
+- コンテキストエラー? `contextWindow`を下げるか、サーバーの制限を上げてください。
+- セキュリティ: ローカルモデルはプロバイダー側のフィルターをスキップします。エージェントを狭く保ち、コンパクションをオンにして、プロンプトインジェクションの影響範囲を制限してください。

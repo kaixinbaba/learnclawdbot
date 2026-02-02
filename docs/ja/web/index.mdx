@@ -1,0 +1,107 @@
+---
+summary: "Gateway Web サーフェス: コントロール UI、バインドモード、セキュリティ"
+read_when:
+  - Tailscale 経由で Gateway にアクセスしたい場合
+  - ブラウザコントロール UI と設定編集が必要な場合
+---
+# Web（Gateway）
+
+Gateway は、Gateway WebSocket と同じポートから小さな **ブラウザコントロール UI**（Vite + Lit）を提供します:
+
+- デフォルト: `http://<host>:18789/`
+- オプションのプレフィックス: `gateway.controlUi.basePath` を設定（例: `/openclaw`）
+
+機能は [コントロール UI](/web/control-ui) にあります。
+このページはバインドモード、セキュリティ、Web 対応サーフェスに焦点を当てています。
+
+## Webhook
+
+`hooks.enabled=true` の場合、Gateway は同じ HTTP サーバー上に小さな webhook エンドポイントも公開します。
+認証 + ペイロードについては、[Gateway 設定](/gateway/configuration) → `hooks` を参照してください。
+
+## 設定（デフォルトでオン）
+
+コントロール UI は、アセットが存在する場合（`dist/control-ui`）、**デフォルトで有効**です。
+設定で制御できます:
+
+```json5
+{
+  gateway: {
+    controlUi: { enabled: true, basePath: "/openclaw" } // basePath はオプション
+  }
+}
+```
+
+## Tailscale アクセス
+
+### 統合 Serve（推奨）
+
+Gateway をループバックに保ち、Tailscale Serve にプロキシさせます:
+
+```json5
+{
+  gateway: {
+    bind: "loopback",
+    tailscale: { mode: "serve" }
+  }
+}
+```
+
+次にゲートウェイを起動:
+
+```bash
+openclaw gateway
+```
+
+開く:
+- `https://<magicdns>/`（または設定した `gateway.controlUi.basePath`）
+
+### Tailnet バインド + トークン
+
+```json5
+{
+  gateway: {
+    bind: "tailnet",
+    controlUi: { enabled: true },
+    auth: { mode: "token", token: "your-token" }
+  }
+}
+```
+
+次にゲートウェイを起動（非ループバックバインドにはトークンが必要）:
+
+```bash
+openclaw gateway
+```
+
+開く:
+- `http://<tailscale-ip>:18789/`（または設定した `gateway.controlUi.basePath`）
+
+### パブリックインターネット（Funnel）
+
+```json5
+{
+  gateway: {
+    bind: "loopback",
+    tailscale: { mode: "funnel" },
+    auth: { mode: "password" } // または OPENCLAW_GATEWAY_PASSWORD
+  }
+}
+```
+
+## セキュリティノート
+
+- デフォルトでは Gateway 認証が必要です（トークン/パスワードまたは Tailscale ID ヘッダー）。
+- 非ループバックバインドでも共有トークン/パスワードが**必要**です（`gateway.auth` または env）。
+- ウィザードはデフォルトでゲートウェイトークンを生成します（ループバック上でも）。
+- UI は `connect.params.auth.token` または `connect.params.auth.password` を送信します。
+- Serve では、`gateway.auth.allowTailscale` が `true` の場合、Tailscale ID ヘッダーが認証を満たすことができます（トークン/パスワード不要）。明示的な認証情報を要求するには、`gateway.auth.allowTailscale: false` を設定します。[Tailscale](/gateway/tailscale) と [セキュリティ](/gateway/security) を参照してください。
+- `gateway.tailscale.mode: "funnel"` には `gateway.auth.mode: "password"`（共有パスワード）が必要です。
+
+## UI のビルド
+
+Gateway は `dist/control-ui` から静的ファイルを提供します。次でビルドします:
+
+```bash
+pnpm ui:build # 初回実行時に UI 依存関係を自動インストール
+```

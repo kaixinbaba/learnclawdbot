@@ -1,0 +1,349 @@
+---
+summary: "テストキット：unit/e2e/liveスイート、Dockerランナー、各テストがカバーする内容"
+read_when:
+  - ローカルまたはCIでテストを実行する時
+  - model/providerのバグに対するリグレッションを追加する時
+  - gatewayとagentの動作をデバッグする時
+---
+
+# Testing
+
+OpenClawには3つのVitestスイート（unit/integration、e2e、live）と小規模なDockerランナーセットがあります。
+
+このドキュメントは「テスト方法」ガイドです：
+- 各スイートがカバーする内容（および意図的にカバー*しない*内容）
+- 一般的なワークフロー（ローカル、プッシュ前、デバッグ）で実行するコマンド
+- liveテストが認証情報を検出し、model/providerを選択する方法
+- 実際のmodel/provider問題に対するリグレッションの追加方法
+
+## クイックスタート
+
+ほとんどの場合：
+- 完全なゲート（プッシュ前に実行推奨）：`pnpm lint && pnpm build && pnpm test`
+
+テストを変更した場合や追加の確認が必要な場合：
+- カバレッジゲート：`pnpm test:coverage`
+- E2Eスイート：`pnpm test:e2e`
+
+実際のprovider/modelをデバッグする場合（実際の認証情報が必要）：
+- Liveスイート（model + gateway tool/imageプローブ）：`pnpm test:live`
+
+ヒント：失敗したケースが1つだけ必要な場合は、以下で説明する許可リスト環境変数を使用してliveテストを絞り込むことをお勧めします。
+
+## テストスイート（何がどこで実行されるか）
+
+スイートを「現実性の向上」（および不安定性/コストの増加）と考えてください：
+
+### Unit / integration（デフォルト）
+
+- コマンド：`pnpm test`
+- 設定：`vitest.config.ts`
+- ファイル：`src/**/*.test.ts`
+- スコープ：
+  - 純粋なユニットテスト
+  - プロセス内統合テスト（gateway認証、ルーティング、ツール、パース、設定）
+  - 既知のバグに対する決定論的リグレッション
+- 期待：
+  - CIで実行
+  - 実際のキーは不要
+  - 高速で安定している必要がある
+
+### E2E（gateway smoke）
+
+- コマンド：`pnpm test:e2e`
+- 設定：`vitest.e2e.config.ts`
+- ファイル：`src/**/*.e2e.test.ts`
+- スコープ：
+  - マルチインスタンスgatewayのエンドツーエンド動作
+  - WebSocket/HTTPサーフェス、nodeペアリング、重いネットワーク処理
+- 期待：
+  - CIで実行（パイプラインで有効化されている場合）
+  - 実際のキーは不要
+  - ユニットテストより多くの可動部品（遅くなる可能性）
+
+### Live（実際のprovider + 実際のmodel）
+
+- コマンド：`pnpm test:live`
+- 設定：`vitest.live.config.ts`
+- ファイル：`src/**/*.live.test.ts`
+- デフォルト：`pnpm test:live`で**有効化**（`OPENCLAW_LIVE_TEST=1`を設定）
+- スコープ：
+  - 「このprovider/modelは*今日*実際の認証情報で実際に動作するか？」
+  - providerフォーマット変更、tool-calling quirks、認証問題、レート制限動作をキャッチ
+- 期待：
+  - 設計上CI安定ではない（実際のネットワーク、実際のproviderポリシー、クォータ、障害）
+  - コストがかかる/レート制限を使用
+  - 「すべて」ではなく絞り込んだサブセットの実行を推奨
+  - Live実行は`~/.profile`をソースして不足しているAPIキーを取得
+  - Anthropicキーローテーション：`OPENCLAW_LIVE_ANTHROPIC_KEYS="sk-...,sk-..."`（または`OPENCLAW_LIVE_ANTHROPIC_KEY=sk-...`）または複数の`ANTHROPIC_API_KEY*`変数を設定。テストはレート制限時に再試行
+
+## どのスイートを実行すべきか？
+
+この決定表を使用してください：
+- ロジック/テストの編集：`pnpm test`を実行（多く変更した場合は`pnpm test:coverage`も）
+- gatewayネットワーキング / WSプロトコル / ペアリングに触れる：`pnpm test:e2e`を追加
+- 「ボットがダウン」/ provider固有の障害 / tool callingのデバッグ：絞り込んだ`pnpm test:live`を実行
+
+## Live：modelスモーク（プロファイルキー）
+
+Liveテストは障害を分離できるように2つのレイヤーに分割されています：
+- 「Direct model」は、与えられたキーでprovider/modelが全く応答できるかどうかを示します。
+- 「Gateway smoke」は、そのmodelに対して完全なgateway+agentパイプラインが動作するかどうかを示します（セッション、履歴、ツール、サンドボックスポリシーなど）。
+
+### レイヤー1：Direct model completion（gatewayなし）
+
+- テスト：`src/agents/models.profiles.live.test.ts`
+- 目標：
+  - 検出されたmodelを列挙
+  - `getApiKeyForModel`を使用して認証情報があるmodelを選択
+  - model毎に小規模な補完を実行（必要に応じてターゲットリグレッション）
+- 有効化方法：
+  - `pnpm test:live`（またはVitestを直接呼び出す場合は`OPENCLAW_LIVE_TEST=1`）
+- `OPENCLAW_LIVE_MODELS=modern`（または`all`、modernのエイリアス）を設定してこのスイートを実際に実行。そうしないと、`pnpm test:live`をgateway smokeに集中させるためスキップされます
+- modelの選択方法：
+  - `OPENCLAW_LIVE_MODELS=modern`でmodern許可リストを実行（Opus/Sonnet/Haiku 4.5、GPT-5.x + Codex、Gemini 3、GLM 4.7、MiniMax M2.1、Grok 4）
+  - `OPENCLAW_LIVE_MODELS=all`はmodern許可リストのエイリアス
+  - または`OPENCLAW_LIVE_MODELS="openai/gpt-5.2,anthropic/claude-opus-4-5,..."`（カンマ区切り許可リスト）
+- providerの選択方法：
+  - `OPENCLAW_LIVE_PROVIDERS="google,google-antigravity,google-gemini-cli"`（カンマ区切り許可リスト）
+- キーの取得元：
+  - デフォルト：プロファイルストアと環境変数フォールバック
+  - `OPENCLAW_LIVE_REQUIRE_PROFILE_KEYS=1`を設定して**プロファイルストア**のみを強制
+- これが存在する理由：
+  - 「provider APIが壊れている/キーが無効」と「gateway agentパイプラインが壊れている」を分離
+  - 小規模で分離されたリグレッションを含む（例：OpenAI Responses/Codex Responsesの推論リプレイ + tool-callフロー）
+
+### レイヤー2：Gateway + dev agent smoke（「@openclaw」が実際に行うこと）
+
+- テスト：`src/gateway/gateway-models.profiles.live.test.ts`
+- 目標：
+  - プロセス内gatewayを起動
+  - `agent:dev:*`セッションを作成/パッチ（実行毎にmodelオーバーライド）
+  - キー付きmodelを反復してアサート：
+    - 「意味のある」応答（ツールなし）
+    - 実際のツール呼び出しが動作（readプローブ）
+    - オプションの追加ツールプローブ（exec+readプローブ）
+    - OpenAIリグレッションパス（tool-call-only → follow-up）が引き続き動作
+- プローブの詳細（失敗を迅速に説明できるように）：
+  - `read`プローブ：テストはワークスペースにnonceファイルを書き込み、agentに`read`を実行してnonceをエコーバックするよう要求
+  - `exec+read`プローブ：テストはagentに`exec`でnonceを一時ファイルに書き込み、それを`read`で読み戻すよう要求
+  - imageプローブ：テストは生成されたPNG（cat + ランダム化されたコード）を添付し、modelが`cat <CODE>`を返すことを期待
+  - 実装リファレンス：`src/gateway/gateway-models.profiles.live.test.ts`と`src/gateway/live-image-probe.ts`
+- 有効化方法：
+  - `pnpm test:live`（またはVitestを直接呼び出す場合は`OPENCLAW_LIVE_TEST=1`）
+- modelの選択方法：
+  - デフォルト：modern許可リスト（Opus/Sonnet/Haiku 4.5、GPT-5.x + Codex、Gemini 3、GLM 4.7、MiniMax M2.1、Grok 4）
+  - `OPENCLAW_LIVE_GATEWAY_MODELS=all`はmodern許可リストのエイリアス
+  - または`OPENCLAW_LIVE_GATEWAY_MODELS="provider/model"`（またはカンマ区切りリスト）を設定して絞り込み
+- providerの選択方法（「OpenRouter everything」を回避）：
+  - `OPENCLAW_LIVE_GATEWAY_PROVIDERS="google,google-antigravity,google-gemini-cli,openai,anthropic,zai,minimax"`（カンマ区切り許可リスト）
+- Tool + imageプローブはこのliveテストで常にオン：
+  - `read`プローブ + `exec+read`プローブ（ツールストレス）
+  - imageプローブは、modelが画像入力サポートをアドバタイズする時に実行
+  - フロー（高レベル）：
+    - テストは「CAT」+ ランダムコードを含む小さなPNGを生成（`src/gateway/live-image-probe.ts`）
+    - `agent` `attachments: [{ mimeType: "image/png", content: "<base64>" }]`経由で送信
+    - Gatewayは添付ファイルを`images[]`にパース（`src/gateway/server-methods/agent.ts` + `src/gateway/chat-attachments.ts`）
+    - 埋め込まれたagentはマルチモーダルユーザーメッセージをmodelに転送
+    - アサーション：返信に`cat` + コードが含まれる（OCR許容：軽微なミスは許可）
+
+ヒント：マシンでテストできる内容（および正確な`provider/model` ID）を確認するには、次を実行：
+
+```bash
+openclaw models list
+openclaw models list --json
+```
+
+## Live：Anthropic setup-token smoke
+
+- テスト：`src/agents/anthropic.setup-token.live.test.ts`
+- 目標：Claude Code CLI setup-token（またはペーストされたsetup-tokenプロファイル）がAnthropicプロンプトを完了できることを検証
+- 有効化：
+  - `pnpm test:live`（またはVitestを直接呼び出す場合は`OPENCLAW_LIVE_TEST=1`）
+  - `OPENCLAW_LIVE_SETUP_TOKEN=1`
+- トークンソース（いずれか1つを選択）：
+  - プロファイル：`OPENCLAW_LIVE_SETUP_TOKEN_PROFILE=anthropic:setup-token-test`
+  - 生トークン：`OPENCLAW_LIVE_SETUP_TOKEN_VALUE=sk-ant-oat01-...`
+- modelオーバーライド（オプション）：
+  - `OPENCLAW_LIVE_SETUP_TOKEN_MODEL=anthropic/claude-opus-4-5`
+
+セットアップ例：
+
+```bash
+openclaw models auth paste-token --provider anthropic --profile-id anthropic:setup-token-test
+OPENCLAW_LIVE_SETUP_TOKEN=1 OPENCLAW_LIVE_SETUP_TOKEN_PROFILE=anthropic:setup-token-test pnpm test:live src/agents/anthropic.setup-token.live.test.ts
+```
+
+## Live：CLIバックエンドsmoke（Claude Code CLIまたは他のローカルCLI）
+
+- テスト：`src/gateway/gateway-cli-backend.live.test.ts`
+- 目標：デフォルト設定に触れずに、ローカルCLIバックエンドを使用してGateway + agentパイプラインを検証
+- 有効化：
+  - `pnpm test:live`（またはVitestを直接呼び出す場合は`OPENCLAW_LIVE_TEST=1`）
+  - `OPENCLAW_LIVE_CLI_BACKEND=1`
+- デフォルト：
+  - Model：`claude-cli/claude-sonnet-4-5`
+  - Command：`claude`
+  - Args：`["-p","--output-format","json","--dangerously-skip-permissions"]`
+- オーバーライド（オプション）：
+  - `OPENCLAW_LIVE_CLI_BACKEND_MODEL="claude-cli/claude-opus-4-5"`
+  - `OPENCLAW_LIVE_CLI_BACKEND_MODEL="codex-cli/gpt-5.2-codex"`
+  - `OPENCLAW_LIVE_CLI_BACKEND_COMMAND="/full/path/to/claude"`
+  - `OPENCLAW_LIVE_CLI_BACKEND_ARGS='["-p","--output-format","json","--permission-mode","bypassPermissions"]'`
+  - `OPENCLAW_LIVE_CLI_BACKEND_CLEAR_ENV='["ANTHROPIC_API_KEY","ANTHROPIC_API_KEY_OLD"]'`
+  - `OPENCLAW_LIVE_CLI_BACKEND_IMAGE_PROBE=1`：実際の画像添付ファイルを送信（パスはプロンプトに注入）
+  - `OPENCLAW_LIVE_CLI_BACKEND_IMAGE_ARG="--image"`：プロンプト注入の代わりにCLI引数として画像ファイルパスを渡す
+  - `OPENCLAW_LIVE_CLI_BACKEND_IMAGE_MODE="repeat"`（または`"list"`）：`IMAGE_ARG`が設定されている時の画像引数の渡し方を制御
+  - `OPENCLAW_LIVE_CLI_BACKEND_RESUME_PROBE=1`：2ターン目を送信してresumeフローを検証
+- `OPENCLAW_LIVE_CLI_BACKEND_DISABLE_MCP_CONFIG=0`：Claude Code CLI MCP設定を有効のままにする（デフォルトは一時的な空ファイルでMCP設定を無効化）
+
+例：
+
+```bash
+OPENCLAW_LIVE_CLI_BACKEND=1 \
+  OPENCLAW_LIVE_CLI_BACKEND_MODEL="claude-cli/claude-sonnet-4-5" \
+  pnpm test:live src/gateway/gateway-cli-backend.live.test.ts
+```
+
+### 推奨liveレシピ
+
+絞り込まれた明示的な許可リストが最も高速で最も不安定性が少ない：
+
+- 単一model、direct（gatewayなし）：
+  - `OPENCLAW_LIVE_MODELS="openai/gpt-5.2" pnpm test:live src/agents/models.profiles.live.test.ts`
+
+- 単一model、gateway smoke：
+  - `OPENCLAW_LIVE_GATEWAY_MODELS="openai/gpt-5.2" pnpm test:live src/gateway/gateway-models.profiles.live.test.ts`
+
+- 複数providerにわたるtool calling：
+  - `OPENCLAW_LIVE_GATEWAY_MODELS="openai/gpt-5.2,anthropic/claude-opus-4-5,google/gemini-3-flash-preview,zai/glm-4.7,minimax/minimax-m2.1" pnpm test:live src/gateway/gateway-models.profiles.live.test.ts`
+
+- Google focus（Gemini APIキー + Antigravity）：
+  - Gemini（APIキー）：`OPENCLAW_LIVE_GATEWAY_MODELS="google/gemini-3-flash-preview" pnpm test:live src/gateway/gateway-models.profiles.live.test.ts`
+  - Antigravity（OAuth）：`OPENCLAW_LIVE_GATEWAY_MODELS="google-antigravity/claude-opus-4-5-thinking,google-antigravity/gemini-3-pro-high" pnpm test:live src/gateway/gateway-models.profiles.live.test.ts`
+
+注記：
+- `google/...`はGemini API（APIキー）を使用
+- `google-antigravity/...`はAntigravity OAuthブリッジ（Cloud Code Assistスタイルのagentエンドポイント）を使用
+- `google-gemini-cli/...`はマシン上のローカルGemini CLIを使用（別の認証 + ツールの癖）
+- Gemini API vs Gemini CLI：
+  - API：OpenClawはGoogleのホストされたGemini APIをHTTP経由で呼び出す（APIキー/プロファイル認証）。これがほとんどのユーザーが意味する「Gemini」
+  - CLI：OpenClawはローカルの`gemini`バイナリをシェルアウト。独自の認証を持ち、動作が異なる可能性（ストリーミング/ツールサポート/バージョンスキュー）
+
+## Live：modelマトリックス（カバーする内容）
+
+固定された「CIモデルリスト」はありません（liveはオプトイン）が、これらは定期的にキーを持つ開発マシンでカバーすることが**推奨される**modelです。
+
+### Modern smoke set（tool calling + image）
+
+これは動作を維持することが期待される「一般的なmodel」実行です：
+- OpenAI（非Codex）：`openai/gpt-5.2`（オプション：`openai/gpt-5.1`）
+- OpenAI Codex：`openai-codex/gpt-5.2`（オプション：`openai-codex/gpt-5.2-codex`）
+- Anthropic：`anthropic/claude-opus-4-5`（または`anthropic/claude-sonnet-4-5`）
+- Google（Gemini API）：`google/gemini-3-pro-preview`と`google/gemini-3-flash-preview`（古いGemini 2.xモデルは避ける）
+- Google（Antigravity）：`google-antigravity/claude-opus-4-5-thinking`と`google-antigravity/gemini-3-flash`
+- Z.AI（GLM）：`zai/glm-4.7`
+- MiniMax：`minimax/minimax-m2.1`
+
+ツール + imageでgateway smokeを実行：
+`OPENCLAW_LIVE_GATEWAY_MODELS="openai/gpt-5.2,openai-codex/gpt-5.2,anthropic/claude-opus-4-5,google/gemini-3-pro-preview,google/gemini-3-flash-preview,google-antigravity/claude-opus-4-5-thinking,google-antigravity/gemini-3-flash,zai/glm-4.7,minimax/minimax-m2.1" pnpm test:live src/gateway/gateway-models.profiles.live.test.ts`
+
+### ベースライン：tool calling（Read + オプションExec）
+
+providerファミリー毎に少なくとも1つを選択：
+- OpenAI：`openai/gpt-5.2`（または`openai/gpt-5-mini`）
+- Anthropic：`anthropic/claude-opus-4-5`（または`anthropic/claude-sonnet-4-5`）
+- Google：`google/gemini-3-flash-preview`（または`google/gemini-3-pro-preview`）
+- Z.AI（GLM）：`zai/glm-4.7`
+- MiniMax：`minimax/minimax-m2.1`
+
+オプションの追加カバレッジ（あると良い）：
+- xAI：`xai/grok-4`（または利用可能な最新）
+- Mistral：`mistral/`…（有効にした「tools」対応modelから1つ選択）
+- Cerebras：`cerebras/`…（アクセス権がある場合）
+- LM Studio：`lmstudio/`…（ローカル。tool callingはAPIモードに依存）
+
+### Vision：image送信（添付ファイル → マルチモーダルメッセージ）
+
+imageプローブを実行するために、`OPENCLAW_LIVE_GATEWAY_MODELS`に少なくとも1つの画像対応model（Claude/Gemini/OpenAI visionバリアントなど）を含める。
+
+### アグリゲーター / 代替gateway
+
+キーが有効な場合、次のテストもサポート：
+- OpenRouter：`openrouter/...`（数百のmodel。`openclaw models scan`を使用してtool+image対応候補を見つける）
+- OpenCode Zen：`opencode/...`（`OPENCODE_API_KEY` / `OPENCODE_ZEN_API_KEY`経由で認証）
+
+liveマトリックスに含めることができるその他のprovider（認証情報/設定がある場合）：
+- ビルトイン：`openai`、`openai-codex`、`anthropic`、`google`、`google-vertex`、`google-antigravity`、`google-gemini-cli`、`zai`、`openrouter`、`opencode`、`xai`、`groq`、`cerebras`、`mistral`、`github-copilot`
+- `models.providers`経由（カスタムエンドポイント）：`minimax`（クラウド/API）、およびOpenAI/Anthropic互換プロキシ（LM Studio、vLLM、LiteLLMなど）
+
+ヒント：ドキュメントで「すべてのmodel」をハードコードしようとしないでください。権威あるリストは、マシン上で`discoverModels(...)`が返す内容 + 利用可能なキーです。
+
+## 認証情報（コミット禁止）
+
+Liveテストは、CLIと同じ方法で認証情報を検出します。実用的な影響：
+- CLIが動作すれば、liveテストは同じキーを見つけるはず
+- liveテストが「認証情報なし」と言う場合、`openclaw models list` / model選択をデバッグするのと同じ方法でデバッグ
+
+- プロファイルストア：`~/.openclaw/credentials/`（推奨。テストでの「プロファイルキー」の意味）
+- 設定：`~/.openclaw/openclaw.json`（または`OPENCLAW_CONFIG_PATH`）
+
+環境変数キー（例：`~/.profile`でエクスポート）に依存したい場合は、`source ~/.profile`後にローカルテストを実行するか、以下のDockerランナーを使用（コンテナに`~/.profile`をマウント可能）。
+
+## Deepgram live（音声文字起こし）
+
+- テスト：`src/media-understanding/providers/deepgram/audio.live.test.ts`
+- 有効化：`DEEPGRAM_API_KEY=... DEEPGRAM_LIVE_TEST=1 pnpm test:live src/media-understanding/providers/deepgram/audio.live.test.ts`
+
+## Dockerランナー（オプションの「Linuxで動作」チェック）
+
+これらはrepo Docker image内で`pnpm test:live`を実行し、ローカル設定ディレクトリとワークスペースをマウント（マウントされている場合は`~/.profile`をソース）：
+
+- Direct models：`pnpm test:docker:live-models`（スクリプト：`scripts/test-live-models-docker.sh`）
+- Gateway + dev agent：`pnpm test:docker:live-gateway`（スクリプト：`scripts/test-live-gateway-models-docker.sh`）
+- Onboardingウィザード（TTY、完全なスキャフォールディング）：`pnpm test:docker:onboard`（スクリプト：`scripts/e2e/onboard-docker.sh`）
+- Gatewayネットワーキング（2つのコンテナ、WS認証 + health）：`pnpm test:docker:gateway-network`（スクリプト：`scripts/e2e/gateway-network-docker.sh`）
+- Plugins（カスタム拡張ロード + registryスモーク）：`pnpm test:docker:plugins`（スクリプト：`scripts/e2e/plugins-docker.sh`）
+
+便利な環境変数：
+
+- `OPENCLAW_CONFIG_DIR=...`（デフォルト：`~/.openclaw`）を`/home/node/.openclaw`にマウント
+- `OPENCLAW_WORKSPACE_DIR=...`（デフォルト：`~/.openclaw/workspace`）を`/home/node/.openclaw/workspace`にマウント
+- `OPENCLAW_PROFILE_FILE=...`（デフォルト：`~/.profile`）を`/home/node/.profile`にマウントしてテスト実行前にソース
+- `OPENCLAW_LIVE_GATEWAY_MODELS=...` / `OPENCLAW_LIVE_MODELS=...`で実行を絞り込み
+- `OPENCLAW_LIVE_REQUIRE_PROFILE_KEYS=1`で認証情報がプロファイルストアから来ることを保証（環境変数ではない）
+
+## ドキュメント健全性
+
+ドキュメント編集後にドキュメントチェックを実行：`pnpm docs:list`
+
+## オフラインリグレッション（CI-safe）
+
+これらは実際のproviderなしの「実際のパイプライン」リグレッションです：
+- Gateway tool calling（モックOpenAI、実際のgateway + agentループ）：`src/gateway/gateway.tool-calling.mock-openai.test.ts`
+- Gatewayウィザード（WS `wizard.start`/`wizard.next`、設定 + 認証の書き込みが強制）：`src/gateway/gateway.wizard.e2e.test.ts`
+
+## Agent信頼性評価（skills）
+
+「agent信頼性評価」のように動作するCI-safeテストがすでにいくつかあります：
+- 実際のgateway + agentループを通じたモックtool-calling（`src/gateway/gateway.tool-calling.mock-openai.test.ts`）
+- セッション配線と設定効果を検証するエンドツーエンドウィザードフロー（`src/gateway/gateway.wizard.e2e.test.ts`）
+
+skills（[Skills](/tools/skills)参照）でまだ欠けているもの：
+- **決定**：skillsがプロンプトにリストされている時、agentは適切なskillを選択するか（または無関係なものを避けるか）？
+- **コンプライアンス**：agentは使用前に`SKILL.md`を読み、必要なステップ/引数に従うか？
+- **ワークフロー契約**：ツールの順序、セッション履歴の引き継ぎ、サンドボックス境界をアサートするマルチターンシナリオ
+
+将来の評価は最初に決定論的であるべき：
+- ツール呼び出し + 順序、skillファイル読み取り、セッション配線をアサートするためにモックproviderを使用するシナリオランナー
+- skill中心のシナリオの小規模スイート（使用 vs 回避、ゲーティング、プロンプトインジェクション）
+- CI-safeスイートが配置された後のみのオプションlive評価（オプトイン、環境変数ゲート）
+
+## リグレッションの追加（ガイダンス）
+
+liveで発見されたprovider/model問題を修正する場合：
+- 可能であればCI-safeリグレッションを追加（モック/スタブprovider、または正確なリクエスト形状変換をキャプチャ）
+- 本質的にlive-onlyの場合（レート制限、認証ポリシー）、liveテストを絞り込んで環境変数経由でオプトイン
+- バグをキャッチする最小のレイヤーをターゲットにすることを優先：
+  - providerリクエスト変換/リプレイバグ → direct modelsテスト
+  - gatewayセッション/履歴/ツールパイプラインバグ → gateway live smokeまたはCI-safe gatewayモックテスト

@@ -1,0 +1,30 @@
+---
+summary: "GLM モデルファミリーの概要と OpenClaw での使用方法"
+read_when:
+  - OpenClaw で GLM モデルを使用したい
+  - モデル命名規則とセットアップが必要
+---
+# GLM モデル
+
+GLM は **モデルファミリー**（企業名ではありません）であり、Z.AI プラットフォームを通じて利用できます。OpenClaw では、GLM モデルは `zai` プロバイダと `zai/glm-4.7` のようなモデル ID を介してアクセスされます。
+
+## CLI セットアップ
+
+```bash
+openclaw onboard --auth-choice zai-api-key
+```
+
+## 設定スニペット
+
+```json5
+{
+  env: { ZAI_API_KEY: "sk-..." },
+  agents: { defaults: { model: { primary: "zai/glm-4.7" } } }
+}
+```
+
+## 注意事項
+
+- GLM のバージョンと利用可能性は変更される可能性があります。最新情報については Z.AI のドキュメントを確認してください。
+- モデル ID の例には `glm-4.7` と `glm-4.6` があります。
+- プロバイダの詳細については、[/providers/zai](/providers/zai) を参照してください。

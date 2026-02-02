@@ -1,0 +1,398 @@
+---
+summary: "Discord ボットのサポート状況、機能、および設定"
+read_when:
+  - Discord チャンネル機能の作業時
+---
+# Discord (Bot API)
+
+ステータス: 公式のDiscord bot gatewayを介したDMおよびギルドテキストチャンネルに対応しています。
+
+## クイックセットアップ（初心者向け）
+1) Discord botを作成し、botトークンをコピーします。
+2) Discordアプリ設定で、**Message Content Intent**を有効にします（許可リストや名前検索を使用する予定がある場合は**Server Members Intent**も有効にします）。
+3) OpenClawにトークンを設定します:
+   - 環境変数: `DISCORD_BOT_TOKEN=...`
+   - または設定: `channels.discord.token: "..."`。
+   - 両方が設定されている場合、設定が優先されます（環境変数フォールバックはデフォルトアカウントのみ）。
+4) メッセージ権限でbotをサーバーに招待します（DMだけが必要な場合はプライベートサーバーを作成してください）。
+5) Gatewayを起動します。
+6) DMアクセスはデフォルトでpairingです。最初の連絡時にペアリングコードを承認してください。
+
+最小限の設定:
+```json5
+{
+  channels: {
+    discord: {
+      enabled: true,
+      token: "YOUR_BOT_TOKEN"
+    }
+  }
+}
+```
+
+## 目標
+- Discord DMまたはギルドチャンネル経由でOpenClawと会話します。
+- ダイレクトチャットはエージェントのメインSession（セッション）（デフォルト`agent:main:main`）に集約されます。ギルドチャンネルは`agent:<agentId>:discord:channel:<channelId>`として分離されます（表示名は`discord:<guildSlug>#<channelSlug>`を使用します）。
+- グループDMはデフォルトで無視されます。`channels.discord.dm.groupEnabled`経由で有効にし、オプションで`channels.discord.dm.groupChannels`で制限します。
+- ルーティングを確定的に保つ: 返信は常に到着したチャンネルに戻ります。
+
+## 動作方法
+1. Discordアプリケーション → Botを作成し、必要なIntent（インテント）（DM + ギルドメッセージ + メッセージコンテンツ）を有効にし、botトークンを取得します。
+2. メッセージの読み取り/送信権限でbotをサーバーに招待します。
+3. `channels.discord.token`（またはフォールバックとして`DISCORD_BOT_TOKEN`）でOpenClawを設定します。
+4. Gatewayを実行します。トークンが利用可能で（設定が優先、環境変数がフォールバック）、`channels.discord.enabled`が`false`でない場合、Discordチャンネルが自動起動します。
+   - 環境変数を優先する場合は、`DISCORD_BOT_TOKEN`を設定します（設定ブロックはオプションです）。
+5. ダイレクトチャット: 配信時に`user:<id>`（または`<@id>`メンション）を使用します。すべてのターンは共有`main`セッションに到着します。裸の数値IDは曖昧で拒否されます。
+6. ギルドチャンネル: 配信に`channel:<channelId>`を使用します。メンションはデフォルトで必須で、ギルドごとまたはチャンネルごとに設定できます。
+7. ダイレクトチャット: `channels.discord.dm.policy`（デフォルト: `"pairing"`）によりデフォルトで安全です。未知の送信者はペアリングコードを受け取ります（1時間後に期限切れ）。`openclaw pairing approve discord <code>`経由で承認します。
+   - 古い「誰でもオープン」動作を維持するには: `channels.discord.dm.policy="open"`と`channels.discord.dm.allowFrom=["*"]`を設定します。
+   - ハード許可リスト: `channels.discord.dm.policy="allowlist"`を設定し、送信者を`channels.discord.dm.allowFrom`にリストします。
+   - すべてのDMを無視: `channels.discord.dm.enabled=false`または`channels.discord.dm.policy="disabled"`を設定します。
+8. グループDMはデフォルトで無視されます。`channels.discord.dm.groupEnabled`経由で有効にし、オプションで`channels.discord.dm.groupChannels`で制限します。
+9. オプションのギルドルール: `channels.discord.guilds`をギルドID（推奨）またはslugでキーイングし、チャンネルごとのルールを設定します。
+10. オプションのネイティブコマンド: `commands.native`はデフォルトで`"auto"`（Discord/Telegramでオン、Slackでオフ）です。`channels.discord.commands.native: true|false|"auto"`で上書きします。`false`は以前に登録されたコマンドをクリアします。テキストコマンドは`commands.text`で制御され、スタンドアロンの`/...`メッセージとして送信する必要があります。`commands.useAccessGroups: false`を使用してコマンドのアクセスグループチェックをバイパスします。
+    - 完全なコマンドリスト + 設定: [Slash commands](/tools/slash-commands)
+11. オプションのギルドコンテキスト履歴: `channels.discord.historyLimit`を設定（デフォルト20、`messages.groupChat.historyLimit`にフォールバック）して、メンションへの返信時に最後のN個のギルドメッセージをコンテキストとして含めます。無効にするには`0`を設定します。
+12. リアクション: エージェントは`discord` tool（ツール）経由でリアクションをトリガーできます（`channels.discord.actions.*`でゲート制御）。
+    - リアクション削除のセマンティクス: [/tools/reactions](/tools/reactions)を参照してください。
+    - `discord`ツールは現在のチャンネルがDiscordの場合のみ公開されます。
+13. ネイティブコマンドは共有`main`セッションではなく、分離されたセッションキー（`agent:<agentId>:discord:slash:<userId>`）を使用します。
+
+注: 名前 → ID解決にはギルドメンバー検索が使用され、Server Members Intentが必要です。botがメンバーを検索できない場合は、IDまたは`<@id>`メンションを使用してください。
+注: SlugはスペースがLowercase（小文字）で`-`に置き換えられます。チャンネル名は先頭の`#`なしでslug化されます。
+注: ギルドコンテキストの`[from:]`行には`author.tag` + `id`が含まれ、ping可能な返信を簡単にします。
+
+## 設定の書き込み
+デフォルトでは、Discordは`/config set|unset`によってトリガーされる設定更新の書き込みが許可されています（`commands.config: true`が必要）。
+
+無効化するには:
+```json5
+{
+  channels: { discord: { configWrites: false } }
+}
+```
+
+## 独自のbotを作成する方法
+
+これは`#help`のようなサーバー（ギルド）チャンネルでOpenClawを実行するための「Discord Developer Portal」セットアップです。
+
+### 1) Discord app + bot userを作成する
+1. Discord Developer Portal → **Applications** → **New Application**
+2. アプリ内で:
+   - **Bot** → **Add Bot**
+   - **Bot Token**をコピー（これを`DISCORD_BOT_TOKEN`に入れます）
+
+### 2) OpenClawが必要とするgateway intentを有効にする
+Discordは明示的に有効にしない限り「privileged intents」をブロックします。
+
+**Bot** → **Privileged Gateway Intents**で、以下を有効にします:
+- **Message Content Intent**（ほとんどのギルドでメッセージテキストを読み取るために必須。これがないと「Used disallowed intents」と表示されるか、botが接続してもメッセージに反応しません）
+- **Server Members Intent**（推奨。一部のメンバー/ユーザー検索とギルド内の許可リストマッチングに必須）
+
+通常、**Presence Intent**は必要ありません。
+
+### 3) 招待URL（OAuth2 URL Generator）を生成する
+アプリ内: **OAuth2** → **URL Generator**
+
+**Scopes**
+- ✅ `bot`
+- ✅ `applications.commands`（ネイティブコマンドに必須）
+
+**Bot Permissions**（最小ベースライン）
+- ✅ View Channels
+- ✅ Send Messages
+- ✅ Read Message History
+- ✅ Embed Links
+- ✅ Attach Files
+- ✅ Add Reactions（オプションですが推奨）
+- ✅ Use External Emojis / Stickers（オプション。必要な場合のみ）
+
+デバッグ中で完全にbotを信頼している場合を除き、**Administrator**は避けてください。
+
+生成されたURLをコピーし、開いてサーバーを選択し、botをインストールします。
+
+### 4) IDを取得する（guild/user/channel）
+DiscordはどこでもNumeric ID（数値ID）を使用します。OpenClaw設定はIDを優先します。
+
+1. Discord（デスクトップ/ウェブ） → **User Settings** → **Advanced** → **Developer Mode**を有効にする
+2. 右クリック:
+   - サーバー名 → **Copy Server ID**（guild id）
+   - チャンネル（例: `#help`） → **Copy Channel ID**
+   - ユーザー → **Copy User ID**
+
+### 5) OpenClawを設定する
+
+#### Token
+環境変数経由でbotトークンを設定（サーバーで推奨）:
+- `DISCORD_BOT_TOKEN=...`
+
+または設定経由:
+
+```json5
+{
+  channels: {
+    discord: {
+      enabled: true,
+      token: "YOUR_BOT_TOKEN"
+    }
+  }
+}
+```
+
+複数アカウントサポート: `channels.discord.accounts`をアカウントごとのトークンとオプションの`name`で使用します。共有パターンについては[`gateway/configuration`](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts)を参照してください。
+
+#### 許可リスト + チャンネルルーティング
+例「単一サーバー、私のみ許可、#helpのみ許可」:
+
+```json5
+{
+  channels: {
+    discord: {
+      enabled: true,
+      dm: { enabled: false },
+      guilds: {
+        "YOUR_GUILD_ID": {
+          users: ["YOUR_USER_ID"],
+          requireMention: true,
+          channels: {
+            help: { allow: true, requireMention: true }
+          }
+        }
+      },
+      retry: {
+        attempts: 3,
+        minDelayMs: 500,
+        maxDelayMs: 30000,
+        jitter: 0.1
+      }
+    }
+  }
+}
+```
+
+注:
+- `requireMention: true`は、botがメンションされた時のみ返信することを意味します（共有チャンネルに推奨）。
+- `agents.list[].groupChat.mentionPatterns`（または`messages.groupChat.mentionPatterns`）もギルドメッセージのメンションとしてカウントされます。
+- マルチエージェント上書き: `agents.list[].groupChat.mentionPatterns`でエージェントごとのパターンを設定します。
+- `channels`が存在する場合、リストにないチャンネルはデフォルトで拒否されます。
+- すべてのチャンネルにデフォルトを適用するには`"*"`チャンネルエントリーを使用します。明示的なチャンネルエントリーはワイルドカードを上書きします。
+- Thread（スレッド）は親チャンネル設定（許可リスト、`requireMention`、スキル、プロンプトなど）を継承します。明示的にスレッドチャンネルIDを追加しない限り。
+- Bot作成のメッセージはデフォルトで無視されます。許可するには`channels.discord.allowBots=true`を設定します（自分のメッセージはフィルターされたままです）。
+- 警告: 他のbotへの返信を許可する場合（`channels.discord.allowBots=true`）、bot間の返信ループを防ぐために`requireMention`、`channels.discord.guilds.*.channels.<id>.users`許可リスト、および/または`AGENTS.md`と`SOUL.md`の明確なガードレールを使用してください。
+
+### 6) 動作を確認する
+1. Gatewayを起動します。
+2. サーバーチャンネルで送信: `@Krill hello`（またはbotの名前）。
+3. 何も起こらない場合: 以下の**トラブルシューティング**を確認してください。
+
+### トラブルシューティング
+- まず: `openclaw doctor`と`openclaw channels status --probe`を実行します（実行可能な警告 + クイック監査）。
+- **「Used disallowed intents」**: Developer Portalで**Message Content Intent**（およびおそらく**Server Members Intent**）を有効にし、Gatewayを再起動します。
+- **Botは接続するがギルドチャンネルで返信しない**:
+  - **Message Content Intent**が欠落しているか、
+  - Botにチャンネル権限（View/Send/Read History）がないか、
+  - 設定がメンションを要求しているがメンションしていないか、
+  - ギルド/チャンネル許可リストがチャンネル/ユーザーを拒否しています。
+- **`requireMention: false`でも返信がない**:
+- `channels.discord.groupPolicy`はデフォルトで**allowlist**です。`"open"`に設定するか、`channels.discord.guilds`にギルドエントリーを追加します（オプションで`channels.discord.guilds.<id>.channels`にチャンネルをリストして制限します）。
+  - `DISCORD_BOT_TOKEN`のみを設定し、`channels.discord`セクションを作成しない場合、ランタイムは`groupPolicy`をデフォルトで`open`にします。ロックダウンするには`channels.discord.groupPolicy`、`channels.defaults.groupPolicy`、またはギルド/チャンネル許可リストを追加します。
+- `requireMention`は`channels.discord.guilds`（または特定のチャンネル）の下に配置する必要があります。トップレベルの`channels.discord.requireMention`は無視されます。
+- **Permission（権限）監査**（`channels status --probe`）は数値チャンネルIDのみをチェックします。`channels.discord.guilds.*.channels`キーとしてslug/名前を使用する場合、監査は権限を検証できません。
+- **DMが機能しない**: `channels.discord.dm.enabled=false`、`channels.discord.dm.policy="disabled"`、またはまだ承認されていません（`channels.discord.dm.policy="pairing"`）。
+
+## 機能と制限
+- DMとギルドテキストチャンネル（スレッドは別のチャンネルとして扱われます。音声はサポートされていません）。
+- タイピングインジケーターはベストエフォートで送信されます。メッセージチャンク化は`channels.discord.textChunkLimit`を使用します（デフォルト2000）。長い返信は行数で分割されます（`channels.discord.maxLinesPerMessage`、デフォルト17）。
+- オプションの改行チャンク化: `channels.discord.chunkMode="newline"`を設定して、長さチャンク化の前に空白行（段落境界）で分割します。
+- ファイルアップロードは設定された`channels.discord.mediaMaxMb`までサポートされます（デフォルト8 MB）。
+- ノイズの多いbotを避けるため、デフォルトでメンションゲートされたギルド返信。
+- メッセージが別のメッセージを参照している場合、返信コンテキストが挿入されます（引用コンテンツ + ID）。
+- ネイティブ返信スレッドは**デフォルトでオフ**です。`channels.discord.replyToMode`と返信タグで有効にします。
+
+## 再試行ポリシー
+アウトバウンドDiscord API呼び出しは、レート制限（429）時にDiscord `retry_after`が利用可能な場合にそれを使用して再試行し、指数バックオフとジッターを使用します。`channels.discord.retry`経由で設定します。[Retry policy](/concepts/retry)を参照してください。
+
+## 設定
+
+```json5
+{
+  channels: {
+    discord: {
+      enabled: true,
+      token: "abc.123",
+      groupPolicy: "allowlist",
+      guilds: {
+        "*": {
+          channels: {
+            general: { allow: true }
+          }
+        }
+      },
+      mediaMaxMb: 8,
+      actions: {
+        reactions: true,
+        stickers: true,
+        emojiUploads: true,
+        stickerUploads: true,
+        polls: true,
+        permissions: true,
+        messages: true,
+        threads: true,
+        pins: true,
+        search: true,
+        memberInfo: true,
+        roleInfo: true,
+        roles: false,
+        channelInfo: true,
+        channels: true,
+        voiceStatus: true,
+        events: true,
+        moderation: false
+      },
+      replyToMode: "off",
+      dm: {
+        enabled: true,
+        policy: "pairing", // pairing | allowlist | open | disabled
+        allowFrom: ["123456789012345678", "steipete"],
+        groupEnabled: false,
+        groupChannels: ["openclaw-dm"]
+      },
+      guilds: {
+        "*": { requireMention: true },
+        "123456789012345678": {
+          slug: "friends-of-openclaw",
+          requireMention: false,
+          reactionNotifications: "own",
+          users: ["987654321098765432", "steipete"],
+          channels: {
+            general: { allow: true },
+            help: {
+              allow: true,
+              requireMention: true,
+              users: ["987654321098765432"],
+              skills: ["search", "docs"],
+              systemPrompt: "Keep answers short."
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Ackリアクションは`messages.ackReaction` + `messages.ackReactionScope`でグローバルに制御されます。botが返信した後にackリアクションをクリアするには`messages.removeAckAfterReply`を使用します。
+
+- `dm.enabled`: すべてのDMを無視するには`false`を設定（デフォルト`true`）。
+- `dm.policy`: DMアクセス制御（`pairing`推奨）。`"open"`には`dm.allowFrom=["*"]`が必要です。
+- `dm.allowFrom`: DM許可リスト（ユーザーIDまたは名前）。`dm.policy="allowlist"`と`dm.policy="open"`検証で使用されます。ウィザードはユーザー名を受け入れ、botがメンバーを検索できる場合はIDに解決します。
+- `dm.groupEnabled`: グループDMを有効化（デフォルト`false`）。
+- `dm.groupChannels`: グループDMチャンネルIDまたはslugのオプション許可リスト。
+- `groupPolicy`: ギルドチャンネル処理を制御（`open|disabled|allowlist`）。`allowlist`にはチャンネル許可リストが必要です。
+- `guilds`: ギルドID（推奨）またはslugでキーイングされたギルドごとのルール。
+- `guilds."*"`: 明示的なエントリーが存在しない場合に適用されるデフォルトのギルドごと設定。
+- `guilds.<id>.slug`: 表示名に使用されるオプションのフレンドリーなslug。
+- `guilds.<id>.users`: オプションのギルドごとのユーザー許可リスト（IDまたは名前）。
+- `guilds.<id>.tools`: チャンネル上書きが欠落している場合に使用されるオプションのギルドごとのツールポリシー上書き（`allow`/`deny`/`alsoAllow`）。
+- `guilds.<id>.toolsBySender`: ギルドレベルでのオプションの送信者ごとのツールポリシー上書き（チャンネル上書きが欠落している場合に適用。`"*"`ワイルドカードサポート）。
+- `guilds.<id>.channels.<channel>.allow`: `groupPolicy="allowlist"`の場合にチャンネルを許可/拒否。
+- `guilds.<id>.channels.<channel>.requireMention`: チャンネルのメンションゲーティング。
+- `guilds.<id>.channels.<channel>.tools`: オプションのチャンネルごとのツールポリシー上書き（`allow`/`deny`/`alsoAllow`）。
+- `guilds.<id>.channels.<channel>.toolsBySender`: チャンネル内のオプションの送信者ごとのツールポリシー上書き（`"*"`ワイルドカードサポート）。
+- `guilds.<id>.channels.<channel>.users`: オプションのチャンネルごとのユーザー許可リスト。
+- `guilds.<id>.channels.<channel>.skills`: スキルフィルター（省略 = すべてのスキル、空 = なし）。
+- `guilds.<id>.channels.<channel>.systemPrompt`: チャンネルの追加システムプロンプト（チャンネルトピックと結合）。
+- `guilds.<id>.channels.<channel>.enabled`: チャンネルを無効にするには`false`を設定。
+- `guilds.<id>.channels`: チャンネルルール（キーはチャンネルslugまたはID）。
+- `guilds.<id>.requireMention`: ギルドごとのメンション要件（チャンネルごとに上書き可能）。
+- `guilds.<id>.reactionNotifications`: リアクションシステムイベントモード（`off`、`own`、`all`、`allowlist`）。
+- `textChunkLimit`: アウトバウンドテキストチャンクサイズ（文字数）。デフォルト: 2000。
+- `chunkMode`: `length`（デフォルト）は`textChunkLimit`を超える場合のみ分割します。`newline`は長さチャンク化の前に空白行（段落境界）で分割します。
+- `maxLinesPerMessage`: メッセージごとのソフト最大行数。デフォルト: 17。
+- `mediaMaxMb`: ディスクに保存される受信メディアをクランプ。
+- `historyLimit`: メンションへの返信時にコンテキストとして含める最近のギルドメッセージの数（デフォルト20。`messages.groupChat.historyLimit`にフォールバック。`0`で無効化）。
+- `dmHistoryLimit`: ユーザーターン単位のDM履歴制限。ユーザーごとの上書き: `dms["<user_id>"].historyLimit`。
+- `retry`: アウトバウンドDiscord API呼び出しの再試行ポリシー（attempts、minDelayMs、maxDelayMs、jitter）。
+- `actions`: アクションごとのツールゲート。省略するとすべて許可（無効にするには`false`を設定）。
+  - `reactions`（react + read reactionsをカバー）
+  - `stickers`、`emojiUploads`、`stickerUploads`、`polls`、`permissions`、`messages`、`threads`、`pins`、`search`
+  - `memberInfo`、`roleInfo`、`channelInfo`、`voiceStatus`、`events`
+  - `channels`（チャンネル/カテゴリー/権限の作成/編集/削除）
+  - `roles`（ロール追加/削除、デフォルト`false`）
+  - `moderation`（タイムアウト/キック/BAN、デフォルト`false`）
+
+リアクション通知は`guilds.<id>.reactionNotifications`を使用します:
+- `off`: リアクションイベントなし。
+- `own`: bot自身のメッセージへのリアクション（デフォルト）。
+- `all`: すべてのメッセージのすべてのリアクション。
+- `allowlist`: すべてのメッセージの`guilds.<id>.users`からのリアクション（空リストで無効化）。
+
+### ツールアクションのデフォルト
+
+| アクショングループ | デフォルト | 注記 |
+| --- | --- | --- |
+| reactions | 有効 | React + list reactions + emojiList |
+| stickers | 有効 | Send stickers |
+| emojiUploads | 有効 | Upload emojis |
+| stickerUploads | 有効 | Upload stickers |
+| polls | 有効 | Create polls |
+| permissions | 有効 | Channel permission snapshot |
+| messages | 有効 | Read/send/edit/delete |
+| threads | 有効 | Create/list/reply |
+| pins | 有効 | Pin/unpin/list |
+| search | 有効 | Message search（プレビュー機能） |
+| memberInfo | 有効 | Member info |
+| roleInfo | 有効 | Role list |
+| channelInfo | 有効 | Channel info + list |
+| channels | 有効 | Channel/category management |
+| voiceStatus | 有効 | Voice state lookup |
+| events | 有効 | List/create scheduled events |
+| roles | 無効 | Role add/remove |
+| moderation | 無効 | Timeout/kick/ban |
+- `replyToMode`: `off`（デフォルト）、`first`、または`all`。モデルが返信タグを含む場合のみ適用されます。
+
+## 返信タグ
+スレッド返信をリクエストするには、モデルは出力に1つのタグを含めることができます:
+- `[[reply_to_current]]` — トリガーとなったDiscordメッセージに返信。
+- `[[reply_to:<id>]]` — コンテキスト/履歴から特定のメッセージIDに返信。
+現在のメッセージIDは`[message_id: …]`としてプロンプトに追加されます。履歴エントリーには既にIDが含まれています。
+
+動作は`channels.discord.replyToMode`で制御されます:
+- `off`: タグを無視。
+- `first`: 最初のアウトバウンドチャンク/添付ファイルのみが返信。
+- `all`: すべてのアウトバウンドチャンク/添付ファイルが返信。
+
+許可リストマッチングの注記:
+- `allowFrom`/`users`/`groupChannels`はID、名前、タグ、または`<@id>`のようなメンションを受け入れます。
+- `discord:`/`user:`（ユーザー）および`channel:`（グループDM）のようなプレフィックスがサポートされています。
+- 任意の送信者/チャンネルを許可するには`*`を使用します。
+- `guilds.<id>.channels`が存在する場合、リストにないチャンネルはデフォルトで拒否されます。
+- `guilds.<id>.channels`が省略されている場合、許可リストに登録されたギルド内のすべてのチャンネルが許可されます。
+- **チャンネルを許可しない**には、`channels.discord.groupPolicy: "disabled"`を設定します（または空の許可リストを保持）。
+- 設定ウィザードは`Guild/Channel`名（公開 + プライベート）を受け入れ、可能な場合はIDに解決します。
+- 起動時、OpenClawは許可リスト内のチャンネル/ユーザー名をIDに解決し（botがメンバーを検索できる場合）、マッピングをログに記録します。解決されないエントリーは入力されたまま保持されます。
+
+ネイティブコマンドの注記:
+- 登録されたコマンドはOpenClawのチャットコマンドをミラーします。
+- ネイティブコマンドはDM/ギルドメッセージと同じ許可リストを尊重します（`channels.discord.dm.allowFrom`、`channels.discord.guilds`、チャンネルごとのルール）。
+- スラッシュコマンドは、許可リストに登録されていないユーザーにもDiscord UIで表示される場合があります。OpenClawは実行時に許可リストを強制し、「not authorized」と返信します。
+
+## ツールアクション
+エージェントは以下のようなアクションで`discord`を呼び出すことができます:
+- `react` / `reactions`（リアクションを追加またはリスト）
+- `sticker`、`poll`、`permissions`
+- `readMessages`、`sendMessage`、`editMessage`、`deleteMessage`
+- Read/search/pin toolペイロードには、生のDiscord `timestamp`と一緒に正規化された`timestampMs`（UTC epoch ms）と`timestampUtc`が含まれます。
+- `threadCreate`、`threadList`、`threadReply`
+- `pinMessage`、`unpinMessage`、`listPins`
+- `searchMessages`、`memberInfo`、`roleInfo`、`roleAdd`、`roleRemove`、`emojiList`
+- `channelInfo`、`channelList`、`voiceStatus`、`eventList`、`eventCreate`
+- `timeout`、`kick`、`ban`
+
+DiscordメッセージIDは挿入されたコンテキスト（`[discord message id: …]`および履歴行）に表示されるため、エージェントはそれらをターゲットにできます。
+絵文字はunicode（例: `✅`）またはカスタム絵文字構文（例: `<:party_blob:1234567890>`）が使用できます。
+
+## 安全性と運用
+- Botトークンはパスワードのように扱ってください。管理されたホストでは`DISCORD_BOT_TOKEN`環境変数を優先するか、設定ファイルの権限をロックダウンしてください。
+- Botには必要な権限のみを付与してください（通常はRead/Send Messages）。
+- Botがスタックまたはレート制限されている場合は、他のプロセスがDiscordセッションを所有していないことを確認した後、Gatewayを再起動します（`openclaw gateway --force`）。
