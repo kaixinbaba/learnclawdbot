@@ -19,7 +19,7 @@ const RybbitScript = () => {
           data-session-replay={RYBBIT_SESSION_REPLAY ? "true" : undefined}
           data-replay-mask-text-selectors={RYBBIT_REPLAY_MASK_SELECTORS}
           defer
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       ) : (
         <></>

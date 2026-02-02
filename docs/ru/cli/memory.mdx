@@ -1,0 +1,42 @@
+---
+summary: "Справочник CLI для `openclaw memory` (status/index/search)"
+read_when:
+  - Вы хотите индексировать или искать семантическую память
+  - Вы отлаживаете доступность памяти или индексацию
+---
+
+# `openclaw memory`
+
+Управление индексацией и поиском семантической памяти.
+Предоставляется активным плагином памяти (по умолчанию: `memory-core`; установите `plugins.slots.memory = "none"` для отключения).
+
+Связанные разделы:
+- Концепция памяти: [Memory](/concepts/memory)
+ - Плагины: [Plugins](/plugins)
+
+## Примеры
+
+```bash
+openclaw memory status
+openclaw memory status --deep
+openclaw memory status --deep --index
+openclaw memory status --deep --index --verbose
+openclaw memory index
+openclaw memory index --verbose
+openclaw memory search "release checklist"
+openclaw memory status --agent main
+openclaw memory index --agent main --verbose
+```
+
+## Опции
+
+Общие:
+
+- `--agent <id>`: ограничить одним агентом (по умолчанию: все настроенные агенты).
+- `--verbose`: выводить подробные логи во время проверок и индексации.
+
+Примечания:
+- `memory status --deep` проверяет доступность векторов + встраивания.
+- `memory status --deep --index` запускает переиндексацию если хранилище загрязнено.
+- `memory index --verbose` выводит детали по каждой фазе (провайдер, модель, источники, активность партий).
+- `memory status` включает любые дополнительные пути настроенные через `memorySearch.extraPaths`.

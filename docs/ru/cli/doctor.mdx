@@ -1,0 +1,38 @@
+---
+summary: "Справочник CLI для `openclaw doctor` (проверка состояния + управляемый ремонт)"
+read_when:
+  - У вас проблемы с подключением/аутентификацией и вы хотите управляемые исправления
+  - Вы обновились и хотите проверку работоспособности
+---
+
+# `openclaw doctor`
+
+Проверки состояния + быстрые исправления для шлюза и каналов.
+
+Связанные разделы:
+- Устранение неполадок: [Troubleshooting](/gateway/troubleshooting)
+- Аудит безопасности: [Security](/gateway/security)
+
+## Примеры
+
+```bash
+openclaw doctor
+openclaw doctor --repair
+openclaw doctor --deep
+```
+
+Примечания:
+- Интерактивные запросы (как исправления keychain/OAuth) выполняются только когда stdin является TTY и `--non-interactive` **не** установлен. Headless запуски (cron, Telegram, без терминала) будут пропускать запросы.
+- `--fix` (псевдоним для `--repair`) записывает резервную копию в `~/.openclaw/openclaw.json.bak` и удаляет неизвестные ключи конфигурации, перечисляя каждое удаление.
+
+## macOS: переопределения env в `launchctl`
+
+Если вы ранее запускали `launchctl setenv OPENCLAW_GATEWAY_TOKEN ...` (или `...PASSWORD`), это значение переопределяет ваш файл конфигурации и может вызывать постоянные ошибки "unauthorized".
+
+```bash
+launchctl getenv OPENCLAW_GATEWAY_TOKEN
+launchctl getenv OPENCLAW_GATEWAY_PASSWORD
+
+launchctl unsetenv OPENCLAW_GATEWAY_TOKEN
+launchctl unsetenv OPENCLAW_GATEWAY_PASSWORD
+```

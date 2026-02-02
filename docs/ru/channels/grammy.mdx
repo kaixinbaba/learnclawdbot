@@ -1,0 +1,26 @@
+---
+summary: "Интеграция Telegram Bot API через grammY с примечаниями по настройке"
+read_when:
+  - Работа с Telegram или путями grammY
+---
+# Интеграция grammY (Telegram Bot API)
+
+# Почему grammY
+- TS-first клиент Bot API со встроенными помощниками long-poll + webhook, middleware, обработкой ошибок, ограничителем скорости.
+- Более чистые помощники для медиа, чем ручная сборка fetch + FormData; поддерживает все методы Bot API.
+- Расширяемый: поддержка прокси через custom fetch, middleware сессий (опционально), type-safe контекст.
+
+# Что мы реализовали
+- **Единый путь клиента:** реализация на основе fetch удалена; grammY теперь единственный клиент Telegram (отправка + gateway) с включенным по умолчанию throttler grammY.
+- **Gateway:** `monitorTelegramProvider` создает `Bot` grammY, подключает контроль упоминаний/белых списков, загрузку медиа через `getFile`/`download` и доставляет ответы с помощью `sendMessage/sendPhoto/sendVideo/sendAudio/sendDocument`. Поддерживает long-poll или webhook через `webhookCallback`.
+- **Прокси:** опциональный `channels.telegram.proxy` использует `undici.ProxyAgent` через `client.baseFetch` grammY.
+- **Поддержка webhook:** `webhook-set.ts` оборачивает `setWebhook/deleteWebhook`; `webhook.ts` размещает callback с health + graceful shutdown. Gateway включает режим webhook, когда установлен `channels.telegram.webhookUrl` (иначе используется long-poll).
+- **Сессии:** прямые чаты объединяются в основную сессию агента (`agent:<agentId>:<mainKey>`); группы используют `agent:<agentId>:telegram:group:<chatId>`; ответы маршрутизируются обратно в тот же канал.
+- **Настройки конфигурации:** `channels.telegram.botToken`, `channels.telegram.dmPolicy`, `channels.telegram.groups` (белый список + упоминания по умолчанию), `channels.telegram.allowFrom`, `channels.telegram.groupAllowFrom`, `channels.telegram.groupPolicy`, `channels.telegram.mediaMaxMb`, `channels.telegram.linkPreview`, `channels.telegram.proxy`, `channels.telegram.webhookSecret`, `channels.telegram.webhookUrl`.
+- **Черновая потоковая передача:** опциональный `channels.telegram.streamMode` использует `sendMessageDraft` в приватных topic-чатах (Bot API 9.3+). Это отдельно от блочной потоковой передачи канала.
+- **Тесты:** моки grammY покрывают контроль упоминаний личных сообщений + групп и исходящую отправку; больше фикстур медиа/webhook все еще приветствуются.
+
+Открытые вопросы
+- Опциональные плагины grammY (throttler), если мы столкнемся с 429 от Bot API.
+- Добавить более структурированные тесты медиа (стикеры, голосовые заметки).
+- Сделать порт прослушивания webhook настраиваемым (в настоящее время фиксирован на 8787, если не подключен через gateway).

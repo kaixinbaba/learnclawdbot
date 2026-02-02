@@ -1,0 +1,32 @@
+---
+summary: "Справочник CLI для `openclaw voicecall` (интерфейс команд плагина голосовых вызовов)"
+read_when:
+  - Вы используете плагин голосовых вызовов и хотите получить точки входа CLI
+  - Вы хотите быстрые примеры для `voicecall call|continue|status|tail|expose`
+---
+
+# `openclaw voicecall`
+
+`voicecall` — это команда, предоставляемая плагином. Она появляется только если плагин voice-call установлен и включен.
+
+Основная документация:
+- Плагин голосовых вызовов: [Голосовые вызовы](/plugins/voice-call)
+
+## Основные команды
+
+```bash
+openclaw voicecall status --call-id <id>
+openclaw voicecall call --to "+15555550123" --message "Hello" --mode notify
+openclaw voicecall continue --call-id <id> --message "Any questions?"
+openclaw voicecall end --call-id <id>
+```
+
+## Открытие вебхуков (Tailscale)
+
+```bash
+openclaw voicecall expose --mode serve
+openclaw voicecall expose --mode funnel
+openclaw voicecall unexpose
+```
+
+Примечание по безопасности: открывайте конечную точку вебхука только в доверенных сетях. Предпочитайте Tailscale Serve вместо Funnel, когда это возможно.

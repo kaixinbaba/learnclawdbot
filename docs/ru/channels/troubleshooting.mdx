@@ -1,0 +1,25 @@
+---
+summary: "Ярлыки устранения неполадок для конкретных каналов (Discord/Telegram/WhatsApp)"
+read_when:
+  - Канал подключается, но сообщения не проходят
+  - Исследование неправильной конфигурации канала (намерения, разрешения, режим конфиденциальности)
+---
+# Устранение неполадок канала
+
+Начните с:
+
+```bash
+openclaw doctor
+openclaw channels status --probe
+```
+
+`channels status --probe` выводит предупреждения, когда может обнаружить распространенные неправильные конфигурации канала, и включает небольшие live-проверки (учетные данные, некоторые разрешения/членство).
+
+## Каналы
+- Discord: [/channels/discord#troubleshooting](/channels/discord#troubleshooting)
+- Telegram: [/channels/telegram#troubleshooting](/channels/telegram#troubleshooting)
+- WhatsApp: [/channels/whatsapp#troubleshooting-quick](/channels/whatsapp#troubleshooting-quick)
+
+## Быстрые исправления Telegram
+- Журналы показывают `HttpError: Network request for 'sendMessage' failed` или `sendChatAction` → проверьте IPv6 DNS. Если `api.telegram.org` разрешается в IPv6 первым, а хост не имеет выхода IPv6, принудительно используйте IPv4 или включите IPv6. См. [/channels/telegram#troubleshooting](/channels/telegram#troubleshooting).
+- Журналы показывают `setMyCommands failed` → проверьте исходящий HTTPS и доступность DNS к `api.telegram.org` (распространено на заблокированных VPS или прокси).

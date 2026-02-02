@@ -1,0 +1,57 @@
+---
+summary: "Справочник CLI для `openclaw plugins` (список, установка, включение/отключение, диагностика)"
+read_when:
+  - Вы хотите установить или управлять встроенными плагинами Gateway
+  - Вы хотите отладить ошибки загрузки плагинов
+---
+
+# `openclaw plugins`
+
+Управление плагинами/расширениями Gateway (загружаются в процесс).
+
+Связанные разделы:
+- Система плагинов: [Плагины](/plugin)
+- Манифест и схема плагина: [Манифест плагина](/plugins/manifest)
+- Усиление безопасности: [Безопасность](/gateway/security)
+
+## Команды
+
+```bash
+openclaw plugins list
+openclaw plugins info <id>
+openclaw plugins enable <id>
+openclaw plugins disable <id>
+openclaw plugins doctor
+openclaw plugins update <id>
+openclaw plugins update --all
+```
+
+Встроенные плагины поставляются с OpenClaw, но по умолчанию отключены. Используйте `plugins enable` для их активации.
+
+Все плагины должны включать файл `openclaw.plugin.json` с встроенной JSON Schema (`configSchema`, даже если она пустая). Отсутствующие/невалидные манифесты или схемы препятствуют загрузке плагина и приводят к ошибке валидации конфигурации.
+
+### Установка
+
+```bash
+openclaw plugins install <path-or-spec>
+```
+
+Примечание по безопасности: установка плагинов равносильна запуску кода. Предпочитайте фиксированные версии.
+
+Поддерживаемые архивы: `.zip`, `.tgz`, `.tar.gz`, `.tar`.
+
+Используйте `--link` для избежания копирования локальной директории (добавляет в `plugins.load.paths`):
+
+```bash
+openclaw plugins install -l ./my-plugin
+```
+
+### Обновление
+
+```bash
+openclaw plugins update <id>
+openclaw plugins update --all
+openclaw plugins update <id> --dry-run
+```
+
+Обновления применяются только к плагинам, установленным из npm (отслеживаются в `plugins.installs`).

@@ -1,0 +1,918 @@
+---
+summary: "Справочник CLI OpenClaw для команд `openclaw`, подкоманд и опций"
+read_when:
+  - Добавление или изменение команд или опций CLI
+  - Документирование новых поверхностей команд
+---
+
+# Справочник CLI
+
+Эта страница описывает текущее поведение CLI. Если команды изменяются, обновите этот документ.
+
+## Страницы команд
+
+- [`setup`](/cli/setup)
+- [`onboard`](/cli/onboard)
+- [`configure`](/cli/configure)
+- [`config`](/cli/config)
+- [`doctor`](/cli/doctor)
+- [`dashboard`](/cli/dashboard)
+- [`reset`](/cli/reset)
+- [`uninstall`](/cli/uninstall)
+- [`update`](/cli/update)
+- [`message`](/cli/message)
+- [`agent`](/cli/agent)
+- [`agents`](/cli/agents)
+- [`acp`](/cli/acp)
+- [`status`](/cli/status)
+- [`health`](/cli/health)
+- [`sessions`](/cli/sessions)
+- [`gateway`](/cli/gateway)
+- [`logs`](/cli/logs)
+- [`system`](/cli/system)
+- [`models`](/cli/models)
+- [`memory`](/cli/memory)
+- [`nodes`](/cli/nodes)
+- [`devices`](/cli/devices)
+- [`node`](/cli/node)
+- [`approvals`](/cli/approvals)
+- [`sandbox`](/cli/sandbox)
+- [`tui`](/cli/tui)
+- [`browser`](/cli/browser)
+- [`cron`](/cli/cron)
+- [`dns`](/cli/dns)
+- [`docs`](/cli/docs)
+- [`hooks`](/cli/hooks)
+- [`webhooks`](/cli/webhooks)
+- [`pairing`](/cli/pairing)
+- [`plugins`](/cli/plugins) (команды плагинов)
+- [`channels`](/cli/channels)
+- [`security`](/cli/security)
+- [`skills`](/cli/skills)
+- [`voicecall`](/cli/voicecall) (плагин; если установлен)
+
+## Глобальные флаги
+
+- `--dev`: изолировать состояние в `~/.openclaw-dev` и сдвинуть порты по умолчанию.
+- `--profile <name>`: изолировать состояние в `~/.openclaw-<name>`.
+- `--no-color`: отключить цвета ANSI.
+- `--update`: сокращение для `openclaw update` (только установки из исходников).
+- `-V`, `--version`, `-v`: вывести версию и выйти.
+
+## Стилизация вывода
+
+- Цвета ANSI и индикаторы прогресса отображаются только в TTY сессиях.
+- Гиперссылки OSC-8 отображаются как кликабельные ссылки в поддерживаемых терминалах; иначе мы возвращаемся к обычным URL.
+- `--json` (и `--plain` где поддерживается) отключает стилизацию для чистого вывода.
+- `--no-color` отключает стилизацию ANSI; `NO_COLOR=1` также учитывается.
+- Долго выполняющиеся команды показывают индикатор прогресса (OSC 9;4 когда поддерживается).
+
+## Цветовая палитра
+
+OpenClaw использует палитру лобстера для вывода CLI.
+
+- `accent` (#FF5A2D): заголовки, метки, основные подсветки.
+- `accentBright` (#FF7A3D): имена команд, акцент.
+- `accentDim` (#D14A22): вторичный текст подсветки.
+- `info` (#FF8A5B): информационные значения.
+- `success` (#2FBF71): состояния успеха.
+- `warn` (#FFB020): предупреждения, запасные варианты, внимание.
+- `error` (#E23D2D): ошибки, сбои.
+- `muted` (#8B7F77): снижение акцента, метаданные.
+
+Источник истины палитры: `src/terminal/palette.ts` (также известная как "lobster seam").
+
+## Дерево команд
+
+```
+openclaw [--dev] [--profile <name>] <command>
+  setup
+  onboard
+  configure
+  config
+    get
+    set
+    unset
+  doctor
+  security
+    audit
+  reset
+  uninstall
+  update
+  channels
+    list
+    status
+    logs
+    add
+    remove
+    login
+    logout
+  skills
+    list
+    info
+    check
+  plugins
+    list
+    info
+    install
+    enable
+    disable
+    doctor
+  memory
+    status
+    index
+    search
+  message
+  agent
+  agents
+    list
+    add
+    delete
+  acp
+  status
+  health
+  sessions
+  gateway
+    call
+    health
+    status
+    probe
+    discover
+    install
+    uninstall
+    start
+    stop
+    restart
+    run
+  logs
+  system
+    event
+    heartbeat last|enable|disable
+    presence
+  models
+    list
+    status
+    set
+    set-image
+    aliases list|add|remove
+    fallbacks list|add|remove|clear
+    image-fallbacks list|add|remove|clear
+    scan
+    auth add|setup-token|paste-token
+    auth order get|set|clear
+  sandbox
+    list
+    recreate
+    explain
+  cron
+    status
+    list
+    add
+    edit
+    rm
+    enable
+    disable
+    runs
+    run
+  nodes
+  devices
+  node
+    run
+    status
+    install
+    uninstall
+    start
+    stop
+    restart
+  approvals
+    get
+    set
+    allowlist add|remove
+  browser
+    status
+    start
+    stop
+    reset-profile
+    tabs
+    open
+    focus
+    close
+    profiles
+    create-profile
+    delete-profile
+    screenshot
+    snapshot
+    navigate
+    resize
+    click
+    type
+    press
+    hover
+    drag
+    select
+    upload
+    fill
+    dialog
+    wait
+    evaluate
+    console
+    pdf
+  hooks
+    list
+    info
+    check
+    enable
+    disable
+    install
+    update
+  webhooks
+    gmail setup|run
+  pairing
+    list
+    approve
+  docs
+  dns
+    setup
+  tui
+```
+
+Примечание: плагины могут добавлять дополнительные команды верхнего уровня (например `openclaw voicecall`).
+
+## Безопасность
+
+- `openclaw security audit` — аудит конфигурации + локального состояния на распространённые проблемы безопасности.
+- `openclaw security audit --deep` — проверка живого Шлюза по возможности.
+- `openclaw security audit --fix` — ужесточить безопасные настройки по умолчанию и chmod состояния/конфигурации.
+
+## Плагины
+
+Управление расширениями и их конфигурацией:
+
+- `openclaw plugins list` — обнаружить плагины (используйте `--json` для машинного вывода).
+- `openclaw plugins info <id>` — показать детали для плагина.
+- `openclaw plugins install <path|.tgz|npm-spec>` — установить плагин (или добавить путь плагина в `plugins.load.paths`).
+- `openclaw plugins enable <id>` / `disable <id>` — переключить `plugins.entries.<id>.enabled`.
+- `openclaw plugins doctor` — сообщить об ошибках загрузки плагинов.
+
+Большинство изменений плагинов требуют перезапуска шлюза. См. [/plugin](/plugin).
+
+## Память
+
+Векторный поиск по `MEMORY.md` + `memory/*.md`:
+
+- `openclaw memory status` — показать статистику индекса.
+- `openclaw memory index` — переиндексировать файлы памяти.
+- `openclaw memory search "<query>"` — семантический поиск по памяти.
+
+## Слеш-команды чата
+
+Сообщения чата поддерживают команды `/...` (текстовые и нативные). См. [/tools/slash-commands](/tools/slash-commands).
+
+Основные моменты:
+- `/status` для быстрой диагностики.
+- `/config` для постоянных изменений конфигурации.
+- `/debug` для переопределений конфигурации только во время выполнения (память, не диск; требует `commands.debug: true`).
+
+## Настройка + онбординг
+
+### `setup`
+Инициализация конфигурации + рабочего пространства.
+
+Опции:
+- `--workspace <dir>`: путь к рабочему пространству агента (по умолчанию `~/.openclaw/workspace`).
+- `--wizard`: запустить мастер онбординга.
+- `--non-interactive`: запустить мастер без запросов.
+- `--mode <local|remote>`: режим мастера.
+- `--remote-url <url>`: URL удалённого Шлюза.
+- `--remote-token <token>`: токен удалённого Шлюза.
+
+Мастер автоматически запускается, когда присутствуют любые флаги мастера (`--non-interactive`, `--mode`, `--remote-url`, `--remote-token`).
+
+### `onboard`
+Интерактивный мастер для настройки шлюза, рабочего пространства и навыков.
+
+Опции:
+- `--workspace <dir>`
+- `--reset` (сбросить конфигурацию + учётные данные + сессии + рабочее пространство перед мастером)
+- `--non-interactive`
+- `--mode <local|remote>`
+- `--flow <quickstart|advanced|manual>` (manual — это псевдоним для advanced)
+- `--auth-choice <setup-token|token|chutes|openai-codex|openai-api-key|openrouter-api-key|ai-gateway-api-key|moonshot-api-key|kimi-code-api-key|synthetic-api-key|venice-api-key|gemini-api-key|zai-api-key|apiKey|minimax-api|minimax-api-lightning|opencode-zen|skip>`
+- `--token-provider <id>` (неинтерактивный; используется с `--auth-choice token`)
+- `--token <token>` (неинтерактивный; используется с `--auth-choice token`)
+- `--token-profile-id <id>` (неинтерактивный; по умолчанию: `<provider>:manual`)
+- `--token-expires-in <duration>` (неинтерактивный; например `365d`, `12h`)
+- `--anthropic-api-key <key>`
+- `--openai-api-key <key>`
+- `--openrouter-api-key <key>`
+- `--ai-gateway-api-key <key>`
+- `--moonshot-api-key <key>`
+- `--kimi-code-api-key <key>`
+- `--gemini-api-key <key>`
+- `--zai-api-key <key>`
+- `--minimax-api-key <key>`
+- `--opencode-zen-api-key <key>`
+- `--gateway-port <port>`
+- `--gateway-bind <loopback|lan|tailnet|auto|custom>`
+- `--gateway-auth <token|password>`
+- `--gateway-token <token>`
+- `--gateway-password <password>`
+- `--remote-url <url>`
+- `--remote-token <token>`
+- `--tailscale <off|serve|funnel>`
+- `--tailscale-reset-on-exit`
+- `--install-daemon`
+- `--no-install-daemon` (псевдоним: `--skip-daemon`)
+- `--daemon-runtime <node|bun>`
+- `--skip-channels`
+- `--skip-skills`
+- `--skip-health`
+- `--skip-ui`
+- `--node-manager <npm|pnpm|bun>` (pnpm рекомендуется; bun не рекомендуется для среды выполнения Шлюза)
+- `--json`
+
+### `configure`
+Интерактивный мастер конфигурации (модели, каналы, навыки, шлюз).
+
+### `config`
+Неинтерактивные помощники конфигурации (get/set/unset). Запуск `openclaw config` без
+подкоманды запускает мастер.
+
+Подкоманды:
+- `config get <path>`: вывести значение конфигурации (dot/bracket путь).
+- `config set <path> <value>`: установить значение (JSON5 или необработанная строка).
+- `config unset <path>`: удалить значение.
+
+### `doctor`
+Проверки состояния + быстрые исправления (конфигурация + шлюз + устаревшие сервисы).
+
+Опции:
+- `--no-workspace-suggestions`: отключить подсказки памяти рабочего пространства.
+- `--yes`: принять настройки по умолчанию без запросов (headless).
+- `--non-interactive`: пропустить запросы; применить только безопасные миграции.
+- `--deep`: сканировать системные сервисы на дополнительные установки шлюза.
+
+## Помощники каналов
+
+### `channels`
+Управление аккаунтами чат-каналов (WhatsApp/Telegram/Discord/Google Chat/Slack/Mattermost (плагин)/Signal/iMessage/MS Teams).
+
+Подкоманды:
+- `channels list`: показать настроенные каналы и профили авторизации.
+- `channels status`: проверить доступность шлюза и состояние канала (`--probe` выполняет дополнительные проверки; используйте `openclaw health` или `openclaw status --deep` для проверок состояния шлюза).
+- Совет: `channels status` выводит предупреждения с предлагаемыми исправлениями, когда может обнаружить распространённые неправильные конфигурации (затем указывает на `openclaw doctor`).
+- `channels logs`: показать последние логи каналов из файла логов шлюза.
+- `channels add`: мастер-стиль настройки когда флаги не переданы; флаги переключаются в неинтерактивный режим.
+- `channels remove`: отключить по умолчанию; передайте `--delete` для удаления записей конфигурации без запросов.
+- `channels login`: интерактивный вход в канал (только WhatsApp Web).
+- `channels logout`: выйти из сессии канала (если поддерживается).
+
+Общие опции:
+- `--channel <name>`: `whatsapp|telegram|discord|googlechat|slack|mattermost|signal|imessage|msteams`
+- `--account <id>`: id аккаунта канала (по умолчанию `default`)
+- `--name <label>`: отображаемое имя для аккаунта
+
+Опции `channels login`:
+- `--channel <channel>` (по умолчанию `whatsapp`; поддерживает `whatsapp`/`web`)
+- `--account <id>`
+- `--verbose`
+
+Опции `channels logout`:
+- `--channel <channel>` (по умолчанию `whatsapp`)
+- `--account <id>`
+
+Опции `channels list`:
+- `--no-usage`: пропустить снимки использования/квоты провайдера модели (только с поддержкой OAuth/API).
+- `--json`: вывод JSON (включает использование если не установлен `--no-usage`).
+
+Опции `channels logs`:
+- `--channel <name|all>` (по умолчанию `all`)
+- `--lines <n>` (по умолчанию `200`)
+- `--json`
+
+Подробнее: [/concepts/oauth](/concepts/oauth)
+
+Примеры:
+```bash
+openclaw channels add --channel telegram --account alerts --name "Alerts Bot" --token $TELEGRAM_BOT_TOKEN
+openclaw channels add --channel discord --account work --name "Work Bot" --token $DISCORD_BOT_TOKEN
+openclaw channels remove --channel discord --account work --delete
+openclaw channels status --probe
+openclaw status --deep
+```
+
+### `skills`
+Перечислить и проверить доступные навыки плюс информацию о готовности.
+
+Подкоманды:
+- `skills list`: перечислить навыки (по умолчанию без подкоманды).
+- `skills info <name>`: показать детали для одного навыка.
+- `skills check`: сводка готовых vs отсутствующих требований.
+
+Опции:
+- `--eligible`: показать только готовые навыки.
+- `--json`: вывод JSON (без стилизации).
+- `-v`, `--verbose`: включить детали отсутствующих требований.
+
+Совет: используйте `npx clawdhub` для поиска, установки и синхронизации навыков.
+
+### `pairing`
+Утвердить запросы на сопряжение DM через каналы.
+
+Подкоманды:
+- `pairing list <channel> [--json]`
+- `pairing approve <channel> <code> [--notify]`
+
+### `webhooks gmail`
+Настройка хука Gmail Pub/Sub + раннер. См. [/automation/gmail-pubsub](/automation/gmail-pubsub).
+
+Подкоманды:
+- `webhooks gmail setup` (требует `--account <email>`; поддерживает `--project`, `--topic`, `--subscription`, `--label`, `--hook-url`, `--hook-token`, `--push-token`, `--bind`, `--port`, `--path`, `--include-body`, `--max-bytes`, `--renew-minutes`, `--tailscale`, `--tailscale-path`, `--tailscale-target`, `--push-endpoint`, `--json`)
+- `webhooks gmail run` (переопределения времени выполнения для тех же флагов)
+
+### `dns setup`
+Помощник DNS wide-area discovery (CoreDNS + Tailscale). См. [/gateway/discovery](/gateway/discovery).
+
+Опции:
+- `--apply`: установить/обновить конфигурацию CoreDNS (требует sudo; только macOS).
+
+## Сообщения + агент
+
+### `message`
+Единое исходящее сообщение + действия каналов.
+
+См.: [/cli/message](/cli/message)
+
+Подкоманды:
+- `message send|poll|react|reactions|read|edit|delete|pin|unpin|pins|permissions|search|timeout|kick|ban`
+- `message thread <create|list|reply>`
+- `message emoji <list|upload>`
+- `message sticker <send|upload>`
+- `message role <info|add|remove>`
+- `message channel <info|list>`
+- `message member info`
+- `message voice status`
+- `message event <list|create>`
+
+Примеры:
+- `openclaw message send --target +15555550123 --message "Hi"`
+- `openclaw message poll --channel discord --target channel:123 --poll-question "Snack?" --poll-option Pizza --poll-option Sushi`
+
+### `agent`
+Запустить один ход агента через Шлюз (или `--local` встроенный).
+
+Требуется:
+- `--message <text>`
+
+Опции:
+- `--to <dest>` (для ключа сессии и опциональной доставки)
+- `--session-id <id>`
+- `--thinking <off|minimal|low|medium|high|xhigh>` (только модели GPT-5.2 + Codex)
+- `--verbose <on|full|off>`
+- `--channel <whatsapp|telegram|discord|slack|mattermost|signal|imessage|msteams>`
+- `--local`
+- `--deliver`
+- `--json`
+- `--timeout <seconds>`
+
+### `agents`
+Управление изолированными агентами (рабочие пространства + авторизация + маршрутизация).
+
+#### `agents list`
+Перечислить настроенных агентов.
+
+Опции:
+- `--json`
+- `--bindings`
+
+#### `agents add [name]`
+Добавить нового изолированного агента. Запускает управляемый мастер если не переданы флаги (или `--non-interactive`); `--workspace` требуется в неинтерактивном режиме.
+
+Опции:
+- `--workspace <dir>`
+- `--model <id>`
+- `--agent-dir <dir>`
+- `--bind <channel[:accountId]>` (повторяемый)
+- `--non-interactive`
+- `--json`
+
+Спецификации привязки используют `channel[:accountId]`. Когда `accountId` опущен для WhatsApp, используется id аккаунта по умолчанию.
+
+#### `agents delete <id>`
+Удалить агента и очистить его рабочее пространство + состояние.
+
+Опции:
+- `--force`
+- `--json`
+
+### `acp`
+Запустить мост ACP, который соединяет IDE с Шлюзом.
+
+См. [`acp`](/cli/acp) для полных опций и примеров.
+
+### `status`
+Показать состояние связанной сессии и последних получателей.
+
+Опции:
+- `--json`
+- `--all` (полная диагностика; только для чтения, можно вставлять)
+- `--deep` (проверка каналов)
+- `--usage` (показать использование/квоту провайдера модели)
+- `--timeout <ms>`
+- `--verbose`
+- `--debug` (псевдоним для `--verbose`)
+
+Примечания:
+- Обзор включает статус сервиса Шлюза + узлового хоста когда доступно.
+
+### Отслеживание использования
+OpenClaw может отображать использование/квоту провайдера когда доступны учётные данные OAuth/API.
+
+Поверхности:
+- `/status` (добавляет короткую строку использования провайдера когда доступно)
+- `openclaw status --usage` (выводит полную разбивку по провайдерам)
+- Строка меню macOS (раздел Usage в Context)
+
+Примечания:
+- Данные поступают напрямую из конечных точек использования провайдера (без оценок).
+- Провайдеры: Anthropic, GitHub Copilot, OpenAI Codex OAuth, плюс Gemini CLI/Antigravity когда эти плагины провайдеров включены.
+- Если подходящие учётные данные не существуют, использование скрыто.
+- Подробности: см. [Отслеживание использования](/concepts/usage-tracking).
+
+### `health`
+Получить состояние от запущенного Шлюза.
+
+Опции:
+- `--json`
+- `--timeout <ms>`
+- `--verbose`
+
+### `sessions`
+Перечислить сохранённые сессии разговоров.
+
+Опции:
+- `--json`
+- `--verbose`
+- `--store <path>`
+- `--active <minutes>`
+
+## Сброс / Удаление
+
+### `reset`
+Сбросить локальную конфигурацию/состояние (CLI остаётся установленным).
+
+Опции:
+- `--scope <config|config+creds+sessions|full>`
+- `--yes`
+- `--non-interactive`
+- `--dry-run`
+
+Примечания:
+- `--non-interactive` требует `--scope` и `--yes`.
+
+### `uninstall`
+Удалить сервис шлюза + локальные данные (CLI остаётся).
+
+Опции:
+- `--service`
+- `--state`
+- `--workspace`
+- `--app`
+- `--all`
+- `--yes`
+- `--non-interactive`
+- `--dry-run`
+
+Примечания:
+- `--non-interactive` требует `--yes` и явные области (или `--all`).
+
+## Шлюз
+
+### `gateway`
+Запустить WebSocket Шлюз.
+
+Опции:
+- `--port <port>`
+- `--bind <loopback|tailnet|lan|auto|custom>`
+- `--token <token>`
+- `--auth <token|password>`
+- `--password <password>`
+- `--tailscale <off|serve|funnel>`
+- `--tailscale-reset-on-exit`
+- `--allow-unconfigured`
+- `--dev`
+- `--reset` (сбросить dev конфигурацию + учётные данные + сессии + рабочее пространство)
+- `--force` (убить существующий слушатель на порту)
+- `--verbose`
+- `--claude-cli-logs`
+- `--ws-log <auto|full|compact>`
+- `--compact` (псевдоним для `--ws-log compact`)
+- `--raw-stream`
+- `--raw-stream-path <path>`
+
+### `gateway service`
+Управление сервисом Шлюза (launchd/systemd/schtasks).
+
+Подкоманды:
+- `gateway status` (проверяет RPC Шлюза по умолчанию)
+- `gateway install` (установка сервиса)
+- `gateway uninstall`
+- `gateway start`
+- `gateway stop`
+- `gateway restart`
+
+Примечания:
+- `gateway status` проверяет RPC Шлюза по умолчанию используя разрешённый порт/конфигурацию сервиса (переопределите с `--url/--token/--password`).
+- `gateway status` поддерживает `--no-probe`, `--deep`, и `--json` для скриптов.
+- `gateway status` также отображает устаревшие или дополнительные сервисы шлюза когда может их обнаружить (`--deep` добавляет сканирование на системном уровне). Сервисы OpenClaw с именем профиля рассматриваются как первоклассные и не помечаются как "дополнительные".
+- `gateway status` выводит какой путь конфигурации использует CLI vs какую конфигурацию вероятно использует сервис (env сервиса), плюс разрешённый целевой URL проверки.
+- `gateway install|uninstall|start|stop|restart` поддерживают `--json` для скриптов (вывод по умолчанию остаётся дружелюбным к человеку).
+- `gateway install` по умолчанию использует среду выполнения Node; bun **не рекомендуется** (баги WhatsApp/Telegram).
+- Опции `gateway install`: `--port`, `--runtime`, `--token`, `--force`, `--json`.
+
+### `logs`
+Просмотр файловых логов Шлюза через RPC.
+
+Примечания:
+- TTY сессии отображают цветной, структурированный вид; не-TTY возвращается к обычному тексту.
+- `--json` выдаёт JSON с разделителями строк (одно событие лога на строку).
+
+Примеры:
+```bash
+openclaw logs --follow
+openclaw logs --limit 200
+openclaw logs --plain
+openclaw logs --json
+openclaw logs --no-color
+```
+
+### `gateway <subcommand>`
+Помощники CLI Шлюза (используйте `--url`, `--token`, `--password`, `--timeout`, `--expect-final` для подкоманд RPC).
+
+Подкоманды:
+- `gateway call <method> [--params <json>]`
+- `gateway health`
+- `gateway status`
+- `gateway probe`
+- `gateway discover`
+- `gateway install|uninstall|start|stop|restart`
+- `gateway run`
+
+Общие RPC:
+- `config.apply` (проверить + записать конфигурацию + перезапустить + разбудить)
+- `config.patch` (объединить частичное обновление + перезапустить + разбудить)
+- `update.run` (выполнить обновление + перезапустить + разбудить)
+
+Совет: при вызове `config.set`/`config.apply`/`config.patch` напрямую, передайте `baseHash` из
+`config.get` если конфигурация уже существует.
+
+## Модели
+
+См. [/concepts/models](/concepts/models) для поведения отката и стратегии сканирования.
+
+Предпочтительная авторизация Anthropic (setup-token):
+
+```bash
+claude setup-token
+openclaw models auth setup-token --provider anthropic
+openclaw models status
+```
+
+### `models` (корень)
+`openclaw models` является псевдонимом для `models status`.
+
+Опции корня:
+- `--status-json` (псевдоним для `models status --json`)
+- `--status-plain` (псевдоним для `models status --plain`)
+
+### `models list`
+Опции:
+- `--all`
+- `--local`
+- `--provider <name>`
+- `--json`
+- `--plain`
+
+### `models status`
+Опции:
+- `--json`
+- `--plain`
+- `--check` (выход 1=истёк/отсутствует, 2=истекает)
+- `--probe` (живая проверка настроенных профилей авторизации)
+- `--probe-provider <name>`
+- `--probe-profile <id>` (повторить или разделённые запятыми)
+- `--probe-timeout <ms>`
+- `--probe-concurrency <n>`
+- `--probe-max-tokens <n>`
+
+Всегда включает обзор авторизации и статус истечения OAuth для профилей в хранилище авторизации.
+`--probe` запускает живые запросы (может потреблять токены и вызывать ограничения скорости).
+
+### `models set <model>`
+Установить `agents.defaults.model.primary`.
+
+### `models set-image <model>`
+Установить `agents.defaults.imageModel.primary`.
+
+### `models aliases list|add|remove`
+Опции:
+- `list`: `--json`, `--plain`
+- `add <alias> <model>`
+- `remove <alias>`
+
+### `models fallbacks list|add|remove|clear`
+Опции:
+- `list`: `--json`, `--plain`
+- `add <model>`
+- `remove <model>`
+- `clear`
+
+### `models image-fallbacks list|add|remove|clear`
+Опции:
+- `list`: `--json`, `--plain`
+- `add <model>`
+- `remove <model>`
+- `clear`
+
+### `models scan`
+Опции:
+- `--min-params <b>`
+- `--max-age-days <days>`
+- `--provider <name>`
+- `--max-candidates <n>`
+- `--timeout <ms>`
+- `--concurrency <n>`
+- `--no-probe`
+- `--yes`
+- `--no-input`
+- `--set-default`
+- `--set-image`
+- `--json`
+
+### `models auth add|setup-token|paste-token`
+Опции:
+- `add`: интерактивный помощник авторизации
+- `setup-token`: `--provider <name>` (по умолчанию `anthropic`), `--yes`
+- `paste-token`: `--provider <name>`, `--profile-id <id>`, `--expires-in <duration>`
+
+### `models auth order get|set|clear`
+Опции:
+- `get`: `--provider <name>`, `--agent <id>`, `--json`
+- `set`: `--provider <name>`, `--agent <id>`, `<profileIds...>`
+- `clear`: `--provider <name>`, `--agent <id>`
+
+## Система
+
+### `system event`
+Поставить в очередь системное событие и опционально запустить heartbeat (RPC Шлюза).
+
+Требуется:
+- `--text <text>`
+
+Опции:
+- `--mode <now|next-heartbeat>`
+- `--json`
+- `--url`, `--token`, `--timeout`, `--expect-final`
+
+### `system heartbeat last|enable|disable`
+Управление heartbeat (RPC Шлюза).
+
+Опции:
+- `--json`
+- `--url`, `--token`, `--timeout`, `--expect-final`
+
+### `system presence`
+Перечислить записи системного присутствия (RPC Шлюза).
+
+Опции:
+- `--json`
+- `--url`, `--token`, `--timeout`, `--expect-final`
+
+## Cron
+Управление запланированными задачами (RPC Шлюза). См. [/automation/cron-jobs](/automation/cron-jobs).
+
+Подкоманды:
+- `cron status [--json]`
+- `cron list [--all] [--json]` (вывод таблицы по умолчанию; используйте `--json` для необработанного)
+- `cron add` (псевдоним: `create`; требует `--name` и ровно один из `--at` | `--every` | `--cron`, и ровно одна полезная нагрузка из `--system-event` | `--message`)
+- `cron edit <id>` (патч полей)
+- `cron rm <id>` (псевдонимы: `remove`, `delete`)
+- `cron enable <id>`
+- `cron disable <id>`
+- `cron runs --id <id> [--limit <n>]`
+- `cron run <id> [--force]`
+
+Все команды `cron` принимают `--url`, `--token`, `--timeout`, `--expect-final`.
+
+## Узловой хост
+
+`node` запускает **headless узловой хост** или управляет им как фоновым сервисом. См.
+[`openclaw node`](/cli/node).
+
+Подкоманды:
+- `node run --host <gateway-host> --port 18789`
+- `node status`
+- `node install [--host <gateway-host>] [--port <port>] [--tls] [--tls-fingerprint <sha256>] [--node-id <id>] [--display-name <name>] [--runtime <node|bun>] [--force]`
+- `node uninstall`
+- `node stop`
+- `node restart`
+
+## Nodes
+
+`nodes` общается со Шлюзом и нацеливается на сопряжённые узлы. См. [/nodes](/nodes).
+
+Общие опции:
+- `--url`, `--token`, `--timeout`, `--json`
+
+Подкоманды:
+- `nodes status [--connected] [--last-connected <duration>]`
+- `nodes describe --node <id|name|ip>`
+- `nodes list [--connected] [--last-connected <duration>]`
+- `nodes pending`
+- `nodes approve <requestId>`
+- `nodes reject <requestId>`
+- `nodes rename --node <id|name|ip> --name <displayName>`
+- `nodes invoke --node <id|name|ip> --command <command> [--params <json>] [--invoke-timeout <ms>] [--idempotency-key <key>]`
+- `nodes run --node <id|name|ip> [--cwd <path>] [--env KEY=VAL] [--command-timeout <ms>] [--needs-screen-recording] [--invoke-timeout <ms>] <command...>` (mac node или headless node host)
+- `nodes notify --node <id|name|ip> [--title <text>] [--body <text>] [--sound <name>] [--priority <passive|active|timeSensitive>] [--delivery <system|overlay|auto>] [--invoke-timeout <ms>]` (только mac)
+
+Камера:
+- `nodes camera list --node <id|name|ip>`
+- `nodes camera snap --node <id|name|ip> [--facing front|back|both] [--device-id <id>] [--max-width <px>] [--quality <0-1>] [--delay-ms <ms>] [--invoke-timeout <ms>]`
+- `nodes camera clip --node <id|name|ip> [--facing front|back] [--device-id <id>] [--duration <ms|10s|1m>] [--no-audio] [--invoke-timeout <ms>]`
+
+Canvas + экран:
+- `nodes canvas snapshot --node <id|name|ip> [--format png|jpg|jpeg] [--max-width <px>] [--quality <0-1>] [--invoke-timeout <ms>]`
+- `nodes canvas present --node <id|name|ip> [--target <urlOrPath>] [--x <px>] [--y <px>] [--width <px>] [--height <px>] [--invoke-timeout <ms>]`
+- `nodes canvas hide --node <id|name|ip> [--invoke-timeout <ms>]`
+- `nodes canvas navigate <url> --node <id|name|ip> [--invoke-timeout <ms>]`
+- `nodes canvas eval [<js>] --node <id|name|ip> [--js <code>] [--invoke-timeout <ms>]`
+- `nodes canvas a2ui push --node <id|name|ip> (--jsonl <path> | --text <text>) [--invoke-timeout <ms>]`
+- `nodes canvas a2ui reset --node <id|name|ip> [--invoke-timeout <ms>]`
+- `nodes screen record --node <id|name|ip> [--screen <index>] [--duration <ms|10s>] [--fps <n>] [--no-audio] [--out <path>] [--invoke-timeout <ms>]`
+
+Местоположение:
+- `nodes location get --node <id|name|ip> [--max-age <ms>] [--accuracy <coarse|balanced|precise>] [--location-timeout <ms>] [--invoke-timeout <ms>]`
+
+## Браузер
+
+CLI управления браузером (выделенный Chrome/Brave/Edge/Chromium). См. [`openclaw browser`](/cli/browser) и [Инструмент браузера](/tools/browser).
+
+Общие опции:
+- `--url`, `--token`, `--timeout`, `--json`
+- `--browser-profile <name>`
+
+Управление:
+- `browser status`
+- `browser start`
+- `browser stop`
+- `browser reset-profile`
+- `browser tabs`
+- `browser open <url>`
+- `browser focus <targetId>`
+- `browser close [targetId]`
+- `browser profiles`
+- `browser create-profile --name <name> [--color <hex>] [--cdp-url <url>]`
+- `browser delete-profile --name <name>`
+
+Проверка:
+- `browser screenshot [targetId] [--full-page] [--ref <ref>] [--element <selector>] [--type png|jpeg]`
+- `browser snapshot [--format aria|ai] [--target-id <id>] [--limit <n>] [--interactive] [--compact] [--depth <n>] [--selector <sel>] [--out <path>]`
+
+Действия:
+- `browser navigate <url> [--target-id <id>]`
+- `browser resize <width> <height> [--target-id <id>]`
+- `browser click <ref> [--double] [--button <left|right|middle>] [--modifiers <csv>] [--target-id <id>]`
+- `browser type <ref> <text> [--submit] [--slowly] [--target-id <id>]`
+- `browser press <key> [--target-id <id>]`
+- `browser hover <ref> [--target-id <id>]`
+- `browser drag <startRef> <endRef> [--target-id <id>]`
+- `browser select <ref> <values...> [--target-id <id>]`
+- `browser upload <paths...> [--ref <ref>] [--input-ref <ref>] [--element <selector>] [--target-id <id>] [--timeout-ms <ms>]`
+- `browser fill [--fields <json>] [--fields-file <path>] [--target-id <id>]`
+- `browser dialog --accept|--dismiss [--prompt <text>] [--target-id <id>] [--timeout-ms <ms>]`
+- `browser wait [--time <ms>] [--text <value>] [--text-gone <value>] [--target-id <id>]`
+- `browser evaluate --fn <code> [--ref <ref>] [--target-id <id>]`
+- `browser console [--level <error|warn|info>] [--target-id <id>]`
+- `browser pdf [--target-id <id>]`
+
+## Поиск в документах
+
+### `docs [query...]`
+Поиск по индексу живых документов.
+
+## TUI
+
+### `tui`
+Открыть терминальный UI подключённый к Шлюзу.
+
+Опции:
+- `--url <url>`
+- `--token <token>`
+- `--password <password>`
+- `--session <key>`
+- `--deliver`
+- `--thinking <level>`
+- `--message <text>`
+- `--timeout-ms <ms>` (по умолчанию `agents.defaults.timeoutSeconds`)
+- `--history-limit <n>`

@@ -13,7 +13,7 @@ const UmamiScript = () => {
           src={UMAMI_SRC}
           data-website-id={UMAMI_WEBSITE_ID}
           defer
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       ) : (
         <></>

@@ -1,0 +1,536 @@
+---
+summary: "Интегрированная служба управления браузером + команды действий"
+read_when:
+  - Добавление автоматизации браузера под управлением агента
+  - Отладка конфликтов openclaw с вашим Chrome
+  - Реализация настроек и жизненного цикла браузера в приложении macOS
+---
+
+# Браузер (управляемый openclaw)
+
+OpenClaw может запускать **выделенный профиль Chrome/Brave/Edge/Chromium**, которым управляет агент.
+Он изолирован от вашего личного браузера и управляется через небольшую локальную
+службу управления внутри Gateway (только loopback).
+
+Для начинающих:
+- Представьте это как **отдельный браузер только для агента**.
+- Профиль `openclaw` **не затрагивает** ваш личный профиль браузера.
+- Агент может **открывать вкладки, читать страницы, кликать и вводить текст** в безопасной среде.
+- Профиль по умолчанию `chrome` использует **системный браузер Chromium по умолчанию** через
+  ретранслятор расширения; переключитесь на `openclaw` для изолированного управляемого браузера.
+
+## Что вы получаете
+
+- Отдельный профиль браузера с именем **openclaw** (по умолчанию оранжевый акцент).
+- Детерминированное управление вкладками (list/open/focus/close).
+- Действия агента (click/type/drag/select), снимки, скриншоты, PDF.
+- Опциональная поддержка нескольких профилей (`openclaw`, `work`, `remote`, ...).
+
+Этот браузер **не является** вашим повседневным браузером. Это безопасная, изолированная среда для
+автоматизации и верификации агента.
+
+## Быстрый старт
+
+```bash
+openclaw browser --browser-profile openclaw status
+openclaw browser --browser-profile openclaw start
+openclaw browser --browser-profile openclaw open https://example.com
+openclaw browser --browser-profile openclaw snapshot
+```
+
+Если вы получаете "Browser disabled", включите его в конфигурации (см. ниже) и перезапустите
+Gateway.
+
+## Профили: `openclaw` vs `chrome`
+
+- `openclaw`: управляемый, изолированный браузер (расширение не требуется).
+- `chrome`: ретранслятор расширения к вашему **системному браузеру** (требуется расширение OpenClaw
+  для подключения к вкладке).
+
+Установите `browser.defaultProfile: "openclaw"`, если хотите использовать управляемый режим по умолчанию.
+
+## Конфигурация
+
+Настройки браузера находятся в `~/.openclaw/openclaw.json`.
+
+```json5
+\{
+  browser: \{
+    enabled: true,                    // по умолчанию: true
+    // cdpUrl: "http://127.0.0.1:18792", // устаревшее переопределение для одного профиля
+    remoteCdpTimeoutMs: 1500,         // таймаут HTTP удалённого CDP (мс)
+    remoteCdpHandshakeTimeoutMs: 3000, // таймаут рукопожатия WebSocket удалённого CDP (мс)
+    defaultProfile: "chrome",
+    color: "#FF4500",
+    headless: false,
+    noSandbox: false,
+    attachOnly: false,
+    executablePath: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    profiles: \{
+      openclaw: \{ cdpPort: 18800, color: "#FF4500" \},
+      work: \{ cdpPort: 18801, color: "#0066CC" \},
+      remote: \{ cdpUrl: "http://10.0.0.42:9222", color: "#00AA00" \}
+    \}
+  \}
+\}
+```
+
+Примечания:
+- Служба управления браузером привязывается к loopback на порту, производном от `gateway.port`
+  (по умолчанию: `18791`, что равно gateway + 2). Ретранслятор использует следующий порт (`18792`).
+- Если вы переопределяете порт Gateway (`gateway.port` или `OPENCLAW_GATEWAY_PORT`),
+  производные порты браузера смещаются, оставаясь в том же "семействе".
+- `cdpUrl` по умолчанию указывает на порт ретранслятора, если не задан.
+- `remoteCdpTimeoutMs` применяется к проверкам доступности удалённого (не loopback) CDP.
+- `remoteCdpHandshakeTimeoutMs` применяется к проверкам доступности WebSocket удалённого CDP.
+- `attachOnly: true` означает "никогда не запускать локальный браузер; подключаться только если он уже запущен".
+- `color` + `color` для каждого профиля окрашивают UI браузера, чтобы вы видели, какой профиль активен.
+- Профиль по умолчанию — `chrome` (ретранслятор расширения). Используйте `defaultProfile: "openclaw"` для управляемого браузера.
+- Порядок автоопределения: системный браузер по умолчанию, если он на базе Chromium; иначе Chrome → Brave → Edge → Chromium → Chrome Canary.
+- Локальные профили `openclaw` автоматически назначают `cdpPort`/`cdpUrl` — устанавливайте их только для удалённого CDP.
+
+## Использование Brave (или другого браузера на базе Chromium)
+
+Если ваш **системный браузер по умолчанию** основан на Chromium (Chrome/Brave/Edge/и т.д.),
+OpenClaw использует его автоматически. Установите `browser.executablePath` для переопределения
+автоопределения:
+
+Пример CLI:
+
+```bash
+openclaw config set browser.executablePath "/usr/bin/google-chrome"
+```
+
+```json5
+// macOS
+\{
+  browser: \{
+    executablePath: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+  \}
+\}
+
+// Windows
+\{
+  browser: \{
+    executablePath: "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+  \}
+\}
+
+// Linux
+\{
+  browser: \{
+    executablePath: "/usr/bin/brave-browser"
+  \}
+\}
+```
+
+## Локальное vs удалённое управление
+
+- **Локальное управление (по умолчанию):** Gateway запускает службу управления loopback и может запускать локальный браузер.
+- **Удалённое управление (хост узла):** запустите хост узла на машине с браузером; Gateway проксирует действия браузера к нему.
+- **Удалённый CDP:** установите `browser.profiles.<name>.cdpUrl` (или `browser.cdpUrl`) для
+  подключения к удалённому браузеру на базе Chromium. В этом случае OpenClaw не будет запускать локальный браузер.
+
+URL удалённого CDP могут включать авторизацию:
+- Токены в запросе (например, `https://provider.example?token=<token>`)
+- HTTP Basic auth (например, `https://user:pass@provider.example`)
+
+OpenClaw сохраняет авторизацию при вызове конечных точек `/json/*` и при подключении
+к WebSocket CDP. Предпочитайте переменные окружения или менеджеры секретов для
+токенов вместо их фиксации в конфигурационных файлах.
+
+## Прокси браузера узла (конфигурация по умолчанию zero-config)
+
+Если вы запускаете **хост узла** на машине с вашим браузером, OpenClaw может
+автоматически маршрутизировать вызовы инструмента браузера к этому узлу без дополнительной конфигурации браузера.
+Это путь по умолчанию для удалённых шлюзов.
+
+Примечания:
+- Хост узла предоставляет свой локальный сервер управления браузером через **команду прокси**.
+- Профили берутся из конфигурации `browser.profiles` самого узла (как и для локального).
+- Отключите, если не хотите это использовать:
+  - На узле: `nodeHost.browserProxy.enabled=false`
+  - На шлюзе: `gateway.nodes.browser.mode="off"`
+
+## Browserless (размещённый удалённый CDP)
+
+[Browserless](https://browserless.io) — это размещённая служба Chromium, которая предоставляет
+конечные точки CDP через HTTPS. Вы можете направить профиль браузера OpenClaw на
+конечную точку региона Browserless и аутентифицироваться с помощью вашего API-ключа.
+
+Пример:
+```json5
+\{
+  browser: \{
+    enabled: true,
+    defaultProfile: "browserless",
+    remoteCdpTimeoutMs: 2000,
+    remoteCdpHandshakeTimeoutMs: 4000,
+    profiles: \{
+      browserless: \{
+        cdpUrl: "https://production-sfo.browserless.io?token=<BROWSERLESS_API_KEY>",
+        color: "#00AA00"
+      \}
+    \}
+  \}
+\}
+```
+
+Примечания:
+- Замените `<BROWSERLESS_API_KEY>` на ваш реальный токен Browserless.
+- Выберите конечную точку региона, соответствующую вашей учётной записи Browserless (см. их документацию).
+
+## Безопасность
+
+Ключевые идеи:
+- Управление браузером только через loopback; доступ проходит через авторизацию Gateway или сопряжение узлов.
+- Держите Gateway и любые хосты узлов в частной сети (Tailscale); избегайте публичного доступа.
+- Обращайтесь с URL/токенами удалённого CDP как с секретами; предпочитайте переменные окружения или менеджер секретов.
+
+Советы по удалённому CDP:
+- Предпочитайте конечные точки HTTPS и краткосрочные токены, где это возможно.
+- Избегайте встраивания долгосрочных токенов непосредственно в конфигурационные файлы.
+
+## Профили (мультибраузер)
+
+OpenClaw поддерживает несколько именованных профилей (конфигурации маршрутизации). Профили могут быть:
+- **управляемые openclaw**: выделенный экземпляр браузера на базе Chromium с собственным каталогом пользовательских данных + портом CDP
+- **удалённые**: явный URL CDP (браузер на базе Chromium, работающий в другом месте)
+- **ретранслятор расширения**: ваши существующие вкладки Chrome через локальный ретранслятор + расширение Chrome
+
+По умолчанию:
+- Профиль `openclaw` создаётся автоматически, если отсутствует.
+- Встроенный профиль `chrome` для ретранслятора расширения Chrome (по умолчанию указывает на `http://127.0.0.1:18792`).
+- Локальные порты CDP выделяются из диапазона **18800–18899** по умолчанию.
+- Удаление профиля перемещает его локальный каталог данных в Корзину.
+
+Все конечные точки управления принимают `?profile=<name>`; CLI использует `--browser-profile`.
+
+## Ретранслятор расширения Chrome (используйте ваш существующий Chrome)
+
+OpenClaw также может управлять **вашими существующими вкладками Chrome** (без отдельного экземпляра Chrome "openclaw") через локальный ретранслятор CDP + расширение Chrome.
+
+Полное руководство: [Расширение Chrome](/tools/chrome-extension)
+
+Поток:
+- Gateway запущен локально (на той же машине) или хост узла запущен на машине с браузером.
+- Локальный **сервер ретранслятора** слушает на loopback `cdpUrl` (по умолчанию: `http://127.0.0.1:18792`).
+- Вы нажимаете значок расширения **OpenClaw Browser Relay** на вкладке для подключения (оно не подключается автоматически).
+- Агент управляет этой вкладкой через обычный инструмент `browser`, выбирая правильный профиль.
+
+Если Gateway запущен в другом месте, запустите хост узла на машине с браузером, чтобы Gateway мог проксировать действия браузера.
+
+### Изолированные сессии
+
+Если сессия агента изолирована, инструмент `browser` может по умолчанию использовать `target="sandbox"` (браузер песочницы).
+Захват ретранслятора расширения Chrome требует управления браузером хоста, поэтому либо:
+- запустите сессию без изоляции, или
+- установите `agents.defaults.sandbox.browser.allowHostControl: true` и используйте `target="host"` при вызове инструмента.
+
+### Настройка
+
+1) Загрузите расширение (dev/unpacked):
+
+```bash
+openclaw browser extension install
+```
+
+- Chrome → `chrome://extensions` → включите "Режим разработчика"
+- "Загрузить распакованное" → выберите каталог, напечатанный командой `openclaw browser extension path`
+- Закрепите расширение, затем нажмите на него на вкладке, которой хотите управлять (значок показывает `ON`).
+
+2) Используйте его:
+- CLI: `openclaw browser --browser-profile chrome tabs`
+- Инструмент агента: `browser` с `profile="chrome"`
+
+Опционально: если вы хотите другое имя или порт ретранслятора, создайте свой профиль:
+
+```bash
+openclaw browser create-profile \
+  --name my-chrome \
+  --driver extension \
+  --cdp-url http://127.0.0.1:18792 \
+  --color "#00AA00"
+```
+
+Примечания:
+- Этот режим использует Playwright-on-CDP для большинства операций (скриншоты/снимки/действия).
+- Отключитесь, снова нажав на значок расширения.
+
+## Гарантии изоляции
+
+- **Выделенный каталог пользовательских данных**: никогда не затрагивает ваш личный профиль браузера.
+- **Выделенные порты**: избегает `9222` для предотвращения конфликтов с рабочими процессами разработки.
+- **Детерминированное управление вкладками**: целевые вкладки по `targetId`, а не "последняя вкладка".
+
+## Выбор браузера
+
+При локальном запуске OpenClaw выбирает первый доступный:
+1. Chrome
+2. Brave
+3. Edge
+4. Chromium
+5. Chrome Canary
+
+Вы можете переопределить с помощью `browser.executablePath`.
+
+Платформы:
+- macOS: проверяет `/Applications` и `~/Applications`.
+- Linux: ищет `google-chrome`, `brave`, `microsoft-edge`, `chromium` и т.д.
+- Windows: проверяет обычные места установки.
+
+## API управления (опционально)
+
+Только для локальных интеграций, Gateway предоставляет небольшой HTTP API через loopback:
+
+- Статус/старт/стоп: `GET /`, `POST /start`, `POST /stop`
+- Вкладки: `GET /tabs`, `POST /tabs/open`, `POST /tabs/focus`, `DELETE /tabs/:targetId`
+- Снимок/скриншот: `GET /snapshot`, `POST /screenshot`
+- Действия: `POST /navigate`, `POST /act`
+- Хуки: `POST /hooks/file-chooser`, `POST /hooks/dialog`
+- Загрузки: `POST /download`, `POST /wait/download`
+- Отладка: `GET /console`, `POST /pdf`
+- Отладка: `GET /errors`, `GET /requests`, `POST /trace/start`, `POST /trace/stop`, `POST /highlight`
+- Сеть: `POST /response/body`
+- Состояние: `GET /cookies`, `POST /cookies/set`, `POST /cookies/clear`
+- Состояние: `GET /storage/:kind`, `POST /storage/:kind/set`, `POST /storage/:kind/clear`
+- Настройки: `POST /set/offline`, `POST /set/headers`, `POST /set/credentials`, `POST /set/geolocation`, `POST /set/media`, `POST /set/timezone`, `POST /set/locale`, `POST /set/device`
+
+Все конечные точки принимают `?profile=<name>`.
+
+### Требование Playwright
+
+Некоторые функции (navigate/act/снимок AI/снимок роли, скриншоты элементов, PDF) требуют
+Playwright. Если Playwright не установлен, эти конечные точки возвращают чёткую ошибку 501.
+Снимки ARIA и базовые скриншоты всё ещё работают для управляемого OpenClaw Chrome.
+Для драйвера ретранслятора расширения Chrome снимки ARIA и скриншоты требуют Playwright.
+
+Если вы видите `Playwright is not available in this gateway build`, установите полный
+пакет Playwright (не `playwright-core`) и перезапустите шлюз, или переустановите
+OpenClaw с поддержкой браузера.
+
+## Как это работает (внутреннее устройство)
+
+Высокоуровневый поток:
+- Небольшой **сервер управления** принимает HTTP-запросы.
+- Он подключается к браузерам на базе Chromium (Chrome/Brave/Edge/Chromium) через **CDP**.
+- Для продвинутых действий (click/type/snapshot/PDF) он использует **Playwright** поверх
+  CDP.
+- Когда Playwright отсутствует, доступны только операции без Playwright.
+
+Эта конструкция держит агента на стабильном, детерминированном интерфейсе, позволяя
+вам менять локальные/удалённые браузеры и профили.
+
+## Краткий справочник CLI
+
+Все команды принимают `--browser-profile <name>` для выбора конкретного профиля.
+Все команды также принимают `--json` для машиночитаемого вывода (стабильные пакеты).
+
+Основы:
+- `openclaw browser status`
+- `openclaw browser start`
+- `openclaw browser stop`
+- `openclaw browser tabs`
+- `openclaw browser tab`
+- `openclaw browser tab new`
+- `openclaw browser tab select 2`
+- `openclaw browser tab close 2`
+- `openclaw browser open https://example.com`
+- `openclaw browser focus abcd1234`
+- `openclaw browser close abcd1234`
+
+Инспекция:
+- `openclaw browser screenshot`
+- `openclaw browser screenshot --full-page`
+- `openclaw browser screenshot --ref 12`
+- `openclaw browser screenshot --ref e12`
+- `openclaw browser snapshot`
+- `openclaw browser snapshot --format aria --limit 200`
+- `openclaw browser snapshot --interactive --compact --depth 6`
+- `openclaw browser snapshot --efficient`
+- `openclaw browser snapshot --labels`
+- `openclaw browser snapshot --selector "#main" --interactive`
+- `openclaw browser snapshot --frame "iframe#main" --interactive`
+- `openclaw browser console --level error`
+- `openclaw browser errors --clear`
+- `openclaw browser requests --filter api --clear`
+- `openclaw browser pdf`
+- `openclaw browser responsebody "**/api" --max-chars 5000`
+
+Действия:
+- `openclaw browser navigate https://example.com`
+- `openclaw browser resize 1280 720`
+- `openclaw browser click 12 --double`
+- `openclaw browser click e12 --double`
+- `openclaw browser type 23 "hello" --submit`
+- `openclaw browser press Enter`
+- `openclaw browser hover 44`
+- `openclaw browser scrollintoview e12`
+- `openclaw browser drag 10 11`
+- `openclaw browser select 9 OptionA OptionB`
+- `openclaw browser download e12 /tmp/report.pdf`
+- `openclaw browser waitfordownload /tmp/report.pdf`
+- `openclaw browser upload /tmp/file.pdf`
+- `openclaw browser fill --fields '[{"ref":"1","type":"text","value":"Ada"}]'`
+- `openclaw browser dialog --accept`
+- `openclaw browser wait --text "Done"`
+- `openclaw browser wait "#main" --url "**/dash" --load networkidle --fn "window.ready===true"`
+- `openclaw browser evaluate --fn '(el) => el.textContent' --ref 7`
+- `openclaw browser highlight e12`
+- `openclaw browser trace start`
+- `openclaw browser trace stop`
+
+Состояние:
+- `openclaw browser cookies`
+- `openclaw browser cookies set session abc123 --url "https://example.com"`
+- `openclaw browser cookies clear`
+- `openclaw browser storage local get`
+- `openclaw browser storage local set theme dark`
+- `openclaw browser storage session clear`
+- `openclaw browser set offline on`
+- `openclaw browser set headers --json '{"X-Debug":"1"}'`
+- `openclaw browser set credentials user pass`
+- `openclaw browser set credentials --clear`
+- `openclaw browser set geo 37.7749 -122.4194 --origin "https://example.com"`
+- `openclaw browser set geo --clear`
+- `openclaw browser set media dark`
+- `openclaw browser set timezone America/New_York`
+- `openclaw browser set locale en-US`
+- `openclaw browser set device "iPhone 14"`
+
+Примечания:
+- `upload` и `dialog` — **подготовительные** вызовы; запускайте их перед кликом/нажатием,
+  которые вызывают выбор файла/диалог.
+- `upload` также может устанавливать файловые входы напрямую через `--input-ref` или `--element`.
+- `snapshot`:
+  - `--format ai` (по умолчанию, когда установлен Playwright): возвращает AI-снимок с числовыми ссылками (`aria-ref="<n>"`).
+  - `--format aria`: возвращает дерево доступности (без ссылок; только для инспекции).
+  - `--efficient` (или `--mode efficient`): компактный пресет снимка роли (interactive + compact + depth + меньше maxChars).
+  - Конфигурация по умолчанию (только инструмент/CLI): установите `browser.snapshotDefaults.mode: "efficient"` для использования эффективных снимков, когда вызывающий не передаёт режим (см. [Конфигурация Gateway](/gateway/configuration#browser-openclaw-managed-browser)).
+  - Опции снимка роли (`--interactive`, `--compact`, `--depth`, `--selector`) принудительно используют снимок на основе ролей со ссылками типа `ref=e12`.
+  - `--frame "<iframe selector>"` ограничивает снимки роли iframe (работает со ссылками роли типа `e12`).
+  - `--interactive` выводит плоский, легко выбираемый список интерактивных элементов (лучше всего для управления действиями).
+  - `--labels` добавляет скриншот только области просмотра с наложенными метками ссылок (печатает `MEDIA:<path>`).
+- `click`/`type`/и т.д. требуют `ref` из `snapshot` (либо числовой `12`, либо ссылка роли `e12`).
+  CSS-селекторы намеренно не поддерживаются для действий.
+
+## Снимки и ссылки
+
+OpenClaw поддерживает два стиля "снимков":
+
+- **AI-снимок (числовые ссылки)**: `openclaw browser snapshot` (по умолчанию; `--format ai`)
+  - Вывод: текстовый снимок, включающий числовые ссылки.
+  - Действия: `openclaw browser click 12`, `openclaw browser type 23 "hello"`.
+  - Внутренне ссылка разрешается через `aria-ref` Playwright.
+
+- **Снимок роли (ссылки роли типа `e12`)**: `openclaw browser snapshot --interactive` (или `--compact`, `--depth`, `--selector`, `--frame`)
+  - Вывод: список/дерево на основе ролей с `[ref=e12]` (и опциональным `[nth=1]`).
+  - Действия: `openclaw browser click e12`, `openclaw browser highlight e12`.
+  - Внутренне ссылка разрешается через `getByRole(...)` (плюс `nth()` для дубликатов).
+  - Добавьте `--labels` для включения скриншота области просмотра с наложенными метками `e12`.
+
+Поведение ссылок:
+- Ссылки **не стабильны между навигациями**; если что-то не работает, повторно запустите `snapshot` и используйте свежую ссылку.
+- Если снимок роли был сделан с `--frame`, ссылки роли ограничены этим iframe до следующего снимка роли.
+
+## Усиления ожидания
+
+Вы можете ждать не только время/текст:
+
+- Ожидание URL (глобусы поддерживаются Playwright):
+  - `openclaw browser wait --url "**/dash"`
+- Ожидание состояния загрузки:
+  - `openclaw browser wait --load networkidle`
+- Ожидание JS-предиката:
+  - `openclaw browser wait --fn "window.ready===true"`
+- Ожидание видимости селектора:
+  - `openclaw browser wait "#main"`
+
+Их можно комбинировать:
+
+```bash
+openclaw browser wait "#main" \
+  --url "**/dash" \
+  --load networkidle \
+  --fn "window.ready===true" \
+  --timeout-ms 15000
+```
+
+## Рабочие процессы отладки
+
+Когда действие не выполняется (например, "не видно", "нарушение строгого режима", "перекрыто"):
+
+1. `openclaw browser snapshot --interactive`
+2. Используйте `click <ref>` / `type <ref>` (предпочитайте ссылки роли в интерактивном режиме)
+3. Если всё ещё не работает: `openclaw browser highlight <ref>` для просмотра того, на что нацелен Playwright
+4. Если страница ведёт себя странно:
+   - `openclaw browser errors --clear`
+   - `openclaw browser requests --filter api --clear`
+5. Для глубокой отладки: запишите трассировку:
+   - `openclaw browser trace start`
+   - воспроизведите проблему
+   - `openclaw browser trace stop` (печатает `TRACE:<path>`)
+
+## Вывод JSON
+
+`--json` для скриптов и структурированных инструментов.
+
+Примеры:
+
+```bash
+openclaw browser status --json
+openclaw browser snapshot --interactive --json
+openclaw browser requests --filter api --json
+openclaw browser cookies --json
+```
+
+Снимки роли в JSON включают `refs` плюс небольшой блок `stats` (строки/символы/ссылки/интерактивные), чтобы инструменты могли рассуждать о размере пакета и плотности.
+
+## Переключатели состояния и окружения
+
+Они полезны для рабочих процессов "заставить сайт вести себя как X":
+
+- Куки: `cookies`, `cookies set`, `cookies clear`
+- Хранилище: `storage local|session get|set|clear`
+- Оффлайн: `set offline on|off`
+- Заголовки: `set headers --json '{"X-Debug":"1"}'` (или `--clear`)
+- HTTP basic auth: `set credentials user pass` (или `--clear`)
+- Геолокация: `set geo <lat> <lon> --origin "https://example.com"` (или `--clear`)
+- Медиа: `set media dark|light|no-preference|none`
+- Часовой пояс / локаль: `set timezone ...`, `set locale ...`
+- Устройство / область просмотра:
+  - `set device "iPhone 14"` (пресеты устройств Playwright)
+  - `set viewport 1280 720`
+
+## Безопасность и конфиденциальность
+
+- Профиль браузера openclaw может содержать активные сессии; обращайтесь с ним как с конфиденциальным.
+- `browser act kind=evaluate` / `openclaw browser evaluate` и `wait --fn`
+  выполняют произвольный JavaScript в контексте страницы. Внедрение промпта может управлять
+  этим. Отключите это с помощью `browser.evaluateEnabled=false`, если вам это не нужно.
+- Для входа и заметок об анти-ботах (X/Twitter и т.д.) см. [Вход в браузер + постинг в X/Twitter](/tools/browser-login).
+- Держите Gateway/хост узла приватными (loopback или только tailnet).
+- Конечные точки удалённого CDP мощные; туннелируйте и защищайте их.
+
+## Устранение неполадок
+
+Для проблем, специфичных для Linux (особенно snap Chromium), см.
+[Устранение неполадок браузера](/tools/browser-linux-troubleshooting).
+
+## Инструменты агента + как работает управление
+
+Агент получает **один инструмент** для автоматизации браузера:
+- `browser` — status/start/stop/tabs/open/focus/close/snapshot/screenshot/navigate/act
+
+Как это сопоставляется:
+- `browser snapshot` возвращает стабильное дерево UI (AI или ARIA).
+- `browser act` использует ID `ref` снимка для click/type/drag/select.
+- `browser screenshot` захватывает пиксели (полная страница или элемент).
+- `browser` принимает:
+  - `profile` для выбора именованного профиля браузера (openclaw, chrome или удалённый CDP).
+  - `target` (`sandbox` | `host` | `node`) для выбора, где находится браузер.
+  - В изолированных сессиях `target: "host"` требует `agents.defaults.sandbox.browser.allowHostControl=true`.
+  - Если `target` опущен: изолированные сессии по умолчанию используют `sandbox`, не изолированные сессии — `host`.
+  - Если подключён узел с возможностями браузера, инструмент может автоматически маршрутизироваться к нему, если вы не зафиксируете `target="host"` или `target="node"`.
+
+Это держит агента детерминированным и избегает хрупких селекторов.

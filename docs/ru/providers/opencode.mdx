@@ -1,0 +1,34 @@
+---
+summary: "Использование OpenCode Zen (отобранные модели) с OpenClaw"
+read_when:
+  - Вы хотите OpenCode Zen для доступа к моделям
+  - Вам нужен отобранный список моделей, подходящих для программирования
+---
+# OpenCode Zen
+
+OpenCode Zen — это **отобранный список моделей**, рекомендованный командой OpenCode для агентов программирования.
+Это опциональный, размещенный путь доступа к моделям, который использует API ключ и провайдера `opencode`.
+Zen находится в бета-версии.
+
+## Настройка через CLI
+
+```bash
+openclaw onboard --auth-choice opencode-zen
+# или неинтерактивно
+openclaw onboard --opencode-zen-api-key "$OPENCODE_API_KEY"
+```
+
+## Фрагмент конфигурации
+
+```json5
+{
+  env: { OPENCODE_API_KEY: "sk-..." },
+  agents: { defaults: { model: { primary: "opencode/claude-opus-4-5" } } }
+}
+```
+
+## Примечания
+
+- `OPENCODE_ZEN_API_KEY` также поддерживается.
+- Вы входите в Zen, добавляете платежные реквизиты и копируете свой API ключ.
+- OpenCode Zen выставляет счета за запрос; проверьте панель управления OpenCode для получения подробной информации.

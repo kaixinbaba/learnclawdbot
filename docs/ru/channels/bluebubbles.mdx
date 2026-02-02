@@ -1,0 +1,233 @@
+---
+summary: "iMessage через сервер BlueBubbles на macOS (REST отправка/получение, набор текста, реакции, сопряжение, расширенные действия)."
+read_when:
+  - Настройка канала BlueBubbles
+  - Устранение неполадок сопряжения webhook
+  - Настройка iMessage на macOS
+---
+# BlueBubbles (macOS REST)
+
+Статус: встроенный плагин, который взаимодействует с сервером BlueBubbles на macOS через HTTP. **Рекомендуется для интеграции iMessage** благодаря расширенному API и более простой настройке по сравнению с устаревшим каналом imsg.
+
+## Обзор
+- Работает на macOS через приложение BlueBubbles ([bluebubbles.app](https://bluebubbles.app)).
+- Рекомендуется/протестировано: macOS Sequoia (15). macOS Tahoe (26) работает; редактирование в настоящее время не работает на Tahoe, а обновления иконок групп могут сообщать об успехе, но не синхронизируются.
+- OpenClaw взаимодействует с ним через REST API (`GET /api/v1/ping`, `POST /message/text`, `POST /chat/:id/*`).
+- Входящие сообщения прибывают через webhooks; исходящие ответы, индикаторы набора текста, уведомления о прочтении и реакции — это REST-вызовы.
+- Вложения и стикеры принимаются как входящие медиа (и передаются агенту, когда это возможно).
+- Сопряжение/белый список работает так же, как и другие каналы (`/start/pairing` и т.д.) с `channels.bluebubbles.allowFrom` + коды сопряжения.
+- Реакции передаются как системные события так же, как Slack/Telegram, чтобы агенты могли "упомянуть" их перед ответом.
+- Расширенные функции: редактирование, отмена отправки, цепочки ответов, эффекты сообщений, управление группами.
+
+## Быстрый старт
+1. Установите сервер BlueBubbles на ваш Mac (следуйте инструкциям на [bluebubbles.app/install](https://bluebubbles.app/install)).
+2. В конфигурации BlueBubbles включите веб-API и установите пароль.
+3. Запустите `openclaw onboard` и выберите BlueBubbles, или настройте вручную:
+   ```json5
+   {
+     channels: {
+       bluebubbles: {
+         enabled: true,
+         serverUrl: "http://192.168.1.100:1234",
+         password: "example-password",
+         webhookPath: "/bluebubbles-webhook"
+       }
+     }
+   }
+   ```
+4. Направьте webhooks BlueBubbles на ваш gateway (пример: `https://your-gateway-host:3000/bluebubbles-webhook?password=<password>`).
+5. Запустите gateway; он зарегистрирует обработчик webhook и начнет сопряжение.
+
+## Подключение
+BlueBubbles доступен в интерактивном мастере настройки:
+```
+openclaw onboard
+```
+
+Мастер запрашивает:
+- **URL сервера** (обязательно): Адрес сервера BlueBubbles (например, `http://192.168.1.100:1234`)
+- **Пароль** (обязательно): Пароль API из настроек BlueBubbles Server
+- **Путь webhook** (опционально): По умолчанию `/bluebubbles-webhook`
+- **Политика DM**: pairing, allowlist, open или disabled
+- **Белый список**: Номера телефонов, email или chat targets
+
+Вы также можете добавить BlueBubbles через CLI:
+```
+openclaw channels add bluebubbles --http-url http://192.168.1.100:1234 --password <password>
+```
+
+## Контроль доступа (личные сообщения + группы)
+Личные сообщения:
+- По умолчанию: `channels.bluebubbles.dmPolicy = "pairing"`.
+- Неизвестные отправители получают код сопряжения; сообщения игнорируются до утверждения (коды истекают через 1 час).
+- Утвердите через:
+  - `openclaw pairing list bluebubbles`
+  - `openclaw pairing approve bluebubbles <CODE>`
+- Сопряжение — это обмен токенами по умолчанию. Подробности: [Сопряжение](/start/pairing)
+
+Группы:
+- `channels.bluebubbles.groupPolicy = open | allowlist | disabled` (по умолчанию: `allowlist`).
+- `channels.bluebubbles.groupAllowFrom` контролирует, кто может вызывать в группах при установке `allowlist`.
+
+### Контроль упоминаний (группы)
+BlueBubbles поддерживает контроль упоминаний для групповых чатов, соответствуя поведению iMessage/WhatsApp:
+- Использует `agents.list[].groupChat.mentionPatterns` (или `messages.groupChat.mentionPatterns`) для обнаружения упоминаний.
+- Когда `requireMention` включен для группы, агент отвечает только при упоминании.
+- Управляющие команды от авторизованных отправителей обходят контроль упоминаний.
+
+Конфигурация для конкретной группы:
+```json5
+{
+  channels: {
+    bluebubbles: {
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["+15555550123"],
+      groups: {
+        "*": { requireMention: true },  // по умолчанию для всех групп
+        "iMessage;-;chat123": { requireMention: false }  // переопределение для конкретной группы
+      }
+    }
+  }
+}
+```
+
+### Контроль команд
+- Управляющие команды (например, `/config`, `/model`) требуют авторизации.
+- Использует `allowFrom` и `groupAllowFrom` для определения авторизации команд.
+- Авторизованные отправители могут выполнять управляющие команды даже без упоминания в группах.
+
+## Набор текста + уведомления о прочтении
+- **Индикаторы набора текста**: Отправляются автоматически перед и во время генерации ответа.
+- **Уведомления о прочтении**: Контролируются `channels.bluebubbles.sendReadReceipts` (по умолчанию: `true`).
+- **Индикаторы набора текста**: OpenClaw отправляет события начала набора; BlueBubbles автоматически очищает набор при отправке или таймауте (ручная остановка через DELETE ненадежна).
+
+```json5
+{
+  channels: {
+    bluebubbles: {
+      sendReadReceipts: false  // отключить уведомления о прочтении
+    }
+  }
+}
+```
+
+## Расширенные действия
+BlueBubbles поддерживает расширенные действия с сообщениями при включении в конфигурации:
+
+```json5
+{
+  channels: {
+    bluebubbles: {
+      actions: {
+        reactions: true,       // реакции (по умолчанию: true)
+        edit: true,            // редактирование отправленных сообщений (macOS 13+, не работает на macOS 26 Tahoe)
+        unsend: true,          // отмена отправки сообщений (macOS 13+)
+        reply: true,           // цепочки ответов по GUID сообщения
+        sendWithEffect: true,  // эффекты сообщений (slam, loud и т.д.)
+        renameGroup: true,     // переименование групповых чатов
+        setGroupIcon: true,    // установка иконки/фото группового чата (нестабильно на macOS 26 Tahoe)
+        addParticipant: true,  // добавление участников в группы
+        removeParticipant: true, // удаление участников из групп
+        leaveGroup: true,      // выход из групповых чатов
+        sendAttachment: true   // отправка вложений/медиа
+      }
+    }
+  }
+}
+```
+
+Доступные действия:
+- **react**: Добавить/удалить реакцию (`messageId`, `emoji`, `remove`)
+- **edit**: Редактировать отправленное сообщение (`messageId`, `text`)
+- **unsend**: Отменить отправку сообщения (`messageId`)
+- **reply**: Ответить на конкретное сообщение (`messageId`, `text`, `to`)
+- **sendWithEffect**: Отправить с эффектом iMessage (`text`, `to`, `effectId`)
+- **renameGroup**: Переименовать групповой чат (`chatGuid`, `displayName`)
+- **setGroupIcon**: Установить иконку/фото группового чата (`chatGuid`, `media`) — нестабильно на macOS 26 Tahoe (API может вернуть успех, но иконка не синхронизируется).
+- **addParticipant**: Добавить кого-то в группу (`chatGuid`, `address`)
+- **removeParticipant**: Удалить кого-то из группы (`chatGuid`, `address`)
+- **leaveGroup**: Покинуть групповой чат (`chatGuid`)
+- **sendAttachment**: Отправить медиа/файлы (`to`, `buffer`, `filename`, `asVoice`)
+  - Голосовые заметки: установите `asVoice: true` с аудио **MP3** или **CAF** для отправки в виде голосового сообщения iMessage. BlueBubbles конвертирует MP3 → CAF при отправке голосовых заметок.
+
+### ID сообщений (короткие и полные)
+OpenClaw может передавать *короткие* ID сообщений (например, `1`, `2`) для экономии токенов.
+- `MessageSid` / `ReplyToId` могут быть короткими ID.
+- `MessageSidFull` / `ReplyToIdFull` содержат полные ID провайдера.
+- Короткие ID хранятся в памяти; они могут истечь при перезапуске или вытеснении кэша.
+- Действия принимают короткие или полные `messageId`, но короткие ID вызовут ошибку, если больше не доступны.
+
+Используйте полные ID для долговременной автоматизации и хранения:
+- Шаблоны: `\{\{MessageSidFull\}\}`, `\{\{ReplyToIdFull\}\}`
+- Контекст: `MessageSidFull` / `ReplyToIdFull` во входящих payload
+
+См. [Конфигурация](/gateway/configuration) для переменных шаблона.
+
+## Блочная потоковая передача
+Контролируйте, отправляются ли ответы одним сообщением или транслируются блоками:
+```json5
+{
+  channels: {
+    bluebubbles: {
+      blockStreaming: true  // включить блочную потоковую передачу (поведение по умолчанию)
+    }
+  }
+}
+```
+
+## Медиа + лимиты
+- Входящие вложения загружаются и сохраняются в кэше медиа.
+- Ограничение медиа через `channels.bluebubbles.mediaMaxMb` (по умолчанию: 8 МБ).
+- Исходящий текст разбивается на части до `channels.bluebubbles.textChunkLimit` (по умолчанию: 4000 символов).
+
+## Справочник конфигурации
+Полная конфигурация: [Конфигурация](/gateway/configuration)
+
+Параметры провайдера:
+- `channels.bluebubbles.enabled`: Включить/отключить канал.
+- `channels.bluebubbles.serverUrl`: Базовый URL BlueBubbles REST API.
+- `channels.bluebubbles.password`: Пароль API.
+- `channels.bluebubbles.webhookPath`: Путь конечной точки webhook (по умолчанию: `/bluebubbles-webhook`).
+- `channels.bluebubbles.dmPolicy`: `pairing | allowlist | open | disabled` (по умолчанию: `pairing`).
+- `channels.bluebubbles.allowFrom`: Белый список DM (handles, email, номера E.164, `chat_id:*`, `chat_guid:*`).
+- `channels.bluebubbles.groupPolicy`: `open | allowlist | disabled` (по умолчанию: `allowlist`).
+- `channels.bluebubbles.groupAllowFrom`: Белый список отправителей группы.
+- `channels.bluebubbles.groups`: Конфигурация для конкретной группы (`requireMention` и т.д.).
+- `channels.bluebubbles.sendReadReceipts`: Отправлять уведомления о прочтении (по умолчанию: `true`).
+- `channels.bluebubbles.blockStreaming`: Включить блочную потоковую передачу (по умолчанию: `true`).
+- `channels.bluebubbles.textChunkLimit`: Размер исходящего фрагмента в символах (по умолчанию: 4000).
+- `channels.bluebubbles.chunkMode`: `length` (по умолчанию) разбивает только при превышении `textChunkLimit`; `newline` разбивает на пустых строках (границы параграфов) перед разбиением по длине.
+- `channels.bluebubbles.mediaMaxMb`: Ограничение входящих медиа в МБ (по умолчанию: 8).
+- `channels.bluebubbles.historyLimit`: Макс сообщений группы для контекста (0 отключает).
+- `channels.bluebubbles.dmHistoryLimit`: Лимит истории DM.
+- `channels.bluebubbles.actions`: Включить/отключить конкретные действия.
+- `channels.bluebubbles.accounts`: Конфигурация нескольких аккаунтов.
+
+Связанные глобальные параметры:
+- `agents.list[].groupChat.mentionPatterns` (или `messages.groupChat.mentionPatterns`).
+- `messages.responsePrefix`.
+
+## Адресация / цели доставки
+Предпочитайте `chat_guid` для стабильной маршрутизации:
+- `chat_guid:iMessage;-;+15555550123` (предпочтительно для групп)
+- `chat_id:123`
+- `chat_identifier:...`
+- Прямые handles: `+15555550123`, `user@example.com`
+  - Если для прямого handle нет существующего DM-чата, OpenClaw создаст его через `POST /api/v1/chat/new`. Это требует включения BlueBubbles Private API.
+
+## Безопасность
+- Webhook-запросы аутентифицируются путем сравнения параметров `guid`/`password` запроса или заголовков с `channels.bluebubbles.password`. Запросы с `localhost` также принимаются.
+- Держите пароль API и конечную точку webhook в секрете (обращайтесь с ними как с учетными данными).
+- Доверие localhost означает, что обратный прокси на том же хосте может непреднамеренно обойти пароль. Если вы проксируете gateway, требуйте аутентификацию на прокси и настройте `gateway.trustedProxies`. См. [Безопасность Gateway](/gateway/security#reverse-proxy-configuration).
+- Включите HTTPS + правила брандмауэра на сервере BlueBubbles, если выставляете его за пределы вашей локальной сети.
+
+## Устранение неполадок
+- Если события набора текста/прочтения перестают работать, проверьте логи webhook BlueBubbles и убедитесь, что путь gateway соответствует `channels.bluebubbles.webhookPath`.
+- Коды сопряжения истекают через один час; используйте `openclaw pairing list bluebubbles` и `openclaw pairing approve bluebubbles <code>`.
+- Реакции требуют BlueBubbles private API (`POST /api/v1/message/react`); убедитесь, что версия сервера его предоставляет.
+- Редактирование/отмена отправки требуют macOS 13+ и совместимой версии сервера BlueBubbles. На macOS 26 (Tahoe) редактирование в настоящее время не работает из-за изменений в private API.
+- Обновления иконок групп могут быть нестабильными на macOS 26 (Tahoe): API может вернуть успех, но новая иконка не синхронизируется.
+- OpenClaw автоматически скрывает известные неработающие действия на основе версии macOS сервера BlueBubbles. Если редактирование все еще появляется на macOS 26 (Tahoe), отключите его вручную с помощью `channels.bluebubbles.actions.edit=false`.
+- Для информации о статусе/здоровье: `openclaw status --all` или `openclaw status --deep`.
+
+Для общего справочника по рабочему процессу канала см. [Каналы](/channels) и руководство [Плагины](/plugins).

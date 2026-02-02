@@ -1,0 +1,104 @@
+---
+summary: "Приложение iOS-ноды: подключение к Gateway, сопряжение, canvas и устранение неполадок"
+read_when:
+  - Сопряжение или переподключение iOS-ноды
+  - Запуск iOS-приложения из исходников
+  - Отладка обнаружения gateway или команд canvas
+---
+# Приложение iOS (Нода)
+
+Доступность: внутренний предпросмотр. Приложение iOS еще не распространяется публично.
+
+## Что оно делает
+
+- Подключается к Gateway через WebSocket (LAN или tailnet).
+- Предоставляет возможности ноды: Canvas, снимок экрана, захват камеры, местоположение, режим разговора, голосовое пробуждение.
+- Получает команды `node.invoke` и сообщает о событиях состояния ноды.
+
+## Требования
+
+- Gateway, работающий на другом устройстве (macOS, Linux или Windows через WSL2).
+- Сетевой путь:
+  - Та же LAN через Bonjour, **или**
+  - Tailnet через unicast DNS-SD (пример домена: `openclaw.internal.`), **или**
+  - Ручной хост/порт (запасной вариант).
+
+## Быстрый старт (сопряжение + подключение)
+
+1) Запустите Gateway:
+
+```bash
+openclaw gateway --port 18789
+```
+
+2) В iOS-приложении откройте Settings и выберите обнаруженный gateway (или включите Manual Host и введите хост/порт).
+
+3) Одобрите запрос на сопряжение на хосте gateway:
+
+```bash
+openclaw nodes pending
+openclaw nodes approve <requestId>
+```
+
+4) Проверьте соединение:
+
+```bash
+openclaw nodes status
+openclaw gateway call node.list --params "{}"
+```
+
+## Пути обнаружения
+
+### Bonjour (LAN)
+
+Gateway рекламирует `_openclaw-gw._tcp` на `local.`. iOS-приложение автоматически их перечисляет.
+
+### Tailnet (между сетями)
+
+Если mDNS заблокирован, используйте зону unicast DNS-SD (выберите домен; пример: `openclaw.internal.`) и split DNS Tailscale.
+См. [Bonjour](/gateway/bonjour) для примера CoreDNS.
+
+### Ручной хост/порт
+
+В Settings включите **Manual Host** и введите хост gateway + порт (по умолчанию `18789`).
+
+## Canvas + A2UI
+
+iOS-нода рендерит WKWebView canvas. Используйте `node.invoke` для управления:
+
+```bash
+openclaw nodes invoke --node "iOS Node" --command canvas.navigate --params '{"url":"http://<gateway-host>:18793/__openclaw__/canvas/"}'
+```
+
+Примечания:
+- Canvas host Gateway обслуживает `/__openclaw__/canvas/` и `/__openclaw__/a2ui/`.
+- iOS-нода автоматически переходит к A2UI при подключении, когда рекламируется URL canvas host.
+- Вернитесь к встроенному каркасу с помощью `canvas.navigate` и `{"url":""}`.
+
+### Canvas eval / snapshot
+
+```bash
+openclaw nodes invoke --node "iOS Node" --command canvas.eval --params '{"javaScript":"(() => { const {ctx} = window.__openclaw; ctx.clearRect(0,0,innerWidth,innerHeight); ctx.lineWidth=6; ctx.strokeStyle=\"#ff2d55\"; ctx.beginPath(); ctx.moveTo(40,40); ctx.lineTo(innerWidth-40, innerHeight-40); ctx.stroke(); return \"ok\"; })()"}'
+```
+
+```bash
+openclaw nodes invoke --node "iOS Node" --command canvas.snapshot --params '{"maxWidth":900,"format":"jpeg"}'
+```
+
+## Голосовое пробуждение + режим разговора
+
+- Голосовое пробуждение и режим разговора доступны в Settings.
+- iOS может приостанавливать фоновое аудио; рассматривайте голосовые функции как максимально возможные, когда приложение не активно.
+
+## Распространенные ошибки
+
+- `NODE_BACKGROUND_UNAVAILABLE`: переведите iOS-приложение на передний план (команды canvas/camera/screen требуют этого).
+- `A2UI_HOST_NOT_CONFIGURED`: Gateway не рекламировал URL canvas host; проверьте `canvasHost` в [конфигурации Gateway](/gateway/configuration).
+- Запрос на сопряжение никогда не появляется: запустите `openclaw nodes pending` и одобрите вручную.
+- Переподключение не работает после переустановки: токен сопряжения Keychain был очищен; повторно сопряжите ноду.
+
+## Связанная документация
+
+- [Сопряжение](/gateway/pairing)
+- [Обнаружение](/gateway/discovery)
+- [Bonjour](/gateway/bonjour)

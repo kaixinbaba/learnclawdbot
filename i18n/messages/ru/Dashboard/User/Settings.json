@@ -1,0 +1,31 @@
+{
+  "title": "Настройки",
+  "description": "Управляйте настройками вашей учётной записи и информацией профиля.",
+  "form": {
+    "emailLabel": "Email",
+    "fullNameLabel": "Полное имя",
+    "fullNamePlaceholder": "Введите ваше полное имя",
+    "avatarLabel": "Аватар",
+    "avatarHint": "Максимальный размер файла: {maxSizeInMB} МБ. Разрешённые типы: {allowedTypes}.",
+    "updateButton": "Обновить настройки",
+    "updatingButton": "Обновление..."
+  },
+  "toast": {
+    "fullNameLengthError": "Полное имя должно быть менее {maxLength} символов",
+    "fullNameInvalidCharactersError": "Полное имя содержит недопустимые символы",
+    "errorInvalidFileType": "Неверный тип файла для аватара. Разрешены только {allowedTypes}.",
+    "errorInvalidFileTypeDescription": "Пожалуйста, загрузите файл размером менее {maxSizeInMB} МБ.",
+    "errorFileSizeExceeded": "Размер аватара превышает лимит в {maxSizeInMB} МБ.",
+    "errorFileSizeExceededDescription": "Пожалуйста, загрузите файл размером менее {maxSizeInMB} МБ.",
+    "errorInvalidFullName": "Указано недопустимое полное имя.",
+    "errorFullNameRequired": "Полное имя обязательно.",
+    "updateSuccessTitle": "Профиль обновлён",
+    "updateSuccessDescription": "Ваш профиль успешно обновлён.",
+    "updateErrorTitle": "Обновление не удалось",
+    "updateErrorDescription": "Не удалось обновить настройки. Пожалуйста, попробуйте позже.",
+    "errorDeleteOldAvatar": "Не удалось удалить старый аватар.",
+    "errorUploadAvatar": "Не удалось загрузить аватар.",
+    "errorUpdateAuthUser": "Не удалось обновить пользователя авторизации.",
+    "errorUpdateUserProfile": "Не удалось обновить профиль пользователя."
+  }
+}

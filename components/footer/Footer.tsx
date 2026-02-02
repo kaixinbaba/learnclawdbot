@@ -33,7 +33,7 @@ export default async function Footer() {
                 <div className="items-center space-x-2 flex">
                   <div className="text-gray-50 text-xl font-medium flex items-center gap-2">
                     <Image
-                      src="/logo.png"
+                      src="/logo.webp"
                       alt={t("title")}
                       width={32}
                       height={32}

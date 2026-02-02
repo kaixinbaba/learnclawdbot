@@ -11,14 +11,14 @@ const PlausibleAnalytics = () => {
       {PLAUSIBLE_DOMAIN ? (
         <>
           <Script
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             data-domain={PLAUSIBLE_DOMAIN}
             src={PLAUSIBLE_SRC}
             defer
           />
           <Script
             id="plausible-init"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             dangerouslySetInnerHTML={{
               __html: `
                 window.plausible = window.plausible || function() { 

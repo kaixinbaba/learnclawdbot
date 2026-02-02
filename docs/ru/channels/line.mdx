@@ -1,0 +1,183 @@
+---
+summary: "Настройка, конфигурация и использование плагина LINE Messaging API"
+read_when:
+  - Вы хотите подключить OpenClaw к LINE
+  - Вам нужна настройка webhook LINE + учетных данных
+  - Вы хотите специфичные для LINE опции сообщений
+---
+
+# LINE (плагин)
+
+LINE подключается к OpenClaw через LINE Messaging API. Плагин работает как приемник webhook
+на шлюзе и использует ваш токен доступа канала + секрет канала для
+аутентификации.
+
+Статус: поддерживается через плагин. Личные сообщения, групповые чаты, медиа, местоположения, Flex
+сообщения, шаблонные сообщения и быстрые ответы поддерживаются. Реакции и треды
+не поддерживаются.
+
+## Требуется плагин
+
+Установите плагин LINE:
+
+```bash
+openclaw plugins install @openclaw/line
+```
+
+Локальная версия (при запуске из git-репозитория):
+
+```bash
+openclaw plugins install ./extensions/line
+```
+
+## Настройка
+
+1) Создайте учетную запись LINE Developers и откройте консоль:
+   https://developers.line.biz/console/
+2) Создайте (или выберите) провайдера и добавьте канал **Messaging API**.
+3) Скопируйте **токен доступа канала** и **секрет канала** из настроек канала.
+4) Включите **Использовать webhook** в настройках Messaging API.
+5) Установите URL webhook на конечную точку вашего шлюза (требуется HTTPS):
+
+```
+https://gateway-host/line/webhook
+```
+
+Шлюз отвечает на проверку webhook LINE (GET) и входящие события (POST).
+Если вам нужен пользовательский путь, установите `channels.line.webhookPath` или
+`channels.line.accounts.<id>.webhookPath` и обновите URL соответственно.
+
+## Настройка
+
+Минимальная конфигурация:
+
+```json5
+{
+  channels: {
+    line: {
+      enabled: true,
+      channelAccessToken: "LINE_CHANNEL_ACCESS_TOKEN",
+      channelSecret: "LINE_CHANNEL_SECRET",
+      dmPolicy: "pairing"
+    }
+  }
+}
+```
+
+Переменные окружения (только для учетной записи по умолчанию):
+
+- `LINE_CHANNEL_ACCESS_TOKEN`
+- `LINE_CHANNEL_SECRET`
+
+Файлы токена/секрета:
+
+```json5
+{
+  channels: {
+    line: {
+      tokenFile: "/path/to/line-token.txt",
+      secretFile: "/path/to/line-secret.txt"
+    }
+  }
+}
+```
+
+Несколько учетных записей:
+
+```json5
+{
+  channels: {
+    line: {
+      accounts: {
+        marketing: {
+          channelAccessToken: "...",
+          channelSecret: "...",
+          webhookPath: "/line/marketing"
+        }
+      }
+    }
+  }
+}
+```
+
+## Контроль доступа
+
+Личные сообщения по умолчанию используют сопряжение. Неизвестные отправители получают код сопряжения, и их
+сообщения игнорируются до утверждения.
+
+```bash
+openclaw pairing list line
+openclaw pairing approve line <CODE>
+```
+
+Списки разрешений и политики:
+
+- `channels.line.dmPolicy`: `pairing | allowlist | open | disabled`
+- `channels.line.allowFrom`: список разрешенных ID пользователей LINE для личных сообщений
+- `channels.line.groupPolicy`: `allowlist | open | disabled`
+- `channels.line.groupAllowFrom`: список разрешенных ID пользователей LINE для групп
+- Переопределение для каждой группы: `channels.line.groups.<groupId>.allowFrom`
+
+LINE ID чувствительны к регистру. Допустимые ID выглядят так:
+
+- Пользователь: `U` + 32 шестнадцатеричных символа
+- Группа: `C` + 32 шестнадцатеричных символа
+- Комната: `R` + 32 шестнадцатеричных символа
+
+## Поведение сообщений
+
+- Текст разбивается на части по 5000 символов.
+- Форматирование Markdown удаляется; блоки кода и таблицы преобразуются в Flex
+  карты, когда это возможно.
+- Потоковые ответы буферизуются; LINE получает полные фрагменты с анимацией загрузки
+  пока агент работает.
+- Загрузки медиа ограничены `channels.line.mediaMaxMb` (по умолчанию 10).
+
+## Данные канала (богатые сообщения)
+
+Используйте `channelData.line` для отправки быстрых ответов, местоположений, Flex карт или шаблонных
+сообщений.
+
+```json5
+{
+  text: "Вот вам",
+  channelData: {
+    line: {
+      quickReplies: ["Статус", "Помощь"],
+      location: {
+        title: "Офис",
+        address: "123 Main St",
+        latitude: 35.681236,
+        longitude: 139.767125
+      },
+      flexMessage: {
+        altText: "Карта статуса",
+        contents: { /* Полезная нагрузка Flex */ }
+      },
+      templateMessage: {
+        type: "confirm",
+        text: "Продолжить?",
+        confirmLabel: "Да",
+        confirmData: "yes",
+        cancelLabel: "Нет",
+        cancelData: "no"
+      }
+    }
+  }
+}
+```
+
+Плагин LINE также поставляется с командой `/card` для пресетов Flex-сообщений:
+
+```
+/card info "Добро пожаловать" "Спасибо за присоединение!"
+```
+
+## Устранение неполадок
+
+- **Проверка webhook не удалась:** убедитесь, что URL webhook использует HTTPS и
+  `channelSecret` соответствует консоли LINE.
+- **Нет входящих событий:** подтвердите, что путь webhook соответствует `channels.line.webhookPath`
+  и что шлюз доступен из LINE.
+- **Ошибки загрузки медиа:** увеличьте `channels.line.mediaMaxMb`, если медиа превышает
+  лимит по умолчанию.

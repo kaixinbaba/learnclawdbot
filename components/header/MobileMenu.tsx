@@ -48,10 +48,11 @@ export default function MobileMenu() {
           >
             <Image
               alt={t("title")}
-              src="/logo.png"
+              src="/logo.webp"
               className="w-6 h-6"
               width={32}
               height={32}
+              priority
             />
             <span>{t("title")}</span>
           </I18nLink>

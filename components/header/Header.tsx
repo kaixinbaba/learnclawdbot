@@ -19,7 +19,7 @@ const Header = async () => {
             prefetch={true}
             className="flex items-center space-x-1"
           >
-            <Image src="/logo.png" alt="Logo" width={28} height={28} />
+            <Image src="/logo.webp" alt="Logo" width={28} height={28} priority />
             <span
               className={cn(
                 "text-xl font-semibold text-primary font-science-gothic"

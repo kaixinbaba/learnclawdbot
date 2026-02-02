@@ -1,0 +1,202 @@
+---
+summary: "Модели CLI: list, set, aliases, fallbacks, scan, status"
+read_when:
+  - Добавление или изменение моделей CLI (models list/set/scan/aliases/fallbacks)
+  - Изменение поведения резервных моделей или UX выбора
+  - Обновление проверок сканирования моделей (tools/images)
+---
+# Модели CLI
+
+См. [/concepts/model-failover](/concepts/model-failover) для ротации профилей авторизации,
+периодов ожидания и как это взаимодействует с резервными вариантами.
+Быстрый обзор провайдеров + примеры: [/concepts/model-providers](/concepts/model-providers).
+
+## Как работает выбор модели
+
+OpenClaw выбирает модели в этом порядке:
+
+1) **Основная** модель (`agents.defaults.model.primary` или `agents.defaults.model`).
+2) **Резервные варианты** в `agents.defaults.model.fallbacks` (по порядку).
+3) **Переключение авторизации провайдера** происходит внутри провайдера перед переходом к
+   следующей модели.
+
+Связанное:
+- `agents.defaults.models` — это список разрешений/каталог моделей, которые может использовать OpenClaw (плюс псевдонимы).
+- `agents.defaults.imageModel` используется **только когда** основная модель не может принимать изображения.
+- Значения по умолчанию для каждого агента могут переопределять `agents.defaults.model` через `agents.list[].model` плюс привязки (см. [/concepts/multi-agent](/concepts/multi-agent)).
+
+## Быстрый выбор модели (анекдотично)
+
+- **GLM**: немного лучше для кодирования/вызова инструментов.
+- **MiniMax**: лучше для письма и атмосферы.
+
+## Мастер настройки (рекомендуется)
+
+Если вы не хотите вручную редактировать конфигурацию, запустите мастер онбординга:
+
+```bash
+openclaw onboard
+```
+
+Он может настроить модель + авторизацию для популярных провайдеров, включая **подписку OpenAI Code (Codex)**
+(OAuth) и **Anthropic** (рекомендуется API-ключ; также поддерживается `claude
+setup-token`).
+
+## Ключи конфигурации (обзор)
+
+- `agents.defaults.model.primary` и `agents.defaults.model.fallbacks`
+- `agents.defaults.imageModel.primary` и `agents.defaults.imageModel.fallbacks`
+- `agents.defaults.models` (список разрешений + псевдонимы + параметры провайдера)
+- `models.providers` (пользовательские провайдеры, записанные в `models.json`)
+
+Ссылки на модели нормализуются к нижнему регистру. Псевдонимы провайдера, такие как `z.ai/*`, нормализуются
+к `zai/*`.
+
+Примеры конфигурации провайдера (включая OpenCode Zen) находятся в
+[/gateway/configuration](/gateway/configuration#opencode-zen-multi-model-proxy).
+
+## "Модель не разрешена" (и почему ответы останавливаются)
+
+Если установлен `agents.defaults.models`, он становится **списком разрешений** для `/model` и для
+переопределений сессии. Когда пользователь выбирает модель, которой нет в этом списке разрешений,
+OpenClaw возвращает:
+
+```
+Model "provider/model" is not allowed. Use /model to list available models.
+```
+
+Это происходит **до** того, как генерируется обычный ответ, поэтому сообщение может выглядеть
+как будто оно "не ответило". Исправление заключается в том, чтобы либо:
+
+- Добавить модель в `agents.defaults.models`, или
+- Очистить список разрешений (удалить `agents.defaults.models`), или
+- Выбрать модель из `/model list`.
+
+Пример конфигурации списка разрешений:
+
+```json5
+\{
+  agent: \{
+    model: \{ primary: "anthropic/claude-sonnet-4-5" \},
+    models: \{
+      "anthropic/claude-sonnet-4-5": \{ alias: "Sonnet" \},
+      "anthropic/claude-opus-4-5": \{ alias: "Opus" \}
+    \}
+  \}
+\}
+```
+
+## Переключение моделей в чате (`/model`)
+
+Вы можете переключать модели для текущей сессии без перезапуска:
+
+```
+/model
+/model list
+/model 3
+/model openai/gpt-5.2
+/model status
+```
+
+Примечания:
+- `/model` (и `/model list`) — это компактный нумерованный выбор (семейство моделей + доступные провайдеры).
+- `/model <#>` выбирает из этого выбора.
+- `/model status` — это подробный вид (кандидаты авторизации и, при настройке, конечная точка провайдера `baseUrl` + режим `api`).
+- Ссылки на модели парсятся разделением по **первому** `/`. Используйте `provider/model` при вводе `/model <ref>`.
+- Если ID модели сам содержит `/` (стиль OpenRouter), вы должны включить префикс провайдера (пример: `/model openrouter/moonshotai/kimi-k2`).
+- Если вы опустите провайдер, OpenClaw рассматривает ввод как псевдоним или модель для **провайдера по умолчанию** (работает только когда нет `/` в ID модели).
+
+Полное поведение команды/конфигурация: [Slash-команды](/tools/slash-commands).
+
+## CLI-команды
+
+```bash
+openclaw models list
+openclaw models status
+openclaw models set <provider/model>
+openclaw models set-image <provider/model>
+
+openclaw models aliases list
+openclaw models aliases add <alias> <provider/model>
+openclaw models aliases remove <alias>
+
+openclaw models fallbacks list
+openclaw models fallbacks add <provider/model>
+openclaw models fallbacks remove <provider/model>
+openclaw models fallbacks clear
+
+openclaw models image-fallbacks list
+openclaw models image-fallbacks add <provider/model>
+openclaw models image-fallbacks remove <provider/model>
+openclaw models image-fallbacks clear
+```
+
+`openclaw models` (без подкоманды) — это сокращение для `models status`.
+
+### `models list`
+
+Показывает настроенные модели по умолчанию. Полезные флаги:
+
+- `--all`: полный каталог
+- `--local`: только локальные провайдеры
+- `--provider <name>`: фильтр по провайдеру
+- `--plain`: одна модель на строку
+- `--json`: машиночитаемый вывод
+
+### `models status`
+
+Показывает разрешенную основную модель, резервные варианты, модель изображений и обзор авторизации
+настроенных провайдеров. Также показывает статус истечения OAuth для профилей, найденных
+в хранилище авторизации (предупреждает в течение 24ч по умолчанию). `--plain` выводит только
+разрешенную основную модель.
+Статус OAuth всегда показывается (и включен в вывод `--json`). Если настроенный
+провайдер не имеет учетных данных, `models status` выводит раздел **Missing auth**.
+JSON включает `auth.oauth` (окно предупреждения + профили) и `auth.providers`
+(эффективная авторизация для каждого провайдера).
+Используйте `--check` для автоматизации (выход `1` при отсутствии/истечении, `2` при истечении).
+
+Предпочтительная авторизация Anthropic — это setup-token CLI Claude Code (запустите где угодно; вставьте на хосте шлюза при необходимости):
+
+```bash
+claude setup-token
+openclaw models status
+```
+
+## Сканирование (бесплатные модели OpenRouter)
+
+`openclaw models scan` проверяет **каталог бесплатных моделей OpenRouter** и может
+опционально проверять модели на поддержку инструментов и изображений.
+
+Основные флаги:
+
+- `--no-probe`: пропустить живые проверки (только метаданные)
+- `--min-params <b>`: минимальный размер параметров (миллиарды)
+- `--max-age-days <days>`: пропустить старые модели
+- `--provider <name>`: фильтр префикса провайдера
+- `--max-candidates <n>`: размер списка резервных вариантов
+- `--set-default`: установить `agents.defaults.model.primary` на первый выбор
+- `--set-image`: установить `agents.defaults.imageModel.primary` на первый выбор изображения
+
+Проверка требует API-ключ OpenRouter (из профилей авторизации или
+`OPENROUTER_API_KEY`). Без ключа используйте `--no-probe` для перечисления только кандидатов.
+
+Результаты сканирования ранжируются по:
+1) Поддержка изображений
+2) Задержка инструментов
+3) Размер контекста
+4) Количество параметров
+
+Вход:
+- Список `/models` OpenRouter (фильтр `:free`)
+- Требуется API-ключ OpenRouter из профилей авторизации или `OPENROUTER_API_KEY` (см. [/environment](/environment))
+- Опциональные фильтры: `--max-age-days`, `--min-params`, `--provider`, `--max-candidates`
+- Контроли проверки: `--timeout`, `--concurrency`
+
+При запуске в TTY вы можете выбрать резервные варианты интерактивно. В неинтерактивном
+режиме передайте `--yes` для принятия значений по умолчанию.
+
+## Реестр моделей (`models.json`)
+
+Пользовательские провайдеры в `models.providers` записываются в `models.json` в
+каталоге агента (по умолчанию `~/.openclaw/agents/<agentId>/models.json`). Этот файл
+объединяется по умолчанию, если `models.mode` не установлен на `replace`.

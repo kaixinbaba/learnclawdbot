@@ -1,5 +1,5 @@
 import { siteConfig } from '@/config/site'
-import { DEFAULT_LOCALE, LOCALE_NAMES, LOCALE_TO_HREFLANG, Locale } from '@/i18n/routing'
+import { DEFAULT_LOCALE, LOCALE_NAMES, LOCALE_TO_HREFLANG, Locale, UI_LOCALES } from '@/i18n/routing'
 import { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
@@ -37,10 +37,10 @@ export async function constructMetadata({
     ? `${pageTitle} - ${pageTagLine}`
     : `${pageTitle} | ${siteConfig.name}`
 
-  canonicalUrl = canonicalUrl || path
+  canonicalUrl = canonicalUrl || path || '/'
 
-  // Use availableLocales if provided, otherwise use all locales
-  const locales = availableLocales || Object.keys(LOCALE_NAMES)
+  // Use availableLocales if provided, otherwise use UI_LOCALES (excludes docs-only locales like ko)
+  const locales = availableLocales || UI_LOCALES
 
   const alternateLanguages = locales.reduce((acc, lang) => {
     const localePath = canonicalUrl
@@ -84,7 +84,7 @@ export async function constructMetadata({
     creator: siteConfig.creator,
     metadataBase: new URL(siteConfig.url),
     alternates: {
-      canonical: canonicalUrl ? `${siteConfig.url}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}${canonicalUrl === '/' ? '' : canonicalUrl}` : undefined,
+      canonical: `${siteConfig.url}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}${canonicalUrl === '/' ? '' : canonicalUrl}`,
       languages: alternateLanguages,
     },
     // Create an OG image using https://myogimage.com/
