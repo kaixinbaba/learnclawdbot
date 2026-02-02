@@ -1,8 +1,8 @@
 {
-  "title": "Страница не найдена",
-  "description": "К сожалению, страница, которую вы ищете, не существует или была перемещена.",
-  "backToHome": "Вернуться на главную",
-  "goBack": "Вернуться назад",
-  "helpText": "Если вы считаете, что это ошибка, пожалуйста, сообщите нам.",
-  "contactUs": "Свяжитесь с нами"
+  "title": "Page Not Found",
+  "description": "Sorry, the page you are looking for doesn't exist or has been moved.",
+  "backToHome": "Back to Home",
+  "goBack": "Go Back",
+  "helpText": "If you think this is a mistake, please let us know.",
+  "contactUs": "Contact us"
 }

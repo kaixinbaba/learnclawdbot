@@ -1,0 +1,366 @@
+---
+summary: "Конфигурация и настройка бота для чата Twitch"
+read_when:
+  - Setting up Twitch chat integration for OpenClaw
+---
+# Twitch (плагин)
+
+Поддержка чата Twitch через IRC-соединение. OpenClaw подключается как пользователь Twitch (аккаунт бота) для приёма и отправки сообщений в каналах.
+
+## Требуется плагин
+
+Twitch поставляется как плагин и не входит в базовую установку.
+
+Установка через CLI (реестр npm):
+
+```bash
+openclaw plugins install @openclaw/twitch
+```
+
+Локальная установка (при работе из git-репозитория):
+
+```bash
+openclaw plugins install ./extensions/twitch
+```
+
+Подробности: [Plugins](/plugin)
+
+## Быстрая настройка (для начинающих)
+
+1) Создайте отдельный аккаунт Twitch для бота (или используйте существующий).
+2) Сгенерируйте учётные данные: [Twitch Token Generator](https://twitchtokengenerator.com/)
+   - Выберите **Bot Token**
+   - Убедитесь, что выбраны права доступа `chat:read` и `chat:write`
+   - Скопируйте **Client ID** и **Access Token**
+3) Найдите свой Twitch user ID: https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/
+4) Настройте токен:
+   - Переменная окружения: `OPENCLAW_TWITCH_ACCESS_TOKEN=...` (только для аккаунта по умолчанию)
+   - Или в конфигурации: `channels.twitch.accessToken`
+   - Если заданы оба варианта, приоритет имеет конфигурация (переменная окружения используется только для аккаунта по умолчанию).
+5) Запустите шлюз.
+
+**⚠️ Важно:** Добавьте контроль доступа (`allowFrom` или `allowedRoles`), чтобы предотвратить несанкционированное использование бота. `requireMention` по умолчанию установлен в `true`.
+
+Минимальная конфигурация:
+
+```json5
+{
+  channels: {
+    twitch: {
+      enabled: true,
+      username: "openclaw",              // Аккаунт бота на Twitch
+      accessToken: "oauth:abc123...",    // OAuth Access Token (или используйте переменную окружения OPENCLAW_TWITCH_ACCESS_TOKEN)
+      clientId: "xyz789...",             // Client ID из Token Generator
+      channel: "vevisk",                 // К какому каналу Twitch присоединиться (обязательно)
+      allowFrom: ["123456789"]           // (рекомендуется) Только ваш Twitch user ID - получите его здесь: https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/
+    }
+  }
+}
+```
+
+## Что это такое
+
+- Канал Twitch, принадлежащий шлюзу.
+- Детерминированная маршрутизация: ответы всегда возвращаются в Twitch.
+- Каждый аккаунт сопоставляется с изолированным ключом сессии `agent:<agentId>:twitch:<accountName>`.
+- `username` — это аккаунт бота (кто аутентифицируется), `channel` — в какой чат присоединиться.
+
+## Подробная настройка
+
+### Генерация учётных данных
+
+Используйте [Twitch Token Generator](https://twitchtokengenerator.com/):
+- Выберите **Bot Token**
+- Убедитесь, что выбраны права доступа `chat:read` и `chat:write`
+- Скопируйте **Client ID** и **Access Token**
+
+Регистрация приложения вручную не требуется. Токены истекают через несколько часов.
+
+### Настройка бота
+
+**Переменная окружения (только для аккаунта по умолчанию):**
+```bash
+OPENCLAW_TWITCH_ACCESS_TOKEN=oauth:abc123...
+```
+
+**Или в конфигурации:**
+```json5
+{
+  channels: {
+    twitch: {
+      enabled: true,
+      username: "openclaw",
+      accessToken: "oauth:abc123...",
+      clientId: "xyz789...",
+      channel: "vevisk"
+    }
+  }
+}
+```
+
+Если заданы и переменная окружения, и конфигурация, приоритет имеет конфигурация.
+
+### Контроль доступа (рекомендуется)
+
+```json5
+{
+  channels: {
+    twitch: {
+      allowFrom: ["123456789"],       // (рекомендуется) Только ваш Twitch user ID
+      allowedRoles: ["moderator"]     // Или ограничение по ролям
+    }
+  }
+}
+```
+
+**Доступные роли:** `"moderator"`, `"owner"`, `"vip"`, `"subscriber"`, `"all"`.
+
+**Почему user ID?** Имена пользователей можно изменить, что позволяет выдавать себя за другого. User ID постоянные.
+
+Найдите свой Twitch user ID: https://www.streamweasels.com/tools/convert-twitch-username-%20to-user-id/ (Конвертируйте ваше имя пользователя Twitch в ID)
+
+## Обновление токена (опционально)
+
+Токены от [Twitch Token Generator](https://twitchtokengenerator.com/) не могут обновляться автоматически — сгенерируйте новый при истечении.
+
+Для автоматического обновления токена создайте собственное приложение Twitch в [Twitch Developer Console](https://dev.twitch.tv/console) и добавьте в конфигурацию:
+
+```json5
+{
+  channels: {
+    twitch: {
+      clientSecret: "your_client_secret",
+      refreshToken: "your_refresh_token"
+    }
+  }
+}
+```
+
+Бот автоматически обновляет токены перед истечением и логирует события обновления.
+
+## Поддержка нескольких аккаунтов
+
+Используйте `channels.twitch.accounts` с токенами для каждого аккаунта. См. [`gateway/configuration`](/gateway/configuration) для общего шаблона.
+
+Пример (один аккаунт бота в двух каналах):
+
+```json5
+{
+  channels: {
+    twitch: {
+      accounts: {
+        channel1: {
+          username: "openclaw",
+          accessToken: "oauth:abc123...",
+          clientId: "xyz789...",
+          channel: "vevisk"
+        },
+        channel2: {
+          username: "openclaw",
+          accessToken: "oauth:def456...",
+          clientId: "uvw012...",
+          channel: "secondchannel"
+        }
+      }
+    }
+  }
+}
+```
+
+**Примечание:** Каждому аккаунту нужен собственный токен (один токен на канал).
+
+## Контроль доступа
+
+### Ограничения по ролям
+
+```json5
+{
+  channels: {
+    twitch: {
+      accounts: {
+        default: {
+          allowedRoles: ["moderator", "vip"]
+        }
+      }
+    }
+  }
+}
+```
+
+### Белый список по User ID (наиболее безопасно)
+
+```json5
+{
+  channels: {
+    twitch: {
+      accounts: {
+        default: {
+          allowFrom: ["123456789", "987654321"]
+        }
+      }
+    }
+  }
+}
+```
+
+### Комбинация белого списка + роли
+
+Пользователи из `allowFrom` обходят проверку ролей:
+
+```json5
+{
+  channels: {
+    twitch: {
+      accounts: {
+        default: {
+          allowFrom: ["123456789"],
+          allowedRoles: ["moderator"]
+        }
+      }
+    }
+  }
+}
+```
+
+### Отключение требования @упоминания
+
+По умолчанию `requireMention` установлен в `true`. Чтобы отключить и отвечать на все сообщения:
+
+```json5
+{
+  channels: {
+    twitch: {
+      accounts: {
+        default: {
+          requireMention: false
+        }
+      }
+    }
+  }
+}
+```
+
+## Устранение неполадок
+
+Сначала выполните диагностические команды:
+
+```bash
+openclaw doctor
+openclaw channels status --probe
+```
+
+### Бот не отвечает на сообщения
+
+**Проверьте контроль доступа:** Временно установите `allowedRoles: ["all"]` для тестирования.
+
+**Проверьте, что бот присоединился к каналу:** Бот должен присоединиться к каналу, указанному в `channel`.
+
+### Проблемы с токеном
+
+**"Failed to connect" или ошибки аутентификации:**
+- Убедитесь, что `accessToken` — это значение OAuth access token (обычно начинается с префикса `oauth:`)
+- Проверьте, что токен имеет права доступа `chat:read` и `chat:write`
+- Если используется обновление токена, убедитесь, что заданы `clientSecret` и `refreshToken`
+
+### Обновление токена не работает
+
+**Проверьте логи для событий обновления:**
+```
+Using env token source for mybot
+Access token refreshed for user 123456 (expires in 14400s)
+```
+
+Если видите "token refresh disabled (no refresh token)":
+- Убедитесь, что указан `clientSecret`
+- Убедитесь, что указан `refreshToken`
+
+## Конфигурация
+
+**Конфигурация аккаунта:**
+- `username` - Имя пользователя бота
+- `accessToken` - OAuth access token с правами `chat:read` и `chat:write`
+- `clientId` - Twitch Client ID (из Token Generator или вашего приложения)
+- `channel` - Канал для присоединения (обязательно)
+- `enabled` - Включить этот аккаунт (по умолчанию: `true`)
+- `clientSecret` - Опционально: Для автоматического обновления токена
+- `refreshToken` - Опционально: Для автоматического обновления токена
+- `expiresIn` - Срок действия токена в секундах
+- `obtainmentTimestamp` - Временная метка получения токена
+- `allowFrom` - Белый список user ID
+- `allowedRoles` - Контроль доступа по ролям (`"moderator" | "owner" | "vip" | "subscriber" | "all"`)
+- `requireMention` - Требовать @упоминание (по умолчанию: `true`)
+
+**Опции провайдера:**
+- `channels.twitch.enabled` - Включить/выключить запуск канала
+- `channels.twitch.username` - Имя пользователя бота (упрощённая конфигурация для одного аккаунта)
+- `channels.twitch.accessToken` - OAuth access token (упрощённая конфигурация для одного аккаунта)
+- `channels.twitch.clientId` - Twitch Client ID (упрощённая конфигурация для одного аккаунта)
+- `channels.twitch.channel` - Канал для присоединения (упрощённая конфигурация для одного аккаунта)
+- `channels.twitch.accounts.<accountName>` - Конфигурация для нескольких аккаунтов (все поля аккаунта выше)
+
+Полный пример:
+
+```json5
+{
+  channels: {
+    twitch: {
+      enabled: true,
+      username: "openclaw",
+      accessToken: "oauth:abc123...",
+      clientId: "xyz789...",
+      channel: "vevisk",
+      clientSecret: "secret123...",
+      refreshToken: "refresh456...",
+      allowFrom: ["123456789"],
+      allowedRoles: ["moderator", "vip"],
+      accounts: {
+        default: {
+          username: "mybot",
+          accessToken: "oauth:abc123...",
+          clientId: "xyz789...",
+          channel: "your_channel",
+          enabled: true,
+          clientSecret: "secret123...",
+          refreshToken: "refresh456...",
+          expiresIn: 14400,
+          obtainmentTimestamp: 1706092800000,
+          allowFrom: ["123456789", "987654321"],
+          allowedRoles: ["moderator"]
+        }
+      }
+    }
+  }
+}
+```
+
+## Действия инструментов
+
+Агент может вызывать `twitch` с действием:
+- `send` - Отправить сообщение в канал
+
+Пример:
+
+```json5
+{
+  "action": "twitch",
+  "params": {
+    "message": "Hello Twitch!",
+    "to": "#mychannel"
+  }
+}
+```
+
+## Безопасность и операции
+
+- **Обращайтесь с токенами как с паролями** - Никогда не коммитьте токены в git
+- **Используйте автоматическое обновление токенов** для долгоработающих ботов
+- **Используйте белые списки user ID** вместо имён пользователей для контроля доступа
+- **Мониторьте логи** для событий обновления токенов и статуса подключения
+- **Минимизируйте права доступа токенов** - Запрашивайте только `chat:read` и `chat:write`
+- **Если застряли**: Перезапустите шлюз после подтверждения, что никакой другой процесс не владеет сессией
+
+## Ограничения
+
+- **500 символов** на сообщение (автоматическое разбиение по границам слов)
+- Markdown удаляется перед разбиением
+- Нет ограничения скорости (используются встроенные ограничения Twitch)

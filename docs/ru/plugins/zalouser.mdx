@@ -1,0 +1,75 @@
+---
+summary: "Плагин Zalo Personal: QR-вход + обмен сообщениями через zca-cli (установка плагина + конфигурация канала + CLI + инструмент)"
+read_when:
+  - Вы хотите поддержку Zalo Personal (неофициальная) в OpenClaw
+  - Вы настраиваете или разрабатываете плагин zalouser
+---
+
+# Zalo Personal (плагин)
+
+Поддержка Zalo Personal для OpenClaw через плагин, использующий `zca-cli` для автоматизации обычного пользовательского аккаунта Zalo.
+
+> **Предупреждение:** Неофициальная автоматизация может привести к приостановке/блокировке аккаунта. Используйте на свой страх и риск.
+
+## Именование
+ID канала - `zalouser`, чтобы явно указать, что это автоматизирует **личный пользовательский аккаунт Zalo** (неофициальный). Мы сохраняем `zalo` зарезервированным для возможной будущей официальной интеграции Zalo API.
+
+## Где он работает
+Этот плагин работает **внутри процесса Gateway**.
+
+Если вы используете удаленный Gateway, установите/настройте его на **машине, запускающей Gateway**, затем перезапустите Gateway.
+
+## Установка
+
+### Вариант A: установка из npm
+
+```bash
+openclaw plugins install @openclaw/zalouser
+```
+
+Перезапустите Gateway после этого.
+
+### Вариант B: установка из локальной папки (разработка)
+
+```bash
+openclaw plugins install ./extensions/zalouser
+cd ./extensions/zalouser && pnpm install
+```
+
+Перезапустите Gateway после этого.
+
+## Предварительное требование: zca-cli
+На машине Gateway должен быть `zca` в `PATH`:
+
+```bash
+zca --version
+```
+
+## Конфигурация
+Конфигурация канала находится в `channels.zalouser` (не `plugins.entries.*`):
+
+```json5
+{
+  channels: {
+    zalouser: {
+      enabled: true,
+      dmPolicy: "pairing"
+    }
+  }
+}
+```
+
+## CLI
+
+```bash
+openclaw channels login --channel zalouser
+openclaw channels logout --channel zalouser
+openclaw channels status --probe
+openclaw message send --channel zalouser --target <threadId> --message "Привет от OpenClaw"
+openclaw directory peers list --channel zalouser --query "name"
+```
+
+## Инструмент агента
+Имя инструмента: `zalouser`
+
+Действия: `send`, `image`, `link`, `friends`, `groups`, `me`, `status`

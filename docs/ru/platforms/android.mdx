@@ -1,0 +1,141 @@
+---
+summary: "Приложение Android (node): руководство по подключению + Canvas/Chat/Camera"
+read_when:
+  - Сопряжение или переподключение Android-узла
+  - Отладка обнаружения или авторизации Android gateway
+  - Проверка паритета истории чата между клиентами
+---
+
+# Приложение Android (Node)
+
+## Снимок поддержки
+- Роль: сопутствующее приложение узла (Android не размещает Gateway).
+- Требуется Gateway: да (запустите его на macOS, Linux или Windows через WSL2).
+- Установка: [Начало работы](/start/getting-started) + [Сопряжение](/gateway/pairing).
+- Gateway: [Руководство](/gateway) + [Конфигурация](/gateway/configuration).
+  - Протоколы: [Протокол Gateway](/gateway/protocol) (узлы + плоскость управления).
+
+## Управление системой
+Управление системой (launchd/systemd) находится на хосте Gateway. См. [Gateway](/gateway).
+
+## Руководство по подключению
+
+Приложение Android-узла ⇄ (mDNS/NSD + WebSocket) ⇄ **Gateway**
+
+Android подключается напрямую к WebSocket Gateway (по умолчанию `ws://<host>:18789`) и использует сопряжение, принадлежащее Gateway.
+
+### Предварительные требования
+
+- Вы можете запустить Gateway на "главной" машине.
+- Устройство/эмулятор Android может достичь WebSocket gateway:
+  - Та же LAN с mDNS/NSD, **или**
+  - Та же сеть Tailscale, использующая Wide-Area Bonjour / unicast DNS-SD (см. ниже), **или**
+  - Ручной хост/порт gateway (запасной вариант)
+- Вы можете запустить CLI (`openclaw`) на машине gateway (или через SSH).
+
+### 1) Запустите Gateway
+
+```bash
+openclaw gateway --port 18789 --verbose
+```
+
+Подтвердите в логах, что вы видите что-то вроде:
+- `listening on ws://0.0.0.0:18789`
+
+Для настроек только с tailnet (рекомендуется для Вена ⇄ Лондон), привяжите gateway к IP tailnet:
+
+- Установите `gateway.bind: "tailnet"` в `~/.openclaw/openclaw.json` на хосте gateway.
+- Перезапустите Gateway / приложение панели меню macOS.
+
+### 2) Проверьте обнаружение (необязательно)
+
+С машины gateway:
+
+```bash
+dns-sd -B _openclaw-gw._tcp local.
+```
+
+Больше примечаний по отладке: [Bonjour](/gateway/bonjour).
+
+#### Обнаружение Tailnet (Вена ⇄ Лондон) через unicast DNS-SD
+
+Обнаружение Android NSD/mDNS не пересекает сети. Если ваш Android-узел и gateway находятся в разных сетях, но подключены через Tailscale, используйте вместо этого Wide-Area Bonjour / unicast DNS-SD:
+
+1) Настройте зону DNS-SD (пример `openclaw.internal.`) на хосте gateway и опубликуйте записи `_openclaw-gw._tcp`.
+2) Настройте разделённый DNS Tailscale для вашего выбранного домена, указывающего на этот DNS-сервер.
+
+Подробности и пример конфигурации CoreDNS: [Bonjour](/gateway/bonjour).
+
+### 3) Подключитесь с Android
+
+В приложении Android:
+
+- Приложение поддерживает подключение gateway через **передний сервис** (постоянное уведомление).
+- Откройте **Настройки**.
+- В разделе **Discovered Gateways** выберите ваш gateway и нажмите **Connect**.
+- Если mDNS заблокирован, используйте **Advanced → Manual Gateway** (хост + порт) и **Connect (Manual)**.
+
+После первого успешного сопряжения Android автоматически переподключается при запуске:
+- Ручная конечная точка (если включена), в противном случае
+- Последний обнаруженный gateway (максимальное усилие).
+
+### 4) Одобрите сопряжение (CLI)
+
+На машине gateway:
+
+```bash
+openclaw nodes pending
+openclaw nodes approve <requestId>
+```
+
+Подробности сопряжения: [Сопряжение Gateway](/gateway/pairing).
+
+### 5) Проверьте, что узел подключён
+
+- Через статус узлов:
+  ```bash
+  openclaw nodes status
+  ```
+- Через Gateway:
+  ```bash
+  openclaw gateway call node.list --params "{}"
+  ```
+
+### 6) Чат + история
+
+Лист Chat Android-узла использует **первичный ключ сессии** gateway (`main`), поэтому история и ответы общие с WebChat и другими клиентами:
+
+- История: `chat.history`
+- Отправка: `chat.send`
+- Push-обновления (максимальное усилие): `chat.subscribe` → `event:"chat"`
+
+### 7) Canvas + камера
+
+#### Gateway Canvas Host (рекомендуется для веб-контента)
+
+Если вы хотите, чтобы узел показывал реальный HTML/CSS/JS, который агент может редактировать на диске, направьте узел на хост canvas Gateway.
+
+Примечание: узлы используют автономный хост canvas на `canvasHost.port` (по умолчанию `18793`).
+
+1) Создайте `~/.openclaw/workspace/canvas/index.html` на хосте gateway.
+
+2) Направьте узел на него (LAN):
+
+```bash
+openclaw nodes invoke --node "<Android Node>" --command canvas.navigate --params '{"url":"http://<gateway-hostname>.local:18793/__openclaw__/canvas/"}'
+```
+
+Tailnet (необязательно): если оба устройства находятся в Tailscale, используйте вместо этого имя MagicDNS или IP tailnet, например, `http://<gateway-magicdns>:18793/__openclaw__/canvas/`.
+
+Этот сервер внедряет клиент live-reload в HTML и перезагружается при изменениях файлов.
+Хост A2UI находится по адресу `http://<gateway-host>:18793/__openclaw__/a2ui/`.
+
+Команды Canvas (только передний план):
+- `canvas.eval`, `canvas.snapshot`, `canvas.navigate` (используйте `\{"url":""\}` или `\{"url":"/"\}` для возврата к каркасу по умолчанию). `canvas.snapshot` возвращает `\{ format, base64 \}` (по умолчанию `format="jpeg"`).
+- A2UI: `canvas.a2ui.push`, `canvas.a2ui.reset` (`canvas.a2ui.pushJSONL` устаревший псевдоним)
+
+Команды камеры (только передний план; закрыты разрешением):
+- `camera.snap` (jpg)
+- `camera.clip` (mp4)
+
+См. [Узел камеры](/nodes/camera) для параметров и помощников CLI.

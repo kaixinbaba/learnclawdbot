@@ -1,0 +1,215 @@
+---
+summary: "Протокол WebSocket Gateway: handshake, кадры, версионирование"
+read_when:
+  - Implementing or updating gateway WS clients
+  - Debugging protocol mismatches or connect failures
+  - Regenerating protocol schema/models
+---
+
+# Протокол Gateway (WebSocket)
+
+Протокол WS Gateway является **единой плоскостью управления + транспортом узлов** для
+OpenClaw. Все клиенты (CLI, веб-UI, приложение macOS, узлы iOS/Android, headless
+узлы) подключаются через WebSocket и объявляют свою **роль** + **область** во время
+handshake.
+
+## Транспорт
+
+- WebSocket, текстовые кадры с JSON payload.
+- Первый кадр **должен** быть запросом `connect`.
+
+## Handshake (connect)
+
+Gateway → Client (вызов pre-connect):
+
+```json
+{
+  "type": "event",
+  "event": "connect.challenge",
+  "payload": { "nonce": "…", "ts": 1737264000000 }
+}
+```
+
+Client → Gateway:
+
+```json
+{
+  "type": "req",
+  "id": "…",
+  "method": "connect",
+  "params": {
+    "minProtocol": 3,
+    "maxProtocol": 3,
+    "client": {
+      "id": "cli",
+      "version": "1.2.3",
+      "platform": "macos",
+      "mode": "operator"
+    },
+    "role": "operator",
+    "scopes": ["operator.read", "operator.write"],
+    "caps": [],
+    "commands": [],
+    "permissions": {},
+    "auth": { "token": "…" },
+    "locale": "en-US",
+    "userAgent": "openclaw-cli/1.2.3",
+    "device": {
+      "id": "device_fingerprint",
+      "publicKey": "…",
+      "signature": "…",
+      "signedAt": 1737264000000,
+      "nonce": "…"
+    }
+  }
+}
+```
+
+Gateway → Client:
+
+```json
+{
+  "type": "res",
+  "id": "…",
+  "ok": true,
+  "payload": { "type": "hello-ok", "protocol": 3, "policy": { "tickIntervalMs": 15000 } }
+}
+```
+
+Когда выдается токен устройства, `hello-ok` также включает:
+
+```json
+{
+  "auth": {
+    "deviceToken": "…",
+    "role": "operator",
+    "scopes": ["operator.read", "operator.write"]
+  }
+}
+```
+
+### Пример узла
+
+```json
+{
+  "type": "req",
+  "id": "…",
+  "method": "connect",
+  "params": {
+    "minProtocol": 3,
+    "maxProtocol": 3,
+    "client": {
+      "id": "ios-node",
+      "version": "1.2.3",
+      "platform": "ios",
+      "mode": "node"
+    },
+    "role": "node",
+    "scopes": [],
+    "caps": ["camera", "canvas", "screen", "location", "voice"],
+    "commands": ["camera.snap", "canvas.navigate", "screen.record", "location.get"],
+    "permissions": { "camera.capture": true, "screen.record": false },
+    "auth": { "token": "…" },
+    "locale": "en-US",
+    "userAgent": "openclaw-ios/1.2.3",
+    "device": {
+      "id": "device_fingerprint",
+      "publicKey": "…",
+      "signature": "…",
+      "signedAt": 1737264000000,
+      "nonce": "…"
+    }
+  }
+}
+```
+
+## Кадрирование
+
+- **Запрос**: `\{type:"req", id, method, params\}`  
+- **Ответ**: `\{type:"res", id, ok, payload|error\}`  
+- **Событие**: `\{type:"event", event, payload, seq?, stateVersion?\}`
+
+Методы с побочными эффектами требуют **ключей идемпотентности** (см. схему).
+
+## Роли + области
+
+### Роли
+- `operator` = клиент плоскости управления (CLI/UI/автоматизация).
+- `node` = хост возможностей (камера/экран/canvas/system.run).
+
+### Области (operator)
+Общие области:
+- `operator.read`
+- `operator.write`
+- `operator.admin`
+- `operator.approvals`
+- `operator.pairing`
+
+### Caps/commands/permissions (node)
+Узлы объявляют заявки на возможности во время connect:
+- `caps`: категории возможностей высокого уровня.
+- `commands`: список разрешений команд для invoke.
+- `permissions`: детальные переключатели (например `screen.record`, `camera.capture`).
+
+Gateway обрабатывает их как **заявки** и применяет серверные списки разрешений.
+
+## Присутствие
+
+- `system-presence` возвращает записи, ключом которых является идентичность устройства.
+- Записи присутствия включают `deviceId`, `roles` и `scopes`, чтобы UI могли показывать одну строку на устройство
+  даже когда оно подключается как **operator** и **node**.
+
+### Вспомогательные методы узла
+
+- Узлы могут вызывать `skills.bins` для получения текущего списка исполняемых файлов навыков
+  для проверок auto-allow.
+
+## Одобрения exec
+
+- Когда запрос exec нуждается в одобрении, gateway транслирует `exec.approval.requested`.
+- Клиенты Operator разрешают, вызывая `exec.approval.resolve` (требует область `operator.approvals`).
+
+## Версионирование
+
+- `PROTOCOL_VERSION` находится в `src/gateway/protocol/schema.ts`.
+- Клиенты отправляют `minProtocol` + `maxProtocol`; сервер отклоняет несоответствия.
+- Схемы + модели генерируются из определений TypeBox:
+  - `pnpm protocol:gen`
+  - `pnpm protocol:gen:swift`
+  - `pnpm protocol:check`
+
+## Аутентификация
+
+- Если установлен `OPENCLAW_GATEWAY_TOKEN` (или `--token`), `connect.params.auth.token`
+  должен совпадать или сокет закрывается.
+- После сопряжения Gateway выдает **токен устройства**, ограниченный областью подключения
+  роль + области. Он возвращается в `hello-ok.auth.deviceToken` и должен быть
+  сохранен клиентом для будущих подключений.
+- Токены устройств могут быть ротированы/отозваны через `device.token.rotate` и
+  `device.token.revoke` (требует область `operator.pairing`).
+
+## Идентичность устройства + сопряжение
+
+- Узлы должны включать стабильную идентичность устройства (`device.id`), выведенную из
+  отпечатка ключевой пары.
+- Gateways выдают токены для каждого устройства + роли.
+- Одобрения сопряжения требуются для новых ID устройств, если локальное автоодобрение
+  не включено.
+- **Локальные** подключения включают loopback и собственный адрес tailnet хоста gateway
+  (чтобы tailnet привязки того же хоста все еще могли автоодобряться).
+- Все WS клиенты должны включать идентичность `device` во время `connect` (operator + node).
+  Control UI может опустить ее **только** когда включено `gateway.controlUi.allowInsecureAuth`
+  (или `gateway.controlUi.dangerouslyDisableDeviceAuth` для экстренного использования).
+- Неlocal соединения должны подписать предоставленный сервером `connect.challenge` nonce.
+
+## TLS + закрепление
+
+- TLS поддерживается для WS соединений.
+- Клиенты могут опционально закрепить отпечаток сертификата gateway (см. `gateway.tls`
+  конфигурацию плюс `gateway.remote.tlsFingerprint` или CLI `--tls-fingerprint`).
+
+## Область
+
+Этот протокол предоставляет **полный API gateway** (статус, каналы, модели, чат,
+агент, сессии, узлы, одобрения и т.д.). Точная поверхность определяется
+схемами TypeBox в `src/gateway/protocol/schema.ts`.

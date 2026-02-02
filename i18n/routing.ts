@@ -1,7 +1,7 @@
 import { createNavigation } from 'next-intl/navigation';
 import { defineRouting } from 'next-intl/routing';
 
-export const LOCALES = ['en', 'zh', 'ja', 'ko']
+export const LOCALES = ['en', 'zh', 'ja', 'ko', 'ru']
 // Locales shown in the language switcher UI (excludes docs-only locales like ko)
 export const UI_LOCALES = ['en', 'zh', 'ja']
 export const DEFAULT_LOCALE = 'en'
@@ -10,12 +10,14 @@ export const LOCALE_NAMES: Record<string, string> = {
   'zh': "中文",
   'ja': "日本語",
   'ko': "한국어",
+  'ru': "Русский",
 };
 export const LOCALE_TO_HREFLANG: Record<string, string> = {
   'en': 'en-US',
   'zh': 'zh-CN',
   'ja': 'ja-JP',
   'ko': 'ko-KR',
+  'ru': 'ru-RU',
 };
 
 export const routing = defineRouting({

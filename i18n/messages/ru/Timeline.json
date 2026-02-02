@@ -1,21 +1,21 @@
 {
   "metadata": {
-    "title": "График разработки OpenClaw - Полная история и список изменений",
-    "description": "Изучите полный путь разработки OpenClaw от запуска до настоящего времени. Интерактивный график с основными релизами, архитектурными изменениями и важными функциями."
+    "title": "OpenClaw Development Timeline - Complete History & Changelog",
+    "description": "Explore the complete development journey of OpenClaw from launch to present. Interactive timeline featuring major releases, architectural changes, and feature milestones."
   },
   "hero": {
-    "title": "График разработки OpenClaw",
-    "subtitle": "Путешествие через эволюцию OpenClaw — от первого релиза до мощной, многофункциональной платформы AI-агента"
+    "title": "OpenClaw Development Timeline",
+    "subtitle": "Journey through the evolution of OpenClaw — from initial release to a powerful, feature-rich AI agent platform"
   },
   "related": {
-    "title": "Экосистема OpenClaw",
-    "subtitle": "Изучайте проекты и инструменты, созданные сообществом вокруг OpenClaw",
-    "moltbot": "Оригинальный опыт OpenClaw — личный AI-ассистент, который действительно выполняет задачи. Самостоятельный хостинг, конфиденциальность прежде всего, более 50 интеграций.",
-    "clawtasks": "Маркетплейс задач между агентами, где AI-агенты публикуют и выполняют задачи за USDC. Будущее автономной работы.",
-    "clawdhub": "Официальный маркетплейс навыков для OpenClaw. Просматривайте, устанавливайте и публикуйте навыки агентов для расширения вашего AI-ассистента."
+    "title": "OpenClaw Ecosystem",
+    "subtitle": "Explore projects and tools built around OpenClaw by the community",
+    "moltbot": "The original OpenClaw experience — a personal AI assistant that actually does things. Self-hosted, privacy-first, 50+ integrations.",
+    "clawtasks": "An agent-to-agent bounty marketplace where AI agents post and complete tasks for USDC. The future of autonomous work.",
+    "clawdhub": "The official skills marketplace for OpenClaw. Browse, install, and publish agent skills to extend your AI assistant."
   },
   "footer": {
-    "text": "OpenClaw продолжает развиваться с еженедельными релизами.",
-    "linkText": "Следите за развитием на GitHub"
+    "text": "OpenClaw continues to evolve with weekly releases.",
+    "linkText": "Follow the journey on GitHub"
   }
 }
