@@ -1,6 +1,6 @@
 import { listPublishedPostsAction } from '@/actions/posts/posts'
 import { siteConfig } from '@/config/site'
-import { DEFAULT_LOCALE, LOCALES } from '@/i18n/routing'
+import { DEFAULT_LOCALE, UI_LOCALES } from '@/i18n/routing'
 import { blogCms } from '@/lib/cms'
 import { MetadataRoute } from 'next'
 
@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/terms-of-service',
   ]
 
-  const pages = LOCALES.flatMap(locale => {
+  const pages = UI_LOCALES.flatMap(locale => {
     return staticPages.map(page => ({
       url: `${siteUrl}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}${page}`,
       lastModified: new Date(),
@@ -43,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const allBlogSitemapEntries: MetadataRoute.Sitemap = [];
 
-  for (const locale of LOCALES) {
+  for (const locale of UI_LOCALES) {
     const { posts: localPosts } = await blogCms.getLocalList(locale);
     localPosts
       .filter((post) => post.slug && post.status !== "draft")
@@ -60,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
   }
 
-  for (const locale of LOCALES) {
+  for (const locale of UI_LOCALES) {
     const serverResult = await listPublishedPostsAction({
       locale: locale,
       pageSize: 1000,
@@ -90,7 +90,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const allGlossarySitemapEntries: MetadataRoute.Sitemap = [];
 
   // Add glossary list page
-  for (const locale of LOCALES) {
+  for (const locale of UI_LOCALES) {
     allGlossarySitemapEntries.push({
       url: `${siteUrl}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/glossary`,
       lastModified: new Date(),
@@ -100,7 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Add glossary entries
-  for (const locale of LOCALES) {
+  for (const locale of UI_LOCALES) {
     const serverResult = await listPublishedPostsAction({
       locale: locale,
       pageSize: 1000,

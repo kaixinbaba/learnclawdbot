@@ -33,7 +33,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DEFAULT_LOCALE, LOCALES, useRouter } from "@/i18n/routing";
+import { DEFAULT_LOCALE, UI_LOCALES as LOCALES, useRouter } from "@/i18n/routing";
 import { pricingPlans as pricingPlansSchema } from "@/lib/db/schema";
 import { extractJsonFromText, isValidJsonString } from "@/lib/safeJson";
 import { formatCurrency } from "@/lib/utils";

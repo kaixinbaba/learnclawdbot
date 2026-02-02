@@ -1,0 +1,157 @@
+{
+  "Hero": {
+    "badge": {
+      "label": "",
+      "text": "OpenClaw란?",
+      "href": "/what-is-openclaw"
+    },
+    "title": "OpenClaw 배우기",
+    "description": "Learn OpenClaw는 OpenClaw를 이해하고 효과적으로 사용하기 위한 초보자 친화적인 서드파티 가이드입니다. 이 강력한 AI 에이전트 도구(구 Clawbot / Moltbot)를 시작하기 위한 쉬운 튜토리얼, 팁, 리소스를 제공합니다.",
+    "getStarted": "학습 시작",
+    "getStartedLink": "/blog/guide",
+    "viewDocs": "블로그 읽기",
+    "viewDocsLink": "/blog",
+    "timeline": "개발 타임라인"
+  },
+  "Features": {
+    "badge": {
+      "label": "공식",
+      "text": "OpenClaw 공식 리소스"
+    },
+    "title": "OpenClaw 공식 리소스",
+    "description": "이 공식 리소스를 활용하여 OpenClaw를 시작하세요. 문서부터 스킬 마켓플레이스까지, 필요한 모든 것이 여기에 있습니다.",
+    "items": [
+      {
+        "title": "공식 사이트",
+        "description": "OpenClaw 공식 웹사이트를 방문하여 이 강력한 AI 에이전트 도구에 대해 자세히 알아보세요.",
+        "details": [
+          {
+            "title": "OpenClaw 공식 사이트",
+            "description": "최신 뉴스와 업데이트가 포함된 OpenClaw 공식 홈페이지.",
+            "href": "https://openclaw.ai/"
+          }
+        ],
+        "images": []
+      },
+      {
+        "title": "공식 문서",
+        "description": "포괄적인 공식 문서로 OpenClaw를 시작하고 마스터하세요.",
+        "details": [
+          {
+            "title": "시작 가이드",
+            "description": "OpenClaw 설정 및 사용 시작을 돕는 공식 가이드.",
+            "href": "https://docs.openclaw.ai/"
+          }
+        ],
+        "images": []
+      },
+      {
+        "title": "GitHub 리포지토리",
+        "description": "소스 코드를 탐색하고, 기여하고, 최신 개발 현황을 추적하세요.",
+        "details": [
+          {
+            "title": "GitHub의 OpenClaw",
+            "description": "OpenClaw 공식 GitHub 리포지토리.",
+            "href": "https://github.com/openclaw/openclaw"
+          }
+        ],
+        "images": []
+      },
+      {
+        "title": "ClawdHub - 스킬 마켓",
+        "description": "OpenClaw의 기능을 확장하는 스킬을 발견하고 설치하세요.",
+        "details": [
+          {
+            "title": "스킬 탐색",
+            "description": "OpenClaw용 AgentSkills 번들을 찾아 설치.",
+            "href": "https://clawdhub.com/"
+          }
+        ],
+        "images": []
+      }
+    ]
+  },
+  "UseCases": {
+    "badge": {
+      "label": "사용 사례",
+      "text": "OpenClaw로 할 수 있는 것"
+    },
+    "title": "강력한 AI 에이전트 기능",
+    "description": "OpenClaw는 다양한 작업을 지원하는 다기능 AI 에이전트 도구입니다. 일반적인 사용 사례를 소개합니다.",
+    "cases": [
+      {
+        "title": "코드 개발",
+        "description": "AI의 도움으로 코드를 작성, 검토, 리팩토링. OpenClaw는 코드베이스를 이해하고 더 빠르고 나은 개발을 돕습니다.",
+        "image": "/placeholder.webp",
+        "icon": "Code"
+      },
+      {
+        "title": "작업 자동화",
+        "description": "반복적인 작업과 워크플로우를 자동화. OpenClaw는 명령을 실행하고 파일을 관리하며 개발 환경과 통합할 수 있습니다.",
+        "image": "/placeholder.webp",
+        "icon": "Bot"
+      },
+      {
+        "title": "리서치 및 분석",
+        "description": "주제를 조사하고 데이터를 분석하며 웹에서 정보를 수집. OpenClaw는 빠르고 효율적으로 답을 찾는 것을 도와줍니다.",
+        "image": "/placeholder.webp",
+        "icon": "Search"
+      },
+      {
+        "title": "문서화",
+        "description": "프로젝트 문서를 생성하고 유지. OpenClaw는 README, API 문서, 기술 사양을 작성할 수 있습니다.",
+        "image": "/placeholder.webp",
+        "icon": "FileText"
+      }
+    ]
+  },
+  "Testimonials": {
+    "badge": {
+      "label": "커뮤니티"
+    },
+    "title": "OpenClaw 커뮤니티에 참여하세요",
+    "description": "다른 OpenClaw 사용자와 연결하고 경험을 공유하세요"
+  },
+  "FAQ": {
+    "title": "자주 묻는 질문",
+    "description": "OpenClaw와 이 AI 에이전트 도구를 최대한 활용하는 방법에 대한 자주 묻는 질문",
+    "items": [
+      {
+        "question": "OpenClaw란 무엇인가요?",
+        "answer": "OpenClaw는 개발자와 사용자가 자연어 대화를 통해 다양한 작업을 수행할 수 있도록 설계된 강력한 AI 에이전트 도구입니다. 코드 작성, 워크플로우 자동화, 주제 조사 등이 가능합니다."
+      },
+      {
+        "question": "OpenClaw는 무료인가요?",
+        "answer": "최신 가격 및 라이선스 정보는 OpenClaw 공식 웹사이트를 참조해 주세요. 자세한 내용은 https://openclaw.ai/ 를 확인하세요."
+      },
+      {
+        "question": "OpenClaw를 설치하려면?",
+        "answer": "공식 문서 https://docs.openclaw.ai/ 에서 상세한 설치 안내를 확인할 수 있습니다. 다양한 플랫폼에서의 설치 방법이 안내되어 있습니다."
+      },
+      {
+        "question": "OpenClaw 스킬이란?",
+        "answer": "스킬은 OpenClaw에 새로운 기능을 추가하는 확장 기능입니다. https://clawdhub.com/ 에서 스킬을 탐색하고 설치하여 OpenClaw의 기능을 확장할 수 있습니다."
+      },
+      {
+        "question": "Learn OpenClaw는 공식 리소스인가요?",
+        "answer": "아닙니다. Learn OpenClaw는 서드파티 커뮤니티 주도 리소스입니다. 공식 문서와 지원은 OpenClaw 공식 웹사이트 https://openclaw.ai/ 를 참조해 주세요."
+      },
+      {
+        "question": "OpenClaw에 기여하려면?",
+        "answer": "GitHub 리포지토리 https://github.com/openclaw/openclaw 를 통해 OpenClaw에 기여할 수 있습니다. 기여 가이드라인을 확인해 주세요."
+      }
+    ]
+  },
+  "CTA": {
+    "title": "오늘부터 OpenClaw를 배워보세요",
+    "description": "튜토리얼과 가이드를 탐색하여 OpenClaw를 마스터하고, AI 기반 어시스턴스로 생산성을 높이세요.",
+    "button": "시작하기",
+    "trustText": "무료 커뮤니티 리소스",
+    "features": {
+      "deploy": "초보자 친화적",
+      "production": "단계별 가이드",
+      "updates": "커뮤니티 주도",
+      "i18n": "다국어 지원"
+    }
+  }
+}

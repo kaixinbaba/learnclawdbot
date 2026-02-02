@@ -10,6 +10,7 @@ import {
 import {
     Locale,
     LOCALE_NAMES,
+    UI_LOCALES,
     routing,
     usePathname,
     useRouter,
@@ -48,7 +49,7 @@ export default function LocaleSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuRadioGroup value={locale} onValueChange={onSelectChange}>
-          {routing.locales.map((cur) => (
+          {UI_LOCALES.map((cur) => (
             <DropdownMenuRadioItem key={cur} value={cur}>
               {LOCALE_NAMES[cur]}
             </DropdownMenuRadioItem>

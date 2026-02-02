@@ -8,7 +8,7 @@ import { ViewCounter } from "@/components/cms/ViewCounter";
 import { TableOfContents } from "@/components/tiptap/TableOfContents";
 import { TiptapRenderer } from "@/components/tiptap/TiptapRenderer";
 import { Button } from "@/components/ui/button";
-import { Link as I18nLink, Locale, LOCALES } from "@/i18n/routing";
+import { Link as I18nLink, Locale, UI_LOCALES as LOCALES } from "@/i18n/routing";
 import { glossaryCms } from "@/lib/cms";
 import { constructMetadata } from "@/lib/metadata";
 import { PostBase } from "@/types/cms";
