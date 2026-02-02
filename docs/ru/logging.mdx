@@ -1,0 +1,343 @@
+---
+summary: "Обзор логирования: файловые логи, консольный вывод, CLI-хвост и Control UI"
+read_when:
+  - Вам нужен дружелюбный для начинающих обзор логирования
+  - Вы хотите настроить уровни логирования или форматы
+  - Вы устраняете неполадки и нужно быстро найти логи
+---
+
+# Логирование
+
+OpenClaw логирует в двух местах:
+
+- **Файловые логи** (строки JSON), записываемые Gateway.
+- **Консольный вывод**, показываемый в терминалах и Control UI.
+
+Эта страница объясняет, где находятся логи, как их читать и как настраивать уровни
+логирования и форматы.
+
+## Где находятся логи
+
+По умолчанию Gateway записывает ротируемый файл лога в:
+
+`/tmp/openclaw/openclaw-YYYY-MM-DD.log`
+
+Дата использует локальный часовой пояс хоста gateway.
+
+Вы можете переопределить это в `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "logging": {
+    "file": "/path/to/openclaw.log"
+  }
+}
+```
+
+## Как читать логи
+
+### CLI: живой хвост (рекомендуется)
+
+Используйте CLI для хвоста файла лога gateway через RPC:
+
+```bash
+openclaw logs --follow
+```
+
+Режимы вывода:
+
+- **TTY-сессии**: красивые, раскрашенные, структурированные строки лога.
+- **Не-TTY сессии**: обычный текст.
+- `--json`: строки JSON с разделителями (одно событие лога на строку).
+- `--plain`: принудительный обычный текст в TTY-сессиях.
+- `--no-color`: отключить ANSI-цвета.
+
+В режиме JSON CLI испускает объекты с тегами `type`:
+
+- `meta`: метаданные потока (файл, курсор, размер)
+- `log`: разобранная запись лога
+- `notice`: подсказки усечения / ротации
+- `raw`: неразобранная строка лога
+
+Если Gateway недостижим, CLI выводит короткую подсказку запустить:
+
+```bash
+openclaw doctor
+```
+
+### Control UI (web)
+
+Вкладка **Logs** в Control UI хвостит тот же файл, используя `logs.tail`.
+См. [/web/control-ui](/web/control-ui) для того, как открыть его.
+
+### Логи только каналов
+
+Для фильтрации активности каналов (WhatsApp/Telegram/и т.д.) используйте:
+
+```bash
+openclaw channels logs --channel whatsapp
+```
+
+## Форматы логов
+
+### Файловые логи (JSONL)
+
+Каждая строка в файле лога — это объект JSON. CLI и Control UI разбирают эти
+записи для рендеринга структурированного вывода (время, уровень, подсистема, сообщение).
+
+### Консольный вывод
+
+Консольные логи **TTY-aware** и отформатированы для читабельности:
+
+- Префиксы подсистемы (например, `gateway/channels/whatsapp`)
+- Раскраска уровней (info/warn/error)
+- Опциональный компактный или JSON-режим
+
+Форматирование консоли контролируется `logging.consoleStyle`.
+
+## Настройка логирования
+
+Вся конфигурация логирования находится под `logging` в `~/.openclaw/openclaw.json`.
+
+```json
+{
+  "logging": {
+    "level": "info",
+    "file": "/tmp/openclaw/openclaw-YYYY-MM-DD.log",
+    "consoleLevel": "info",
+    "consoleStyle": "pretty",
+    "redactSensitive": "tools",
+    "redactPatterns": [
+      "sk-.*"
+    ]
+  }
+}
+```
+
+### Уровни логирования
+
+- `logging.level`: уровень **файловых логов** (JSONL).
+- `logging.consoleLevel`: уровень подробности **консоли**.
+
+`--verbose` влияет только на консольный вывод; он не меняет уровни файловых логов.
+
+### Стили консоли
+
+`logging.consoleStyle`:
+
+- `pretty`: дружелюбный к человеку, раскрашенный, с временными метками.
+- `compact`: более плотный вывод (лучше для длинных сессий).
+- `json`: JSON на строку (для процессоров логов).
+
+### Редактирование
+
+Сводки инструментов могут редактировать чувствительные токены перед тем, как они попадут в консоль:
+
+- `logging.redactSensitive`: `off` | `tools` (по умолчанию: `tools`)
+- `logging.redactPatterns`: список строк регулярных выражений для переопределения набора по умолчанию
+
+Редактирование влияет **только на консольный вывод** и не изменяет файловые логи.
+
+## Диагностика + OpenTelemetry
+
+Диагностика — это структурированные, машиночитаемые события для запусков модели **и**
+телеметрии потока сообщений (вебхуки, очереди, состояние сессии). Они **не**
+заменяют логи; они существуют для питания метрик, трассировок и других экспортёров.
+
+События диагностики испускаются внутри процесса, но экспортёры присоединяются только когда
+диагностика + плагин экспортёра включены.
+
+### OpenTelemetry vs OTLP
+
+- **OpenTelemetry (OTel)**: модель данных + SDK для трассировок, метрик и логов.
+- **OTLP**: протокол передачи, используемый для экспорта данных OTel коллектору/бэкенду.
+- OpenClaw экспортирует через **OTLP/HTTP (protobuf)** сегодня.
+
+### Экспортируемые сигналы
+
+- **Метрики**: счётчики + гистограммы (использование токенов, поток сообщений, очереди).
+- **Трассировки**: спаны для использования модели + обработки вебхуков/сообщений.
+- **Логи**: экспортируются через OTLP, когда включено `diagnostics.otel.logs`. Объём логов
+  может быть высоким; учитывайте `logging.level` и фильтры экспортёра.
+
+### Каталог событий диагностики
+
+Использование модели:
+- `model.usage`: токены, стоимость, продолжительность, контекст, провайдер/модель/канал, ID сессий.
+
+Поток сообщений:
+- `webhook.received`: входящий вебхук по каналу.
+- `webhook.processed`: вебхук обработан + продолжительность.
+- `webhook.error`: ошибки обработчика вебхука.
+- `message.queued`: сообщение поставлено в очередь для обработки.
+- `message.processed`: исход + продолжительность + опциональная ошибка.
+
+Очередь + сессия:
+- `queue.lane.enqueue`: постановка в очередь команд + глубина.
+- `queue.lane.dequeue`: выемка из очереди команд + время ожидания.
+- `session.state`: переход состояния сессии + причина.
+- `session.stuck`: предупреждение о застрявшей сессии + возраст.
+- `run.attempt`: метаданные повтора/попытки запуска.
+- `diagnostic.heartbeat`: агрегированные счётчики (вебхуки/очередь/сессия).
+
+### Включить диагностику (без экспортёра)
+
+Используйте это, если вы хотите, чтобы события диагностики были доступны плагинам или пользовательским приёмникам:
+
+```json
+{
+  "diagnostics": {
+    "enabled": true
+  }
+}
+```
+
+### Флаги диагностики (целевые логи)
+
+Используйте флаги для включения дополнительных, целевых отладочных логов без повышения `logging.level`.
+Флаги нечувствительны к регистру и поддерживают подстановочные знаки (например, `telegram.*` или `*`).
+
+```json
+{
+  "diagnostics": {
+    "flags": ["telegram.http"]
+  }
+}
+```
+
+Переопределение через переменные окружения (одноразово):
+
+```
+OPENCLAW_DIAGNOSTICS=telegram.http,telegram.payload
+```
+
+Примечания:
+- Логи флагов идут в стандартный файл лога (тот же, что и `logging.file`).
+- Вывод всё ещё редактируется согласно `logging.redactSensitive`.
+- Полное руководство: [/diagnostics/flags](/diagnostics/flags).
+
+### Экспорт в OpenTelemetry
+
+Диагностика может быть экспортирована через плагин `diagnostics-otel` (OTLP/HTTP). Это
+работает с любым OpenTelemetry-коллектором/бэкендом, который принимает OTLP/HTTP.
+
+```json
+{
+  "plugins": {
+    "allow": ["diagnostics-otel"],
+    "entries": {
+      "diagnostics-otel": {
+        "enabled": true
+      }
+    }
+  },
+  "diagnostics": {
+    "enabled": true,
+    "otel": {
+      "enabled": true,
+      "endpoint": "http://otel-collector:4318",
+      "protocol": "http/protobuf",
+      "serviceName": "openclaw-gateway",
+      "traces": true,
+      "metrics": true,
+      "logs": true,
+      "sampleRate": 0.2,
+      "flushIntervalMs": 60000
+    }
+  }
+}
+```
+
+Примечания:
+- Вы также можете включить плагин с помощью `openclaw plugins enable diagnostics-otel`.
+- `protocol` в настоящее время поддерживает только `http/protobuf`. `grpc` игнорируется.
+- Метрики включают использование токенов, стоимость, размер контекста, продолжительность запуска и
+  счётчики/гистограммы потока сообщений (вебхуки, очереди, состояние сессии, глубина/ожидание очереди).
+- Трассировки/метрики могут быть переключены с помощью `traces` / `metrics` (по умолчанию: вкл). Трассировки
+  включают спаны использования модели плюс спаны обработки вебхуков/сообщений при включении.
+- Установите `headers`, когда ваш коллектор требует авторизацию.
+- Поддерживаются переменные окружения: `OTEL_EXPORTER_OTLP_ENDPOINT`,
+  `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_PROTOCOL`.
+
+### Экспортируемые метрики (имена + типы)
+
+Использование модели:
+- `openclaw.tokens` (счётчик, атрибуты: `openclaw.token`, `openclaw.channel`,
+  `openclaw.provider`, `openclaw.model`)
+- `openclaw.cost.usd` (счётчик, атрибуты: `openclaw.channel`, `openclaw.provider`,
+  `openclaw.model`)
+- `openclaw.run.duration_ms` (гистограмма, атрибуты: `openclaw.channel`,
+  `openclaw.provider`, `openclaw.model`)
+- `openclaw.context.tokens` (гистограмма, атрибуты: `openclaw.context`,
+  `openclaw.channel`, `openclaw.provider`, `openclaw.model`)
+
+Поток сообщений:
+- `openclaw.webhook.received` (счётчик, атрибуты: `openclaw.channel`,
+  `openclaw.webhook`)
+- `openclaw.webhook.error` (счётчик, атрибуты: `openclaw.channel`,
+  `openclaw.webhook`)
+- `openclaw.webhook.duration_ms` (гистограмма, атрибуты: `openclaw.channel`,
+  `openclaw.webhook`)
+- `openclaw.message.queued` (счётчик, атрибуты: `openclaw.channel`,
+  `openclaw.source`)
+- `openclaw.message.processed` (счётчик, атрибуты: `openclaw.channel`,
+  `openclaw.outcome`)
+- `openclaw.message.duration_ms` (гистограмма, атрибуты: `openclaw.channel`,
+  `openclaw.outcome`)
+
+Очереди + сессии:
+- `openclaw.queue.lane.enqueue` (счётчик, атрибуты: `openclaw.lane`)
+- `openclaw.queue.lane.dequeue` (счётчик, атрибуты: `openclaw.lane`)
+- `openclaw.queue.depth` (гистограмма, атрибуты: `openclaw.lane` или
+  `openclaw.channel=heartbeat`)
+- `openclaw.queue.wait_ms` (гистограмма, атрибуты: `openclaw.lane`)
+- `openclaw.session.state` (счётчик, атрибуты: `openclaw.state`, `openclaw.reason`)
+- `openclaw.session.stuck` (счётчик, атрибуты: `openclaw.state`)
+- `openclaw.session.stuck_age_ms` (гистограмма, атрибуты: `openclaw.state`)
+- `openclaw.run.attempt` (счётчик, атрибуты: `openclaw.attempt`)
+
+### Экспортируемые спаны (имена + ключевые атрибуты)
+
+- `openclaw.model.usage`
+  - `openclaw.channel`, `openclaw.provider`, `openclaw.model`
+  - `openclaw.sessionKey`, `openclaw.sessionId`
+  - `openclaw.tokens.*` (input/output/cache_read/cache_write/total)
+- `openclaw.webhook.processed`
+  - `openclaw.channel`, `openclaw.webhook`, `openclaw.chatId`
+- `openclaw.webhook.error`
+  - `openclaw.channel`, `openclaw.webhook`, `openclaw.chatId`,
+    `openclaw.error`
+- `openclaw.message.processed`
+  - `openclaw.channel`, `openclaw.outcome`, `openclaw.chatId`,
+    `openclaw.messageId`, `openclaw.sessionKey`, `openclaw.sessionId`,
+    `openclaw.reason`
+- `openclaw.session.stuck`
+  - `openclaw.state`, `openclaw.ageMs`, `openclaw.queueDepth`,
+    `openclaw.sessionKey`, `openclaw.sessionId`
+
+### Выборка + сброс
+
+- Выборка трассировок: `diagnostics.otel.sampleRate` (0.0–1.0, только корневые спаны).
+- Интервал экспорта метрик: `diagnostics.otel.flushIntervalMs` (мин 1000мс).
+
+### Примечания по протоколу
+
+- Конечные точки OTLP/HTTP могут быть установлены через `diagnostics.otel.endpoint` или
+  `OTEL_EXPORTER_OTLP_ENDPOINT`.
+- Если конечная точка уже содержит `/v1/traces` или `/v1/metrics`, она используется как есть.
+- Если конечная точка уже содержит `/v1/logs`, она используется как есть для логов.
+- `diagnostics.otel.logs` включает экспорт OTLP-логов для вывода основного логгера.
+
+### Поведение экспорта логов
+
+- OTLP-логи используют те же структурированные записи, записываемые в `logging.file`.
+- Уважают `logging.level` (уровень файлового лога). Консольное редактирование **не** применяется
+  к OTLP-логам.
+- Установки с высоким объёмом должны предпочесть выборку/фильтрацию OTLP-коллектора.
+
+## Советы по устранению неполадок
+
+- **Gateway недостижим?** Сначала запустите `openclaw doctor`.
+- **Логи пусты?** Проверьте, что Gateway запущен и записывает в путь файла
+  в `logging.file`.
+- **Нужны больше подробностей?** Установите `logging.level` в `debug` или `trace` и повторите.

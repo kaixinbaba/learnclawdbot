@@ -59,7 +59,7 @@ export default async function DocPage({ params }: { params: Params }) {
   }
 
   // For untranslated locales, sidebar uses English
-  const hasLocaleDocs = locale === "en" || locale === "zh" || locale === "ja" || locale === "ko";
+  const hasLocaleDocs = locale === "en" || locale === "zh" || locale === "ja" || locale === "ko" || locale === "ru";
   const sidebarLocale = hasLocaleDocs ? locale : "en";
   const sections = await getDocSidebar(sidebarLocale);
 
@@ -71,6 +71,7 @@ export default async function DocPage({ params }: { params: Params }) {
     zh: "返回文档首页",
     ja: "ドキュメントに戻る",
     ko: "문서로 돌아가기",
+    ru: "Назад к документации",
   };
 
   const fallbackNotice: Record<string, string> = {

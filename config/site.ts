@@ -1,7 +1,7 @@
 import { SiteConfig } from "@/types/siteConfig";
 
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://learnclawdbot.org";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.learnclawdbot.org";
 
 export const siteConfig: SiteConfig = {
   name: "Learn OpenClaw",

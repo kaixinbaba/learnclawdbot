@@ -1,0 +1,79 @@
+---
+summary: "Настройка Perplexity Sonar для web_search"
+read_when:
+  - Вы хотите использовать Perplexity Sonar для веб-поиска
+  - Вам нужна настройка PERPLEXITY_API_KEY или OpenRouter
+---
+
+# Perplexity Sonar
+
+OpenClaw может использовать Perplexity Sonar для инструмента `web_search`. Вы можете подключиться
+через прямой API Perplexity или через OpenRouter.
+
+## Варианты API
+
+### Perplexity (напрямую)
+
+- Базовый URL: https://api.perplexity.ai
+- Переменная окружения: `PERPLEXITY_API_KEY`
+
+### OpenRouter (альтернатива)
+
+- Базовый URL: https://openrouter.ai/api/v1
+- Переменная окружения: `OPENROUTER_API_KEY`
+- Поддерживает предоплаченные/крипто-кредиты.
+
+## Пример конфигурации
+
+```json5
+{
+  tools: {
+    web: {
+      search: {
+        provider: "perplexity",
+        perplexity: {
+          apiKey: "pplx-...",
+          baseUrl: "https://api.perplexity.ai",
+          model: "perplexity/sonar-pro"
+        }
+      }
+    }
+  }
+}
+```
+
+## Переключение с Brave
+
+```json5
+{
+  tools: {
+    web: {
+      search: {
+        provider: "perplexity",
+        perplexity: {
+          apiKey: "pplx-...",
+          baseUrl: "https://api.perplexity.ai"
+        }
+      }
+    }
+  }
+}
+```
+
+Если установлены и `PERPLEXITY_API_KEY`, и `OPENROUTER_API_KEY`, установите
+`tools.web.search.perplexity.baseUrl` (или `tools.web.search.perplexity.apiKey`)
+для разрешения неоднозначности.
+
+Если базовый URL не установлен, OpenClaw выбирает значение по умолчанию на основе источника API-ключа:
+
+- `PERPLEXITY_API_KEY` или `pplx-...` → прямой Perplexity (`https://api.perplexity.ai`)
+- `OPENROUTER_API_KEY` или `sk-or-...` → OpenRouter (`https://openrouter.ai/api/v1`)
+- Неизвестные форматы ключей → OpenRouter (безопасный откат)
+
+## Модели
+
+- `perplexity/sonar` — быстрые вопросы-ответы с веб-поиском
+- `perplexity/sonar-pro` (по умолчанию) — многошаговое рассуждение + веб-поиск
+- `perplexity/sonar-reasoning-pro` — глубокое исследование
+
+См. [Веб-инструменты](/tools/web) для полной конфигурации web_search.

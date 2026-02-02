@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Locale } from "@/i18n/routing";
 import { constructMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return constructMetadata({
     title: t("metaTitle"),
     description: t("metaDescription"),
+    locale: locale as Locale,
     path: "/what-is-clawdbot",
   });
 }

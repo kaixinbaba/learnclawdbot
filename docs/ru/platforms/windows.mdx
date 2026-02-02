@@ -1,0 +1,145 @@
+---
+summary: "Поддержка Windows (WSL2) + статус приложения-компаньона"
+read_when:
+  - Установка OpenClaw на Windows
+  - Поиск информации о статусе приложения-компаньона для Windows
+---
+# Windows (WSL2)
+
+OpenClaw на Windows рекомендуется **через WSL2** (рекомендуется Ubuntu). CLI + Gateway работают внутри Linux, что обеспечивает согласованность среды выполнения и делает инструментарий гораздо более совместимым (Node/Bun/pnpm, Linux-бинарники, навыки). Нативные установки Windows не тестировались и более проблематичны.
+
+Нативные приложения-компаньоны для Windows планируются.
+
+## Установка (WSL2)
+- [Начало работы](/start/getting-started) (используйте внутри WSL)
+- [Установка и обновления](/install/updating)
+- Официальное руководство WSL2 (Microsoft): https://learn.microsoft.com/windows/wsl/install
+
+## Gateway
+- [Руководство по Gateway](/gateway)
+- [Конфигурация](/gateway/configuration)
+
+## Установка сервиса Gateway (CLI)
+
+Внутри WSL2:
+
+```
+openclaw onboard --install-daemon
+```
+
+Или:
+
+```
+openclaw gateway install
+```
+
+Или:
+
+```
+openclaw configure
+```
+
+Выберите **Сервис Gateway** при запросе.
+
+Восстановление/миграция:
+
+```
+openclaw doctor
+```
+
+## Продвинутое: предоставление доступа к сервисам WSL через LAN (portproxy)
+
+WSL имеет собственную виртуальную сеть. Если другой машине нужно подключиться к сервису, работающему **внутри WSL** (SSH, локальный TTS-сервер или Gateway), вы должны перенаправить порт Windows на текущий IP WSL. IP WSL изменяется после перезагрузок, поэтому вам может потребоваться обновить правило перенаправления.
+
+Пример (PowerShell **от имени администратора**):
+
+```powershell
+$Distro = "Ubuntu-24.04"
+$ListenPort = 2222
+$TargetPort = 22
+
+$WslIp = (wsl -d $Distro -- hostname -I).Trim().Split(" ")[0]
+if (-not $WslIp) { throw "WSL IP не найден." }
+
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=$ListenPort `
+  connectaddress=$WslIp connectport=$TargetPort
+```
+
+Разрешите порт через Windows Firewall (один раз):
+
+```powershell
+New-NetFirewallRule -DisplayName "WSL SSH $ListenPort" -Direction Inbound `
+  -Protocol TCP -LocalPort $ListenPort -Action Allow
+```
+
+Обновите portproxy после перезагрузки WSL:
+
+```powershell
+netsh interface portproxy delete v4tov4 listenport=$ListenPort listenaddress=0.0.0.0 | Out-Null
+netsh interface portproxy add v4tov4 listenport=$ListenPort listenaddress=0.0.0.0 `
+  connectaddress=$WslIp connectport=$TargetPort | Out-Null
+```
+
+Примечания:
+- SSH с другой машины нацелен на **IP хоста Windows** (пример: `ssh user@windows-host -p 2222`).
+- Удаленные узлы должны указывать на **доступный** URL Gateway (не `127.0.0.1`); используйте
+  `openclaw status --all` для подтверждения.
+- Используйте `listenaddress=0.0.0.0` для доступа по LAN; `127.0.0.1` оставляет его только локальным.
+- Если вы хотите, чтобы это было автоматическим, зарегистрируйте задание планировщика для выполнения шага обновления при входе в систему.
+
+## Пошаговая установка WSL2
+
+### 1) Установка WSL2 + Ubuntu
+
+Откройте PowerShell (администратор):
+
+```powershell
+wsl --install
+# Или выберите дистрибутив явно:
+wsl --list --online
+wsl --install -d Ubuntu-24.04
+```
+
+Перезагрузитесь, если Windows попросит.
+
+### 2) Включение systemd (требуется для установки gateway)
+
+В вашем терминале WSL:
+
+```bash
+sudo tee /etc/wsl.conf >/dev/null <<'EOF'
+[boot]
+systemd=true
+EOF
+```
+
+Затем из PowerShell:
+
+```powershell
+wsl --shutdown
+```
+
+Снова откройте Ubuntu, затем проверьте:
+
+```bash
+systemctl --user status
+```
+
+### 3) Установка OpenClaw (внутри WSL)
+
+Следуйте инструкциям по началу работы с Linux внутри WSL:
+
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+pnpm install
+pnpm ui:build # автоматически устанавливает зависимости UI при первом запуске
+pnpm build
+openclaw onboard
+```
+
+Полное руководство: [Начало работы](/start/getting-started)
+
+## Приложение-компаньон для Windows
+
+У нас пока нет приложения-компаньона для Windows. Приветствуются вклады, если вы хотите помочь в его создании.

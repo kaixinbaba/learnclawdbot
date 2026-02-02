@@ -52,7 +52,7 @@ function PostCardCover({
 
   return (
     <I18nLink
-      href={`${baseUrl}/${post.slug}`}
+      href={`${baseUrl}/${post.slug.replace(/^\//, '')}`}
       title={post.title}
       prefetch={false}
       className="group block h-full focus:outline-none"
@@ -114,7 +114,7 @@ function PostCardCompact({
 
   return (
     <I18nLink
-      href={`${baseUrl}/${post.slug}`}
+      href={`${baseUrl}/${post.slug.replace(/^\//, '')}`}
       title={post.title}
       prefetch={false}
       className="group block w-full focus:outline-none"

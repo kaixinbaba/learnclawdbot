@@ -1,236 +1,236 @@
 {
   "Home": {
-    "title": "Изучайте OpenClaw (ранее Clawbot и Moltbot)",
-    "tagLine": "Полное руководство для начинающих",
-    "description": "Ваше полное руководство по OpenClaw (ранее Clawbot и Moltbot). Превратите ваше чат-приложение в мощного AI-ассистента, который управляет сложными процессами и ежедневными операциями за вас."
+    "title": "Learn OpenClaw (Formerly Clawbot and Moltbot)",
+    "tagLine": "The Ultimate Beginner's Guide",
+    "description": "Your ultimate guide to OpenClaw (formerly Clawbot and Moltbot). Transform your chat app into a powerful AI assistant that handles complex workflows and daily operations for you."
   },
   "Login": {
-    "title": "С возвращением",
-    "description": "Войдите используя следующие методы",
+    "title": "Welcome back",
+    "description": "Sign in with the following methods",
     "Toast": {
-      "rateLimitTitle": "Слишком много запросов",
-      "rateLimitDescription": "Пожалуйста, подождите немного перед повторной попыткой.",
+      "rateLimitTitle": "Too many requests",
+      "rateLimitDescription": "Please wait a moment before trying again.",
       "Email": {
-        "successTitle": "Магическая ссылка отправлена!",
-        "successDescription": "Пожалуйста, проверьте вашу электронную почту для ссылки входа.",
-        "errorTitle": "Ошибка",
-        "errorDescription": "Не удалось отправить магическую ссылку. Пожалуйста, попробуйте снова."
+        "successTitle": "Magic link sent!",
+        "successDescription": "Please check your email for the login link.",
+        "errorTitle": "Error",
+        "errorDescription": "Failed to send magic link. Please try again."
       },
       "OTP": {
-        "errorTitle": "Ошибка",
-        "sendSuccessTitle": "Код отправлен!",
-        "sendSuccessDescription": "Пожалуйста, проверьте вашу электронную почту для кода подтверждения.",
-        "sendErrorDescription": "Не удалось отправить код подтверждения. Пожалуйста, попробуйте снова.",
-        "verifySuccessTitle": "Успешно!",
-        "verifySuccessDescription": "Вы успешно вошли в систему.",
-        "verifyErrorDescription": "Неверный или истекший код подтверждения. Пожалуйста, попробуйте снова."
+        "errorTitle": "Error",
+        "sendSuccessTitle": "Code sent!",
+        "sendSuccessDescription": "Please check your email for the verification code.",
+        "sendErrorDescription": "Failed to send verification code. Please try again.",
+        "verifySuccessTitle": "Success!",
+        "verifySuccessDescription": "You have been signed in successfully.",
+        "verifyErrorDescription": "Invalid or expired verification code. Please try again."
       },
       "Google": {
-        "errorTitle": "Ошибка",
-        "errorDescription": "Не удалось войти через Google. Пожалуйста, попробуйте снова."
+        "errorTitle": "Error",
+        "errorDescription": "Failed to sign in with Google. Please try again."
       },
       "Github": {
-        "errorTitle": "Ошибка",
-        "errorDescription": "Не удалось войти через Github. Пожалуйста, попробуйте снова."
+        "errorTitle": "Error",
+        "errorDescription": "Failed to sign in with Github. Please try again."
       }
     },
     "signInMethods": {
-      "or": "Или продолжить с",
-      "signInWithGoogle": "Продолжить с Google",
-      "signInWithGithub": "Продолжить с Github",
-      "signInWithEmail": "Продолжить с Email",
-      "otpMethod": "Код подтверждения",
-      "magicLinkMethod": "Магическая ссылка",
-      "sendOTP": "Отправить код",
-      "verifyOTP": "Подтвердить код",
-      "resendOTP": "Не получили код? Отправить снова",
-      "backToEmail": "Назад",
-      "otpSentTo": "Мы отправили код подтверждения на"
+      "or": "Or continue with",
+      "signInWithGoogle": "Continue with Google",
+      "signInWithGithub": "Continue with Github",
+      "signInWithEmail": "Continue with Email",
+      "otpMethod": "Verification Code",
+      "magicLinkMethod": "Magic Link",
+      "sendOTP": "Send Code",
+      "verifyOTP": "Verify Code",
+      "resendOTP": "Didn't receive the code? Resend",
+      "backToEmail": "Back",
+      "otpSentTo": "We sent a verification code to"
     },
     "Button": {
-      "signIn": "Войти",
-      "signOut": "Выйти"
+      "signIn": "Sign In",
+      "signOut": "Sign Out"
     },
     "UserMenus": [
       {
-        "name": "Настройки",
+        "name": "Settings",
         "href": "/dashboard/settings",
         "icon": "Settings"
       },
       {
-        "name": "Мои заказы",
+        "name": "My Orders",
         "href": "/dashboard/my-orders",
         "icon": "ShoppingCart"
       },
       {
-        "name": "Подписка",
+        "name": "Subscription",
         "href": "/dashboard/subscription",
         "icon": "WalletCards"
       },
       {
-        "name": "История кредитов",
+        "name": "Credit History",
         "href": "/dashboard/credit-history",
         "icon": "Coins"
       }
     ],
     "AdminMenus": [
       {
-        "name": "Обзор",
+        "name": "Overview",
         "href": "/dashboard/overview",
         "icon": "LayoutDashboard"
       },
       {
-        "name": "Пользователи",
+        "name": "Users",
         "href": "/dashboard/users",
         "icon": "Users"
       },
       {
-        "name": "Заказы",
+        "name": "Orders",
         "href": "/dashboard/orders",
         "icon": "ShoppingCart"
       },
       {
-        "name": "Цены",
+        "name": "Prices",
         "href": "/dashboard/prices",
         "icon": "DollarSign"
       },
       {
-        "name": "Блоги",
+        "name": "Blogs",
         "href": "/dashboard/blogs",
         "icon": "Rss"
       },
       {
-        "name": "Глоссарий",
+        "name": "Glossary",
         "href": "/dashboard/glossary",
         "icon": "BookOpen"
       },
       {
-        "name": "R2 Файлы",
+        "name": "R2 Files",
         "href": "/dashboard/r2-resources",
         "icon": "FileBox"
       }
     ]
   },
   "Blogs": {
-    "title": "Статьи блога",
-    "description": "Советы, руководства и полезная информация об OpenClaw.",
+    "title": "Blog Posts",
+    "description": "Tips, tutorials, and insights about OpenClaw.",
     "emptyState": {
-      "title": "Нет статей в блоге",
-      "description": "Мы создаем интересный контент, пожалуйста, следите за обновлениями!"
+      "title": "No blog posts",
+      "description": "We are creating exciting content, please stay tuned!"
     },
-    "loadMorePostsFailed": "Не удалось загрузить больше статей",
-    "loadMorePosts": "Загрузка дополнительных статей...",
-    "filterPostsFailed": "Не удалось загрузить статьи",
-    "noPostsFoundForThisTag": "Статей с этим тегом не найдено",
-    "reachedTheEnd": "Вы достигли конца всех статей",
+    "loadMorePostsFailed": "Failed to load more posts",
+    "loadMorePosts": "Loading more posts...",
+    "filterPostsFailed": "Failed to load posts",
+    "noPostsFoundForThisTag": "No posts found with this tag",
+    "reachedTheEnd": "You've reached the end of all posts",
     "BlogDetail": {
-      "featured": "Избранная статья",
-      "viewCount": "{count} просмотров",
-      "accessRestricted": "Доступ ограничен",
-      "unauthorized": "Эта статья доступна только авторизованным пользователям",
-      "premium": "Премиум контент",
-      "premiumContent": "Эта статья эксклюзивна для подписчиков",
-      "signIn": "Войти",
-      "upgrade": "Обновить",
-      "backToBlogs": "Вернуться к списку блога",
-      "notFound": "Статья не найдена"
+      "featured": "Featured Post",
+      "viewCount": "{count} views",
+      "accessRestricted": "Access Restricted",
+      "unauthorized": "This article is only available to logged-in users",
+      "premium": "Premium Content",
+      "premiumContent": "This article is exclusive to subscribers",
+      "signIn": "Sign In",
+      "upgrade": "Upgrade",
+      "backToBlogs": "Back to Blog List",
+      "notFound": "Article Not Found"
     }
   },
   "About": {
-    "title": "О OpenClaw: Инструмент автоматизации с AI",
-    "description": "Освойте OpenClaw (ранее Clawbot и Moltbot) с нашими пошаговыми руководствами. Узнайте, как автоматизировать email, календарь и рейсы через WhatsApp и Telegram."
+    "title": "About OpenClaw: AI Automation Tool",
+    "description": "Master OpenClaw (formerly Clawbot and Moltbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
   },
   "Moltbot": {
-    "title": "Что такое был Moltbot? (Теперь OpenClaw)",
-    "description": "Moltbot было более ранним названием для OpenClaw (ранее Clawbot). Эта страница сохраняет исторический контекст и указывает на последние ресурсы OpenClaw."
+    "title": "What Was Moltbot? (Now OpenClaw)",
+    "description": "Moltbot was an earlier name for OpenClaw (formerly Clawbot). This page preserves historical context and points to the latest OpenClaw resources."
   },
   "OpenClaw": {
-    "title": "Что такое OpenClaw: Руководство по автоматизации с AI",
-    "description": "Освойте OpenClaw (ранее Clawbot и Moltbot) с нашими пошаговыми руководствами. Узнайте, как автоматизировать email, календарь и рейсы через WhatsApp и Telegram."
+    "title": "What is OpenClaw: AI Automation Guide",
+    "description": "Master OpenClaw (formerly Clawbot and Moltbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
   },
   "Clawdbot": {
-    "metaTitle": "Что такое Clawbot? (Теперь OpenClaw) - AI-ассистент для WhatsApp и Telegram",
-    "metaDescription": "Clawbot было ранним названием для OpenClaw. Позже продукт был известен как Moltbot и теперь называется OpenClaw.",
-    "importantUpdate": "Важное обновление",
-    "title": "Clawbot теперь OpenClaw",
-    "description": "Clawbot было оригинальным названием AI-ассистента, теперь известного как OpenClaw (ранее Moltbot). Эта страница сохраняет историю и указывает на последние ресурсы OpenClaw.",
-    "subtitle": "Мы эволюционировали! Clawbot стал Moltbot и теперь OpenClaw, но это все тот же мощный AI-ассистент, который вы любите.",
-    "cta": "Посмотреть OpenClaw",
-    "whatWasClawdbot": "Что такое был Clawbot?",
-    "whatWasClawdbotDesc": "Clawbot было оригинальным названием нашего AI-ассистента, разработанного для работы внутри WhatsApp и Telegram. Он помогал пользователям управлять электронной почтой, событиями календаря и задачами, не покидая чат-приложение.",
-    "whyChange": "Почему изменения?",
-    "imageAlt": "Объявление о ребрендинге OpenClaw"
+    "metaTitle": "What Is Clawbot? (Now OpenClaw) - AI Assistant for WhatsApp & Telegram",
+    "metaDescription": "Clawbot was an early name for OpenClaw. The product was later known as Moltbot and is now OpenClaw.",
+    "importantUpdate": "Important Update",
+    "title": "Clawbot Is Now OpenClaw",
+    "description": "Clawbot was the original name of the AI assistant now known as OpenClaw (formerly Moltbot). This page preserves the history and points to the latest OpenClaw resources.",
+    "subtitle": "We've evolved! Clawbot became Moltbot and is now OpenClaw, but it's still the same powerful AI assistant you love.",
+    "cta": "Check Out OpenClaw",
+    "whatWasClawdbot": "What Was Clawbot?",
+    "whatWasClawdbotDesc": "Clawbot was the original name of our AI assistant designed to live inside WhatsApp and Telegram. It helped users manage emails, calendar events, and tasks without leaving their chat app.",
+    "whyChange": "Why the Change?",
+    "imageAlt": "OpenClaw Rebranding Announcement"
   },
   "AIDemo": {
-    "title": "Демонстрация возможностей AI",
-    "description": "Эта страница демонстрирует непубличные функции и предназначена исключительно для пользователей, купивших шаблон. Она разработана для изучения и тестирования процесса вызова AI-модели. Чтобы использовать её, просто запустите шаблон локально и введите ваш API-ключ в переменных окружения. Демо AI включает функциональность, такую как однократные и многократные диалоги, преобразование текста в изображение, изображения в изображение и текста/изображения в видео. С помощью этой демонстрации вы можете быстро понять процесс вызова AI, ускоряя ваш путь в создании AI-приложений.",
-    "metaDescription": "Эта страница демонстрирует возможности AI, включая однократные и многократные диалоги, преобразование текста в изображение, изображения в изображение и текста/изображения в видео."
+    "title": "AI Capabilities Demo",
+    "description": "This page showcases non-public features and is exclusively for users who have purchased the template. It's designed for learning and testing the AI model invocation process. To use it, simply launch the template locally and input your API key in the environment variables. The AI demo includes functionalities like single-turn and multi-turn conversations, text-to-image, image-to-image, and text/image-to-video conversions. Through this demo, you can quickly grasp the AI invocation workflow, accelerating your journey in building AI applications.",
+    "metaDescription": "This page showcases AI capabilities including single-turn and multi-turn conversations, text-to-image, image-to-image, and text/image-to-video conversions."
   },
   "ErrorPage": {
     "403": {
-      "title": "403 - Доступ запрещён",
-      "description": "У вас нет прав для доступа к этой странице.",
+      "title": "403 - Access Denied",
+      "description": "You don't have permission to access this page.",
       "button": {
-        "name": "Вернуться на главную",
+        "name": "Back to homepage",
         "href": "/"
       }
     },
     "RedirectError": {
-      "title": "Ошибка перенаправления",
-      "description": "Произошла ошибка в процессе аутентификации.",
-      "goToHome": "На главную",
-      "goToLogin": "Войти",
+      "title": "Redirect Error",
+      "description": "An error occurred during the authentication process.",
+      "goToHome": "Go to Home",
+      "goToLogin": "Go to Login",
       "invalid_params": {
-        "title": "Неверные параметры",
-        "description": "В запросе отсутствуют обязательные параметры."
+        "title": "Invalid Parameters",
+        "description": "Required parameters are missing in the request."
       },
       "invalid_redirect": {
-        "title": "Неверный URL перенаправления",
-        "description": "Указанный URL перенаправления не разрешён."
+        "title": "Invalid Redirect URL",
+        "description": "The redirect URL provided is not allowed."
       },
       "token_expired": {
-        "title": "Токен истёк",
-        "description": "Срок действия вашего токена подтверждения истёк. Пожалуйста, попробуйте войти снова."
+        "title": "Token Expired",
+        "description": "Your verification token has expired. Please try logging in again."
       },
       "invalid_token": {
-        "title": "Неверный токен",
-        "description": "Указанный токен подтверждения недействителен."
+        "title": "Invalid Token",
+        "description": "The verification token provided is invalid."
       },
       "invalid_link_or_expired": {
-        "title": "Недействительная или истёкшая ссылка",
-        "description": "Ссылка подтверждения email недействительна или истекла."
+        "title": "Invalid or Expired Link",
+        "description": "The email verification link is invalid or has expired."
       },
       "server_error": {
-        "title": "Ошибка сервера",
-        "description": "Произошла неожиданная ошибка на сервере во время аутентификации."
+        "title": "Server Error",
+        "description": "An unexpected error occurred on the server during authentication."
       },
       "unknown": {
-        "title": "Ошибка аутентификации",
-        "description": "Произошла неизвестная ошибка в процессе аутентификации."
+        "title": "Authentication Error",
+        "description": "An unknown error occurred during the authentication process."
       }
     },
     "StripeError": {
-      "title": "Ошибка платёжного портала",
-      "description": "Произошла ошибка с вашей платёжной информацией.",
-      "goToHome": "На главную",
-      "goToDashboard": "В панель управления"
+      "title": "Payment Portal Error",
+      "description": "An error occurred with your payment information.",
+      "goToHome": "Go to Home",
+      "goToDashboard": "Go to Dashboard"
     }
   },
   "LanguageDetection": {
-    "title": "Предложение языка",
-    "description": "Мы заметили, что язык вашего браузера отличается от текущего языка сайта. Вы можете изменить язык в любое время.",
-    "countdown": "Закрытие через {countdown} секунд",
-    "switchTo": "Переключиться на"
+    "title": "Language Suggestion",
+    "description": "We noticed your browser language differs from the current site language. You can switch languages anytime.",
+    "countdown": "Closing in {countdown} seconds",
+    "switchTo": "Switch to"
   },
   "Header": {
     "links": [
       {
-        "name": "Документация",
+        "name": "Docs",
         "href": "/docs",
         "items": [
           {
             "name": "English",
-            "href": "/en/docs",
+            "href": "/docs",
             "description": "Documentation in English"
           },
           {
@@ -241,7 +241,12 @@
           {
             "name": "日本語",
             "href": "/ja/docs",
-            "description": "日本語のドキュメント"
+            "description": "日本語ドキュメント"
+          },
+          {
+            "name": "한국어",
+            "href": "/ko/docs",
+            "description": "한국어 문서"
           },
           {
             "name": "Русский",
@@ -251,80 +256,81 @@
         ]
       },
       {
-        "name": "Что такое OpenClaw?",
+        "name": "What is OpenClaw?",
         "href": "/what-is-openclaw"
       },
       {
-        "name": "Блог",
+        "name": "Blog",
         "href": "/blog"
       },
       {
-        "name": "О нас",
+        "name": "About",
         "href": "/about"
       }
     ]
   },
   "Footer": {
-    "Copyright": "Авторские права © {year} {name} Все права защищены.",
-    "About": "О нас",
-    "PrivacyPolicy": "Политика конфиденциальности",
-    "TermsOfService": "Условия обслуживания",
+    "Copyright": "Copyright © {year} {name} All rights reserved.",
+    "About": "About",
+    "PrivacyPolicy": "Privacy Policy",
+    "TermsOfService": "Terms of Service",
     "Newsletter": {
-      "title": "Подпишитесь на нашу рассылку",
-      "description": "Будьте в курсе наших последних новостей.",
+      "title": "Subscribe to our newsletter",
+      "description": "Stay up to date with our latest news.",
       "subscribe": {
-        "invalidEmail": "Пожалуйста, введите действительный адрес электронной почты",
-        "defaultErrorMessage": "Подписка не удалась. Пожалуйста, попробуйте позже",
-        "successMessage": "Успешно подписаны!",
-        "multipleSubmissions": "Слишком много запросов. Пожалуйста, попробуйте завтра"
+        "invalidEmail": "Please enter a valid email address",
+        "defaultErrorMessage": "Subscription failed. Please try again later",
+        "successMessage": "Successfully subscribed!",
+        "multipleSubmissions": "Too many requests. Please try again tomorrow"
       },
       "unsubscribe": {
-        "title": "Отписка от рассылки",
-        "success": "Вы успешно отписались от рассылок Learn OpenClaw.",
+        "title": "Newsletter Unsubscription",
+        "success": "You have successfully unsubscribed from Learn OpenClaw newsletters.",
         "emailPrefix": "Email:",
-        "regretMessage": "Вы можете в любое время подписаться снова, чтобы получать последние обновления и руководства Learn OpenClaw.",
-        "errorGeneric": "Произошла ошибка при обработке вашего запроса на отписку",
-        "errorNoToken": "Токен отписки не предоставлен",
-        "errorMessage": "Пожалуйста, убедитесь, что используете правильную ссылку отписки. Если проблема сохраняется, свяжитесь с нашей службой поддержки.",
-        "contactPrefix": "Свяжитесь с нами:",
-        "contactPrefixSuccess": "Если у вас есть вопросы, свяжитесь с нами:",
-        "backToHome": "Вернуться на главную",
-        "invalidEmail": "Недействительный адрес электронной почты",
-        "notInNewsletter": "Этот email отсутствует в нашем списке подписки",
-        "confirmTitle": "Подтвердите отписку",
-        "confirmMessage": "Вы уверены, что хотите отписаться от нашей рассылки? Вы больше не будете получать обновления о новых функциях и контенте.",
-        "confirmButton": "Да, отписаться",
-        "cancelButton": "Отмена",
-        "processing": "Обработка...",
-        "finalWarning": "Это действие нельзя отменить. Вы всегда можете подписаться снова позже.",
-        "errorInvalidToken": "Неверная ссылка отписки. Ссылка может быть повреждена или истекла."
+        "regretMessage": "You can resubscribe anytime to receive the latest Learn OpenClaw updates and tutorials.",
+        "errorGeneric": "An error occurred while processing your unsubscribe request",
+        "errorNoToken": "No unsubscribe token provided",
+        "errorMessage": "Please make sure you're using the correct unsubscribe link. If the problem persists, contact our support team for assistance.",
+        "contactPrefix": "Contact us at:",
+        "contactPrefixSuccess": "If you have any questions, feel free to contact us at:",
+        "backToHome": "Back to Home",
+        "invalidEmail": "Invalid email address",
+        "notInNewsletter": "This email is not in our subscription list",
+        "confirmTitle": "Confirm Unsubscription",
+        "confirmMessage": "Are you sure you want to unsubscribe from our newsletter? You won't receive updates about new features and content anymore.",
+        "confirmButton": "Yes, Unsubscribe",
+        "cancelButton": "Cancel",
+        "processing": "Processing...",
+        "finalWarning": "This action cannot be undone. You can always resubscribe later.",
+        "errorInvalidToken": "Invalid unsubscribe link. The link may be corrupted or expired."
       }
     },
     "Links": {
       "groups": [
         {
-          "title": "Изучить",
+          "title": "Learn",
           "links": [
             {
               "href": "/openclaw",
-              "name": "Что такое OpenClaw?"
+              "name": "What is OpenClaw?"
             },
             {
               "href": "/blog",
-              "name": "Блог"
+              "name": "Blog"
             }
           ]
         },
         {
-          "title": "О нас",
+          "title": "About",
           "links": [
             {
               "href": "/about",
-              "name": "О нас"
+              "name": "About Us"
             },
             {
               "href": "/privacy-policy",
-              "name": "Политика конфиденциальности"
+              "name": "Privacy Policy",
+              "useA": true
             }
           ]
         }

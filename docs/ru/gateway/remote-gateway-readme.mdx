@@ -1,0 +1,155 @@
+---
+summary: "Настройка SSH туннеля для подключения OpenClaw.app к удаленному шлюзу"
+read_when: "Подключение приложения macOS к удаленному шлюзу через SSH"
+---
+
+# Запуск OpenClaw.app с удаленным шлюзом
+
+OpenClaw.app использует SSH туннелирование для подключения к удаленному шлюзу. Это руководство показывает, как его настроить.
+
+## Обзор
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Клиентская машина                       │
+│                                                              │
+│  OpenClaw.app ──► ws://127.0.0.1:18789 (локальный порт)       │
+│                     │                                        │
+│                     ▼                                        │
+│  SSH Туннель ────────────────────────────────────────────────│
+│                     │                                        │
+└─────────────────────┼──────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         Удаленная машина                       │
+│                                                              │
+│  Gateway WebSocket ──► ws://127.0.0.1:18789 ──►              │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Быстрая настройка
+
+### Шаг 1: Добавить конфигурацию SSH
+
+Отредактируйте `~/.ssh/config` и добавьте:
+
+```ssh
+Host remote-gateway
+    HostName <REMOTE_IP>          # например, 172.27.187.184
+    User <REMOTE_USER>            # например, jefferson
+    LocalForward 18789 127.0.0.1:18789
+    IdentityFile ~/.ssh/id_rsa
+```
+
+Замените `<REMOTE_IP>` и `<REMOTE_USER>` на ваши значения.
+
+### Шаг 2: Скопировать SSH ключ
+
+Скопируйте ваш публичный ключ на удаленную машину (введите пароль один раз):
+
+```bash
+ssh-copy-id -i ~/.ssh/id_rsa <REMOTE_USER>@<REMOTE_IP>
+```
+
+### Шаг 3: Установить токен шлюза
+
+```bash
+launchctl setenv OPENCLAW_GATEWAY_TOKEN "<your-token>"
+```
+
+### Шаг 4: Запустить SSH туннель
+
+```bash
+ssh -N remote-gateway &
+```
+
+### Шаг 5: Перезапустить OpenClaw.app
+
+```bash
+# Закройте OpenClaw.app (⌘Q), затем откройте снова:
+open /path/to/OpenClaw.app
+```
+
+Теперь приложение будет подключаться к удаленному шлюзу через SSH туннель.
+
+---
+
+## Автозапуск туннеля при входе
+
+Чтобы SSH туннель запускался автоматически при входе, создайте Launch Agent.
+
+### Создать файл PLIST
+
+Сохраните это как `~/Library/LaunchAgents/bot.molt.ssh-tunnel.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>bot.molt.ssh-tunnel</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/ssh</string>
+        <string>-N</string>
+        <string>remote-gateway</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+```
+
+### Загрузить Launch Agent
+
+```bash
+launchctl bootstrap gui/$UID ~/Library/LaunchAgents/bot.molt.ssh-tunnel.plist
+```
+
+Теперь туннель будет:
+- Автоматически запускаться при входе
+- Перезапускаться в случае сбоя
+- Работать в фоновом режиме
+
+Устаревшее примечание: удалите оставшийся LaunchAgent `com.openclaw.ssh-tunnel`, если он присутствует.
+
+---
+
+## Устранение неполадок
+
+**Проверить, работает ли туннель:**
+
+```bash
+ps aux | grep "ssh -N remote-gateway" | grep -v grep
+lsof -i :18789
+```
+
+**Перезапустить туннель:**
+
+```bash
+launchctl kickstart -k gui/$UID/bot.molt.ssh-tunnel
+```
+
+**Остановить туннель:**
+
+```bash
+launchctl bootout gui/$UID/bot.molt.ssh-tunnel
+```
+
+---
+
+## Как это работает
+
+| Компонент | Что делает |
+|-----------|------------|
+| `LocalForward 18789 127.0.0.1:18789` | Перенаправляет локальный порт 18789 на удаленный порт 18789 |
+| `ssh -N` | SSH без выполнения удаленных команд (только переадресация портов) |
+| `KeepAlive` | Автоматически перезапускает туннель в случае сбоя |
+| `RunAtLoad` | Запускает туннель при загрузке агента |
+
+OpenClaw.app подключается к `ws://127.0.0.1:18789` на вашей клиентской машине. SSH туннель перенаправляет это соединение на порт 18789 удаленной машины, где работает шлюз.

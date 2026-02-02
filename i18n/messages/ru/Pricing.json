@@ -1,12 +1,13 @@
 {
   "badge": {
-    "label": "ЦЕНЫ",
-    "text": "Разовый платёж, пожизненные обновления"
+    "label": "PRICING",
+    "text": "One-Time Payment, Lifetime Updates"
   },
-  "title": "Запустите ваш SaaS за дни, а не месяцы",
-  "description": "Используя наш проверенный в боевых условиях стартовый шаблон SaaS, вы можете пропустить шаблонное кодирование и сосредоточиться на функциях, которые действительно нужны вашим пользователям.",
-  "annual": "Годовая",
-  "monthly": "Месячная",
-  "onetime": "Разовая",
-  "saveTip": "Экономия 20%"
+  "title": "Ship your SaaS in days, not months",
+  "description": "Using our battle-tested SaaS starter template, so you can skip boilerplate coding and focus on the features your users actually need.",
+  "annual": "Annual",
+  "monthly": "Monthly",
+  "onetime": "One-Time",
+  "saveTip": "Save 20%"
 }
+

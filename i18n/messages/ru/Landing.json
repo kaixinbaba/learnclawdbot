@@ -2,68 +2,68 @@
   "Hero": {
     "badge": {
       "label": "",
-      "text": "Что такое OpenClaw?",
+      "text": "What is OpenClaw?",
       "href": "/what-is-openclaw"
     },
-    "title": "Изучайте OpenClaw",
-    "description": "Learn OpenClaw - это дружественное для начинающих руководство от сообщества, которое поможет вам понять и эффективно использовать OpenClaw. Мы предоставляем простые пошаговые руководства, советы и ресурсы для начала работы с этим мощным инструментом AI-агента (ранее Clawbot и Moltbot).",
-    "getStarted": "Начать обучение",
+    "title": "Learn OpenClaw",
+    "description": "Learn OpenClaw is a beginner-friendly, third-party guide to help you understand and use OpenClaw effectively. We provide easy-to-follow tutorials, tips, and resources for getting started with this powerful AI agent tool (formerly Clawbot and Moltbot).",
+    "getStarted": "Start Learning",
     "getStartedLink": "/blog/guide",
-    "viewDocs": "Читать блог",
+    "viewDocs": "Read Blog",
     "viewDocsLink": "/blog",
-    "timeline": "График разработки"
+    "timeline": "Development Timeline"
   },
   "Features": {
     "badge": {
-      "label": "РЕСУРСЫ",
-      "text": "Официальные ресурсы OpenClaw"
+      "label": "RESOURCES",
+      "text": "Official OpenClaw Resources"
     },
-    "title": "Официальные ресурсы OpenClaw",
-    "description": "Начните работу с OpenClaw, используя эти официальные ресурсы. От документации до маркетплейса навыков - здесь есть всё, что вам нужно.",
+    "title": "OpenClaw Official Resources",
+    "description": "Get started with OpenClaw using these official resources. From documentation to skills marketplace, everything you need is here.",
     "items": [
       {
-        "title": "Официальный сайт",
-        "description": "Посетите официальный сайт OpenClaw, чтобы узнать больше об этом мощном инструменте AI-агента.",
+        "title": "Official Website",
+        "description": "Visit the official OpenClaw website to learn more about this powerful AI agent tool.",
         "details": [
           {
-            "title": "Официальный сайт OpenClaw",
-            "description": "Официальная домашняя страница OpenClaw с последними новостями и обновлениями.",
+            "title": "OpenClaw Official Site",
+            "description": "The official homepage of OpenClaw with latest news and updates.",
             "href": "https://openclaw.ai/"
           }
         ],
         "images": []
       },
       {
-        "title": "Документация",
-        "description": "Всеобъемлющая официальная документация, которая поможет вам начать работу и освоить OpenClaw.",
+        "title": "Documentation",
+        "description": "Comprehensive official documentation to help you get started and master OpenClaw.",
         "details": [
           {
-            "title": "Руководство для начинающих",
-            "description": "Официальное руководство, которое поможет вам настроить и начать использовать OpenClaw.",
+            "title": "Getting Started Guide",
+            "description": "Official guide to help you set up and start using OpenClaw.",
             "href": "https://docs.openclaw.ai/"
           }
         ],
         "images": []
       },
       {
-        "title": "GitHub репозиторий",
-        "description": "Изучайте исходный код, вносите вклад и следите за последними разработками.",
+        "title": "GitHub Repository",
+        "description": "Explore the source code, contribute, and stay updated with the latest developments.",
         "details": [
           {
-            "title": "OpenClaw на GitHub",
-            "description": "Официальный репозиторий GitHub для OpenClaw.",
+            "title": "OpenClaw on GitHub",
+            "description": "Official GitHub repository for OpenClaw.",
             "href": "https://github.com/openclaw/openclaw"
           }
         ],
         "images": []
       },
       {
-        "title": "ClawdHub - Маркетплейс навыков",
-        "description": "Открывайте и устанавливайте навыки для расширения возможностей OpenClaw.",
+        "title": "ClawdHub - Skills Marketplace",
+        "description": "Discover and install skills to extend OpenClaw's capabilities.",
         "details": [
           {
-            "title": "Просмотр навыков",
-            "description": "Находите и устанавливайте пакеты AgentSkills для OpenClaw.",
+            "title": "Browse Skills",
+            "description": "Find and install AgentSkills bundles for OpenClaw.",
             "href": "https://clawdhub.com/"
           }
         ],
@@ -73,33 +73,33 @@
   },
   "UseCases": {
     "badge": {
-      "label": "ПРИМЕРЫ ИСПОЛЬЗОВАНИЯ",
-      "text": "Что умеет OpenClaw"
+      "label": "USE CASES",
+      "text": "What Can OpenClaw Do"
     },
-    "title": "Мощные возможности AI-агента",
-    "description": "OpenClaw - это универсальный инструмент AI-агента, который может помочь вам с различными задачами. Вот некоторые распространённые примеры использования.",
+    "title": "Powerful AI Agent Capabilities",
+    "description": "OpenClaw is a versatile AI agent tool that can help you with various tasks. Here are some common use cases.",
     "cases": [
       {
-        "title": "Разработка кода",
-        "description": "Пишите, проверяйте и рефакторите код с помощью AI. OpenClaw понимает вашу кодовую базу и помогает вам разрабатывать быстрее и лучше.",
+        "title": "Code Development",
+        "description": "Write, review, and refactor code with AI assistance. OpenClaw understands your codebase and helps you develop faster and better.",
         "image": "/placeholder.webp",
         "icon": "Code"
       },
       {
-        "title": "Автоматизация задач",
-        "description": "Автоматизируйте повторяющиеся задачи и рабочие процессы. OpenClaw может выполнять команды, управлять файлами и интегрироваться с вашей средой разработки.",
+        "title": "Task Automation",
+        "description": "Automate repetitive tasks and workflows. OpenClaw can execute commands, manage files, and integrate with your development environment.",
         "image": "/placeholder.webp",
         "icon": "Bot"
       },
       {
-        "title": "Исследования и анализ",
-        "description": "Исследуйте темы, анализируйте данные и собирайте информацию из веба. OpenClaw помогает вам быстро и эффективно находить ответы.",
+        "title": "Research & Analysis",
+        "description": "Research topics, analyze data, and gather information from the web. OpenClaw helps you find answers quickly and efficiently.",
         "image": "/placeholder.webp",
         "icon": "Search"
       },
       {
-        "title": "Документация",
-        "description": "Генерируйте и поддерживайте документацию для ваших проектов. OpenClaw может писать README, API-документацию и технические спецификации.",
+        "title": "Documentation",
+        "description": "Generate and maintain documentation for your projects. OpenClaw can write READMEs, API docs, and technical specifications.",
         "image": "/placeholder.webp",
         "icon": "FileText"
       }
@@ -107,51 +107,51 @@
   },
   "Testimonials": {
     "badge": {
-      "label": "СООБЩЕСТВО"
+      "label": "COMMUNITY"
     },
-    "title": "Присоединяйтесь к сообществу OpenClaw",
-    "description": "Общайтесь с другими пользователями OpenClaw и делитесь своим опытом"
+    "title": "Join the OpenClaw Community",
+    "description": "Connect with other OpenClaw users and share your experiences"
   },
   "FAQ": {
-    "title": "Часто задаваемые вопросы",
-    "description": "Распространённые вопросы об OpenClaw и как максимально эффективно использовать этот инструмент AI-агента",
+    "title": "Frequently Asked Questions",
+    "description": "Common questions about OpenClaw and how to get the most out of this AI agent tool",
     "items": [
       {
-        "question": "Что такое OpenClaw?",
-        "answer": "OpenClaw - это мощный инструмент AI-агента, разработанный для помощи разработчикам и пользователям в выполнении различных задач через взаимодействие на естественном языке. Он может писать код, автоматизировать рабочие процессы, исследовать темы и многое другое."
+        "question": "What is OpenClaw?",
+        "answer": "OpenClaw is a powerful AI agent tool designed to help developers and users perform various tasks through natural language interaction. It can write code, automate workflows, research topics, and much more."
       },
       {
-        "question": "Бесплатен ли OpenClaw?",
-        "answer": "Пожалуйста, обратитесь к официальному сайту OpenClaw для получения актуальной информации о ценах и лицензировании. Посетите https://openclaw.ai/ для подробностей."
+        "question": "Is OpenClaw free to use?",
+        "answer": "Please refer to the official OpenClaw website for the latest pricing and licensing information. Visit https://openclaw.ai/ for details."
       },
       {
-        "question": "Как установить OpenClaw?",
-        "answer": "Вы можете найти подробные инструкции по установке в официальной документации на https://docs.openclaw.ai/. Руководство охватывает установку на различных платформах."
+        "question": "How do I install OpenClaw?",
+        "answer": "You can find detailed installation instructions in the official documentation at https://docs.openclaw.ai/. The guide covers installation on various platforms."
       },
       {
-        "question": "Что такое навыки в OpenClaw?",
-        "answer": "Навыки - это расширения, которые добавляют новые возможности в OpenClaw. Вы можете просматривать и устанавливать навыки из ClawdHub на https://clawdhub.com/, чтобы расширить функциональность OpenClaw."
+        "question": "What are Skills in OpenClaw?",
+        "answer": "Skills are extensions that add new capabilities to OpenClaw. You can browse and install skills from ClawdHub at https://clawdhub.com/ to extend OpenClaw's functionality."
       },
       {
-        "question": "Является ли Learn OpenClaw официальным ресурсом?",
-        "answer": "Нет, Learn OpenClaw - это сторонний ресурс, управляемый сообществом. Для официальной документации и поддержки, пожалуйста, посетите официальный сайт OpenClaw на https://openclaw.ai/."
+        "question": "Is Learn OpenClaw an official resource?",
+        "answer": "No, Learn OpenClaw is a third-party, community-driven resource. For official documentation and support, please visit the official OpenClaw website at https://openclaw.ai/."
       },
       {
-        "question": "Как я могу внести вклад в OpenClaw?",
-        "answer": "Вы можете внести вклад в OpenClaw через репозиторий GitHub на https://github.com/openclaw/openclaw. Ознакомьтесь с руководством по вкладам для получения дополнительной информации."
+        "question": "How can I contribute to OpenClaw?",
+        "answer": "You can contribute to OpenClaw through the GitHub repository at https://github.com/openclaw/openclaw. Check the contribution guidelines for more information."
       }
     ]
   },
   "CTA": {
-    "title": "Начните изучать OpenClaw сегодня",
-    "description": "Изучайте наши руководства и инструкции, чтобы освоить OpenClaw и повысить свою продуктивность с помощью AI-помощника.",
-    "button": "Начать",
-    "trustText": "Бесплатный ресурс сообщества",
+    "title": "Start Learning OpenClaw Today",
+    "description": "Explore our tutorials and guides to master OpenClaw and boost your productivity with AI-powered assistance.",
+    "button": "Get Started",
+    "trustText": "Free community resource",
     "features": {
-      "deploy": "Дружественно для начинающих",
-      "production": "Пошаговые руководства",
-      "updates": "Управляется сообществом",
-      "i18n": "Мультиязычный"
+      "deploy": "Beginner Friendly",
+      "production": "Step-by-Step Guides",
+      "updates": "Community Driven",
+      "i18n": "Multi-Language"
     }
   }
 }

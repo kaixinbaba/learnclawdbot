@@ -39,7 +39,7 @@ export async function constructMetadata({
 
   canonicalUrl = canonicalUrl || path || '/'
 
-  // Use availableLocales if provided, otherwise use UI_LOCALES (excludes docs-only locales like ko)
+  // Use availableLocales if provided, otherwise use UI_LOCALES (excludes docs-only locales like ko, ru)
   const locales = availableLocales || UI_LOCALES
 
   const alternateLanguages = locales.reduce((acc, lang) => {

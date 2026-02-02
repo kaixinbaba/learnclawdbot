@@ -1,0 +1,181 @@
+---
+summary: "Установка OpenClaw (рекомендуемый установщик, глобальная установка или из исходников)"
+read_when:
+  - Установка OpenClaw
+  - Вы хотите установить из GitHub
+---
+
+# Установка
+
+Используйте установщик, если у вас нет причины не делать этого. Он настраивает CLI и запускает онбординг.
+
+## Быстрая установка (рекомендуется)
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash
+```
+
+Windows (PowerShell):
+
+```powershell
+iwr -useb https://openclaw.ai/install.ps1 | iex
+```
+
+Следующий шаг (если вы пропустили онбординг):
+
+```bash
+openclaw onboard --install-daemon
+```
+
+## Системные требования
+
+- **Node >=22**
+- macOS, Linux или Windows через WSL2
+- `pnpm` только если вы собираете из исходников
+
+## Выберите путь установки
+
+### 1) Скрипт установщика (рекомендуется)
+
+Устанавливает `openclaw` глобально через npm и запускает онбординг.
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash
+```
+
+Флаги установщика:
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --help
+```
+
+Подробности: [Внутренности установщика](/install/installer).
+
+Неинтерактивно (пропустить онбординг):
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --no-onboard
+```
+
+### 2) Глобальная установка (вручную)
+
+Если у вас уже есть Node:
+
+```bash
+npm install -g openclaw@latest
+```
+
+Если у вас глобально установлен libvips (часто на macOS через Homebrew) и установка `sharp` не удается, принудительно используйте предсобранные бинарники:
+
+```bash
+SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install -g openclaw@latest
+```
+
+Если вы видите `sharp: Please add node-gyp to your dependencies`, либо установите инструменты сборки (macOS: Xcode CLT + `npm install -g node-gyp`), либо используйте обходной путь `SHARP_IGNORE_GLOBAL_LIBVIPS=1` выше, чтобы пропустить нативную сборку.
+
+Или:
+
+```bash
+pnpm add -g openclaw@latest
+```
+
+Затем:
+
+```bash
+openclaw onboard --install-daemon
+```
+
+### 3) Из исходников (для контрибьюторов/разработчиков)
+
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+pnpm install
+pnpm ui:build # автоматически устанавливает зависимости UI при первом запуске
+pnpm build
+openclaw onboard --install-daemon
+```
+
+Совет: если у вас еще нет глобальной установки, запускайте команды репозитория через `pnpm openclaw ...`.
+
+### 4) Другие варианты установки
+
+- Docker: [Docker](/install/docker)
+- Nix: [Nix](/install/nix)
+- Ansible: [Ansible](/install/ansible)
+- Bun (только CLI): [Bun](/install/bun)
+
+## После установки
+
+- Запустите онбординг: `openclaw onboard --install-daemon`
+- Быстрая проверка: `openclaw doctor`
+- Проверьте здоровье gateway: `openclaw status` + `openclaw health`
+- Откройте панель управления: `openclaw dashboard`
+
+## Метод установки: npm vs git (установщик)
+
+Установщик поддерживает два метода:
+
+- `npm` (по умолчанию): `npm install -g openclaw@latest`
+- `git`: клонирование/сборка из GitHub и запуск из исходной папки
+
+### Флаги CLI
+
+```bash
+# Явный npm
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --install-method npm
+
+# Установка из GitHub (исходная папка)
+curl -fsSL https://openclaw.bot/install.sh | bash -s -- --install-method git
+```
+
+Общие флаги:
+
+- `--install-method npm|git`
+- `--git-dir <path>` (по умолчанию: `~/openclaw`)
+- `--no-git-update` (пропустить `git pull` при использовании существующей папки)
+- `--no-prompt` (отключить запросы; требуется в CI/автоматизации)
+- `--dry-run` (показать, что произойдет; не вносить изменения)
+- `--no-onboard` (пропустить онбординг)
+
+### Переменные окружения
+
+Эквивалентные переменные окружения (полезны для автоматизации):
+
+- `OPENCLAW_INSTALL_METHOD=git|npm`
+- `OPENCLAW_GIT_DIR=...`
+- `OPENCLAW_GIT_UPDATE=0|1`
+- `OPENCLAW_NO_PROMPT=1`
+- `OPENCLAW_DRY_RUN=1`
+- `OPENCLAW_NO_ONBOARD=1`
+- `SHARP_IGNORE_GLOBAL_LIBVIPS=0|1` (по умолчанию: `1`; избегает сборки `sharp` против системного libvips)
+
+## Устранение неполадок: `openclaw` не найден (PATH)
+
+Быстрая диагностика:
+
+```bash
+node -v
+npm -v
+npm prefix -g
+echo "$PATH"
+```
+
+Если `$(npm prefix -g)/bin` (macOS/Linux) или `$(npm prefix -g)` (Windows) **отсутствует** в `echo "$PATH"`, ваша оболочка не может найти глобальные бинарники npm (включая `openclaw`).
+
+Исправление: добавьте это в файл запуска вашей оболочки (zsh: `~/.zshrc`, bash: `~/.bashrc`):
+
+```bash
+# macOS / Linux
+export PATH="$(npm prefix -g)/bin:$PATH"
+```
+
+В Windows добавьте вывод `npm prefix -g` в ваш PATH.
+
+Затем откройте новый терминал (или `rehash` в zsh / `hash -r` в bash).
+
+## Обновление / удаление
+
+- Обновления: [Обновление](/install/updating)
+- Миграция на новую машину: [Миграция](/install/migrating)
+- Удаление: [Удаление](/install/uninstall)

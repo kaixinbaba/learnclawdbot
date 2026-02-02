@@ -247,6 +247,11 @@
             "name": "한국어",
             "href": "/ko/docs",
             "description": "한국어 문서"
+          },
+          {
+            "name": "Русский",
+            "href": "/ru/docs",
+            "description": "Документация на русском"
           }
         ]
       },
@@ -324,7 +329,8 @@
             },
             {
               "href": "/privacy-policy",
-              "name": "隐私政策"
+              "name": "隐私政策",
+              "useA": true
             }
           ]
         }

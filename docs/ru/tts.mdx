@@ -1,0 +1,366 @@
+---
+summary: "Преобразование текста в речь (TTS) для исходящих ответов"
+read_when:
+  - Включение преобразования текста в речь для ответов
+  - Настройка провайдеров TTS или лимитов
+  - Использование команд /tts
+---
+
+# Преобразование текста в речь (TTS)
+
+OpenClaw может конвертировать исходящие ответы в аудио с использованием ElevenLabs, OpenAI или Edge TTS.
+Это работает везде, где OpenClaw может отправлять аудио; Telegram получает круглый пузырь голосовой заметки.
+
+## Поддерживаемые сервисы
+
+- **ElevenLabs** (основной или запасной провайдер)
+- **OpenAI** (основной или запасной провайдер; также используется для резюме)
+- **Edge TTS** (основной или запасной провайдер; использует `node-edge-tts`, по умолчанию, когда нет API-ключей)
+
+### Примечания Edge TTS
+
+Edge TTS использует онлайн-сервис нейронного TTS Microsoft Edge через библиотеку `node-edge-tts`. Это размещенный сервис (не локальный), использует конечные точки Microsoft и не требует API-ключа. `node-edge-tts` предоставляет параметры конфигурации речи и форматы вывода, но не все параметры поддерживаются сервисом Edge.
+
+Поскольку Edge TTS — это публичный веб-сервис без опубликованного SLA или квоты, рассматривайте его как выполняемый по возможности. Если вам нужны гарантированные лимиты и поддержка, используйте OpenAI или ElevenLabs. REST API Microsoft Speech документирует лимит аудио в 10 минут на запрос; Edge TTS не публикует лимиты, поэтому предполагайте аналогичные или более низкие лимиты.
+
+## Опциональные ключи
+
+Если вы хотите OpenAI или ElevenLabs:
+- `ELEVENLABS_API_KEY` (или `XI_API_KEY`)
+- `OPENAI_API_KEY`
+
+Edge TTS **не** требует API-ключа. Если ключи API не найдены, OpenClaw по умолчанию использует Edge TTS (если не отключено через `messages.tts.edge.enabled=false`).
+
+Если настроено несколько провайдеров, выбранный провайдер используется первым, а остальные являются запасными вариантами.
+Автоматическое резюме использует настроенную `summaryModel` (или `agents.defaults.model.primary`), поэтому этот провайдер также должен быть аутентифицирован, если вы включаете резюме.
+
+## Ссылки на сервисы
+
+- [OpenAI Text-to-Speech guide](https://platform.openai.com/docs/guides/text-to-speech)
+- [OpenAI Audio API reference](https://platform.openai.com/docs/api-reference/audio)
+- [ElevenLabs Text to Speech](https://elevenlabs.io/docs/api-reference/text-to-speech)
+- [ElevenLabs Authentication](https://elevenlabs.io/docs/api-reference/authentication)
+- [node-edge-tts](https://github.com/SchneeHertz/node-edge-tts)
+- [Microsoft Speech output formats](https://learn.microsoft.com/azure/ai-services/speech-service/rest-text-to-speech#audio-outputs)
+
+## Включено ли это по умолчанию?
+
+Нет. Авто-TTS **выключено** по умолчанию. Включите его в конфигурации с помощью `messages.tts.auto` или для каждой сессии с `/tts always` (псевдоним: `/tts on`).
+
+Edge TTS **включен** по умолчанию, как только TTS включен, и используется автоматически, когда нет API-ключей OpenAI или ElevenLabs.
+
+## Конфигурация
+
+Конфигурация TTS находится под `messages.tts` в `openclaw.json`.
+Полная схема в [Конфигурация шлюза](/gateway/configuration).
+
+### Минимальная конфигурация (включение + провайдер)
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "elevenlabs"
+    }
+  }
+}
+```
+
+### OpenAI основной с ElevenLabs запасным
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "openai",
+      summaryModel: "openai/gpt-4.1-mini",
+      modelOverrides: {
+        enabled: true
+      },
+      openai: {
+        apiKey: "openai_api_key",
+        model: "gpt-4o-mini-tts",
+        voice: "alloy"
+      },
+      elevenlabs: {
+        apiKey: "elevenlabs_api_key",
+        baseUrl: "https://api.elevenlabs.io",
+        voiceId: "voice_id",
+        modelId: "eleven_multilingual_v2",
+        seed: 42,
+        applyTextNormalization: "auto",
+        languageCode: "en",
+        voiceSettings: {
+          stability: 0.5,
+          similarityBoost: 0.75,
+          style: 0.0,
+          useSpeakerBoost: true,
+          speed: 1.0
+        }
+      }
+    }
+  }
+}
+```
+
+### Edge TTS основной (без API-ключа)
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "edge",
+      edge: {
+        enabled: true,
+        voice: "en-US-MichelleNeural",
+        lang: "en-US",
+        outputFormat: "audio-24khz-48kbitrate-mono-mp3",
+        rate: "+10%",
+        pitch: "-5%"
+      }
+    }
+  }
+}
+```
+
+### Отключить Edge TTS
+
+```json5
+{
+  messages: {
+    tts: {
+      edge: {
+        enabled: false
+      }
+    }
+  }
+}
+```
+
+### Пользовательские лимиты + путь настроек
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      maxTextLength: 4000,
+      timeoutMs: 30000,
+      prefsPath: "~/.openclaw/settings/tts.json"
+    }
+  }
+}
+```
+
+### Отвечать аудио только после входящей голосовой заметки
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "inbound"
+    }
+  }
+}
+```
+
+### Отключить автоматическое резюме для длинных ответов
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always"
+    }
+  }
+}
+```
+
+Затем запустите:
+
+```
+/tts summary off
+```
+
+### Примечания по полям
+
+- `auto`: режим авто-TTS (`off`, `always`, `inbound`, `tagged`).
+  - `inbound` отправляет аудио только после входящей голосовой заметки.
+  - `tagged` отправляет аудио только когда ответ содержит теги `[[tts]]`.
+- `enabled`: устаревший переключатель (доктор мигрирует его в `auto`).
+- `mode`: `"final"` (по умолчанию) или `"all"` (включает ответы инструментов/блоков).
+- `provider`: `"elevenlabs"`, `"openai"` или `"edge"` (запасной вариант автоматический).
+- Если `provider` **не установлен**, OpenClaw предпочитает `openai` (если ключ), затем `elevenlabs` (если ключ), в противном случае `edge`.
+- `summaryModel`: опциональная дешевая модель для автоматического резюме; по умолчанию `agents.defaults.model.primary`.
+  - Принимает `provider/model` или настроенный псевдоним модели.
+- `modelOverrides`: разрешить модели выдавать директивы TTS (включено по умолчанию).
+- `maxTextLength`: жесткое ограничение для входных данных TTS (символы). `/tts audio` не выполняется, если превышено.
+- `timeoutMs`: таймаут запроса (мс).
+- `prefsPath`: переопределить путь к локальному JSON настроек (провайдер/лимит/резюме).
+- Значения `apiKey` по умолчанию берутся из переменных окружения (`ELEVENLABS_API_KEY`/`XI_API_KEY`, `OPENAI_API_KEY`).
+- `elevenlabs.baseUrl`: переопределить базовый URL API ElevenLabs.
+- `elevenlabs.voiceSettings`:
+  - `stability`, `similarityBoost`, `style`: `0..1`
+  - `useSpeakerBoost`: `true|false`
+  - `speed`: `0.5..2.0` (1.0 = нормально)
+- `elevenlabs.applyTextNormalization`: `auto|on|off`
+- `elevenlabs.languageCode`: 2-буквенный ISO 639-1 (например `en`, `de`)
+- `elevenlabs.seed`: целое число `0..4294967295` (детерминизм по возможности)
+- `edge.enabled`: разрешить использование Edge TTS (по умолчанию `true`; без API-ключа).
+- `edge.voice`: название нейронного голоса Edge (например `en-US-MichelleNeural`).
+- `edge.lang`: код языка (например `en-US`).
+- `edge.outputFormat`: формат вывода Edge (например `audio-24khz-48kbitrate-mono-mp3`).
+  - См. форматы вывода Microsoft Speech для допустимых значений; не все форматы поддерживаются Edge.
+- `edge.rate` / `edge.pitch` / `edge.volume`: процентные строки (например `+10%`, `-5%`).
+- `edge.saveSubtitles`: записать JSON субтитры рядом с аудиофайлом.
+- `edge.proxy`: URL прокси для запросов Edge TTS.
+- `edge.timeoutMs`: переопределение таймаута запроса (мс).
+
+## Переопределения, управляемые моделью (по умолчанию включено)
+
+По умолчанию модель **может** выдавать директивы TTS для одного ответа.
+Когда `messages.tts.auto` равно `tagged`, эти директивы требуются для запуска аудио.
+
+Когда включено, модель может выдавать директивы `[[tts:...]]` для переопределения голоса для одного ответа, плюс опциональный блок `[[tts:text]]...[[/tts:text]]` для предоставления выразительных тегов (смех, пение и т.д.), которые должны появляться только в аудио.
+
+Пример полезной нагрузки ответа:
+
+```
+Вот, пожалуйста.
+
+[[tts:provider=elevenlabs voiceId=pMsXgVXv3BLzUgSXRplE model=eleven_v3 speed=1.1]]
+[[tts:text]](смеется) Прочитай песню еще раз.[[/tts:text]]
+```
+
+Доступные ключи директив (когда включено):
+- `provider` (`openai` | `elevenlabs` | `edge`)
+- `voice` (голос OpenAI) или `voiceId` (ElevenLabs)
+- `model` (модель TTS OpenAI или ID модели ElevenLabs)
+- `stability`, `similarityBoost`, `style`, `speed`, `useSpeakerBoost`
+- `applyTextNormalization` (`auto|on|off`)
+- `languageCode` (ISO 639-1)
+- `seed`
+
+Отключить все переопределения модели:
+
+```json5
+{
+  messages: {
+    tts: {
+      modelOverrides: {
+        enabled: false
+      }
+    }
+  }
+}
+```
+
+Опциональный список разрешений (отключить определенные переопределения, сохранив теги включенными):
+
+```json5
+{
+  messages: {
+    tts: {
+      modelOverrides: {
+        enabled: true,
+        allowProvider: false,
+        allowSeed: false
+      }
+    }
+  }
+}
+```
+
+## Настройки для каждого пользователя
+
+Слэш-команды записывают локальные переопределения в `prefsPath` (по умолчанию: `~/.openclaw/settings/tts.json`, переопределение с помощью `OPENCLAW_TTS_PREFS` или `messages.tts.prefsPath`).
+
+Сохраненные поля:
+- `enabled`
+- `provider`
+- `maxLength` (порог резюме; по умолчанию 1500 символов)
+- `summarize` (по умолчанию `true`)
+
+Эти переопределяют `messages.tts.*` для этого хоста.
+
+## Форматы вывода (фиксированные)
+
+- **Telegram**: голосовая заметка Opus (`opus_48000_64` из ElevenLabs, `opus` из OpenAI).
+  - 48kHz / 64kbps — хороший компромисс голосовой заметки и требуется для круглого пузыря.
+- **Другие каналы**: MP3 (`mp3_44100_128` из ElevenLabs, `mp3` из OpenAI).
+  - 44.1kHz / 128kbps — баланс по умолчанию для ясности речи.
+- **Edge TTS**: использует `edge.outputFormat` (по умолчанию `audio-24khz-48kbitrate-mono-mp3`).
+  - `node-edge-tts` принимает `outputFormat`, но не все форматы доступны от сервиса Edge.
+  - Значения формата вывода следуют форматам вывода Microsoft Speech (включая Ogg/WebM Opus).
+  - Telegram `sendVoice` принимает OGG/MP3/M4A; используйте OpenAI/ElevenLabs, если вам нужны гарантированные голосовые заметки Opus.
+  - Если настроенный формат вывода Edge не работает, OpenClaw повторяет попытку с MP3.
+
+Форматы OpenAI/ElevenLabs фиксированные; Telegram ожидает Opus для UX голосовой заметки.
+
+## Поведение авто-TTS
+
+Когда включено, OpenClaw:
+- пропускает TTS, если ответ уже содержит медиа или директиву `MEDIA:`.
+- пропускает очень короткие ответы (< 10 символов).
+- резюмирует длинные ответы, когда включено, используя `agents.defaults.model.primary` (или `summaryModel`).
+- прикрепляет сгенерированное аудио к ответу.
+
+Если ответ превышает `maxLength` и резюме отключено (или нет API-ключа для модели резюме), аудио пропускается и отправляется обычный текстовый ответ.
+
+## Диаграмма потока
+
+```
+Ответ -> TTS включен?
+  нет  -> отправить текст
+  да -> есть медиа / MEDIA: / короткий?
+          да -> отправить текст
+          нет  -> длина > лимита?
+                   нет  -> TTS -> прикрепить аудио
+                   да -> резюме включено?
+                            нет  -> отправить текст
+                            да -> резюмировать (summaryModel или agents.defaults.model.primary)
+                                      -> TTS -> прикрепить аудио
+```
+
+## Использование слэш-команды
+
+Есть одна команда: `/tts`.
+См. [Слэш-команды](/tools/slash-commands) для деталей включения.
+
+Примечание Discord: `/tts` — встроенная команда Discord, поэтому OpenClaw регистрирует `/voice` как нативную команду там. Текст `/tts ...` всё еще работает.
+
+```
+/tts off
+/tts always
+/tts inbound
+/tts tagged
+/tts status
+/tts provider openai
+/tts limit 2000
+/tts summary off
+/tts audio Hello from OpenClaw
+```
+
+Примечания:
+- Команды требуют авторизованного отправителя (правила списка разрешений/владельца всё еще применяются).
+- `commands.text` или регистрация нативных команд должны быть включены.
+- `off|always|inbound|tagged` — переключатели для каждой сессии (`/tts on` — псевдоним для `/tts always`).
+- `limit` и `summary` сохраняются в локальных настройках, а не в основной конфигурации.
+- `/tts audio` генерирует одноразовый аудио ответ (не переключает TTS).
+
+## Инструмент агента
+
+Инструмент `tts` преобразует текст в речь и возвращает путь `MEDIA:`. Когда результат совместим с Telegram, инструмент включает `[[audio_as_voice]]`, чтобы Telegram отправлял голосовой пузырь.
+
+## Gateway RPC
+
+Методы шлюза:
+- `tts.status`
+- `tts.enable`
+- `tts.disable`
+- `tts.convert`
+- `tts.setProvider`
+- `tts.providers`

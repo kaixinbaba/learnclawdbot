@@ -1,25 +1,25 @@
 {
-  "title": "Глоссарий",
-  "description": "Всеобъемлющий глоссарий терминов и концепций разработки Next.js SaaS.",
+  "title": "Glossary",
+  "description": "Comprehensive glossary of Next.js SaaS development terms and concepts.",
   "emptyState": {
-    "title": "Нет записей глоссария",
-    "description": "Мы создаем интересный контент, пожалуйста, следите за обновлениями!"
+    "title": "No glossary entries",
+    "description": "We are creating exciting content, please stay tuned!"
   },
-  "loadMorePostsFailed": "Не удалось загрузить больше записей глоссария",
-  "loadMorePosts": "Загрузка дополнительных записей глоссария...",
-  "filterPostsFailed": "Не удалось загрузить записи глоссария",
-  "noPostsFoundForThisTag": "Записей глоссария с этим тегом не найдено",
-  "reachedTheEnd": "Вы достигли конца всех записей глоссария",
+  "loadMorePostsFailed": "Failed to load more glossary entries",
+  "loadMorePosts": "Loading more glossary entries...",
+  "filterPostsFailed": "Failed to load glossary entries",
+  "noPostsFoundForThisTag": "No glossary entries found with this tag",
+  "reachedTheEnd": "You've reached the end of all glossary entries",
   "GlossaryDetail": {
-    "featured": "Избранная запись",
-    "viewCount": "{count} просмотров",
-    "accessRestricted": "Доступ ограничен",
-    "unauthorized": "Эта запись глоссария доступна только авторизованным пользователям",
-    "premium": "Премиум контент",
-    "premiumContent": "Эта запись глоссария эксклюзивна для подписчиков",
-    "signIn": "Войти",
-    "upgrade": "Обновить",
-    "backToGlossary": "Вернуться к списку глоссария",
-    "notFound": "Запись глоссария не найдена"
+    "featured": "Featured Entry",
+    "viewCount": "{count} views",
+    "accessRestricted": "Access Restricted",
+    "unauthorized": "This glossary entry is only available to logged-in users",
+    "premium": "Premium Content",
+    "premiumContent": "This glossary entry is exclusive to subscribers",
+    "signIn": "Sign In",
+    "upgrade": "Upgrade",
+    "backToGlossary": "Back to Glossary List",
+    "notFound": "Glossary Entry Not Found"
   }
 }

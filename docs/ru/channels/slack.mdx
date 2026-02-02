@@ -1,0 +1,509 @@
+---
+summary: "Настройка Slack для режима сокетов или HTTP webhook"
+read_when: "Настройка Slack или отладка режима сокетов/HTTP в Slack"
+---
+
+# Slack
+
+## Режим сокетов (по умолчанию)
+
+### Быстрая настройка (для начинающих)
+1) Создайте приложение Slack и включите **Socket Mode**.
+2) Создайте **App Token** (`xapp-...`) и **Bot Token** (`xoxb-...`).
+3) Установите токены для OpenClaw и запустите gateway.
+
+Минимальная конфигурация:
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      appToken: "xapp-...",
+      botToken: "xoxb-..."
+    }
+  }
+}
+```
+
+### Настройка
+1) Создайте приложение Slack (From scratch) на https://api.slack.com/apps.
+2) **Socket Mode** → включите. Затем перейдите в **Basic Information** → **App-Level Tokens** → **Generate Token and Scopes** с областью `connections:write`. Скопируйте **App Token** (`xapp-...`).
+3) **OAuth & Permissions** → добавьте области токена бота (используйте манифест ниже). Нажмите **Install to Workspace**. Скопируйте **Bot User OAuth Token** (`xoxb-...`).
+4) Опционально: **OAuth & Permissions** → добавьте **User Token Scopes** (см. список только для чтения ниже). Переустановите приложение и скопируйте **User OAuth Token** (`xoxp-...`).
+5) **Event Subscriptions** → включите события и подпишитесь на:
+   - `message.*` (включает редактирования/удаления/трансляции в треды)
+   - `app_mention`
+   - `reaction_added`, `reaction_removed`
+   - `member_joined_channel`, `member_left_channel`
+   - `channel_rename`
+   - `pin_added`, `pin_removed`
+6) Пригласите бота в каналы, которые он должен читать.
+7) Slash Commands → создайте `/openclaw`, если используете `channels.slack.slashCommand`. Если включаете нативные команды, добавьте одну slash-команду для каждой встроенной команды (те же имена, что в `/help`). Native по умолчанию выключен для Slack, если не установить `channels.slack.commands.native: true` (глобальный `commands.native` равен `"auto"`, что оставляет Slack выключенным).
+8) App Home → включите **Messages Tab**, чтобы пользователи могли писать боту в личные сообщения.
+
+Используйте манифест ниже, чтобы области и события оставались синхронизированными.
+
+Поддержка нескольких аккаунтов: используйте `channels.slack.accounts` с токенами для каждого аккаунта и опциональным `name`. См. [`gateway/configuration`](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts) для общего паттерна.
+
+### Конфигурация OpenClaw (минимальная)
+
+Установите токены через переменные окружения (рекомендуется):
+- `SLACK_APP_TOKEN=xapp-...`
+- `SLACK_BOT_TOKEN=xoxb-...`
+
+Или через конфигурацию:
+
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      appToken: "xapp-...",
+      botToken: "xoxb-..."
+    }
+  }
+}
+```
+
+### Пользовательский токен (опционально)
+OpenClaw может использовать пользовательский токен Slack (`xoxp-...`) для операций чтения (история,
+закрепления, реакции, эмодзи, информация о участниках). По умолчанию он остается только для чтения: чтения
+предпочитают пользовательский токен, когда он присутствует, а записи все равно используют токен бота, если
+вы явно не включите эту возможность. Даже с `userTokenReadOnly: false`, токен бота остается
+предпочтительным для записей, когда он доступен.
+
+Пользовательские токены настраиваются в файле конфигурации (без поддержки переменных окружения). Для
+мультиаккаунта установите `channels.slack.accounts.<id>.userToken`.
+
+Пример с токенами бота + приложения + пользователя:
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      appToken: "xapp-...",
+      botToken: "xoxb-...",
+      userToken: "xoxp-..."
+    }
+  }
+}
+```
+
+Пример с явно установленным userTokenReadOnly (разрешить записи через пользовательский токен):
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      appToken: "xapp-...",
+      botToken: "xoxb-...",
+      userToken: "xoxp-...",
+      userTokenReadOnly: false
+    }
+  }
+}
+```
+
+#### Использование токенов
+- Операции чтения (история, список реакций, список закреплений, список эмодзи, информация о участниках,
+  поиск) предпочитают пользовательский токен, когда он настроен, иначе токен бота.
+- Операции записи (отправка/редактирование/удаление сообщений, добавление/удаление реакций, закрепление/открепление,
+  загрузка файлов) используют токен бота по умолчанию. Если `userTokenReadOnly: false` и
+  токен бота недоступен, OpenClaw использует пользовательский токен.
+
+### Контекст истории
+- `channels.slack.historyLimit` (или `channels.slack.accounts.*.historyLimit`) контролирует, сколько недавних сообщений канала/группы оборачивается в промпт.
+- Откатывается на `messages.groupChat.historyLimit`. Установите `0` для отключения (по умолчанию 50).
+
+## Режим HTTP (Events API)
+Используйте режим HTTP webhook, когда ваш Gateway доступен для Slack по HTTPS (типично для серверных развертываний).
+Режим HTTP использует Events API + Interactivity + Slash Commands с общим URL запроса.
+
+### Настройка
+1) Создайте приложение Slack и **отключите Socket Mode** (опционально, если используете только HTTP).
+2) **Basic Information** → скопируйте **Signing Secret**.
+3) **OAuth & Permissions** → установите приложение и скопируйте **Bot User OAuth Token** (`xoxb-...`).
+4) **Event Subscriptions** → включите события и установите **Request URL** на путь webhook вашего gateway (по умолчанию `/slack/events`).
+5) **Interactivity & Shortcuts** → включите и установите тот же **Request URL**.
+6) **Slash Commands** → установите тот же **Request URL** для ваших команд.
+
+Пример URL запроса:
+`https://gateway-host/slack/events`
+
+### Конфигурация OpenClaw (минимальная)
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      mode: "http",
+      botToken: "xoxb-...",
+      signingSecret: "your-signing-secret",
+      webhookPath: "/slack/events"
+    }
+  }
+}
+```
+
+Мультиаккаунт в режиме HTTP: установите `channels.slack.accounts.<id>.mode = "http"` и предоставьте уникальный
+`webhookPath` для каждого аккаунта, чтобы каждое приложение Slack могло указывать на свой собственный URL.
+
+### Манифест (опционально)
+Используйте этот манифест приложения Slack для быстрого создания приложения (настройте имя/команду, если хотите). Включите
+пользовательские области, если планируете настроить пользовательский токен.
+
+```json
+{
+  "display_information": {
+    "name": "OpenClaw",
+    "description": "Slack connector for OpenClaw"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "OpenClaw",
+      "always_online": false
+    },
+    "app_home": {
+      "messages_tab_enabled": true,
+      "messages_tab_read_only_enabled": false
+    },
+    "slash_commands": [
+      {
+        "command": "/openclaw",
+        "description": "Send a message to OpenClaw",
+        "should_escape": false
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "chat:write",
+        "channels:history",
+        "channels:read",
+        "groups:history",
+        "groups:read",
+        "groups:write",
+        "im:history",
+        "im:read",
+        "im:write",
+        "mpim:history",
+        "mpim:read",
+        "mpim:write",
+        "users:read",
+        "app_mentions:read",
+        "reactions:read",
+        "reactions:write",
+        "pins:read",
+        "pins:write",
+        "emoji:read",
+        "commands",
+        "files:read",
+        "files:write"
+      ],
+      "user": [
+        "channels:history",
+        "channels:read",
+        "groups:history",
+        "groups:read",
+        "im:history",
+        "im:read",
+        "mpim:history",
+        "mpim:read",
+        "users:read",
+        "reactions:read",
+        "pins:read",
+        "emoji:read",
+        "search:read"
+      ]
+    }
+  },
+  "settings": {
+    "socket_mode_enabled": true,
+    "event_subscriptions": {
+      "bot_events": [
+        "app_mention",
+        "message.channels",
+        "message.groups",
+        "message.im",
+        "message.mpim",
+        "reaction_added",
+        "reaction_removed",
+        "member_joined_channel",
+        "member_left_channel",
+        "channel_rename",
+        "pin_added",
+        "pin_removed"
+      ]
+    }
+  }
+}
+```
+
+Если включаете нативные команды, добавьте одну запись `slash_commands` для каждой команды, которую хотите предоставить (соответствующую списку `/help`). Переопределите с помощью `channels.slack.commands.native`.
+
+## Области (текущие vs опциональные)
+Conversations API в Slack использует области по типу: вам нужны только области для
+типов разговоров, к которым вы действительно обращаетесь (channels, groups, im, mpim). См.
+https://docs.slack.dev/apis/web-api/using-the-conversations-api/ для обзора.
+
+### Области токена бота (обязательные)
+- `chat:write` (отправка/обновление/удаление сообщений через `chat.postMessage`)
+  https://docs.slack.dev/reference/methods/chat.postMessage
+- `im:write` (открытие личных сообщений через `conversations.open` для пользовательских личных сообщений)
+  https://docs.slack.dev/reference/methods/conversations.open
+- `channels:history`, `groups:history`, `im:history`, `mpim:history`
+  https://docs.slack.dev/reference/methods/conversations.history
+- `channels:read`, `groups:read`, `im:read`, `mpim:read`
+  https://docs.slack.dev/reference/methods/conversations.info
+- `users:read` (поиск пользователя)
+  https://docs.slack.dev/reference/methods/users.info
+- `reactions:read`, `reactions:write` (`reactions.get` / `reactions.add`)
+  https://docs.slack.dev/reference/methods/reactions.get
+  https://docs.slack.dev/reference/methods/reactions.add
+- `pins:read`, `pins:write` (`pins.list` / `pins.add` / `pins.remove`)
+  https://docs.slack.dev/reference/scopes/pins.read
+  https://docs.slack.dev/reference/scopes/pins.write
+- `emoji:read` (`emoji.list`)
+  https://docs.slack.dev/reference/scopes/emoji.read
+- `files:write` (загрузки через `files.uploadV2`)
+  https://docs.slack.dev/messaging/working-with-files/#upload
+
+### Области пользовательского токена (опциональные, только для чтения по умолчанию)
+Добавьте их в **User Token Scopes**, если настраиваете `channels.slack.userToken`.
+
+- `channels:history`, `groups:history`, `im:history`, `mpim:history`
+- `channels:read`, `groups:read`, `im:read`, `mpim:read`
+- `users:read`
+- `reactions:read`
+- `pins:read`
+- `emoji:read`
+- `search:read`
+
+### Не нужны сегодня (но вероятно в будущем)
+- `mpim:write` (только если добавим открытие групповых личных сообщений/начало личных сообщений через `conversations.open`)
+- `groups:write` (только если добавим управление приватными каналами: создание/переименование/приглашение/архивирование)
+- `chat:write.public` (только если хотим публиковать в каналы, в которых нет бота)
+  https://docs.slack.dev/reference/scopes/chat.write.public
+- `users:read.email` (только если нужны поля email из `users.info`)
+  https://docs.slack.dev/changelog/2017-04-narrowing-email-access
+- `files:read` (только если начнем перечислять/читать метаданные файлов)
+
+## Конфигурация
+Slack использует только Socket Mode (без HTTP webhook сервера). Предоставьте оба токена:
+
+```json
+{
+  "slack": {
+    "enabled": true,
+    "botToken": "xoxb-...",
+    "appToken": "xapp-...",
+    "groupPolicy": "allowlist",
+    "dm": {
+      "enabled": true,
+      "policy": "pairing",
+      "allowFrom": ["U123", "U456", "*"],
+      "groupEnabled": false,
+      "groupChannels": ["G123"],
+      "replyToMode": "all"
+    },
+    "channels": {
+      "C123": { "allow": true, "requireMention": true },
+      "#general": {
+        "allow": true,
+        "requireMention": true,
+        "users": ["U123"],
+        "skills": ["search", "docs"],
+        "systemPrompt": "Keep answers short."
+      }
+    },
+    "reactionNotifications": "own",
+    "reactionAllowlist": ["U123"],
+    "replyToMode": "off",
+    "actions": {
+      "reactions": true,
+      "messages": true,
+      "pins": true,
+      "memberInfo": true,
+      "emojiList": true
+    },
+    "slashCommand": {
+      "enabled": true,
+      "name": "openclaw",
+      "sessionPrefix": "slack:slash",
+      "ephemeral": true
+    },
+    "textChunkLimit": 4000,
+    "mediaMaxMb": 20
+  }
+}
+```
+
+Токены также можно предоставить через переменные окружения:
+- `SLACK_BOT_TOKEN`
+- `SLACK_APP_TOKEN`
+
+Реакции подтверждения контролируются глобально через `messages.ackReaction` +
+`messages.ackReactionScope`. Используйте `messages.removeAckAfterReply` для удаления
+реакции подтверждения после ответа бота.
+
+## Лимиты
+- Исходящий текст разбивается на части по `channels.slack.textChunkLimit` (по умолчанию 4000).
+- Опциональное разбиение по новым строкам: установите `channels.slack.chunkMode="newline"` для разделения по пустым строкам (границам абзацев) перед разбиением по длине.
+- Загрузки медиа ограничены `channels.slack.mediaMaxMb` (по умолчанию 20).
+
+## Треды ответов
+По умолчанию OpenClaw отвечает в основном канале. Используйте `channels.slack.replyToMode` для контроля автоматических тредов:
+
+| Режим | Поведение |
+| --- | --- |
+| `off` | **По умолчанию.** Ответ в основном канале. Тред только если исходное сообщение уже было в треде. |
+| `first` | Первый ответ идет в тред (под исходным сообщением), последующие ответы идут в основной канал. Полезно для сохранения видимости контекста при избежании захламления тредов. |
+| `all` | Все ответы идут в тред. Сохраняет разговоры изолированными, но может снизить видимость. |
+
+Режим применяется как к автоответам, так и к вызовам инструментов агента (`slack sendMessage`).
+
+### Треды по типу чата
+Вы можете настроить разное поведение тредов для каждого типа чата, установив `channels.slack.replyToModeByChatType`:
+
+```json5
+{
+  channels: {
+    slack: {
+      replyToMode: "off",        // по умолчанию для каналов
+      replyToModeByChatType: {
+        direct: "all",           // личные сообщения всегда в тредах
+        group: "first"           // групповые личные сообщения/MPIM тредят первый ответ
+      },
+    }
+  }
+}
+```
+
+Поддерживаемые типы чатов:
+- `direct`: личные сообщения 1:1 (Slack `im`)
+- `group`: групповые личные сообщения / MPIM (Slack `mpim`)
+- `channel`: стандартные каналы (публичные/приватные)
+
+Приоритет:
+1) `replyToModeByChatType.<chatType>`
+2) `replyToMode`
+3) Провайдер по умолчанию (`off`)
+
+Устаревший `channels.slack.dm.replyToMode` все еще принимается как резерв для `direct`, когда не установлено переопределение типа чата.
+
+Примеры:
+
+Треды только для личных сообщений:
+```json5
+{
+  channels: {
+    slack: {
+      replyToMode: "off",
+      replyToModeByChatType: { direct: "all" }
+    }
+  }
+}
+```
+
+Треды для групповых личных сообщений, но оставить каналы в корне:
+```json5
+{
+  channels: {
+    slack: {
+      replyToMode: "off",
+      replyToModeByChatType: { group: "first" }
+    }
+  }
+}
+```
+
+Сделать треды для каналов, оставить личные сообщения в корне:
+```json5
+{
+  channels: {
+    slack: {
+      replyToMode: "first",
+      replyToModeByChatType: { direct: "off", group: "off" }
+    }
+  }
+}
+```
+
+### Теги ручных тредов
+Для детального контроля используйте эти теги в ответах агента:
+- `[[reply_to_current]]` — ответить на исходное сообщение (начать/продолжить тред).
+- `[[reply_to:<id>]]` — ответить на конкретное сообщение по id.
+
+## Сессии + маршрутизация
+- Личные сообщения делят сессию `main` (как WhatsApp/Telegram).
+- Каналы мапятся на сессии `agent:<agentId>:slack:channel:<channelId>`.
+- Slash-команды используют сессии `agent:<agentId>:slack:slash:<userId>` (префикс настраивается через `channels.slack.slashCommand.sessionPrefix`).
+- Если Slack не предоставляет `channel_type`, OpenClaw определяет его по префиксу ID канала (`D`, `C`, `G`) и по умолчанию использует `channel` для стабильности ключей сессий.
+- Регистрация нативных команд использует `commands.native` (глобальный по умолчанию `"auto"` → Slack выключен) и может быть переопределена для каждого workspace через `channels.slack.commands.native`. Текстовые команды требуют отдельных сообщений `/...` и могут быть отключены с `commands.text: false`. Slash-команды Slack управляются в приложении Slack и не удаляются автоматически. Используйте `commands.useAccessGroups: false` для обхода проверок групп доступа для команд.
+- Полный список команд + конфигурация: [Slash commands](/tools/slash-commands)
+
+## Безопасность личных сообщений (pairing)
+- По умолчанию: `channels.slack.dm.policy="pairing"` — неизвестные отправители личных сообщений получают код сопряжения (истекает через 1 час).
+- Одобрить через: `openclaw pairing approve slack <code>`.
+- Чтобы разрешить всем: установите `channels.slack.dm.policy="open"` и `channels.slack.dm.allowFrom=["*"]`.
+- `channels.slack.dm.allowFrom` принимает ID пользователей, @handles или emails (разрешается при запуске, когда токены позволяют). Мастер принимает имена пользователей и разрешает их в id во время настройки, когда токены позволяют.
+
+## Групповая политика
+- `channels.slack.groupPolicy` контролирует обработку каналов (`open|disabled|allowlist`).
+- `allowlist` требует, чтобы каналы были перечислены в `channels.slack.channels`.
+ - Если вы только установили `SLACK_BOT_TOKEN`/`SLACK_APP_TOKEN` и никогда не создавали секцию `channels.slack`,
+   runtime по умолчанию устанавливает `groupPolicy` в `open`. Добавьте `channels.slack.groupPolicy`,
+   `channels.defaults.groupPolicy` или список разрешенных каналов для ограничения.
+ - Мастер настройки принимает имена `#channel` и разрешает их в ID когда возможно
+   (публичные + приватные); если существует несколько совпадений, он предпочитает активный канал.
+ - При запуске OpenClaw разрешает имена каналов/пользователей в списках разрешений в ID (когда токены позволяют)
+   и логирует маппинг; неразрешенные записи сохраняются как введенные.
+ - Чтобы разрешить **никакие каналы**, установите `channels.slack.groupPolicy: "disabled"` (или оставьте пустой список разрешений).
+
+Опции канала (`channels.slack.channels.<id>` или `channels.slack.channels.<name>`):
+- `allow`: разрешить/запретить канал когда `groupPolicy="allowlist"`.
+- `requireMention`: блокировка упоминаний для канала.
+- `tools`: опциональные переопределения политики инструментов для канала (`allow`/`deny`/`alsoAllow`).
+- `toolsBySender`: опциональные переопределения политики инструментов для отправителя внутри канала (ключи - id отправителей/@handles/emails; поддерживается wildcard `"*"`).
+- `allowBots`: разрешить сообщения от ботов в этом канале (по умолчанию: false).
+- `users`: опциональный список разрешенных пользователей для канала.
+- `skills`: фильтр навыков (опустить = все навыки, пустой = нет).
+- `systemPrompt`: дополнительный системный промпт для канала (комбинируется с темой/целью).
+- `enabled`: установите `false` для отключения канала.
+
+## Цели доставки
+Используйте это с cron/CLI отправками:
+- `user:<id>` для личных сообщений
+- `channel:<id>` для каналов
+
+## Действия инструментов
+Действия инструментов Slack могут быть ограничены через `channels.slack.actions.*`:
+
+| Группа действий | По умолчанию | Примечания |
+| --- | --- | --- |
+| reactions | включено | Реакция + список реакций |
+| messages | включено | Чтение/отправка/редактирование/удаление |
+| pins | включено | Закрепление/открепление/список |
+| memberInfo | включено | Информация о участнике |
+| emojiList | включено | Список пользовательских эмодзи |
+
+## Примечания по безопасности
+- Записи по умолчанию используют токен бота, поэтому действия, изменяющие состояние, остаются в области
+  разрешений и идентичности бота приложения.
+- Установка `userTokenReadOnly: false` позволяет использовать пользовательский токен для операций записи
+  когда токен бота недоступен, что означает, что действия выполняются с
+  доступом устанавливающего пользователя. Относитесь к пользовательскому токену как к высокопривилегированному и держите
+  блокировки действий и списки разрешений строгими.
+- Если включаете записи через пользовательский токен, убедитесь, что пользовательский токен включает области записи
+  которые ожидаете (`chat:write`, `reactions:write`, `pins:write`,
+  `files:write`) или эти операции будут неудачными.
+
+## Примечания
+- Блокировка упоминаний контролируется через `channels.slack.channels` (установите `requireMention` в `true`); `agents.list[].groupChat.mentionPatterns` (или `messages.groupChat.mentionPatterns`) также считаются упоминаниями.
+- Переопределение мультиагента: установите паттерны для агента через `agents.list[].groupChat.mentionPatterns`.
+- Уведомления о реакциях следуют `channels.slack.reactionNotifications` (используйте `reactionAllowlist` с режимом `allowlist`).
+- Сообщения от ботов по умолчанию игнорируются; включите через `channels.slack.allowBots` или `channels.slack.channels.<id>.allowBots`.
+- Предупреждение: Если разрешаете ответы другим ботам (`channels.slack.allowBots=true` или `channels.slack.channels.<id>.allowBots=true`), предотвратите циклы ответов бот-бот с помощью `requireMention`, списков разрешений `channels.slack.channels.<id>.users` и/или четких ограждений в `AGENTS.md` и `SOUL.md`.
+- Для инструмента Slack семантика удаления реакций в [/tools/reactions](/tools/reactions).
+- Вложения загружаются в хранилище медиа когда разрешено и под лимитом размера.
