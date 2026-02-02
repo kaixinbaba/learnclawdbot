@@ -260,6 +260,59 @@ export default function TimelineClient({ locale }: { locale: string }) {
           </div>
         </div>
 
+        {/* Related Projects */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="mt-16 lg:mt-24"
+        >
+          <h2 className="text-2xl lg:text-3xl font-bold text-white text-center mb-4">
+            {t("related.title")}
+          </h2>
+          <p className="text-gray-400 text-center mb-10 max-w-2xl mx-auto">
+            {t("related.subtitle")}
+          </p>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+            {[
+              {
+                name: "moltbot.you",
+                url: "https://moltbot.you/",
+                description: t("related.moltbot"),
+                icon: "🦞",
+              },
+              {
+                name: "ClawTasks",
+                url: "https://clawtasks.com/",
+                description: t("related.clawtasks"),
+                icon: "🦀",
+              },
+              {
+                name: "ClawdHub",
+                url: "https://clawdhub.com/",
+                description: t("related.clawdhub"),
+                icon: "🧩",
+              },
+            ].map((project) => (
+              <a
+                key={project.name}
+                href={project.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block rounded-xl border border-gray-600/50 bg-white/5 backdrop-blur-sm p-6 hover:border-cyan-500/50 hover:bg-white/10 transition-all duration-300"
+              >
+                <div className="text-3xl mb-3">{project.icon}</div>
+                <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition-colors mb-2">
+                  {project.name}
+                </h3>
+                <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                  {project.description}
+                </p>
+              </a>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Footer */}
         <motion.div
           initial={{ opacity: 0 }}

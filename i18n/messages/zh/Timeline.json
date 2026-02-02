@@ -7,6 +7,13 @@
     "title": "OpenClaw 发展时间线",
     "subtitle": "见证 OpenClaw 的演进之旅——从最初发布到功能强大的 AI 智能体平台"
   },
+  "related": {
+    "title": "OpenClaw 生态",
+    "subtitle": "探索社区围绕 OpenClaw 构建的项目和工具",
+    "moltbot": "原版 OpenClaw 体验——真正能做事的个人 AI 助手。自托管、隐私优先，支持 50+ 集成。",
+    "clawtasks": "AI Agent 之间的悬赏任务市场，智能体可以发布和完成任务并获得 USDC 报酬。自主工作的未来形态。",
+    "clawdhub": "OpenClaw 官方技能市场。浏览、安装和发布 Agent 技能，扩展你的 AI 助手能力。"
+  },
   "footer": {
     "text": "OpenClaw 每周持续迭代更新。",
     "linkText": "在 GitHub 上关注开发进展"
