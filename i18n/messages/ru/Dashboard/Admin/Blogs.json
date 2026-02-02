@@ -1,0 +1,165 @@
+{
+  "title": "Управление блогом",
+  "description": "Панель управления блогом для создания, редактирования, удаления, дублирования и AI-перевода статей блога. Поддерживает закрепление статей, установку статуса (черновик, опубликовано, архив) и настройки видимости (публичный, авторизованные пользователи, подписчики). (Только для администратора)",
+  "fetchError": "Не удалось загрузить блоги: {error}",
+  "createNewButton": "Создать новый блог",
+  "List": {
+    "failedToFetch": "Не удалось загрузить блоги",
+    "searchPlaceholder": "Поиск заголовков, слагов, описаний..."
+  },
+  "Delete": {
+    "title": "Подтверждение удаления",
+    "description": "Это действие нельзя отменить. Это навсегда удалит статью блога \"{title}\".",
+    "cancelButton": "Отмена",
+    "deleteButton": "Удалить",
+    "deleting": "Удаление...",
+    "success": "Блог успешно удалён.",
+    "failedToDelete": "Не удалось удалить блог",
+    "unexpectedError": "Произошла неожиданная ошибка.",
+    "errorFetching": "Не удалось получить информацию о блоге."
+  },
+  "Create": {
+    "pageTitle": "Создать блог",
+    "pageDescription": "Создать новую статью блога (только для администратора)",
+    "submitSuccess": "Блог успешно создан.",
+    "submitErrorTitle": "Не удалось создать блог",
+    "submitErrorDesc": "Пожалуйста, попробуйте позже.",
+    "loadingDuplicateMessage": "Дублирование исходного блога...",
+    "errorFetchingDuplicateTitle": "Не удалось получить информацию об исходном блоге.",
+    "errorFetchingDuplicateDesc": "Вы всё ещё можете продолжить создание нового блога.",
+    "errorFetchUnexpected": "Произошла неожиданная ошибка."
+  },
+  "Edit": {
+    "pageTitle": "Редактировать блог",
+    "pageDescription": "Редактировать статью блога (только для администратора)",
+    "submitSuccess": "Блог успешно обновлён.",
+    "submitErrorTitle": "Не удалось обновить блог",
+    "submitErrorDesc": "Пожалуйста, попробуйте позже.",
+    "errorInvalidId": "Недействительный ID блога.",
+    "errorFetchFailed": "Не удалось загрузить блог.",
+    "errorFetchUnexpected": "Произошла неожиданная ошибка.",
+    "postNotFoundTitle": "Блог не найден",
+    "postNotFoundDesc": "Блог не существует.",
+    "backToList": "Вернуться к списку"
+  },
+  "Form": {
+    "fields": {
+      "language": {
+        "label": "Язык блога",
+        "placeholder": "Выберите язык блога"
+      },
+      "title": {
+        "label": "Заголовок",
+        "placeholder": "Введите заголовок",
+        "description": "Рекомендуемая длина 60 символов",
+        "recommendedLength": "60"
+      },
+      "slug": {
+        "label": "Слаг",
+        "placeholder": "Введите слаг",
+        "generateButton": "Сгенерировать слаг",
+        "description": "Автоматически генерирует слаг только из английских заголовков. Для других языков введите вручную."
+      },
+      "description": {
+        "label": "Описание",
+        "placeholder": "Введите описание",
+        "description": "Рекомендуемая длина 160 символов",
+        "recommendedLength": "160"
+      },
+      "tags": {
+        "label": "Теги",
+        "placeholder": "Выберите теги",
+        "description": "Выберите теги блога."
+      },
+      "featuredImageUrl": {
+        "label": "Избранное изображение",
+        "placeholder": "Выберите избранное изображение",
+        "description": "Необязательно. Если не загружено, динамическое OG-изображение будет автоматически сгенерировано на основе заголовка."
+      },
+      "content": {
+        "label": "Содержание",
+        "placeholder": "Введите содержание блога, поддерживается формат Markdown",
+        "description": "Введите содержание блога, поддерживается формат Markdown."
+      },
+      "status": {
+        "label": "Статус",
+        "placeholder": "Выберите статус",
+        "options": {
+          "draft": "Черновик",
+          "published": "Опубликовано",
+          "archived": "Архив"
+        }
+      },
+      "visibility": {
+        "label": "Видимость",
+        "placeholder": "Выберите видимость",
+        "options": {
+          "public": "Публичный",
+          "loggedIn": "Авторизованные пользователи",
+          "subscribers": "Только подписчики"
+        }
+      },
+      "isPinned": {
+        "label": "Избранное",
+        "description": "Закрепить эту статью вверху."
+      }
+    },
+    "cancelButton": "Отмена",
+    "submittingButton": "Отправка...",
+    "updateButton": "Обновить блог",
+    "createButton": "Создать блог",
+    "upload": {
+      "uploading": "Загрузка...",
+      "uploadError": "Ошибка загрузки",
+      "uploadErrorDesc": "Пожалуйста, выберите файл изображения.",
+      "noPrefix": "Префикс именования изображения не предоставлен.",
+      "invalidFileType": "Недействительный тип файла. Разрешены только файлы изображений.",
+      "fileSizeExceeded": "Ограничение размера файла: {maxSizeInMB}МБ.",
+      "presignedUrlError": "Не удалось сгенерировать presigned URL",
+      "uploadErrorUnexpected": "Произошла неожиданная ошибка.",
+      "uploadSuccess": "Загрузка успешна",
+      "uploadSuccessDesc": "Изображение загружено в хранилище R2."
+    },
+    "toolbar": {
+      "translateTo": "Перевести на {languageName}",
+      "noTranslationOptions": "Нет доступных вариантов перевода.",
+      "translateByAIDescription": "AI-перевод требует настройки переменных окружения NEXT_PUBLIC_AI_MODEL_ID и NEXT_PUBLIC_AI_PROVIDER",
+      "translateActionTitle": "Перевести содержание"
+    },
+    "translate": {
+      "loading": "Перевод...",
+      "error": "Перевод не удался",
+      "success": "Перевод успешен!",
+      "infoEmpty": "Содержание перевода пусто"
+    }
+  },
+  "TagManager": {
+    "title": "Управление тегами",
+    "description": "Управление тегами блога.",
+    "manageTagsButton": "Управление тегами",
+    "newTagPlaceholder": "Введите название тега",
+    "selectTags": "Выбрать теги",
+    "selectedTagsLabel": "Выбранные теги",
+    "searchPlaceholder": "Поиск тегов",
+    "loadingTagsMessage": "Загрузка тегов...",
+    "noResults": "Теги не найдены",
+    "createSuccess": "Тег \"{name}\" успешно создан.",
+    "createNewTag": "Создать новый тег",
+    "creatingButton": "Создание...",
+    "createButton": "Создать тег",
+    "closeButton": "Закрыть",
+    "editButton": "Редактировать",
+    "deleteButton": "Удалить",
+    "confirmDelete": "Вы уверены, что хотите удалить тег \"{name}\"? Это действие нельзя отменить.",
+    "deleteSuccess": "Тег \"{name}\" успешно удалён.",
+    "updateSuccess": "Тег \"{name}\" успешно обновлён.",
+    "errors": {
+      "nameRequired": "Название тега обязательно.",
+      "fetchFailed": "Не удалось загрузить теги",
+      "alreadyExists": "Тег с названием \"{name}\" уже существует.",
+      "createFailed": "Не удалось создать тег",
+      "deleteFailed": "Не удалось удалить тег",
+      "updateFailed": "Не удалось обновить тег"
+    }
+  }
+}

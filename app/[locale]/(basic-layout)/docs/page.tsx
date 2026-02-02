@@ -20,6 +20,7 @@ export async function generateMetadata({
         : "Complete OpenClaw documentation including installation, configuration, channel integrations and more",
     locale: locale as Locale,
     path: "/docs",
+    availableLocales: LOCALES,
   });
 }
 

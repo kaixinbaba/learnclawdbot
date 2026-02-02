@@ -1,0 +1,22 @@
+---
+summary: "Справка CLI для `openclaw agent` (отправить один ход агента через Gateway)"
+read_when:
+  - Вы хотите запустить один ход агента из скриптов (опционально доставить ответ)
+---
+
+# `openclaw agent`
+
+Запустить ход агента через Gateway (используйте `--local` для встроенного).
+Используйте `--agent <id>` для прямого таргетинга настроенного агента.
+
+Связанное:
+- Инструмент отправки агента: [Отправка агента](/tools/agent-send)
+
+## Примеры
+
+```bash
+openclaw agent --to +15555550123 --message "обновление статуса" --deliver
+openclaw agent --agent ops --message "Суммировать логи"
+openclaw agent --session-id 1234 --message "Суммировать входящие" --thinking medium
+openclaw agent --agent ops --message "Создать отчет" --deliver --reply-channel slack --reply-to "#reports"
+```

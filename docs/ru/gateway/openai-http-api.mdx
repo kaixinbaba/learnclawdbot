@@ -1,0 +1,112 @@
+---
+summary: "Предоставление OpenAI-совместимой конечной точки HTTP /v1/chat/completions из шлюза"
+read_when:
+  - Интеграция инструментов, ожидающих OpenAI Chat Completions
+---
+# OpenAI Chat Completions (HTTP)
+
+Шлюз OpenClaw может обслуживать небольшую OpenAI-совместимую конечную точку Chat Completions.
+
+Эта конечная точка **отключена по умолчанию**. Сначала включите её в конфигурации.
+
+- `POST /v1/chat/completions`
+- Тот же порт, что и шлюз (WS + HTTP мультиплекс): `http://<gateway-host>:<port>/v1/chat/completions`
+
+Под капотом запросы выполняются как обычный запуск агента шлюза (тот же путь кода, что и `openclaw agent`), поэтому маршрутизация/разрешения/конфигурация соответствуют вашему шлюзу.
+
+## Аутентификация
+
+Использует конфигурацию аутентификации шлюза. Отправьте bearer-токен:
+
+- `Authorization: Bearer <token>`
+
+Примечания:
+- Когда `gateway.auth.mode="token"`, используйте `gateway.auth.token` (или `OPENCLAW_GATEWAY_TOKEN`).
+- Когда `gateway.auth.mode="password"`, используйте `gateway.auth.password` (или `OPENCLAW_GATEWAY_PASSWORD`).
+
+## Выбор агента
+
+Не требуется пользовательских заголовков: закодируйте идентификатор агента в поле OpenAI `model`:
+
+- `model: "openclaw:<agentId>"` (пример: `"openclaw:main"`, `"openclaw:beta"`)
+- `model: "agent:<agentId>"` (псевдоним)
+
+Или нацеливайтесь на конкретного агента OpenClaw по заголовку:
+
+- `x-openclaw-agent-id: <agentId>` (по умолчанию: `main`)
+
+Расширенное:
+- `x-openclaw-session-key: <sessionKey>` для полного контроля маршрутизации сессий.
+
+## Включение конечной точки
+
+Установите `gateway.http.endpoints.chatCompletions.enabled` в `true`:
+
+```json5
+\{
+  gateway: \{
+    http: \{
+      endpoints: \{
+        chatCompletions: \{ enabled: true \}
+      \}
+    \}
+  \}
+\}
+```
+
+## Отключение конечной точки
+
+Установите `gateway.http.endpoints.chatCompletions.enabled` в `false`:
+
+```json5
+\{
+  gateway: \{
+    http: \{
+      endpoints: \{
+        chatCompletions: \{ enabled: false \}
+      \}
+    \}
+  \}
+\}
+```
+
+## Поведение сессии
+
+По умолчанию конечная точка **без состояния для каждого запроса** (новый ключ сессии генерируется для каждого вызова).
+
+Если запрос включает строку OpenAI `user`, шлюз выводит стабильный ключ сессии из неё, поэтому повторные вызовы могут использовать сессию агента совместно.
+
+## Потоковая передача (SSE)
+
+Установите `stream: true` для получения Server-Sent Events (SSE):
+
+- `Content-Type: text/event-stream`
+- Каждая строка события — `data: <json>`
+- Поток заканчивается `data: [DONE]`
+
+## Примеры
+
+Без потоковой передачи:
+```bash
+curl -sS http://127.0.0.1:18789/v1/chat/completions \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'x-openclaw-agent-id: main' \
+  -d '\{
+    "model": "openclaw",
+    "messages": [\{"role":"user","content":"привет"\}]
+  \}'
+```
+
+С потоковой передачей:
+```bash
+curl -N http://127.0.0.1:18789/v1/chat/completions \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'x-openclaw-agent-id: main' \
+  -d '\{
+    "model": "openclaw",
+    "stream": true,
+    "messages": [\{"role":"user","content":"привет"\}]
+  \}'
+```

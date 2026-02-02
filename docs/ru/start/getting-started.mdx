@@ -1,0 +1,204 @@
+---
+summary: "Руководство для начинающих: от нуля до первого сообщения (мастер, аутентификация, каналы, сопряжение)"
+read_when:
+  - Первая настройка с нуля
+  - Вы хотите самый быстрый путь от установки → настройки → первого сообщения
+---
+
+# Начало работы
+
+Цель: перейти от **нуля** → **первого рабочего чата** (с разумными настройками по умолчанию) как можно быстрее.
+
+Самый быстрый чат: откройте Control UI (настройка канала не требуется). Запустите `openclaw dashboard`
+и общайтесь в браузере, или откройте `http://127.0.0.1:18789/` на хосте gateway.
+Документация: [Dashboard](/web/dashboard) и [Control UI](/web/control-ui).
+
+Рекомендуемый путь: используйте **мастер настройки CLI** (`openclaw onboard`). Он настраивает:
+- модель/аутентификацию (рекомендуется OAuth)
+- настройки gateway
+- каналы (WhatsApp/Telegram/Discord/Mattermost (плагин)/...)
+- настройки сопряжения по умолчанию (безопасные прямые сообщения)
+- загрузку рабочего пространства + навыки
+- опциональный фоновый сервис
+
+Если вам нужны более подробные справочные страницы, перейдите к: [Мастер](/start/wizard), [Настройка](/start/setup), [Сопряжение](/start/pairing), [Безопасность](/gateway/security).
+
+Примечание по песочнице: `agents.defaults.sandbox.mode: "non-main"` использует `session.mainKey` (по умолчанию `"main"`),
+поэтому сессии групп/каналов изолированы. Если вы хотите, чтобы основной агент всегда
+работал на хосте, установите явное переопределение для каждого агента:
+
+```json
+{
+  "routing": {
+    "agents": {
+      "main": {
+        "workspace": "~/.openclaw/workspace",
+        "sandbox": { "mode": "off" }
+      }
+    }
+  }
+}
+```
+
+## 0) Предварительные требования
+
+- Node `>=22`
+- `pnpm` (опционально; рекомендуется, если вы собираете из исходного кода)
+- **Рекомендуется:** API-ключ Brave Search для веб-поиска. Самый простой путь:
+  `openclaw configure --section web` (сохраняет `tools.web.search.apiKey`).
+  См. [Веб-инструменты](/tools/web).
+
+macOS: если вы планируете собирать приложения, установите Xcode / CLT. Только для CLI + gateway достаточно Node.
+Windows: используйте **WSL2** (рекомендуется Ubuntu). WSL2 настоятельно рекомендуется; нативный Windows не тестировался, более проблематичен и имеет худшую совместимость с инструментами. Сначала установите WSL2, затем выполните шаги для Linux внутри WSL. См. [Windows (WSL2)](/platforms/windows).
+
+## 1) Установите CLI (рекомендуется)
+
+```bash
+curl -fsSL https://openclaw.bot/install.sh | bash
+```
+
+Опции установщика (метод установки, неинтерактивный режим, из GitHub): [Установка](/install).
+
+Windows (PowerShell):
+
+```powershell
+iwr -useb https://openclaw.ai/install.ps1 | iex
+```
+
+Альтернатива (глобальная установка):
+
+```bash
+npm install -g openclaw@latest
+```
+
+```bash
+pnpm add -g openclaw@latest
+```
+
+## 2) Запустите мастер настройки (и установите сервис)
+
+```bash
+openclaw onboard --install-daemon
+```
+
+Что вы выберете:
+- **Локальный vs Удаленный** gateway
+- **Аутентификация**: подписка OpenAI Code (Codex) (OAuth) или API-ключи. Для Anthropic мы рекомендуем API-ключ; `claude setup-token` также поддерживается.
+- **Провайдеры**: вход через QR WhatsApp, токены ботов Telegram/Discord, токены плагинов Mattermost и т.д.
+- **Демон**: фоновая установка (launchd/systemd; WSL2 использует systemd)
+  - **Среда выполнения**: Node (рекомендуется; требуется для WhatsApp/Telegram). Bun **не рекомендуется**.
+- **Токен Gateway**: мастер генерирует его по умолчанию (даже на loopback) и сохраняет в `gateway.auth.token`.
+
+Документация мастера: [Мастер](/start/wizard)
+
+### Аутентификация: где она находится (важно)
+
+- **Рекомендуемый путь Anthropic:** установите API-ключ (мастер может сохранить его для использования сервисом). `claude setup-token` также поддерживается, если вы хотите повторно использовать учетные данные Claude Code.
+
+- Учетные данные OAuth (устаревший импорт): `~/.openclaw/credentials/oauth.json`
+- Профили аутентификации (OAuth + API-ключи): `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+
+Совет для безголового режима/сервера: сначала выполните OAuth на обычной машине, затем скопируйте `oauth.json` на хост gateway.
+
+## 3) Запустите Gateway
+
+Если вы установили сервис во время настройки, Gateway должен уже работать:
+
+```bash
+openclaw gateway status
+```
+
+Ручной запуск (на переднем плане):
+
+```bash
+openclaw gateway --port 18789 --verbose
+```
+
+Dashboard (локальный loopback): `http://127.0.0.1:18789/`
+Если настроен токен, вставьте его в настройки Control UI (сохраняется как `connect.params.auth.token`).
+
+⚠️ **Предупреждение Bun (WhatsApp + Telegram):** Bun имеет известные проблемы с этими
+каналами. Если вы используете WhatsApp или Telegram, запускайте Gateway с **Node**.
+
+## 3.5) Быстрая проверка (2 мин)
+
+```bash
+openclaw status
+openclaw health
+openclaw security audit --deep
+```
+
+## 4) Сопряжение + подключение вашей первой поверхности чата
+
+### WhatsApp (вход по QR)
+
+```bash
+openclaw channels login
+```
+
+Сканируйте через WhatsApp → Настройки → Связанные устройства.
+
+Документация WhatsApp: [WhatsApp](/channels/whatsapp)
+
+### Telegram / Discord / другие
+
+Мастер может записать токены/конфигурацию за вас. Если вы предпочитаете ручную конфигурацию, начните с:
+- Telegram: [Telegram](/channels/telegram)
+- Discord: [Discord](/channels/discord)
+- Mattermost (плагин): [Mattermost](/channels/mattermost)
+
+**Совет по прямым сообщениям Telegram:** ваше первое прямое сообщение возвращает код сопряжения. Одобрите его (см. следующий шаг), иначе бот не ответит.
+
+## 5) Безопасность прямых сообщений (одобрение сопряжения)
+
+Позиция по умолчанию: неизвестные прямые сообщения получают короткий код, и сообщения не обрабатываются до одобрения.
+Если на ваше первое прямое сообщение нет ответа, одобрите сопряжение:
+
+```bash
+openclaw pairing list whatsapp
+openclaw pairing approve whatsapp <код>
+```
+
+Документация по сопряжению: [Сопряжение](/start/pairing)
+
+## Из исходного кода (разработка)
+
+Если вы работаете над самим OpenClaw, запустите из исходного кода:
+
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+pnpm install
+pnpm ui:build # автоустановка зависимостей UI при первом запуске
+pnpm build
+openclaw onboard --install-daemon
+```
+
+Если у вас еще нет глобальной установки, запустите шаг настройки через `pnpm openclaw ...` из репозитория.
+`pnpm build` также упаковывает A2UI-ресурсы; если вам нужно выполнить только этот шаг, используйте `pnpm canvas:a2ui:bundle`.
+
+Gateway (из этого репозитория):
+
+```bash
+node openclaw.mjs gateway --port 18789 --verbose
+```
+
+## 7) Проверьте end-to-end
+
+В новом терминале отправьте тестовое сообщение:
+
+```bash
+openclaw message send --target +15555550123 --message "Привет от OpenClaw"
+```
+
+Если `openclaw health` показывает "no auth configured", вернитесь к мастеру и установите OAuth/key auth — агент не сможет ответить без этого.
+
+Совет: `openclaw status --all` — лучший вставляемый отчет для отладки в режиме только для чтения.
+Проверки работоспособности: `openclaw health` (или `openclaw status --deep`) запрашивает у работающего gateway снимок состояния.
+
+## Следующие шаги (опционально, но отлично)
+
+- Приложение для панели меню macOS + голосовое пробуждение: [приложение macOS](/platforms/macos)
+- Узлы iOS/Android (Canvas/камера/голос): [Узлы](/nodes)
+- Удаленный доступ (туннель SSH / Tailscale Serve): [Удаленный доступ](/gateway/remote) и [Tailscale](/gateway/tailscale)
+- Постоянная работа / настройки VPN: [Удаленный доступ](/gateway/remote), [exe.dev](/platforms/exe-dev), [Hetzner](/platforms/hetzner), [удаленный доступ macOS](/platforms/mac/remote)

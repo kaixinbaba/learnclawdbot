@@ -1,0 +1,40 @@
+---
+summary: "Настройка Brave Search API для web_search"
+read_when:
+  - Вы хотите использовать Brave Search для web_search
+  - Вам нужен BRAVE_API_KEY или информация о тарифах
+---
+
+# Brave Search API
+
+OpenClaw использует Brave Search в качестве провайдера по умолчанию для `web_search`.
+
+## Получение API-ключа
+
+1) Создайте аккаунт Brave Search API на https://brave.com/search/api/
+2) В панели управления выберите тариф **Data for Search** и сгенерируйте API-ключ.
+3) Сохраните ключ в конфигурации (рекомендуется) или установите переменную окружения `BRAVE_API_KEY` в Gateway.
+
+## Пример конфигурации
+
+```json5
+{
+  tools: {
+    web: {
+      search: {
+        provider: "brave",
+        apiKey: "BRAVE_API_KEY_HERE",
+        maxResults: 5,
+        timeoutSeconds: 30
+      }
+    }
+  }
+}
+```
+
+## Примечания
+
+- Тариф Data for AI **несовместим** с `web_search`.
+- Brave предоставляет бесплатный уровень и платные тарифы; проверьте текущие лимиты на портале Brave API.
+
+См. [Веб-инструменты](/tools/web) для полной конфигурации web_search.

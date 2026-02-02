@@ -1,0 +1,68 @@
+---
+summary: "Справочник CLI для `openclaw nodes` (list/status/approve/invoke, camera/canvas/screen)"
+read_when:
+  - Вы управляете сопряженными узлами (камеры, экран, canvas)
+  - Вам нужно одобрить запросы или вызвать команды узла
+---
+
+# `openclaw nodes`
+
+Управление сопряженными узлами (устройствами) и вызов возможностей узлов.
+
+Связанные темы:
+- Обзор узлов: [Nodes](/nodes)
+- Камера: [Camera nodes](/nodes/camera)
+- Изображения: [Image nodes](/nodes/images)
+
+Общие опции:
+- `--url`, `--token`, `--timeout`, `--json`
+
+## Основные команды
+
+```bash
+openclaw nodes list
+openclaw nodes list --connected
+openclaw nodes list --last-connected 24h
+openclaw nodes pending
+openclaw nodes approve <requestId>
+openclaw nodes status
+openclaw nodes status --connected
+openclaw nodes status --last-connected 24h
+```
+
+`nodes list` выводит таблицы ожидающих/сопряженных узлов. Строки сопряженных узлов включают время последнего подключения (Last Connect).
+Используйте `--connected` для отображения только подключенных в данный момент узлов. Используйте `--last-connected <duration>` для
+фильтрации узлов, которые подключались в течение указанного времени (например, `24h`, `7d`).
+
+## Invoke / run
+
+```bash
+openclaw nodes invoke --node <id|name|ip> --command <command> --params <json>
+openclaw nodes run --node <id|name|ip> <command...>
+openclaw nodes run --raw "git status"
+openclaw nodes run --agent main --node <id|name|ip> --raw "git status"
+```
+
+Флаги invoke:
+- `--params <json>`: строка JSON-объекта (по умолчанию `\{\}`).
+- `--invoke-timeout <ms>`: таймаут вызова узла (по умолчанию `15000`).
+- `--idempotency-key <key>`: необязательный ключ идемпотентности.
+
+### Поведение в стиле Exec
+
+`nodes run` повторяет поведение exec модели (значения по умолчанию + одобрения):
+
+- Читает `tools.exec.*` (плюс переопределения `agents.list[].tools.exec.*`).
+- Использует одобрения exec (`exec.approval.request`) перед вызовом `system.run`.
+- `--node` можно опустить, если установлен `tools.exec.node`.
+- Требуется узел, который объявляет `system.run` (приложение-компаньон macOS или хост безголового узла).
+
+Флаги:
+- `--cwd <path>`: рабочая директория.
+- `--env <key=val>`: переопределение переменных окружения (повторяемое).
+- `--command-timeout <ms>`: таймаут команды.
+- `--invoke-timeout <ms>`: таймаут вызова узла (по умолчанию `30000`).
+- `--needs-screen-recording`: требуется разрешение на запись экрана.
+- `--raw <command>`: выполнить строку оболочки (`/bin/sh -lc` или `cmd.exe /c`).
+- `--agent <id>`: одобрения/списки разрешений с привязкой к агенту (по умолчанию настроенный агент).
+- `--ask <off|on-miss|always>`, `--security <deny|allowlist|full>`: переопределения.

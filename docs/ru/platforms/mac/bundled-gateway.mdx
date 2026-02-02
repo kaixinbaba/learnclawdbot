@@ -1,0 +1,67 @@
+---
+summary: "Среда выполнения Gateway на macOS (внешний launchd-сервис)"
+read_when:
+  - Упаковка OpenClaw.app
+  - Отладка macOS launchd-сервиса gateway
+  - Установка Gateway CLI для macOS
+---
+
+# Gateway на macOS (внешний launchd)
+
+OpenClaw.app больше не включает Node/Bun или среду выполнения Gateway. Приложение macOS
+ожидает **внешней** установки CLI `openclaw`, не порождает Gateway как
+дочерний процесс и управляет launchd-сервисом для каждого пользователя, чтобы поддерживать Gateway
+работающим (или подключается к существующему локальному Gateway, если он уже запущен).
+
+## Установить CLI (требуется для локального режима)
+
+Вам нужен Node 22+ на Mac, затем установите `openclaw` глобально:
+
+```bash
+npm install -g openclaw@<version>
+```
+
+Кнопка **Install CLI** приложения macOS запускает тот же процесс через npm/pnpm (bun не рекомендуется для среды выполнения Gateway).
+
+## Launchd (Gateway как LaunchAgent)
+
+Метка:
+- `bot.molt.gateway` (или `bot.molt.<profile>`; устаревший `com.openclaw.*` может остаться)
+
+Расположение plist (для каждого пользователя):
+- `~/Library/LaunchAgents/bot.molt.gateway.plist`
+  (или `~/Library/LaunchAgents/bot.molt.<profile>.plist`)
+
+Менеджер:
+- Приложение macOS владеет установкой/обновлением LaunchAgent в локальном режиме.
+- CLI также может установить его: `openclaw gateway install`.
+
+Поведение:
+- "OpenClaw Active" включает/отключает LaunchAgent.
+- Выход из приложения **не** останавливает gateway (launchd поддерживает его работу).
+- Если Gateway уже работает на настроенном порту, приложение подключается к
+  нему вместо запуска нового.
+
+Логирование:
+- stdout/err launchd: `/tmp/openclaw/openclaw-gateway.log`
+
+## Совместимость версий
+
+Приложение macOS проверяет версию gateway в сравнении с собственной версией. Если они
+несовместимы, обновите глобальный CLI до версии приложения.
+
+## Проверка работоспособности
+
+```bash
+openclaw --version
+
+OPENCLAW_SKIP_CHANNELS=1 \
+OPENCLAW_SKIP_CANVAS_HOST=1 \
+openclaw gateway --port 18999 --bind loopback
+```
+
+Затем:
+
+```bash
+openclaw gateway call health --url ws://127.0.0.1:18999 --timeout 3000
+```

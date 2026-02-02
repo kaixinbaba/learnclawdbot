@@ -1,0 +1,48 @@
+---
+summary: "Справочник CLI для `openclaw approvals` (утверждения exec для шлюза или узловых хостов)"
+read_when:
+  - Вы хотите редактировать утверждения exec из CLI
+  - Вам нужно управлять списками разрешений на шлюзе или узловых хостах
+---
+
+# `openclaw approvals`
+
+Управление утверждениями exec для **локального хоста**, **хоста шлюза** или **узлового хоста**.
+По умолчанию команды работают с локальным файлом утверждений на диске. Используйте `--gateway` для работы со шлюзом или `--node` для работы с конкретным узлом.
+
+Связанные разделы:
+- Утверждения Exec: [Exec approvals](/tools/exec-approvals)
+- Узлы: [Nodes](/nodes)
+
+## Основные команды
+
+```bash
+openclaw approvals get
+openclaw approvals get --node <id|name|ip>
+openclaw approvals get --gateway
+```
+
+## Замена утверждений из файла
+
+```bash
+openclaw approvals set --file ./exec-approvals.json
+openclaw approvals set --node <id|name|ip> --file ./exec-approvals.json
+openclaw approvals set --gateway --file ./exec-approvals.json
+```
+
+## Помощники списка разрешений
+
+```bash
+openclaw approvals allowlist add "~/Projects/**/bin/rg"
+openclaw approvals allowlist add --agent main --node <id|name|ip> "/usr/bin/uptime"
+openclaw approvals allowlist add --agent "*" "/usr/bin/uname"
+
+openclaw approvals allowlist remove "~/Projects/**/bin/rg"
+```
+
+## Примечания
+
+- `--node` использует тот же резольвер, что и `openclaw nodes` (id, name, ip или префикс id).
+- `--agent` по умолчанию `"*"`, что применяется ко всем агентам.
+- Узловой хост должен анонсировать `system.execApprovals.get/set` (приложение macOS или headless node host).
+- Файлы утверждений хранятся для каждого хоста в `~/.openclaw/exec-approvals.json`.

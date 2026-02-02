@@ -1,0 +1,75 @@
+---
+summary: "Справочник CLI для `openclaw channels` (аккаунты, статус, вход/выход, логи)"
+read_when:
+  - Вы хотите добавить/удалить аккаунты каналов (WhatsApp/Telegram/Discord/Google Chat/Slack/Mattermost (плагин)/Signal/iMessage)
+  - Вы хотите проверить статус канала или просмотреть логи канала
+---
+
+# `openclaw channels`
+
+Управление аккаунтами чат-каналов и их статусом выполнения на Шлюзе.
+
+Связанные документы:
+- Руководства по каналам: [Channels](/channels/index)
+- Конфигурация шлюза: [Configuration](/gateway/configuration)
+
+## Основные команды
+
+```bash
+openclaw channels list
+openclaw channels status
+openclaw channels capabilities
+openclaw channels capabilities --channel discord --target channel:123
+openclaw channels resolve --channel slack "#general" "@jane"
+openclaw channels logs --channel all
+```
+
+## Добавление / удаление аккаунтов
+
+```bash
+openclaw channels add --channel telegram --token <bot-token>
+openclaw channels remove --channel telegram --delete
+```
+
+Совет: `openclaw channels add --help` показывает флаги для каждого канала (токен, токен приложения, пути signal-cli и т.д.).
+
+## Вход / выход (интерактивный)
+
+```bash
+openclaw channels login --channel whatsapp
+openclaw channels logout --channel whatsapp
+```
+
+## Устранение неполадок
+
+- Запустите `openclaw status --deep` для широкой проверки.
+- Используйте `openclaw doctor` для управляемых исправлений.
+- `openclaw channels list` выдаёт `Claude: HTTP 403 ... user:profile` → снимок использования требует области `user:profile`. Используйте `--no-usage`, или предоставьте ключ сессии claude.ai (`CLAUDE_WEB_SESSION_KEY` / `CLAUDE_WEB_COOKIE`), или повторно авторизуйтесь через Claude Code CLI.
+
+## Проверка возможностей
+
+Получение подсказок о возможностях провайдера (намерения/области где доступно) плюс статическая поддержка функций:
+
+```bash
+openclaw channels capabilities
+openclaw channels capabilities --channel discord --target channel:123
+```
+
+Примечания:
+- `--channel` опциональный; опустите его, чтобы перечислить каждый канал (включая расширения).
+- `--target` принимает `channel:<id>` или необработанный числовой id канала и применяется только к Discord.
+- Проверки специфичны для провайдера: намерения Discord + опциональные разрешения канала; области бота и пользователя Slack; флаги бота Telegram + webhook; версия демона Signal; токен приложения MS Teams + роли/области Graph (аннотированы где известно). Каналы без проверок сообщают `Probe: unavailable`.
+
+## Разрешение имён в ID
+
+Разрешение имён каналов/пользователей в ID с использованием справочника провайдера:
+
+```bash
+openclaw channels resolve --channel slack "#general" "@jane"
+openclaw channels resolve --channel discord "My Server/#support" "@someone"
+openclaw channels resolve --channel matrix "Project Room"
+```
+
+Примечания:
+- Используйте `--kind user|group|auto` для принудительного типа цели.
+- Разрешение предпочитает активные совпадения, когда несколько записей имеют одинаковое имя.

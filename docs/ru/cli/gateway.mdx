@@ -1,0 +1,187 @@
+---
+summary: "CLI Шлюза OpenClaw (`openclaw gateway`) — запуск, запрос и обнаружение шлюзов"
+read_when:
+  - Запуск Шлюза из CLI (разработка или серверы)
+  - Отладка авторизации Шлюза, режимов привязки и подключения
+  - Обнаружение шлюзов через Bonjour (LAN + tailnet)
+---
+
+# CLI Шлюза
+
+Шлюз — это WebSocket сервер OpenClaw (каналы, узлы, сессии, хуки).
+
+Подкоманды на этой странице находятся под `openclaw gateway …`.
+
+Связанные документы:
+- [/gateway/bonjour](/gateway/bonjour)
+- [/gateway/discovery](/gateway/discovery)
+- [/gateway/configuration](/gateway/configuration)
+
+## Запуск Шлюза
+
+Запуск локального процесса Шлюза:
+
+```bash
+openclaw gateway
+```
+
+Псевдоним для переднего плана:
+
+```bash
+openclaw gateway run
+```
+
+Примечания:
+- По умолчанию Шлюз отказывается запускаться, если `gateway.mode=local` не установлен в `~/.openclaw/openclaw.json`. Используйте `--allow-unconfigured` для ad-hoc/dev запусков.
+- Привязка за пределами loopback без аутентификации блокируется (защитное ограждение).
+- `SIGUSR1` запускает перезапуск внутри процесса при авторизации (включите `commands.restart` или используйте инструмент шлюза/применение конфигурации/обновление).
+- Обработчики `SIGINT`/`SIGTERM` останавливают процесс шлюза, но они не восстанавливают пользовательское состояние терминала. Если вы оборачиваете CLI с TUI или вводом в raw-режиме, восстановите терминал перед выходом.
+
+### Опции
+
+- `--port <port>`: порт WebSocket (по умолчанию из конфигурации/env; обычно `18789`).
+- `--bind <loopback|lan|tailnet|auto|custom>`: режим привязки слушателя.
+- `--auth <token|password>`: переопределение режима авторизации.
+- `--token <token>`: переопределение токена (также устанавливает `OPENCLAW_GATEWAY_TOKEN` для процесса).
+- `--password <password>`: переопределение пароля (также устанавливает `OPENCLAW_GATEWAY_PASSWORD` для процесса).
+- `--tailscale <off|serve|funnel>`: экспонировать Шлюз через Tailscale.
+- `--tailscale-reset-on-exit`: сбросить конфигурацию serve/funnel Tailscale при завершении.
+- `--allow-unconfigured`: разрешить запуск шлюза без `gateway.mode=local` в конфигурации.
+- `--dev`: создать dev конфигурацию + рабочее пространство если отсутствует (пропускает BOOTSTRAP.md).
+- `--reset`: сбросить dev конфигурацию + учётные данные + сессии + рабочее пространство (требует `--dev`).
+- `--force`: убить любой существующий слушатель на выбранном порту перед запуском.
+- `--verbose`: подробные логи.
+- `--claude-cli-logs`: показывать только логи claude-cli в консоли (и включить его stdout/stderr).
+- `--ws-log <auto|full|compact>`: стиль логов websocket (по умолчанию `auto`).
+- `--compact`: псевдоним для `--ws-log compact`.
+- `--raw-stream`: логировать необработанные события потока модели в jsonl.
+- `--raw-stream-path <path>`: путь jsonl необработанного потока.
+
+## Запрос запущенного Шлюза
+
+Все команды запроса используют WebSocket RPC.
+
+Режимы вывода:
+- По умолчанию: читаемый человеком (с цветом в TTY).
+- `--json`: машинночитаемый JSON (без стилизации/спиннера).
+- `--no-color` (или `NO_COLOR=1`): отключить ANSI сохраняя человеческий макет.
+
+Общие опции (где поддерживается):
+- `--url <url>`: URL WebSocket Шлюза.
+- `--token <token>`: токен Шлюза.
+- `--password <password>`: пароль Шлюза.
+- `--timeout <ms>`: таймаут/бюджет (варьируется по командам).
+- `--expect-final`: ждать "финального" ответа (вызовы агента).
+
+### `gateway health`
+
+```bash
+openclaw gateway health --url ws://127.0.0.1:18789
+```
+
+### `gateway status`
+
+`gateway status` показывает сервис Шлюза (launchd/systemd/schtasks) плюс опциональную проверку RPC.
+
+```bash
+openclaw gateway status
+openclaw gateway status --json
+```
+
+Опции:
+- `--url <url>`: переопределить URL проверки.
+- `--token <token>`: авторизация по токену для проверки.
+- `--password <password>`: авторизация по паролю для проверки.
+- `--timeout <ms>`: таймаут проверки (по умолчанию `10000`).
+- `--no-probe`: пропустить проверку RPC (только вид сервиса).
+- `--deep`: сканировать также системные сервисы.
+
+### `gateway probe`
+
+`gateway probe` — это команда "отладить всё". Она всегда проверяет:
+- ваш настроенный удалённый шлюз (если установлен), и
+- localhost (loopback) **даже если удалённый настроен**.
+
+Если доступно несколько шлюзов, она выводит все из них. Поддерживается несколько шлюзов, когда вы используете изолированные профили/порты (например, rescue bot), но большинство установок по-прежнему запускают один шлюз.
+
+```bash
+openclaw gateway probe
+openclaw gateway probe --json
+```
+
+#### Remote over SSH (паритет с приложением Mac)
+
+Режим "Remote over SSH" приложения macOS использует локальный port-forward, чтобы удалённый шлюз (который может быть привязан только к loopback) стал доступен по `ws://127.0.0.1:<port>`.
+
+Эквивалент CLI:
+
+```bash
+openclaw gateway probe --ssh user@gateway-host
+```
+
+Опции:
+- `--ssh <target>`: `user@host` или `user@host:port` (порт по умолчанию `22`).
+- `--ssh-identity <path>`: файл идентификации.
+- `--ssh-auto`: выбрать первый обнаруженный хост шлюза как цель SSH (только LAN/WAB).
+
+Конфигурация (опциональная, используется по умолчанию):
+- `gateway.remote.sshTarget`
+- `gateway.remote.sshIdentity`
+
+### `gateway call <method>`
+
+Низкоуровневый помощник RPC.
+
+```bash
+openclaw gateway call status
+openclaw gateway call logs.tail --params '\{"sinceMs": 60000\}'
+```
+
+## Управление сервисом Шлюза
+
+```bash
+openclaw gateway install
+openclaw gateway start
+openclaw gateway stop
+openclaw gateway restart
+openclaw gateway uninstall
+```
+
+Примечания:
+- `gateway install` поддерживает `--port`, `--runtime`, `--token`, `--force`, `--json`.
+- Команды жизненного цикла принимают `--json` для скриптов.
+
+## Обнаружение шлюзов (Bonjour)
+
+`gateway discover` сканирует маяки Шлюза (`_openclaw-gw._tcp`).
+
+- Multicast DNS-SD: `local.`
+- Unicast DNS-SD (Wide-Area Bonjour): выберите домен (пример: `openclaw.internal.`) и настройте split DNS + DNS сервер; см. [/gateway/bonjour](/gateway/bonjour)
+
+Только шлюзы с включённым обнаружением Bonjour (по умолчанию) анонсируют маяк.
+
+Записи Wide-Area discovery включают (TXT):
+- `role` (подсказка роли шлюза)
+- `transport` (подсказка транспорта, например `gateway`)
+- `gatewayPort` (порт WebSocket, обычно `18789`)
+- `sshPort` (порт SSH; по умолчанию `22` если не указан)
+- `tailnetDns` (имя хоста MagicDNS, когда доступно)
+- `gatewayTls` / `gatewayTlsSha256` (TLS включён + отпечаток сертификата)
+- `cliPath` (опциональная подсказка для удалённых установок)
+
+### `gateway discover`
+
+```bash
+openclaw gateway discover
+```
+
+Опции:
+- `--timeout <ms>`: таймаут для каждой команды (browse/resolve); по умолчанию `2000`.
+- `--json`: машинночитаемый вывод (также отключает стилизацию/спиннер).
+
+Примеры:
+
+```bash
+openclaw gateway discover --timeout 4000
+openclaw gateway discover --json | jq '.beacons[].wsUrl'
+```

@@ -1,0 +1,34 @@
+---
+summary: "Использование единого API OpenRouter для доступа ко многим моделям в OpenClaw"
+read_when:
+  - Вам нужен один API ключ для многих LLM
+  - Вы хотите запускать модели через OpenRouter в OpenClaw
+---
+# OpenRouter
+
+OpenRouter предоставляет **единый API**, который направляет запросы ко многим моделям через одну конечную точку и API ключ. Он совместим с OpenAI, поэтому большинство SDK OpenAI работают при переключении базового URL.
+
+## Настройка через CLI
+
+```bash
+openclaw onboard --auth-choice apiKey --token-provider openrouter --token "$OPENROUTER_API_KEY"
+```
+
+## Фрагмент конфигурации
+
+```json5
+{
+  env: { OPENROUTER_API_KEY: "sk-or-..." },
+  agents: {
+    defaults: {
+      model: { primary: "openrouter/anthropic/claude-sonnet-4-5" }
+    }
+  }
+}
+```
+
+## Примечания
+
+- Ссылки на модели: `openrouter/<provider>/<model>`.
+- Для получения дополнительных опций моделей/провайдеров см. [/concepts/model-providers](/concepts/model-providers).
+- OpenRouter использует Bearer токен с вашим API ключом под капотом.

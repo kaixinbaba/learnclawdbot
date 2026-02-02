@@ -1,0 +1,344 @@
+---
+summary: "Поведение групповых чатов на разных поверхностях (WhatsApp/Telegram/Discord/Slack/Signal/iMessage/Microsoft Teams)"
+read_when:
+  - Изменение поведения групповых чатов или гейтинга упоминаний
+---
+# Группы
+
+OpenClaw обрабатывает групповые чаты консистентно на разных поверхностях: WhatsApp, Telegram, Discord, Slack, Signal, iMessage, Microsoft Teams.
+
+## Введение для начинающих (2 минуты)
+OpenClaw "живет" на ваших собственных аккаунтах для обмена сообщениями. Нет отдельного пользователя бота WhatsApp.
+Если **вы** находитесь в группе, OpenClaw может видеть эту группу и отвечать там.
+
+Поведение по умолчанию:
+- Группы ограничены (`groupPolicy: "allowlist"`).
+- Ответы требуют упоминания, если вы явно не отключите гейтинг упоминаний.
+
+Перевод: allowlist-отправители могут запустить OpenClaw, упомянув его.
+
+> TL;DR
+> - **Доступ к DM** контролируется `*.allowFrom`.
+> - **Доступ к группам** контролируется `*.groupPolicy` + allowlists (`*.groups`, `*.groupAllowFrom`).
+> - **Триггер ответа** контролируется гейтингом упоминаний (`requireMention`, `/activation`).
+
+Быстрый поток (что происходит с групповым сообщением):
+```
+groupPolicy? disabled -> drop
+groupPolicy? allowlist -> группа разрешена? нет -> drop
+requireMention? да -> упомянут? нет -> сохранить только для контекста
+иначе -> ответить
+```
+
+![Поток групповых сообщений](/images/groups-flow.svg)
+
+Если вы хотите...
+| Цель | Что установить |
+|------|-------------|
+| Разрешить все группы, но отвечать только на @упоминания | `groups: { "*": { requireMention: true } }` |
+| Отключить все ответы в группах | `groupPolicy: "disabled"` |
+| Только конкретные группы | `groups: { "<group-id>": { ... } }` (без ключа `"*"`) |
+| Только вы можете запустить в группах | `groupPolicy: "allowlist"`, `groupAllowFrom: ["+1555..."]` |
+
+## Ключи сессий
+- Групповые сессии используют ключи сессий `agent:<agentId>:<channel>:group:<id>` (комнаты/каналы используют `agent:<agentId>:<channel>:channel:<id>`).
+- Темы форумов Telegram добавляют `:topic:<threadId>` к ID группы, чтобы каждая тема имела свою собственную сессию.
+- Прямые чаты используют основную сессию (или на отправителя, если настроено).
+- Heartbeat-опросы пропускаются для групповых сессий.
+
+## Паттерн: личные DM + публичные группы (один агент)
+
+Да — это хорошо работает, если ваш "личный" трафик — это **DM**, а ваш "публичный" трафик — это **группы**.
+
+Почему: в однагентном режиме DM обычно попадают в **основную** сессию (`agent:main:main`), в то время как группы всегда используют **не-основные** ключи сессий (`agent:main:<channel>:group:<id>`). Если вы включите песочницу с `mode: "non-main"`, эти групповые сессии запускаются в Docker, в то время как ваша основная DM-сессия остается на хосте.
+
+Это дает вам одного агента "мозг" (общее рабочее пространство + память), но две позиции выполнения:
+- **DM**: полные инструменты (хост)
+- **Группы**: песочница + ограниченные инструменты (Docker)
+
+> Если вам нужны действительно отдельные рабочие пространства/персоны ("личный" и "публичный" никогда не должны смешиваться), используйте второго агента + bindings. См. [Маршрутизация мультиагента](/concepts/multi-agent).
+
+Пример (DM на хосте, группы в песочнице + инструменты только для сообщений):
+
+```json5
+{
+  agents: {
+    defaults: {
+      sandbox: {
+        mode: "non-main", // группы/каналы не-основные -> в песочнице
+        scope: "session", // сильнейшая изоляция (один контейнер на группу/канал)
+        workspaceAccess: "none"
+      }
+    }
+  },
+  tools: {
+    sandbox: {
+      tools: {
+        // Если allow не пусто, все остальное заблокировано (deny все равно выигрывает).
+        allow: ["group:messaging", "group:sessions"],
+        deny: ["group:runtime", "group:fs", "group:ui", "nodes", "cron", "gateway"]
+      }
+    }
+  }
+}
+```
+
+Хотите "группы могут видеть только папку X" вместо "нет доступа к хосту"? Держите `workspaceAccess: "none"` и монтируйте только разрешенные пути в песочницу:
+
+```json5
+{
+  agents: {
+    defaults: {
+      sandbox: {
+        mode: "non-main",
+        scope: "session",
+        workspaceAccess: "none",
+        docker: {
+          binds: [
+            // hostPath:containerPath:mode
+            "~/FriendsShared:/data:ro"
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+Связанные разделы:
+- Ключи конфигурации и значения по умолчанию: [Конфигурация Gateway](/gateway/configuration#agentsdefaultssandbox)
+- Отладка, почему инструмент заблокирован: [Песочница vs Политика инструментов vs Повышенные привилегии](/gateway/sandbox-vs-tool-policy-vs-elevated)
+- Детали монтирования bind: [Песочница](/gateway/sandboxing#custom-bind-mounts)
+
+## Метки отображения
+- UI-метки используют `displayName`, когда доступно, отформатированные как `<channel>:<token>`.
+- `#room` зарезервирован для комнат/каналов; групповые чаты используют `g-<slug>` (нижний регистр, пробелы -> `-`, сохранить `#@+._-`).
+
+## Политика групп
+Контролируйте, как обрабатываются сообщения групп/комнат для каждого канала:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      groupPolicy: "disabled", // "open" | "disabled" | "allowlist"
+      groupAllowFrom: ["+15551234567"]
+    },
+    telegram: {
+      groupPolicy: "disabled",
+      groupAllowFrom: ["123456789", "@username"]
+    },
+    signal: {
+      groupPolicy: "disabled",
+      groupAllowFrom: ["+15551234567"]
+    },
+    imessage: {
+      groupPolicy: "disabled",
+      groupAllowFrom: ["chat_id:123"]
+    },
+    msteams: {
+      groupPolicy: "disabled",
+      groupAllowFrom: ["user@org.com"]
+    },
+    discord: {
+      groupPolicy: "allowlist",
+      guilds: {
+        "GUILD_ID": { channels: { help: { allow: true } } }
+      }
+    },
+    slack: {
+      groupPolicy: "allowlist",
+      channels: { "#general": { allow: true } }
+    },
+    matrix: {
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["@owner:example.org"],
+      groups: {
+        "!roomId:example.org": { allow: true },
+        "#alias:example.org": { allow: true }
+      }
+    }
+  }
+}
+```
+
+| Политика | Поведение |
+|--------|----------|
+| `"open"` | Группы обходят allowlists; гейтинг упоминаний все еще применяется. |
+| `"disabled"` | Полностью блокировать все групповые сообщения. |
+| `"allowlist"` | Разрешать только группы/комнаты, которые соответствуют настроенному allowlist. |
+
+Примечания:
+- `groupPolicy` отделена от гейтинга упоминаний (который требует @упоминаний).
+- WhatsApp/Telegram/Signal/iMessage/Microsoft Teams: используйте `groupAllowFrom` (откат: явный `allowFrom`).
+- Discord: allowlist использует `channels.discord.guilds.<id>.channels`.
+- Slack: allowlist использует `channels.slack.channels`.
+- Matrix: allowlist использует `channels.matrix.groups` (ID комнат, алиасы или имена). Используйте `channels.matrix.groupAllowFrom` для ограничения отправителей; allowlist `users` для каждой комнаты также поддерживаются.
+- Групповые DM контролируются отдельно (`channels.discord.dm.*`, `channels.slack.dm.*`).
+- Telegram allowlist может соответствовать ID пользователей (`"123456789"`, `"telegram:123456789"`, `"tg:123456789"`) или именам пользователей (`"@alice"` или `"alice"`); префиксы нечувствительны к регистру.
+- По умолчанию `groupPolicy: "allowlist"`; если ваш групповой allowlist пуст, групповые сообщения блокируются.
+
+Быстрая ментальная модель (порядок оценки для групповых сообщений):
+1) `groupPolicy` (open/disabled/allowlist)
+2) групповые allowlists (`*.groups`, `*.groupAllowFrom`, канально-специфичный allowlist)
+3) гейтинг упоминаний (`requireMention`, `/activation`)
+
+## Гейтинг упоминаний (по умолчанию)
+Групповые сообщения требуют упоминания, если не переопределено для группы. Значения по умолчанию находятся для каждой подсистемы в `*.groups."*"`.
+
+Ответ на сообщение бота считается неявным упоминанием (когда канал поддерживает метаданные ответа). Это применяется к Telegram, WhatsApp, Slack, Discord и Microsoft Teams.
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      groups: {
+        "*": { requireMention: true },
+        "123@g.us": { requireMention: false }
+      }
+    },
+    telegram: {
+      groups: {
+        "*": { requireMention: true },
+        "123456789": { requireMention: false }
+      }
+    },
+    imessage: {
+      groups: {
+        "*": { requireMention: true },
+        "123": { requireMention: false }
+      }
+    }
+  },
+  agents: {
+    list: [
+      {
+        id: "main",
+        groupChat: {
+          mentionPatterns: ["@openclaw", "openclaw", "\\+15555550123"],
+          historyLimit: 50
+        }
+      }
+    ]
+  }
+}
+```
+
+Примечания:
+- `mentionPatterns` — это regex, нечувствительные к регистру.
+- Поверхности, которые предоставляют явные упоминания, все еще проходят; паттерны — это откат.
+- Переопределение для агента: `agents.list[].groupChat.mentionPatterns` (полезно, когда несколько агентов используют одну группу).
+- Гейтинг упоминаний применяется только когда возможно обнаружение упоминаний (нативные упоминания или `mentionPatterns` настроены).
+- Discord defaults живут в `channels.discord.guilds."*"` (переопределяемо для гильдии/канала).
+- Контекст истории группы обернут единообразно для всех каналов и **только ожидающие** (сообщения, пропущенные из-за гейтинга упоминаний); используйте `messages.groupChat.historyLimit` для глобального значения по умолчанию и `channels.<channel>.historyLimit` (или `channels.<channel>.accounts.*.historyLimit`) для переопределений. Установите `0` для отключения.
+
+## Ограничения инструментов группы/канала (опционально)
+Некоторые конфигурации каналов поддерживают ограничение того, какие инструменты доступны **внутри конкретной группы/комнаты/канала**.
+
+- `tools`: разрешить/запретить инструменты для всей группы.
+- `toolsBySender`: переопределения для каждого отправителя внутри группы (ключи — ID отправителей/имена пользователей/email/номера телефонов в зависимости от канала). Используйте `"*"` как подстановочный знак.
+
+Порядок разрешения (наиболее специфичное выигрывает):
+1) соответствие `toolsBySender` группы/канала
+2) `tools` группы/канала
+3) соответствие `toolsBySender` по умолчанию (`"*"`)
+4) `tools` по умолчанию (`"*"`)
+
+Пример (Telegram):
+
+```json5
+{
+  channels: {
+    telegram: {
+      groups: {
+        "*": { tools: { deny: ["exec"] } },
+        "-1001234567890": {
+          tools: { deny: ["exec", "read", "write"] },
+          toolsBySender: {
+            "123456789": { alsoAllow: ["exec"] }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Примечания:
+- Ограничения инструментов группы/канала применяются в дополнение к глобальной/агентской политике инструментов (deny все равно выигрывает).
+- Некоторые каналы используют разные вложенности для комнат/каналов (например, Discord `guilds.*.channels.*`, Slack `channels.*`, MS Teams `teams.*.channels.*`).
+
+## Groupовые allowlists
+Когда настроены `channels.whatsapp.groups`, `channels.telegram.groups` или `channels.imessage.groups`, ключи действуют как групповой allowlist. Используйте `"*"` для разрешения всех групп с сохранением поведения упоминаний по умолчанию.
+
+Распространенные намерения (скопировать/вставить):
+
+1) Отключить все ответы в группах
+```json5
+{
+  channels: { whatsapp: { groupPolicy: "disabled" } }
+}
+```
+
+2) Разрешить только конкретные группы (WhatsApp)
+```json5
+{
+  channels: {
+    whatsapp: {
+      groups: {
+        "123@g.us": { requireMention: true },
+        "456@g.us": { requireMention: false }
+      }
+    }
+  }
+}
+```
+
+3) Разрешить все группы, но требовать упоминания (явно)
+```json5
+{
+  channels: {
+    whatsapp: {
+      groups: { "*": { requireMention: true } }
+    }
+  }
+}
+```
+
+4) Только владелец может запустить в группах (WhatsApp)
+```json5
+{
+  channels: {
+    whatsapp: {
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["+15551234567"],
+      groups: { "*": { requireMention: true } }
+    }
+  }
+}
+```
+
+## Активация (только для владельца)
+Владельцы групп могут переключать активацию для группы:
+- `/activation mention`
+- `/activation always`
+
+Владелец определяется `channels.whatsapp.allowFrom` (или собственный E.164 бота, когда не установлен). Отправьте команду как отдельное сообщение. Другие поверхности в настоящее время игнорируют `/activation`.
+
+## Поля контекста
+Групповые входящие пейлоады устанавливают:
+- `ChatType=group`
+- `GroupSubject` (если известно)
+- `GroupMembers` (если известно)
+- `WasMentioned` (результат гейтинга упоминаний)
+- Темы форумов Telegram также включают `MessageThreadId` и `IsForum`.
+
+Системный промпт агента включает введение группы на первом ходу новой групповой сессии. Он напоминает модели отвечать как человек, избегать таблиц Markdown и избегать буквальных последовательностей `\n`.
+
+## Специфика iMessage
+- Предпочитайте `chat_id:<id>` при маршрутизации или использовании allowlist.
+- Список чатов: `imsg chats --limit 20`.
+- Групповые ответы всегда возвращаются на тот же `chat_id`.
+
+## Специфика WhatsApp
+См. [Групповые сообщения](/concepts/group-messages) для поведения, специфичного для WhatsApp (внедрение истории, детали обработки упоминаний).

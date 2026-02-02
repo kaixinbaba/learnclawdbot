@@ -1,0 +1,287 @@
+---
+summary: "Руководство по сервису Gateway, жизненному циклу и операциям"
+read_when:
+  - Запуск или отладка процесса gateway
+---
+# Руководство по сервису Gateway
+
+Последнее обновление: 2025-12-09
+
+## Что это такое
+- Процесс, работающий постоянно, который владеет единственным подключением Baileys/Telegram и плоскостью управления/событий.
+- Заменяет устаревшую команду `gateway`. Точка входа CLI: `openclaw gateway`.
+- Работает до остановки; завершается с ненулевым кодом при фатальных ошибках, чтобы супервизор перезапустил его.
+
+## Как запустить (локально)
+```bash
+openclaw gateway --port 18789
+# для полных логов debug/trace в stdio:
+openclaw gateway --port 18789 --verbose
+# если порт занят, завершите слушателей, затем запустите:
+openclaw gateway --force
+# цикл разработки (авто-перезагрузка при изменениях TS):
+pnpm gateway:watch
+```
+- Горячая перезагрузка конфигурации отслеживает `~/.openclaw/openclaw.json` (или `OPENCLAW_CONFIG_PATH`).
+  - Режим по умолчанию: `gateway.reload.mode="hybrid"` (горячее применение безопасных изменений, перезапуск при критических).
+  - Горячая перезагрузка использует внутрипроцессный перезапуск через **SIGUSR1** при необходимости.
+  - Отключите с `gateway.reload.mode="off"`.
+- Привязывает плоскость управления WebSocket к `127.0.0.1:<port>` (по умолчанию 18789).
+- Тот же порт также обслуживает HTTP (UI управления, hooks, A2UI). Мультиплекс одного порта.
+  - OpenAI Chat Completions (HTTP): [`/v1/chat/completions`](/gateway/openai-http-api).
+  - OpenResponses (HTTP): [`/v1/responses`](/gateway/openresponses-http-api).
+  - Tools Invoke (HTTP): [`/tools/invoke`](/gateway/tools-invoke-http-api).
+- По умолчанию запускает файловый сервер Canvas на `canvasHost.port` (по умолчанию `18793`), обслуживая `http://<gateway-host>:18793/__openclaw__/canvas/` из `~/.openclaw/workspace/canvas`. Отключите с `canvasHost.enabled=false` или `OPENCLAW_SKIP_CANVAS_HOST=1`.
+- Логи в stdout; используйте launchd/systemd, чтобы поддерживать его работающим и ротировать логи.
+- Передайте `--verbose`, чтобы дублировать логирование debug (рукопожатия, req/res, события) из файла лога в stdio при устранении неполадок.
+- `--force` использует `lsof` для поиска слушателей на выбранном порту, отправляет SIGTERM, записывает в лог, что было остановлено, затем запускает gateway (быстро завершается с ошибкой, если `lsof` отсутствует).
+- Если вы запускаете под супервизором (launchd/systemd/дочерний процесс mac-приложения), остановка/перезапуск обычно отправляет **SIGTERM**; старые сборки могут всплывать это как код выхода `pnpm` `ELIFECYCLE` **143** (SIGTERM), что является нормальным завершением, а не сбоем.
+- **SIGUSR1** запускает внутрипроцессный перезапуск при авторизации (инструмент gateway/применение конфигурации/обновление, или включите `commands.restart` для ручных перезапусков).
+- Аутентификация Gateway требуется по умолчанию: установите `gateway.auth.token` (или `OPENCLAW_GATEWAY_TOKEN`) или `gateway.auth.password`. Клиенты должны отправлять `connect.params.auth.token/password`, если только не используется идентификация Tailscale Serve.
+- Мастер теперь генерирует токен по умолчанию даже на loopback.
+- Приоритет порта: `--port` > `OPENCLAW_GATEWAY_PORT` > `gateway.port` > по умолчанию `18789`.
+
+## Удаленный доступ
+- Предпочтителен Tailscale/VPN; в противном случае SSH-туннель:
+  ```bash
+  ssh -N -L 18789:127.0.0.1:18789 user@host
+  ```
+- Клиенты затем подключаются к `ws://127.0.0.1:18789` через туннель.
+- Если настроен токен, клиенты должны включить его в `connect.params.auth.token` даже через туннель.
+
+## Несколько gateway (один хост)
+
+Обычно не нужно: один Gateway может обслуживать несколько каналов обмена сообщениями и агентов. Используйте несколько Gateway только для избыточности или строгой изоляции (например, спасательный бот).
+
+Поддерживается, если вы изолируете состояние + конфигурацию и используете уникальные порты. Полное руководство: [Несколько gateway](/gateway/multiple-gateways).
+
+Имена сервисов учитывают профиль:
+- macOS: `bot.molt.<profile>` (устаревший `com.openclaw.*` может еще существовать)
+- Linux: `openclaw-gateway-<profile>.service`
+- Windows: `OpenClaw Gateway (<profile>)`
+
+Метаданные установки встроены в конфигурацию сервиса:
+- `OPENCLAW_SERVICE_MARKER=openclaw`
+- `OPENCLAW_SERVICE_KIND=gateway`
+- `OPENCLAW_SERVICE_VERSION=<version>`
+
+Шаблон спасательного бота: держите второй Gateway изолированным со своим собственным профилем, директорией состояния, рабочей областью и разнесением базовых портов. Полное руководство: [Руководство по спасательному боту](/gateway/multiple-gateways#rescue-bot-guide).
+
+### Профиль разработки (`--dev`)
+
+Быстрый путь: запустите полностью изолированный dev-экземпляр (config/state/workspace), не трогая вашу основную настройку.
+
+```bash
+openclaw --dev setup
+openclaw --dev gateway --allow-unconfigured
+# затем нацельтесь на dev-экземпляр:
+openclaw --dev status
+openclaw --dev health
+```
+
+Значения по умолчанию (могут быть переопределены через env/flags/config):
+- `OPENCLAW_STATE_DIR=~/.openclaw-dev`
+- `OPENCLAW_CONFIG_PATH=~/.openclaw-dev/openclaw.json`
+- `OPENCLAW_GATEWAY_PORT=19001` (Gateway WS + HTTP)
+- порт сервиса управления браузером = `19003` (производный: `gateway.port+2`, только loopback)
+- `canvasHost.port=19005` (производный: `gateway.port+4`)
+- `agents.defaults.workspace` по умолчанию становится `~/.openclaw/workspace-dev`, когда вы запускаете `setup`/`onboard` под `--dev`.
+
+Производные порты (правила большого пальца):
+- Базовый порт = `gateway.port` (или `OPENCLAW_GATEWAY_PORT` / `--port`)
+- порт сервиса управления браузером = base + 2 (только loopback)
+- `canvasHost.port = base + 4` (или `OPENCLAW_CANVAS_HOST_PORT` / переопределение конфигурации)
+- Порты CDP профиля браузера автоматически выделяются из `browser.controlPort + 9 .. + 108` (сохраняются для каждого профиля).
+
+Контрольный список на экземпляр:
+- уникальный `gateway.port`
+- уникальный `OPENCLAW_CONFIG_PATH`
+- уникальный `OPENCLAW_STATE_DIR`
+- уникальный `agents.defaults.workspace`
+- отдельные номера WhatsApp (если используется WA)
+
+Установка сервиса для каждого профиля:
+```bash
+openclaw --profile main gateway install
+openclaw --profile rescue gateway install
+```
+
+Пример:
+```bash
+OPENCLAW_CONFIG_PATH=~/.openclaw/a.json OPENCLAW_STATE_DIR=~/.openclaw-a openclaw gateway --port 19001
+OPENCLAW_CONFIG_PATH=~/.openclaw/b.json OPENCLAW_STATE_DIR=~/.openclaw-b openclaw gateway --port 19002
+```
+
+## Протокол (вид оператора)
+- Полная документация: [Протокол Gateway](/gateway/protocol) и [Протокол Bridge (устаревший)](/gateway/bridge-protocol).
+- Обязательный первый кадр от клиента: `req {type:"req", id, method:"connect", params:{minProtocol,maxProtocol,client:{id,displayName?,version,platform,deviceFamily?,modelIdentifier?,mode,instanceId?}, caps, auth?, locale?, userAgent? } }`.
+- Gateway отвечает `res {type:"res", id, ok:true, payload:hello-ok }` (или `ok:false` с ошибкой, затем закрывает).
+- После рукопожатия:
+  - Запросы: `{type:"req", id, method, params}` → `{type:"res", id, ok, payload|error}`
+  - События: `{type:"event", event, payload, seq?, stateVersion?}`
+- Структурированные записи присутствия: `{host, ip, version, platform?, deviceFamily?, modelIdentifier?, mode, lastInputSeconds?, ts, reason?, tags?[], instanceId? }` (для WS-клиентов `instanceId` берется из `connect.client.instanceId`).
+- Ответы `agent` двухэтапные: сначала `res` подтверждение `{runId,status:"accepted"}`, затем финальный `res` `{runId,status:"ok"|"error",summary}` после завершения запуска; потоковый вывод приходит как `event:"agent"`.
+
+## Методы (начальный набор)
+- `health` — полный снимок здоровья (та же форма, что и `openclaw health --json`).
+- `status` — краткая сводка.
+- `system-presence` — текущий список присутствия.
+- `system-event` — опубликовать примечание присутствия/системы (структурированное).
+- `send` — отправить сообщение через активные каналы.
+- `agent` — запустить ход агента (поток событий обратно на том же подключении).
+- `node.list` — список сопряженных + текущих подключенных узлов (включает `caps`, `deviceFamily`, `modelIdentifier`, `paired`, `connected` и рекламируемые `commands`).
+- `node.describe` — описать узел (возможности + поддерживаемые команды `node.invoke`; работает для сопряженных узлов и для текущих подключенных несопряженных узлов).
+- `node.invoke` — вызвать команду на узле (например, `canvas.*`, `camera.*`).
+- `node.pair.*` — жизненный цикл сопряжения (`request`, `list`, `approve`, `reject`, `verify`).
+
+См. также: [Присутствие](/concepts/presence) о том, как производится/дедублируется присутствие и почему стабильный `client.instanceId` важен.
+
+## События
+- `agent` — потоковые события tool/output из запуска агента (помеченные seq).
+- `presence` — обновления присутствия (дельты с stateVersion), отправляемые всем подключенным клиентам.
+- `tick` — периодический keepalive/no-op для подтверждения живучести.
+- `shutdown` — Gateway завершается; payload включает `reason` и необязательный `restartExpectedMs`. Клиенты должны переподключиться.
+
+## Интеграция WebChat
+- WebChat — это нативный SwiftUI UI, который напрямую общается с WebSocket Gateway для истории, отправок, прерывания и событий.
+- Удаленное использование проходит через тот же SSH/Tailscale туннель; если настроен токен gateway, клиент включает его во время `connect`.
+- macOS-приложение подключается через один WS (общее подключение); оно гидратирует присутствие из начального снимка и слушает события `presence` для обновления UI.
+
+## Типизация и валидация
+- Сервер проверяет каждый входящий кадр с помощью AJV относительно JSON Schema, выданной из определений протокола.
+- Клиенты (TS/Swift) потребляют сгенерированные типы (TS напрямую; Swift через генератор репозитория).
+- Определения протокола являются источником истины; регенерируйте schema/models с помощью:
+  - `pnpm protocol:gen`
+  - `pnpm protocol:gen:swift`
+
+## Снимок подключения
+- `hello-ok` включает `snapshot` с `presence`, `health`, `stateVersion` и `uptimeMs` плюс `policy {maxPayload,maxBufferedBytes,tickIntervalMs}`, чтобы клиенты могли отрисовать немедленно без дополнительных запросов.
+- `health`/`system-presence` остаются доступными для ручного обновления, но не требуются во время подключения.
+
+## Коды ошибок (форма res.error)
+- Ошибки используют `{ code, message, details?, retryable?, retryAfterMs? }`.
+- Стандартные коды:
+  - `NOT_LINKED` — WhatsApp не аутентифицирован.
+  - `AGENT_TIMEOUT` — агент не ответил в течение настроенного дедлайна.
+  - `INVALID_REQUEST` — валидация schema/param не удалась.
+  - `UNAVAILABLE` — Gateway завершается или зависимость недоступна.
+
+## Поведение keepalive
+- События `tick` (или ping/pong WS) выдаются периодически, чтобы клиенты знали, что Gateway жив, даже когда нет трафика.
+- Подтверждения send/agent остаются отдельными ответами; не перегружайте тики для отправок.
+
+## Повтор / пробелы
+- События не воспроизводятся. Клиенты обнаруживают пробелы seq и должны обновиться (`health` + `system-presence`) перед продолжением. WebChat и macOS-клиенты теперь автоматически обновляются при пробеле.
+
+## Надзор (пример macOS)
+- Используйте launchd, чтобы поддерживать сервис живым:
+  - Program: путь к `openclaw`
+  - Arguments: `gateway`
+  - KeepAlive: true
+  - StandardOut/Err: пути к файлам или `syslog`
+- При сбое launchd перезапускается; фатальная неправильная конфигурация должна продолжать завершаться, чтобы оператор заметил.
+- LaunchAgents для каждого пользователя и требуют залогиненной сессии; для headless-настроек используйте пользовательский LaunchDaemon (не поставляется).
+  - `openclaw gateway install` записывает `~/Library/LaunchAgents/bot.molt.gateway.plist`
+    (или `bot.molt.<profile>.plist`; устаревший `com.openclaw.*` очищается).
+  - `openclaw doctor` проверяет конфигурацию LaunchAgent и может обновить ее до текущих значений по умолчанию.
+
+## Управление сервисом Gateway (CLI)
+
+Используйте CLI Gateway для install/start/stop/restart/status:
+
+```bash
+openclaw gateway status
+openclaw gateway install
+openclaw gateway stop
+openclaw gateway restart
+openclaw logs --follow
+```
+
+Примечания:
+- `gateway status` проверяет Gateway RPC по умолчанию, используя разрешенный порт/конфигурацию сервиса (переопределите с `--url`).
+- `gateway status --deep` добавляет сканирование на системном уровне (LaunchDaemons/system units).
+- `gateway status --no-probe` пропускает проверку RPC (полезно, когда сеть недоступна).
+- `gateway status --json` стабилен для скриптов.
+- `gateway status` сообщает **среду выполнения супервизора** (запущен launchd/systemd) отдельно от **доступности RPC** (подключение WS + RPC статуса).
+- `gateway status` выводит путь конфигурации + цель проверки, чтобы избежать путаницы "localhost vs привязка LAN" и несоответствий профилей.
+- `gateway status` включает последнюю строку ошибки gateway, когда сервис выглядит запущенным, но порт закрыт.
+- `logs` выполняет tail файлового лога Gateway через RPC (не требуется ручной `tail`/`grep`).
+- Если обнаружены другие сервисы, похожие на gateway, CLI предупреждает, если только они не являются сервисами профилей OpenClaw.
+  Мы по-прежнему рекомендуем **один gateway на машину** для большинства настроек; используйте изолированные профили/порты для избыточности или спасательного бота. См. [Несколько gateway](/gateway/multiple-gateways).
+  - Очистка: `openclaw gateway uninstall` (текущий сервис) и `openclaw doctor` (устаревшие миграции).
+- `gateway install` — это no-op, когда уже установлен; используйте `openclaw gateway install --force` для переустановки (изменения профиля/env/пути).
+
+Встроенное mac-приложение:
+- OpenClaw.app может связать relay gateway на основе Node и установить per-user LaunchAgent с меткой
+  `bot.molt.gateway` (или `bot.molt.<profile>`; устаревшие метки `com.openclaw.*` все еще чисто выгружаются).
+- Чтобы остановить его чисто, используйте `openclaw gateway stop` (или `launchctl bootout gui/$UID/bot.molt.gateway`).
+- Чтобы перезапустить, используйте `openclaw gateway restart` (или `launchctl kickstart -k gui/$UID/bot.molt.gateway`).
+  - `launchctl` работает только если LaunchAgent установлен; в противном случае используйте сначала `openclaw gateway install`.
+  - Замените метку на `bot.molt.<profile>` при запуске именованного профиля.
+
+## Надзор (systemd user unit)
+OpenClaw по умолчанию устанавливает **пользовательский сервис systemd** на Linux/WSL2. Мы рекомендуем пользовательские сервисы для одно-пользовательских машин (более простой env, конфигурация для каждого пользователя).
+Используйте **системный сервис** для многопользовательских или всегда включенных серверов (не требуется lingering, общий надзор).
+
+`openclaw gateway install` записывает пользовательский unit. `openclaw doctor` проверяет unit и может обновить его, чтобы соответствовать текущим рекомендуемым значениям по умолчанию.
+
+Создайте `~/.config/systemd/user/openclaw-gateway[-<profile>].service`:
+```
+[Unit]
+Description=OpenClaw Gateway (profile: <profile>, v<version>)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/openclaw gateway --port 18789
+Restart=always
+RestartSec=5
+Environment=OPENCLAW_GATEWAY_TOKEN=
+WorkingDirectory=/home/youruser
+
+[Install]
+WantedBy=default.target
+```
+Включите lingering (требуется, чтобы пользовательский сервис пережил logout/idle):
+```
+sudo loginctl enable-linger youruser
+```
+Onboarding запускает это на Linux/WSL2 (может запросить sudo; записывает `/var/lib/systemd/linger`).
+Затем включите сервис:
+```
+systemctl --user enable --now openclaw-gateway[-<profile>].service
+```
+
+**Альтернатива (системный сервис)** - для всегда включенных или многопользовательских серверов вы можете установить **системный** unit systemd вместо пользовательского unit (не требуется lingering).
+Создайте `/etc/systemd/system/openclaw-gateway[-<profile>].service` (скопируйте unit выше, переключите `WantedBy=multi-user.target`, установите `User=` + `WorkingDirectory=`), затем:
+```
+sudo systemctl daemon-reload
+sudo systemctl enable --now openclaw-gateway[-<profile>].service
+```
+
+## Windows (WSL2)
+
+Установки Windows должны использовать **WSL2** и следовать разделу Linux systemd выше.
+
+## Операционные проверки
+- Живучесть: откройте WS и отправьте `req:connect` → ожидайте `res` с `payload.type="hello-ok"` (со снимком).
+- Готовность: вызовите `health` → ожидайте `ok: true` и привязанный канал в `linkChannel` (когда применимо).
+- Отладка: подпишитесь на события `tick` и `presence`; убедитесь, что `status` показывает привязанный/возраст аутентификации; записи присутствия показывают хост Gateway и подключенных клиентов.
+
+## Гарантии безопасности
+- По умолчанию предполагайте один Gateway на хост; если вы запускаете несколько профилей, изолируйте порты/состояние и нацельтесь на правильный экземпляр.
+- Нет резервного перехода на прямые подключения Baileys; если Gateway недоступен, отправки быстро завершаются с ошибкой.
+- Первые кадры не-connect или неправильно сформированный JSON отклоняются, и сокет закрывается.
+- Плавное завершение: выдавайте событие `shutdown` перед закрытием; клиенты должны обрабатывать закрытие + переподключение.
+
+## Помощники CLI
+- `openclaw gateway health|status` — запрос здоровья/статуса через Gateway WS.
+- `openclaw message send --target <num> --message "hi" [--media ...]` — отправить через Gateway (идемпотентно для WhatsApp).
+- `openclaw agent --message "hi" --to <num>` — запустить ход агента (ждет финала по умолчанию).
+- `openclaw gateway call <method> --params '{"k":"v"}'` — сырой вызыватель метода для отладки.
+- `openclaw gateway stop|restart` — остановить/перезапустить контролируемый сервис gateway (launchd/systemd).
+- Подкоманды помощников Gateway предполагают запущенный gateway на `--url`; они больше не автоматически порождают один.
+
+## Руководство по миграции
+- Прекратите использование `openclaw gateway` и устаревшего контрольного порта TCP.
+- Обновите клиентов, чтобы говорить по протоколу WS с обязательным подключением и структурированным присутствием.

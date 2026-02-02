@@ -1,0 +1,305 @@
+---
+summary: "Узлы: сопряжение, возможности, разрешения и помощники CLI для canvas/camera/screen/system"
+read_when:
+  - Сопряжение узлов iOS/Android со шлюзом
+  - Использование узла canvas/camera для контекста агента
+  - Добавление новых команд узла или помощников CLI
+---
+
+# Узлы
+
+**Узел** — это сопутствующее устройство (macOS/iOS/Android/headless), которое подключается к **WebSocket** шлюза (тот же порт, что и у операторов) с `role: "node"` и предоставляет командную поверхность (например, `canvas.*`, `camera.*`, `system.*`) через `node.invoke`. Детали протокола: [Gateway protocol](/gateway/protocol).
+
+Устаревший транспорт: [Bridge protocol](/gateway/bridge-protocol) (TCP JSONL; устарел/удален для текущих узлов).
+
+macOS также может работать в **режиме узла**: приложение в строке меню подключается к WS-серверу шлюза и предоставляет свои локальные команды canvas/camera как узел (поэтому `openclaw nodes …` работает для этого Mac).
+
+Примечания:
+- Узлы — это **периферийные устройства**, а не шлюзы. Они не запускают службу шлюза.
+- Сообщения Telegram/WhatsApp/и т.д. попадают на **шлюз**, а не на узлы.
+
+## Сопряжение + статус
+
+**WS-узлы используют сопряжение устройств.** Узлы представляют идентификацию устройства во время `connect`; шлюз
+создает запрос на сопряжение устройства для `role: node`. Утвердите через CLI устройств (или UI).
+
+Быстрый CLI:
+
+```bash
+openclaw devices list
+openclaw devices approve <requestId>
+openclaw devices reject <requestId>
+openclaw nodes status
+openclaw nodes describe --node <idOrNameOrIp>
+```
+
+Примечания:
+- `nodes status` помечает узел как **сопряженный**, когда его роль сопряжения устройства включает `node`.
+- `node.pair.*` (CLI: `openclaw nodes pending/approve/reject`) — это отдельное хранилище
+  сопряжения узлов, принадлежащее шлюзу; оно **не** контролирует рукопожатие WS `connect`.
+
+## Удаленный хост узла (system.run)
+
+Используйте **хост узла**, когда ваш шлюз работает на одной машине, а команды должны
+выполняться на другой. Модель по-прежнему общается со **шлюзом**; шлюз
+перенаправляет вызовы `exec` на **хост узла**, когда выбран `host=node`.
+
+### Что где выполняется
+- **Хост шлюза**: получает сообщения, запускает модель, маршрутизирует вызовы инструментов.
+- **Хост узла**: выполняет `system.run`/`system.which` на машине узла.
+- **Одобрения**: применяются на хосте узла через `~/.openclaw/exec-approvals.json`.
+
+### Запустить хост узла (передний план)
+
+На машине узла:
+
+```bash
+openclaw node run --host <gateway-host> --port 18789 --display-name "Build Node"
+```
+
+### Запустить хост узла (служба)
+
+```bash
+openclaw node install --host <gateway-host> --port 18789 --display-name "Build Node"
+openclaw node restart
+```
+
+### Сопряжение + именование
+
+На хосте шлюза:
+
+```bash
+openclaw nodes pending
+openclaw nodes approve <requestId>
+openclaw nodes list
+```
+
+Варианты именования:
+- `--display-name` в `openclaw node run` / `openclaw node install` (сохраняется в `~/.openclaw/node.json` на узле).
+- `openclaw nodes rename --node <id|name|ip> --name "Build Node"` (переопределение шлюза).
+
+### Внести команды в белый список
+
+Одобрения exec **для каждого хоста узла**. Добавьте записи белого списка со шлюза:
+
+```bash
+openclaw approvals allowlist add --node <id|name|ip> "/usr/bin/uname"
+openclaw approvals allowlist add --node <id|name|ip> "/usr/bin/sw_vers"
+```
+
+Одобрения находятся на хосте узла по адресу `~/.openclaw/exec-approvals.json`.
+
+### Направить exec на узел
+
+Настройте значения по умолчанию (конфигурация шлюза):
+
+```bash
+openclaw config set tools.exec.host node
+openclaw config set tools.exec.security allowlist
+openclaw config set tools.exec.node "<id-or-name>"
+```
+
+Или для каждой сессии:
+
+```
+/exec host=node security=allowlist node=<id-or-name>
+```
+
+После установки любой вызов `exec` с `host=node` выполняется на хосте узла (с учетом
+белого списка/одобрений узла).
+
+Связанное:
+- [Node host CLI](/cli/node)
+- [Exec tool](/tools/exec)
+- [Exec approvals](/tools/exec-approvals)
+
+## Вызов команд
+
+Низкий уровень (raw RPC):
+
+```bash
+openclaw nodes invoke --node <idOrNameOrIp> --command canvas.eval --params '\{"javaScript":"location.href"\}'
+```
+
+Существуют помощники более высокого уровня для обычных рабочих процессов "дать агенту вложение MEDIA".
+
+## Скриншоты (снимки canvas)
+
+Если узел показывает Canvas (WebView), `canvas.snapshot` возвращает `\{ format, base64 \}`.
+
+Помощник CLI (записывает во временный файл и выводит `MEDIA:<путь>`):
+
+```bash
+openclaw nodes canvas snapshot --node <idOrNameOrIp> --format png
+openclaw nodes canvas snapshot --node <idOrNameOrIp> --format jpg --max-width 1200 --quality 0.9
+```
+
+### Управление Canvas
+
+```bash
+openclaw nodes canvas present --node <idOrNameOrIp> --target https://example.com
+openclaw nodes canvas hide --node <idOrNameOrIp>
+openclaw nodes canvas navigate https://example.com --node <idOrNameOrIp>
+openclaw nodes canvas eval --node <idOrNameOrIp> --js "document.title"
+```
+
+Примечания:
+- `canvas present` принимает URL или локальные пути к файлам (`--target`), плюс опциональные `--x/--y/--width/--height` для позиционирования.
+- `canvas eval` принимает встроенный JS (`--js`) или позиционный аргумент.
+
+### A2UI (Canvas)
+
+```bash
+openclaw nodes canvas a2ui push --node <idOrNameOrIp> --text "Hello"
+openclaw nodes canvas a2ui push --node <idOrNameOrIp> --jsonl ./payload.jsonl
+openclaw nodes canvas a2ui reset --node <idOrNameOrIp>
+```
+
+Примечания:
+- Поддерживается только A2UI v0.8 JSONL (v0.9/createSurface отклоняется).
+
+## Фотографии + видео (камера узла)
+
+Фотографии (`jpg`):
+
+```bash
+openclaw nodes camera list --node <idOrNameOrIp>
+openclaw nodes camera snap --node <idOrNameOrIp>            # по умолчанию: обе стороны (2 строки MEDIA)
+openclaw nodes camera snap --node <idOrNameOrIp> --facing front
+```
+
+Видеоклипы (`mp4`):
+
+```bash
+openclaw nodes camera clip --node <idOrNameOrIp> --duration 10s
+openclaw nodes camera clip --node <idOrNameOrIp> --duration 3000 --no-audio
+```
+
+Примечания:
+- Узел должен быть **на переднем плане** для `canvas.*` и `camera.*` (фоновые вызовы возвращают `NODE_BACKGROUND_UNAVAILABLE`).
+- Продолжительность клипа ограничена (в настоящее время `<= 60s`), чтобы избежать слишком больших полезных нагрузок base64.
+- Android запросит разрешения `CAMERA`/`RECORD_AUDIO` при возможности; отклоненные разрешения завершатся неудачей с `*_PERMISSION_REQUIRED`.
+
+## Записи экрана (узлы)
+
+Узлы предоставляют `screen.record` (mp4). Пример:
+
+```bash
+openclaw nodes screen record --node <idOrNameOrIp> --duration 10s --fps 10
+openclaw nodes screen record --node <idOrNameOrIp> --duration 10s --fps 10 --no-audio
+```
+
+Примечания:
+- `screen.record` требует, чтобы приложение узла было на переднем плане.
+- Android покажет системный запрос захвата экрана перед записью.
+- Записи экрана ограничены до `<= 60s`.
+- `--no-audio` отключает захват микрофона (поддерживается на iOS/Android; macOS использует аудио системного захвата).
+- Используйте `--screen <index>` для выбора дисплея, когда доступно несколько экранов.
+
+## Местоположение (узлы)
+
+Узлы предоставляют `location.get`, когда местоположение включено в настройках.
+
+Помощник CLI:
+
+```bash
+openclaw nodes location get --node <idOrNameOrIp>
+openclaw nodes location get --node <idOrNameOrIp> --accuracy precise --max-age 15000 --location-timeout 10000
+```
+
+Примечания:
+- Местоположение **выключено по умолчанию**.
+- "Всегда" требует системного разрешения; фоновая загрузка выполняется с максимальными усилиями.
+- Ответ включает широту/долготу, точность (метры) и временную метку.
+
+## SMS (узлы Android)
+
+Узлы Android могут предоставлять `sms.send`, когда пользователь предоставляет разрешение **SMS**, а устройство поддерживает телефонию.
+
+Вызов низкого уровня:
+
+```bash
+openclaw nodes invoke --node <idOrNameOrIp> --command sms.send --params '\{"to":"+15555550123","message":"Hello from OpenClaw"\}'
+```
+
+Примечания:
+- Запрос разрешения должен быть принят на устройстве Android до того, как возможность будет объявлена.
+- Устройства только с Wi-Fi без телефонии не будут объявлять `sms.send`.
+
+## Системные команды (хост узла / узел mac)
+
+Узел macOS предоставляет `system.run`, `system.notify` и `system.execApprovals.get/set`.
+Хост headless узла предоставляет `system.run`, `system.which` и `system.execApprovals.get/set`.
+
+Примеры:
+
+```bash
+openclaw nodes run --node <idOrNameOrIp> -- echo "Hello from mac node"
+openclaw nodes notify --node <idOrNameOrIp> --title "Ping" --body "Gateway ready"
+```
+
+Примечания:
+- `system.run` возвращает stdout/stderr/код выхода в полезной нагрузке.
+- `system.notify` учитывает состояние разрешения уведомлений в приложении macOS.
+- `system.run` поддерживает `--cwd`, `--env KEY=VAL`, `--command-timeout` и `--needs-screen-recording`.
+- `system.notify` поддерживает `--priority <passive|active|timeSensitive>` и `--delivery <system|overlay|auto>`.
+- Узлы macOS отбрасывают переопределения `PATH`; хосты headless узлов принимают `PATH` только когда он добавляется к PATH хоста узла.
+- В режиме узла macOS `system.run` контролируется одобрениями exec в приложении macOS (Настройки → Exec approvals).
+  Ask/allowlist/full ведут себя так же, как и на хосте headless узла; отклоненные запросы возвращают `SYSTEM_RUN_DENIED`.
+- На хосте headless узла `system.run` контролируется одобрениями exec (`~/.openclaw/exec-approvals.json`).
+
+## Привязка exec узла
+
+Когда доступно несколько узлов, вы можете привязать exec к конкретному узлу.
+Это устанавливает узел по умолчанию для `exec host=node` (и может быть переопределено для каждого агента).
+
+Глобальное значение по умолчанию:
+
+```bash
+openclaw config set tools.exec.node "node-id-or-name"
+```
+
+Переопределение для каждого агента:
+
+```bash
+openclaw config get agents.list
+openclaw config set agents.list[0].tools.exec.node "node-id-or-name"
+```
+
+Снять установку, чтобы разрешить любой узел:
+
+```bash
+openclaw config unset tools.exec.node
+openclaw config unset agents.list[0].tools.exec.node
+```
+
+## Карта разрешений
+
+Узлы могут включать карту `permissions` в `node.list` / `node.describe`, с ключами по имени разрешения (например, `screenRecording`, `accessibility`) с логическими значениями (`true` = предоставлено).
+
+## Хост headless узла (кроссплатформенный)
+
+OpenClaw может запустить **хост headless узла** (без UI), который подключается к
+WebSocket шлюза и предоставляет `system.run` / `system.which`. Это полезно на Linux/Windows
+или для запуска минимального узла вместе с сервером.
+
+Запустите его:
+
+```bash
+openclaw node run --host <gateway-host> --port 18789
+```
+
+Примечания:
+- Сопряжение по-прежнему требуется (шлюз покажет запрос на одобрение узла).
+- Хост узла хранит свой идентификатор узла, токен, отображаемое имя и информацию о подключении к шлюзу в `~/.openclaw/node.json`.
+- Одобрения exec применяются локально через `~/.openclaw/exec-approvals.json`
+  (см. [Exec approvals](/tools/exec-approvals)).
+- На macOS хост headless узла предпочитает хост exec приложения-компаньона, когда доступен, и
+  переключается на локальное выполнение, если приложение недоступно. Установите `OPENCLAW_NODE_EXEC_HOST=app`, чтобы требовать
+  приложение, или `OPENCLAW_NODE_EXEC_FALLBACK=0`, чтобы отключить резервное копирование.
+- Добавьте `--tls` / `--tls-fingerprint`, когда WS шлюза использует TLS.
+
+## Режим узла Mac
+
+- Приложение в строке меню macOS подключается к WS-серверу шлюза как узел (поэтому `openclaw nodes …` работает для этого Mac).
+- В удаленном режиме приложение открывает SSH-туннель для порта шлюза и подключается к `localhost`.

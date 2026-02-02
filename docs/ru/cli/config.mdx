@@ -1,0 +1,49 @@
+---
+summary: "Справочник CLI для `openclaw config` (получение/установка/удаление значений конфигурации)"
+read_when:
+  - Вы хотите читать или редактировать конфигурацию неинтерактивно
+---
+
+# `openclaw config`
+
+Помощники конфигурации: получение/установка/удаление значений по пути. Запуск без подкоманды открывает
+мастер настройки (то же самое, что `openclaw configure`).
+
+## Примеры
+
+```bash
+openclaw config get browser.executablePath
+openclaw config set browser.executablePath "/usr/bin/google-chrome"
+openclaw config set agents.defaults.heartbeat.every "2h"
+openclaw config set agents.list[0].tools.exec.node "node-id-or-name"
+openclaw config unset tools.web.search.apiKey
+```
+
+## Пути
+
+Пути используют точечную или скобочную нотацию:
+
+```bash
+openclaw config get agents.defaults.workspace
+openclaw config get agents.list[0].id
+```
+
+Используйте индекс списка агентов для работы с конкретным агентом:
+
+```bash
+openclaw config get agents.list
+openclaw config set agents.list[1].tools.exec.node "node-id-or-name"
+```
+
+## Значения
+
+Значения парсятся как JSON5 когда возможно; в противном случае они обрабатываются как строки.
+Используйте `--json` для требования парсинга JSON5.
+
+```bash
+openclaw config set agents.defaults.heartbeat.every "0m"
+openclaw config set gateway.port 19001 --json
+openclaw config set channels.whatsapp.groups '["*"]' --json
+```
+
+Перезапустите шлюз после редактирования.

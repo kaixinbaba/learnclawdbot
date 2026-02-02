@@ -1,0 +1,51 @@
+---
+summary: "Использование Qwen OAuth (бесплатный уровень) в OpenClaw"
+read_when:
+  - Вы хотите использовать Qwen с OpenClaw
+  - Вам нужен бесплатный доступ OAuth к Qwen Coder
+---
+# Qwen
+
+Qwen предоставляет бесплатный уровень OAuth для моделей Qwen Coder и Qwen Vision
+(2000 запросов/день, в соответствии с лимитами Qwen).
+
+## Включение плагина
+
+```bash
+openclaw plugins enable qwen-portal-auth
+```
+
+Перезапустите Gateway после включения.
+
+## Аутентификация
+
+```bash
+openclaw models auth login --provider qwen-portal --set-default
+```
+
+Это запускает процесс OAuth с кодом устройства Qwen и записывает запись провайдера в ваш
+`models.json` (плюс алиас `qwen` для быстрого переключения).
+
+## Идентификаторы моделей
+
+- `qwen-portal/coder-model`
+- `qwen-portal/vision-model`
+
+Переключение моделей:
+
+```bash
+openclaw models set qwen-portal/coder-model
+```
+
+## Повторное использование входа Qwen Code CLI
+
+Если вы уже вошли в систему с помощью Qwen Code CLI, OpenClaw синхронизирует учетные данные
+из `~/.qwen/oauth_creds.json` при загрузке хранилища аутентификации. Вам все равно нужна
+запись `models.providers.qwen-portal` (используйте команду входа выше для ее создания).
+
+## Примечания
+
+- Токены обновляются автоматически; повторно выполните команду входа, если обновление не удастся или доступ будет отозван.
+- Базовый URL по умолчанию: `https://portal.qwen.ai/v1` (переопределите с помощью
+  `models.providers.qwen-portal.baseUrl`, если Qwen предоставит другую конечную точку).
+- См. [Провайдеры моделей](/concepts/model-providers) для правил провайдера.

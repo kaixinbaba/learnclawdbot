@@ -1,6 +1,6 @@
 import { listPublishedPostsAction } from '@/actions/posts/posts'
 import { siteConfig } from '@/config/site'
-import { DEFAULT_LOCALE, UI_LOCALES } from '@/i18n/routing'
+import { DEFAULT_LOCALE, LOCALES, UI_LOCALES } from '@/i18n/routing'
 import { blogCms } from '@/lib/cms'
 import { listDocSlugs } from '@/lib/docs'
 import { MetadataRoute } from 'next'

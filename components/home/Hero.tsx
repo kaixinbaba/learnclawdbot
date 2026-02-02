@@ -8,9 +8,9 @@ export default function Hero() {
   const t = useTranslations("Landing.Hero");
 
   return (
-    <div className="w-full">
+    <div className="w-full min-h-[calc(100vh-56px)] flex items-center">
       <div className="container mx-auto">
-        <div className="flex gap-8 py-16 lg:py-24 2xl:py-40 items-center justify-center flex-col">
+        <div className="flex gap-8 py-16 lg:py-24 items-center justify-center flex-col">
           <FeatureBadge
             label={t("badge.label")}
             text={t("badge.text")}

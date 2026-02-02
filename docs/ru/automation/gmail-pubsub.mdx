@@ -1,0 +1,252 @@
+---
+summary: "Gmail Pub/Sub push, подключенный к веб-хукам OpenClaw через gogcli"
+read_when:
+  - Подключение триггеров входящих Gmail к OpenClaw
+  - Настройка Pub/Sub push для пробуждения агента
+---
+
+# Gmail Pub/Sub -> OpenClaw
+
+Цель: Gmail watch -> Pub/Sub push -> `gog gmail watch serve` -> веб-хук OpenClaw.
+
+## Предварительные требования
+
+- Установлен и авторизован `gcloud` ([руководство по установке](https://docs.cloud.google.com/sdk/docs/install-sdk)).
+- Установлен и авторизован `gog` (gogcli) для учетной записи Gmail ([gogcli.sh](https://gogcli.sh/)).
+- Включены хуки OpenClaw (см. [Веб-хуки](/automation/webhook)).
+- Вход выполнен в `tailscale` ([tailscale.com](https://tailscale.com/)). Поддерживаемая настройка использует Tailscale Funnel для публичной HTTPS-конечной точки.
+  Другие туннельные сервисы могут работать, но не поддерживаются (DIY) и требуют ручной настройки.
+  Прямо сейчас мы поддерживаем Tailscale.
+
+Пример конфигурации хука (включить предустановленное отображение Gmail):
+
+```json5
+{
+  hooks: {
+    enabled: true,
+    token: "OPENCLAW_HOOK_TOKEN",
+    path: "/hooks",
+    presets: ["gmail"]
+  }
+}
+```
+
+Чтобы доставить сводку Gmail на поверхность чата, переопределите предустановку с помощью отображения,
+которое устанавливает `deliver` + опциональные `channel`/`to`:
+
+```json5
+{
+  hooks: {
+    enabled: true,
+    token: "OPENCLAW_HOOK_TOKEN",
+    presets: ["gmail"],
+    mappings: [
+      {
+        match: { path: "gmail" },
+        action: "agent",
+        wakeMode: "now",
+        name: "Gmail",
+        sessionKey: "hook:gmail:{{messages[0].id}}",
+        messageTemplate:
+          "New email from {{messages[0].from}}\nSubject: {{messages[0].subject}}\n{{messages[0].snippet}}\n{{messages[0].body}}",
+        model: "openai/gpt-5.2-mini",
+        deliver: true,
+        channel: "last"
+        // to: "+15551234567"
+      }
+    ]
+  }
+}
+```
+
+Если хотите фиксированный канал, установите `channel` + `to`. Иначе `channel: "last"`
+использует последний маршрут доставки (возврат к WhatsApp).
+
+Чтобы принудительно использовать более дешевую модель для запусков Gmail, установите `model` в отображении
+(`provider/model` или алиас). Если вы применяете `agents.defaults.models`, включите его туда.
+
+Чтобы установить модель по умолчанию и уровень мышления специально для хуков Gmail, добавьте
+`hooks.gmail.model` / `hooks.gmail.thinking` в вашу конфигурацию:
+
+```json5
+{
+  hooks: {
+    gmail: {
+      model: "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+      thinking: "off"
+    }
+  }
+}
+```
+
+Примечания:
+- `model`/`thinking` для отдельного хука в отображении все еще переопределяют эти значения по умолчанию.
+- Порядок возврата: `hooks.gmail.model` → `agents.defaults.model.fallbacks` → primary (auth/rate-limit/timeouts).
+- Если установлен `agents.defaults.models`, модель Gmail должна быть в белом списке.
+- Содержимое хука Gmail по умолчанию обернуто границами безопасности внешнего контента.
+  Чтобы отключить (опасно), установите `hooks.gmail.allowUnsafeExternalContent: true`.
+
+Для дальнейшей настройки обработки полезной нагрузки добавьте `hooks.mappings` или модуль преобразования JS/TS
+в `hooks.transformsDir` (см. [Веб-хуки](/automation/webhook)).
+
+## Мастер (рекомендуется)
+
+Используйте помощник OpenClaw для настройки всего вместе (устанавливает зависимости на macOS через brew):
+
+```bash
+openclaw webhooks gmail setup \
+  --account openclaw@gmail.com
+```
+
+По умолчанию:
+- Использует Tailscale Funnel для публичной push-конечной точки.
+- Записывает конфигурацию `hooks.gmail` для `openclaw webhooks gmail run`.
+- Включает предустановку хука Gmail (`hooks.presets: ["gmail"]`).
+
+Примечание о пути: когда включен `tailscale.mode`, OpenClaw автоматически устанавливает
+`hooks.gmail.serve.path` в `/` и сохраняет публичный путь в
+`hooks.gmail.tailscale.path` (по умолчанию `/gmail-pubsub`), потому что Tailscale
+удаляет префикс установленного пути перед проксированием.
+Если вам нужно, чтобы бэкенд получал путь с префиксом, установите
+`hooks.gmail.tailscale.target` (или `--tailscale-target`) на полный URL, например
+`http://127.0.0.1:8788/gmail-pubsub`, и сопоставьте `hooks.gmail.serve.path`.
+
+Хотите пользовательскую конечную точку? Используйте `--push-endpoint <url>` или `--tailscale off`.
+
+Примечание о платформе: на macOS мастер устанавливает `gcloud`, `gogcli` и `tailscale`
+через Homebrew; на Linux сначала установите их вручную.
+
+Автозапуск Gateway (рекомендуется):
+- Когда `hooks.enabled=true` и установлен `hooks.gmail.account`, Gateway запускает
+  `gog gmail watch serve` при загрузке и автоматически обновляет watch.
+- Установите `OPENCLAW_SKIP_GMAIL_WATCHER=1`, чтобы отказаться (полезно, если вы запускаете демон самостоятельно).
+- Не запускайте ручной демон одновременно, иначе получите
+  `listen tcp 127.0.0.1:8788: bind: address already in use`.
+
+Ручной демон (запускает `gog gmail watch serve` + автообновление):
+
+```bash
+openclaw webhooks gmail run
+```
+
+## Одноразовая настройка
+
+1) Выберите проект GCP, **которому принадлежит OAuth-клиент**, используемый `gog`.
+
+```bash
+gcloud auth login
+gcloud config set project <project-id>
+```
+
+Примечание: Gmail watch требует, чтобы тема Pub/Sub находилась в том же проекте, что и OAuth-клиент.
+
+2) Включите API:
+
+```bash
+gcloud services enable gmail.googleapis.com pubsub.googleapis.com
+```
+
+3) Создайте тему:
+
+```bash
+gcloud pubsub topics create gog-gmail-watch
+```
+
+4) Разрешите Gmail push публиковать:
+
+```bash
+gcloud pubsub topics add-iam-policy-binding gog-gmail-watch \
+  --member=serviceAccount:gmail-api-push@system.gserviceaccount.com \
+  --role=roles/pubsub.publisher
+```
+
+## Запустите watch
+
+```bash
+gog gmail watch start \
+  --account openclaw@gmail.com \
+  --label INBOX \
+  --topic projects/<project-id>/topics/gog-gmail-watch
+```
+
+Сохраните `history_id` из вывода (для отладки).
+
+## Запустите обработчик push
+
+Локальный пример (аутентификация с общим токеном):
+
+```bash
+gog gmail watch serve \
+  --account openclaw@gmail.com \
+  --bind 127.0.0.1 \
+  --port 8788 \
+  --path /gmail-pubsub \
+  --token <shared> \
+  --hook-url http://127.0.0.1:18789/hooks/gmail \
+  --hook-token OPENCLAW_HOOK_TOKEN \
+  --include-body \
+  --max-bytes 20000
+```
+
+Примечания:
+- `--token` защищает push-конечную точку (`x-gog-token` или `?token=`).
+- `--hook-url` указывает на OpenClaw `/hooks/gmail` (отображено; изолированный запуск + сводка в основную).
+- `--include-body` и `--max-bytes` контролируют фрагмент тела, отправляемый в OpenClaw.
+
+Рекомендуется: `openclaw webhooks gmail run` оборачивает тот же поток и автообновляет watch.
+
+## Откройте обработчик (продвинуто, не поддерживается)
+
+Если вам нужен туннель, отличный от Tailscale, настройте его вручную и используйте публичный URL в push-подписке
+(не поддерживается, без ограждений):
+
+```bash
+cloudflared tunnel --url http://127.0.0.1:8788 --no-autoupdate
+```
+
+Используйте сгенерированный URL как push-конечную точку:
+
+```bash
+gcloud pubsub subscriptions create gog-gmail-watch-push \
+  --topic gog-gmail-watch \
+  --push-endpoint "https://<public-url>/gmail-pubsub?token=<shared>"
+```
+
+Для продакшена: используйте стабильную HTTPS-конечную точку и настройте Pub/Sub OIDC JWT, затем запустите:
+
+```bash
+gog gmail watch serve --verify-oidc --oidc-email <svc@...>
+```
+
+## Тестирование
+
+Отправьте сообщение в отслеживаемый почтовый ящик:
+
+```bash
+gog gmail send \
+  --account openclaw@gmail.com \
+  --to openclaw@gmail.com \
+  --subject "watch test" \
+  --body "ping"
+```
+
+Проверьте состояние watch и историю:
+
+```bash
+gog gmail watch status --account openclaw@gmail.com
+gog gmail history --account openclaw@gmail.com --since <historyId>
+```
+
+## Устранение неполадок
+
+- `Invalid topicName`: несоответствие проекта (тема не в проекте OAuth-клиента).
+- `User not authorized`: отсутствует `roles/pubsub.publisher` на теме.
+- Пустые сообщения: Gmail push предоставляет только `historyId`; получайте через `gog gmail history`.
+
+## Очистка
+
+```bash
+gog gmail watch stop --account openclaw@gmail.com
+gcloud pubsub subscriptions delete gog-gmail-watch-push
+gcloud pubsub topics delete gog-gmail-watch
+```

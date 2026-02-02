@@ -1,0 +1,89 @@
+---
+summary: "Поддержка Linux + статус сопутствующего приложения"
+read_when:
+  - Поиск статуса сопутствующего приложения Linux
+  - Планирование охвата платформ или вклада
+---
+# Приложение Linux
+
+Gateway полностью поддерживается на Linux. **Node — рекомендуемая среда выполнения**.
+Bun не рекомендуется для Gateway (баги WhatsApp/Telegram).
+
+Нативные сопутствующие приложения Linux запланированы. Вклад приветствуется, если вы хотите помочь построить одно.
+
+## Быстрый путь для начинающих (VPS)
+
+1) Установить Node 22+  
+2) `npm i -g openclaw@latest`  
+3) `openclaw onboard --install-daemon`  
+4) С вашего ноутбука: `ssh -N -L 18789:127.0.0.1:18789 <user>@<host>`  
+5) Откройте `http://127.0.0.1:18789/` и вставьте ваш токен
+
+Пошаговое руководство по VPS: [exe.dev](/platforms/exe-dev)
+
+## Установка
+- [Начало работы](/start/getting-started)
+- [Установка и обновления](/install/updating)
+- Опциональные процессы: [Bun (экспериментальный)](/install/bun), [Nix](/install/nix), [Docker](/install/docker)
+
+## Gateway
+- [Руководство по Gateway](/gateway)
+- [Конфигурация](/gateway/configuration)
+
+## Установка сервиса Gateway (CLI)
+
+Используйте один из следующих вариантов:
+
+```
+openclaw onboard --install-daemon
+```
+
+Или:
+
+```
+openclaw gateway install
+```
+
+Или:
+
+```
+openclaw configure
+```
+
+Выберите **Gateway service** при запросе.
+
+Восстановление/миграция:
+
+```
+openclaw doctor
+```
+
+## Управление системой (пользовательский модуль systemd)
+OpenClaw устанавливает **пользовательский** сервис systemd по умолчанию. Используйте **системный**
+сервис для общих или постоянно работающих серверов. Полный пример модуля и руководство
+находятся в [руководстве по Gateway](/gateway).
+
+Минимальная настройка:
+
+Создайте `~/.config/systemd/user/openclaw-gateway[-<profile>].service`:
+
+```
+[Unit]
+Description=OpenClaw Gateway (profile: <profile>, v<version>)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/openclaw gateway --port 18789
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+```
+
+Включите его:
+
+```
+systemctl --user enable --now openclaw-gateway[-<profile>].service
+```

@@ -39,11 +39,13 @@ export async function generateMetadata({
     });
   }
 
+  // Docs are available in all locales (including docs-only locales like ko)
   return constructMetadata({
     title: `${doc.title} - OpenClaw Docs`,
     description: doc.frontmatter.summary || doc.title,
     locale: locale as Locale,
     path: `/docs/${slugStr}`,
+    availableLocales: LOCALES,
   });
 }
 

@@ -1,0 +1,174 @@
+---
+summary: "Использование MiniMax M2.1 в OpenClaw"
+read_when:
+  - Вы хотите модели MiniMax в OpenClaw
+  - Вам нужно руководство по настройке MiniMax
+---
+# MiniMax
+
+MiniMax — это AI-компания, создающая семейство моделей **M2/M2.1**. Текущий релиз, ориентированный на программирование, — это **MiniMax M2.1** (23 декабря 2025 года), созданный для сложных реальных задач.
+
+Источник: [Заметка о выпуске MiniMax M2.1](https://www.minimax.io/news/minimax-m21)
+
+## Обзор модели (M2.1)
+
+MiniMax выделяет эти улучшения в M2.1:
+
+- Более сильное **многоязычное программирование** (Rust, Java, Go, C++, Kotlin, Objective-C, TS/JS).
+- Лучшая **веб/приложения разработка** и качество эстетического вывода (включая нативные мобильные).
+- Улучшенная обработка **составных инструкций** для офисных рабочих процессов, основанная на чередующемся мышлении и интегрированном выполнении ограничений.
+- **Более краткие ответы** с меньшим использованием токенов и более быстрыми циклами итерации.
+- Более сильная совместимость с **инструментами/агентскими фреймворками** и управлением контекстом (Claude Code, Droid/Factory AI, Cline, Kilo Code, Roo Code, BlackBox).
+- Более высокое качество **диалога и технического письма**.
+
+## MiniMax M2.1 vs MiniMax M2.1 Lightning
+
+- **Скорость:** Lightning — это "быстрый" вариант в документации по ценам MiniMax.
+- **Стоимость:** Ценообразование показывает одинаковую стоимость ввода, но Lightning имеет более высокую стоимость вывода.
+- **Маршрутизация плана кодирования:** Бэкенд Lightning недоступен напрямую в плане кодирования MiniMax. MiniMax автоматически направляет большинство запросов на Lightning, но возвращается к обычному бэкенду M2.1 во время пиков трафика.
+
+## Выберите настройку
+
+### MiniMax M2.1 — рекомендуется
+
+**Лучше для:** размещенного MiniMax с Anthropic-совместимым API.
+
+Настройте через CLI:
+- Запустите `openclaw configure`
+- Выберите **Model/auth**
+- Выберите **MiniMax M2.1**
+
+```json5
+{
+  env: { MINIMAX_API_KEY: "sk-..." },
+  agents: { defaults: { model: { primary: "minimax/MiniMax-M2.1" } } },
+  models: {
+    mode: "merge",
+    providers: {
+      minimax: {
+        baseUrl: "https://api.minimax.io/anthropic",
+        apiKey: "${MINIMAX_API_KEY}",
+        api: "anthropic-messages",
+        models: [
+          {
+            id: "MiniMax-M2.1",
+            name: "MiniMax M2.1",
+            reasoning: false,
+            input: ["text"],
+            cost: { input: 15, output: 60, cacheRead: 2, cacheWrite: 10 },
+            contextWindow: 200000,
+            maxTokens: 8192
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### MiniMax M2.1 как резерв (основной Opus)
+
+**Лучше для:** сохранения Opus 4.5 в качестве основного, переключения на MiniMax M2.1 при отказе.
+
+```json5
+{
+  env: { MINIMAX_API_KEY: "sk-..." },
+  agents: {
+    defaults: {
+      models: {
+        "anthropic/claude-opus-4-5": { alias: "opus" },
+        "minimax/MiniMax-M2.1": { alias: "minimax" }
+      },
+      model: {
+        primary: "anthropic/claude-opus-4-5",
+        fallbacks: ["minimax/MiniMax-M2.1"]
+      }
+    }
+  }
+}
+```
+
+### Опционально: Локально через LM Studio (вручную)
+
+**Лучше для:** локального инференса с LM Studio.
+Мы видели хорошие результаты с MiniMax M2.1 на мощном оборудовании (например, настольный компьютер/сервер) с использованием локального сервера LM Studio.
+
+Настройте вручную через `openclaw.json`:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: { primary: "lmstudio/minimax-m2.1-gs32" },
+      models: { "lmstudio/minimax-m2.1-gs32": { alias: "Minimax" } }
+    }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      lmstudio: {
+        baseUrl: "http://127.0.0.1:1234/v1",
+        apiKey: "lmstudio",
+        api: "openai-responses",
+        models: [
+          {
+            id: "minimax-m2.1-gs32",
+            name: "MiniMax M2.1 GS32",
+            reasoning: false,
+            input: ["text"],
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+            contextWindow: 196608,
+            maxTokens: 8192
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+## Настройка через `openclaw configure`
+
+Используйте интерактивный мастер конфигурации для настройки MiniMax без редактирования JSON:
+
+1) Запустите `openclaw configure`.
+2) Выберите **Model/auth**.
+3) Выберите **MiniMax M2.1**.
+4) Выберите модель по умолчанию при запросе.
+
+## Опции конфигурации
+
+- `models.providers.minimax.baseUrl`: предпочитайте `https://api.minimax.io/anthropic` (Anthropic-совместимый); `https://api.minimax.io/v1` опционален для полезных нагрузок, совместимых с OpenAI.
+- `models.providers.minimax.api`: предпочитайте `anthropic-messages`; `openai-completions` опционален для полезных нагрузок, совместимых с OpenAI.
+- `models.providers.minimax.apiKey`: API ключ MiniMax (`MINIMAX_API_KEY`).
+- `models.providers.minimax.models`: определите `id`, `name`, `reasoning`, `contextWindow`, `maxTokens`, `cost`.
+- `agents.defaults.models`: псевдонимы моделей, которые вы хотите в списке разрешенных.
+- `models.mode`: сохраните `merge`, если хотите добавить MiniMax вместе со встроенными.
+
+## Примечания
+
+- Ссылки на модели: `minimax/<model>`.
+- API использования плана кодирования: `https://api.minimaxi.com/v1/api/openplatform/coding_plan/remains` (требуется ключ плана кодирования).
+- Обновите значения цен в `models.json`, если вам нужно точное отслеживание затрат.
+- Реферальная ссылка для плана кодирования MiniMax (скидка 10%): https://platform.minimax.io/subscribe/coding-plan?code=DbXJTRClnb&source=link
+- См. [/concepts/model-providers](/concepts/model-providers) для правил провайдеров.
+- Используйте `openclaw models list` и `openclaw models set minimax/MiniMax-M2.1` для переключения.
+
+## Устранение неполадок
+
+### "Unknown model: minimax/MiniMax-M2.1"
+
+Обычно это означает, что **провайдер MiniMax не настроен** (нет записи провайдера и не найден профиль аутентификации MiniMax/ключ env). Исправление для этого обнаружения находится в **2026.1.12** (неопубликованная на момент написания). Исправьте:
+- Обновившись до **2026.1.12** (или запустив из исходного кода `main`), затем перезапустив gateway.
+- Запустив `openclaw configure` и выбрав **MiniMax M2.1**, или
+- Добавив блок `models.providers.minimax` вручную, или
+- Установив `MINIMAX_API_KEY` (или профиль аутентификации MiniMax), чтобы провайдер мог быть внедрен.
+
+Убедитесь, что id модели **чувствителен к регистру**:
+- `minimax/MiniMax-M2.1`
+- `minimax/MiniMax-M2.1-lightning`
+
+Затем проверьте заново с помощью:
+```bash
+openclaw models list
+```
