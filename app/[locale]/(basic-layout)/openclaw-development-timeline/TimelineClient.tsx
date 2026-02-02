@@ -234,10 +234,10 @@ export default function TimelineClient({ locale }: { locale: string }) {
           transition={{ duration: 0.8 }}
           className="text-center mb-16 lg:mb-24"
         >
-          <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6">
+          <h2 className="text-2xl lg:text-4xl font-bold text-white mb-4">
             {t("hero.title")}
-          </h1>
-          <p className="text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto">
+          </h2>
+          <p className="text-base lg:text-lg text-gray-300 max-w-2xl mx-auto">
             {t("hero.subtitle")}
           </p>
         </motion.div>
