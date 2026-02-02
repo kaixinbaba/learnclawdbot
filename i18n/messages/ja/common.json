@@ -225,6 +225,32 @@
   "Header": {
     "links": [
       {
+        "name": "ドキュメント",
+        "href": "/docs",
+        "items": [
+          {
+            "name": "English",
+            "href": "/docs",
+            "description": "Documentation in English"
+          },
+          {
+            "name": "中文",
+            "href": "/zh/docs",
+            "description": "中文文档"
+          },
+          {
+            "name": "日本語",
+            "href": "/ja/docs",
+            "description": "日本語ドキュメント"
+          },
+          {
+            "name": "한국어",
+            "href": "/ko/docs",
+            "description": "한국어 문서"
+          }
+        ]
+      },
+      {
         "name": "OpenClaw とは？",
         "href": "/what-is-openclaw"
       },

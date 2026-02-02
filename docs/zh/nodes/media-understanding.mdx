@@ -105,7 +105,7 @@ CLI 模板还可以使用：
 规则：
 - 如果媒体超过 `maxBytes`，该模型将被跳过，并**尝试下一个模型**。
 - 如果模型返回超过 `maxChars`，输出将被修剪。
-- `prompt` 默认为简单的 "Describe the {media}." 加上 `maxChars` 指导（仅限 image/video）。
+- `prompt` 默认为简单的 "Describe the \{media\}." 加上 `maxChars` 指导（仅限 image/video）。
 - 如果 `<capability>.enabled: true` 但未配置模型，OpenClaw 在其提供商支持该功能时
   尝试**活动回复模型**。
 

@@ -4,6 +4,46 @@ import CodeBlock from "@/components/mdx/CodeBlock";
 import { MdxCard } from "@/components/mdx/MdxCard";
 import React, { ReactNode } from "react";
 
+// Callout-style components (Info, Warning, Tip, Note, Danger)
+const InfoBox: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="my-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 p-4 text-sm text-blue-800 dark:text-blue-300">
+    {children}
+  </div>
+);
+
+const WarningBox: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="my-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-300">
+    {children}
+  </div>
+);
+
+const TipBox: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="my-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 p-4 text-sm text-green-800 dark:text-green-300">
+    {children}
+  </div>
+);
+
+// CardGroup: renders children in a grid
+const CardGroup: React.FC<{ children: ReactNode; cols?: number }> = ({ children, cols = 2 }) => (
+  <div className={`grid gap-4 my-6 grid-cols-1 md:grid-cols-${cols}`}>
+    {children}
+  </div>
+);
+
+// Steps / Step
+const Steps: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="my-6 space-y-4 border-l-2 border-gray-200 dark:border-gray-700 pl-6">
+    {children}
+  </div>
+);
+
+const StepItem: React.FC<{ children: ReactNode; title?: string }> = ({ children, title }) => (
+  <div className="relative">
+    {title && <h4 className="font-semibold mb-2">{title}</h4>}
+    {children}
+  </div>
+);
+
 interface HeadingProps {
   level: 1 | 2 | 3 | 4 | 5 | 6;
   className: string;
@@ -127,6 +167,28 @@ const MDXComponents: MDXComponentsProps = {
   Aside,
   Callout,
   Card: MdxCard,
+  CardGroup,
+  Info: InfoBox,
+  Warning: WarningBox,
+  Tip: TipBox,
+  Note: InfoBox,
+  Danger: WarningBox,
+  Steps,
+  Step: StepItem,
 };
 
-export default MDXComponents;
+// Wrap MDXComponents with a Proxy to gracefully handle undefined components
+// instead of throwing "Expected component X to be defined"
+const SafeMDXComponents = new Proxy(MDXComponents, {
+  get(target, prop: string) {
+    if (prop in target) {
+      return target[prop];
+    }
+    // Return a passthrough component for unknown tags
+    const Fallback: React.FC<{ children?: ReactNode }> = ({ children }) => <>{children}</>;
+    Fallback.displayName = `MDXFallback(${prop})`;
+    return Fallback;
+  },
+});
+
+export default SafeMDXComponents;

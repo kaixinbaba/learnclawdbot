@@ -1,0 +1,24 @@
+---
+summary: "`openclaw security` CLI 레퍼런스 (일반적인 보안 문제 감사 및 수정)"
+read_when:
+  - config/state에 대한 빠른 보안 감사를 실행하고 싶은 경우
+  - 안전한 "수정" 제안을 적용하고 싶은 경우 (chmod, 기본값 강화)
+---
+
+# `openclaw security`
+
+보안 도구 (감사 + 선택적 수정).
+
+관련 문서:
+- 보안 가이드: [Security](/gateway/security)
+
+## Audit
+
+```bash
+openclaw security audit
+openclaw security audit --deep
+openclaw security audit --fix
+```
+
+감사는 여러 DM 발신자가 main session을 공유할 때 경고하고 공유 inbox에 대해 `session.dmScope="per-channel-peer"` (또는 다중 계정 channel의 경우 `per-account-channel-peer`)를 권장합니다.
+또한 작은 model(`<=300B`)이 샌드박스 없이 web/browser tool이 활성화된 상태로 사용될 때 경고합니다.

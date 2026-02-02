@@ -1,0 +1,334 @@
+{
+  "Home": {
+    "title": "OpenClaw(구 Clawbot / Moltbot) 학습 가이드",
+    "tagLine": "초보자를 위한 완전 가이드",
+    "description": "OpenClaw(구 Clawbot / Moltbot) 완전 가이드. 채팅 앱을 복잡한 워크플로우와 일상 업무를 자동 처리하는 강력한 AI 어시스턴트로 변환하세요."
+  },
+  "Login": {
+    "title": "다시 오신 것을 환영합니다",
+    "description": "아래 방법으로 로그인하실 수 있습니다",
+    "Toast": {
+      "rateLimitTitle": "요청이 너무 많습니다",
+      "rateLimitDescription": "잠시 후 다시 시도해 주세요.",
+      "Email": {
+        "successTitle": "이메일을 발송했습니다",
+        "successDescription": "로그인 링크를 이메일로 보내드렸습니다. 확인해 주세요.",
+        "errorTitle": "오류가 발생했습니다",
+        "errorDescription": "이메일 발송에 실패했습니다. 다시 시도해 주세요."
+      },
+      "OTP": {
+        "errorTitle": "오류가 발생했습니다",
+        "sendSuccessTitle": "인증 코드를 발송했습니다!",
+        "sendSuccessDescription": "이메일에서 인증 코드를 확인해 주세요.",
+        "sendErrorDescription": "인증 코드 발송에 실패했습니다. 다시 시도해 주세요.",
+        "verifySuccessTitle": "로그인 성공!",
+        "verifySuccessDescription": "다시 오신 것을 환영합니다.",
+        "verifyErrorDescription": "인증 코드가 유효하지 않거나 만료되었습니다. 다시 시도해 주세요."
+      },
+      "Google": {
+        "errorTitle": "오류가 발생했습니다",
+        "errorDescription": "Google 계정으로 로그인에 실패했습니다. 다시 시도해 주세요."
+      },
+      "Github": {
+        "errorTitle": "오류가 발생했습니다",
+        "errorDescription": "GitHub 계정으로 로그인에 실패했습니다. 다시 시도해 주세요."
+      }
+    },
+    "signInMethods": {
+      "or": "또는",
+      "signInWithGoogle": "Google 계정으로 로그인",
+      "signInWithGithub": "GitHub 계정으로 로그인",
+      "signInWithEmail": "이메일로 로그인",
+      "otpMethod": "인증 코드",
+      "magicLinkMethod": "매직 링크",
+      "sendOTP": "인증 코드 발송",
+      "verifyOTP": "인증하기",
+      "resendOTP": "코드를 받지 못하셨나요? 재발송",
+      "backToEmail": "돌아가기",
+      "otpSentTo": "인증 코드 발송 완료:"
+    },
+    "Button": {
+      "signIn": "로그인",
+      "signOut": "로그아웃"
+    },
+    "UserMenus": [
+      {
+        "name": "설정",
+        "href": "/dashboard/settings",
+        "icon": "Settings"
+      },
+      {
+        "name": "주문 내역",
+        "href": "/dashboard/my-orders",
+        "icon": "ShoppingCart"
+      },
+      {
+        "name": "구독",
+        "href": "/dashboard/subscription",
+        "icon": "WalletCards"
+      },
+      {
+        "name": "크레딧 내역",
+        "href": "/dashboard/credit-history",
+        "icon": "Coins"
+      }
+    ],
+    "AdminMenus": [
+      {
+        "name": "개요",
+        "href": "/dashboard/overview",
+        "icon": "LayoutDashboard"
+      },
+      {
+        "name": "사용자 관리",
+        "href": "/dashboard/users",
+        "icon": "Users"
+      },
+      {
+        "name": "주문 관리",
+        "href": "/dashboard/orders",
+        "icon": "ShoppingCart"
+      },
+      {
+        "name": "요금 관리",
+        "href": "/dashboard/prices",
+        "icon": "DollarSign"
+      },
+      {
+        "name": "블로그 관리",
+        "href": "/dashboard/blogs",
+        "icon": "Rss"
+      },
+      {
+        "name": "용어집 관리",
+        "href": "/dashboard/glossary",
+        "icon": "BookOpen"
+      },
+      {
+        "name": "R2 리소스",
+        "href": "/dashboard/r2-resources",
+        "icon": "FileBox"
+      }
+    ]
+  },
+  "Blogs": {
+    "title": "블로그 글",
+    "description": "OpenClaw에 관한 팁, 튜토리얼, 인사이트.",
+    "emptyState": {
+      "title": "글이 없습니다",
+      "description": "현재 콘텐츠를 준비 중입니다. 조금만 기다려 주세요!"
+    },
+    "loadMorePostsFailed": "글을 불러오지 못했습니다",
+    "loadMorePosts": "글을 불러오는 중...",
+    "filterPostsFailed": "글을 불러오지 못했습니다",
+    "noPostsFoundForThisTag": "이 태그에 해당하는 글이 없습니다",
+    "reachedTheEnd": "모든 글을 표시했습니다",
+    "BlogDetail": {
+      "featured": "추천 글",
+      "viewCount": "{count}회 조회",
+      "accessRestricted": "접근 제한",
+      "unauthorized": "이 글은 로그인한 사용자만 볼 수 있습니다",
+      "premium": "프리미엄 콘텐츠",
+      "premiumContent": "이 글은 유료 회원 전용입니다",
+      "signIn": "로그인",
+      "upgrade": "업그레이드",
+      "backToBlogs": "블로그 목록으로 돌아가기",
+      "notFound": "글을 찾을 수 없습니다"
+    }
+  },
+  "About": {
+    "title": "OpenClaw 소개: AI 자동화 도구",
+    "description": "OpenClaw(구 Clawbot / Moltbot)를 완벽하게 활용하세요. WhatsApp과 Telegram을 사용하여 이메일, 캘린더, 항공편 예약을 자동화하는 방법을 단계별로 안내합니다."
+  },
+  "Moltbot": {
+    "title": "Moltbot이란? (현재 OpenClaw)",
+    "description": "Moltbot은 OpenClaw의 이전 이름(그 전에는 Clawbot)입니다. 이 페이지는 역사적 설명과 최신 OpenClaw 리소스 안내입니다."
+  },
+  "OpenClaw": {
+    "title": "OpenClaw란: AI 자동화 가이드",
+    "description": "OpenClaw(구 Clawbot / Moltbot)를 완벽하게 활용하세요. WhatsApp과 Telegram을 사용하여 이메일, 캘린더, 항공편 예약을 자동화하는 방법을 단계별로 안내합니다."
+  },
+  "Clawdbot": {
+    "metaTitle": "Clawbot이란? (현재 OpenClaw) - WhatsApp & Telegram용 AI 어시스턴트",
+    "metaDescription": "Clawbot은 OpenClaw의 초기 이름으로, 이후 Moltbot을 거쳐 현재 OpenClaw입니다.",
+    "importantUpdate": "중요 공지",
+    "title": "Clawbot은 OpenClaw가 되었습니다",
+    "description": "Clawbot은 이 AI 어시스턴트의 최초 이름으로, 이후 Moltbot을 거쳐 현재 OpenClaw입니다. 이 페이지는 역사적 설명과 최신 OpenClaw 리소스 안내입니다.",
+    "subtitle": "Clawbot에서 Moltbot을 거쳐 OpenClaw로. 이름과 외형은 바뀌었지만, 강력한 AI 어시스턴트 기능은 그대로입니다.",
+    "cta": "OpenClaw 확인하기",
+    "whatWasClawdbot": "Clawbot이란?",
+    "whatWasClawdbotDesc": "Clawbot은 WhatsApp과 Telegram 내에서 작동하도록 설계된 AI 어시스턴트의 초기 이름이었습니다. 사용자는 채팅 앱을 벗어나지 않고 이메일, 캘린더 일정, 작업을 관리할 수 있었습니다.",
+    "whyChange": "왜 변경했나요?",
+    "imageAlt": "OpenClaw 브랜드 변경 안내"
+  },
+  "AIDemo": {
+    "title": "AI 기능 데모",
+    "description": "이 페이지는 비공개 기능을 소개하며, 템플릿을 구매하신 사용자만 이용하실 수 있습니다. AI 모델 호출 프로세스를 학습하고 테스트하기 위한 것입니다. 로컬에서 템플릿을 실행하고, 환경 변수에 자신의 API 키를 입력해 주세요.",
+    "metaDescription": "이 페이지에서는 싱글턴 및 멀티턴 대화, 텍스트-이미지 변환, 이미지-이미지 변환, 텍스트/이미지-동영상 변환 등 AI 기능을 소개합니다."
+  },
+  "ErrorPage": {
+    "403": {
+      "title": "403 - 접근이 거부되었습니다",
+      "description": "이 페이지에 접근할 권한이 없습니다.",
+      "button": {
+        "name": "홈으로 돌아가기",
+        "href": "/"
+      }
+    },
+    "RedirectError": {
+      "title": "리다이렉트 오류",
+      "description": "인증 과정에서 오류가 발생했습니다.",
+      "goToHome": "홈으로 돌아가기",
+      "goToLogin": "로그인 화면으로 돌아가기",
+      "invalid_params": {
+        "title": "파라미터 오류",
+        "description": "요청에 필요한 파라미터가 부족합니다."
+      },
+      "invalid_redirect": {
+        "title": "리다이렉트 오류",
+        "description": "제공된 리다이렉트 URL이 허용되지 않습니다."
+      },
+      "token_expired": {
+        "title": "토큰 만료",
+        "description": "인증 토큰이 만료되었습니다. 다시 로그인해 주세요."
+      },
+      "invalid_token": {
+        "title": "토큰 오류",
+        "description": "제공된 인증 토큰이 유효하지 않습니다."
+      },
+      "invalid_link_or_expired": {
+        "title": "링크 오류",
+        "description": "이메일 인증 링크가 유효하지 않거나 만료되었습니다."
+      },
+      "server_error": {
+        "title": "서버 오류",
+        "description": "인증 중 서버에서 예기치 않은 오류가 발생했습니다."
+      },
+      "unknown": {
+        "title": "인증 오류",
+        "description": "인증 중 알 수 없는 오류가 발생했습니다."
+      }
+    },
+    "StripeError": {
+      "goToHome": "홈으로 돌아가기",
+      "goToDashboard": "대시보드로 돌아가기",
+      "title": "Payment Portal Error",
+      "description": "결제 정보에 오류가 발생했습니다."
+    }
+  },
+  "LanguageDetection": {
+    "title": "언어 제안",
+    "description": "브라우저 언어 설정이 현재 사이트 언어와 다릅니다. 언제든지 언어를 전환할 수 있습니다.",
+    "countdown": "닫히기까지 {countdown}초",
+    "switchTo": "(으)로 전환"
+  },
+  "Header": {
+    "links": [
+      {
+        "name": "문서",
+        "href": "/docs",
+        "items": [
+          {
+            "name": "English",
+            "href": "/docs",
+            "description": "Documentation in English"
+          },
+          {
+            "name": "中文",
+            "href": "/zh/docs",
+            "description": "中文文档"
+          },
+          {
+            "name": "日本語",
+            "href": "/ja/docs",
+            "description": "日本語ドキュメント"
+          },
+          {
+            "name": "한국어",
+            "href": "/ko/docs",
+            "description": "한국어 문서"
+          }
+        ]
+      },
+      {
+        "name": "OpenClaw란?",
+        "href": "/what-is-openclaw"
+      },
+      {
+        "name": "블로그",
+        "href": "/blog"
+      },
+      {
+        "name": "소개",
+        "href": "/about"
+      }
+    ]
+  },
+  "Footer": {
+    "Copyright": "Copyright © {year} {name} All rights reserved.",
+    "About": "사이트 소개",
+    "PrivacyPolicy": "개인정보 처리방침",
+    "TermsOfService": "이용약관",
+    "Newsletter": {
+      "title": "뉴스레터 안내",
+      "description": "최신 정보를 정기적으로 보내드립니다",
+      "subscribe": {
+        "invalidEmail": "이메일 주소 형식이 올바르지 않습니다",
+        "defaultErrorMessage": "등록 처리에 실패했습니다. 잠시 후 다시 시도해 주세요",
+        "successMessage": "뉴스레터 등록이 완료되었습니다",
+        "multipleSubmissions": "요청이 집중되고 있습니다. 24시간 후에 다시 시도해 주세요"
+      },
+      "unsubscribe": {
+        "title": "뉴스레터 수신 거부",
+        "success": "Learn OpenClaw 뉴스레터 수신 거부가 완료되었습니다.",
+        "emailPrefix": "이메일 주소:",
+        "regretMessage": "언제든지 다시 등록하여 Learn OpenClaw의 최신 업데이트와 튜토리얼을 받을 수 있습니다.",
+        "errorGeneric": "수신 거부 처리 중 오류가 발생했습니다",
+        "errorNoToken": "수신 거부 토큰이 제공되지 않았습니다",
+        "errorMessage": "올바른 수신 거부 링크를 사용하고 있는지 확인해 주세요. 문제가 해결되지 않으면 지원팀에 문의해 주세요.",
+        "contactPrefix": "문의처:",
+        "contactPrefixSuccess": "질문이 있으시면 언제든지 문의해 주세요:",
+        "backToHome": "홈으로 돌아가기",
+        "invalidEmail": "유효하지 않은 이메일 주소입니다",
+        "notInNewsletter": "이 이메일 주소는 수신 목록에 등록되어 있지 않습니다",
+        "confirmTitle": "수신 거부 확인",
+        "confirmMessage": "뉴스레터 수신을 거부하시겠습니까? 새 기능 및 콘텐츠 업데이트 소식을 받지 못하게 됩니다.",
+        "confirmButton": "수신 거부",
+        "cancelButton": "취소",
+        "processing": "처리 중...",
+        "finalWarning": "이 작업은 취소할 수 없습니다. 나중에 언제든지 다시 등록할 수 있습니다.",
+        "errorInvalidToken": "유효하지 않은 수신 거부 링크입니다. 링크가 손상되었거나 만료되었을 수 있습니다."
+      }
+    },
+    "Links": {
+      "groups": [
+        {
+          "title": "배우기",
+          "links": [
+            {
+              "href": "/openclaw",
+              "name": "OpenClaw란?"
+            },
+            {
+              "href": "/blog",
+              "name": "블로그"
+            }
+          ]
+        },
+        {
+          "title": "소개",
+          "links": [
+            {
+              "href": "/about",
+              "name": "우리에 대해"
+            },
+            {
+              "href": "/privacy-policy",
+              "name": "개인정보 처리방침"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

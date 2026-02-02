@@ -1,0 +1,200 @@
+---
+summary: "ClawdHub 가이드: 공개 스킬 레지스트리 + CLI 워크플로"
+read_when:
+  - 새로운 사용자에게 ClawdHub 소개 시
+  - 스킬 설치, 검색 또는 게시 시
+  - ClawdHub CLI 플래그 및 동기화 동작 설명 시
+---
+
+# ClawdHub
+
+ClawdHub는 **OpenClaw를 위한 공개 스킬 레지스트리**입니다. 무료 서비스로, 모든 스킬은 공개되어 있으며 모든 사람이 공유하고 재사용할 수 있도록 공개되어 있습니다. 스킬은 `SKILL.md` 파일(및 지원 텍스트 파일)이 있는 폴더일 뿐입니다. 웹 앱에서 스킬을 찾아보거나 CLI를 사용하여 스킬을 검색, 설치, 업데이트 및 게시할 수 있습니다.
+
+사이트: [clawdhub.com](https://clawdhub.com)
+
+## 대상 사용자(초보자 친화적)
+
+OpenClaw 에이전트에 새로운 기능을 추가하려면 ClawdHub가 스킬을 찾고 설치하는 가장 쉬운 방법입니다. 백엔드가 어떻게 작동하는지 알 필요가 없습니다. 다음을 수행할 수 있습니다:
+
+- 일반 언어로 스킬을 검색합니다.
+- 워크스페이스에 스킬을 설치합니다.
+- 나중에 한 번의 명령으로 스킬을 업데이트합니다.
+- 자신의 스킬을 게시하여 백업합니다.
+
+## 빠른 시작(비기술적)
+
+1) CLI를 설치합니다(다음 섹션 참조).
+2) 필요한 것을 검색합니다:
+   - `clawdhub search "calendar"`
+3) 스킬을 설치합니다:
+   - `clawdhub install <skill-slug>`
+4) 새 OpenClaw 세션을 시작하여 새 스킬을 가져옵니다.
+
+## CLI 설치
+
+하나를 선택하십시오:
+
+```bash
+npm i -g clawdhub
+```
+
+```bash
+pnpm add -g clawdhub
+```
+
+## OpenClaw와의 통합
+
+기본적으로 CLI는 현재 작업 디렉토리 아래의 `./skills`에 스킬을 설치합니다. OpenClaw 워크스페이스가 구성되어 있으면 `--workdir`(또는 `CLAWDHUB_WORKDIR`)를 오버라이드하지 않는 한 `clawdhub`는 해당 워크스페이스로 폴백합니다. OpenClaw는 `<workspace>/skills`에서 워크스페이스 스킬을 로드하고 **다음** 세션에서 가져옵니다. 이미 `~/.openclaw/skills` 또는 번들 스킬을 사용하는 경우 워크스페이스 스킬이 우선합니다.
+
+스킬이 로드, 공유 및 게이팅되는 방법에 대한 자세한 내용은 [Skills](/tools/skills)를 참조하십시오.
+
+## 서비스가 제공하는 기능
+
+- 스킬 및 `SKILL.md` 콘텐츠의 **공개 탐색**.
+- 키워드가 아닌 임베딩(벡터 검색)으로 구동되는 **검색**.
+- semver, 변경 로그 및 태그(`latest` 포함)를 사용한 **버전 관리**.
+- 버전별 zip으로 **다운로드**.
+- 커뮤니티 피드백을 위한 **별점 및 댓글**.
+- 승인 및 감사를 위한 **중재** 훅.
+- 자동화 및 스크립팅을 위한 **CLI 친화적 API**.
+
+## CLI 명령 및 매개변수
+
+글로벌 옵션(모든 명령에 적용):
+
+- `--workdir <dir>`: 작업 디렉토리(기본값: 현재 디렉토리, OpenClaw 워크스페이스로 폴백).
+- `--dir <dir>`: 스킬 디렉토리, workdir에 상대적(기본값: `skills`).
+- `--site <url>`: 사이트 기본 URL(브라우저 로그인).
+- `--registry <url>`: 레지스트리 API 기본 URL.
+- `--no-input`: 프롬프트 비활성화(비대화형).
+- `-V, --cli-version`: CLI 버전 출력.
+
+인증:
+
+- `clawdhub login`(브라우저 플로우) 또는 `clawdhub login --token <token>`
+- `clawdhub logout`
+- `clawdhub whoami`
+
+옵션:
+
+- `--token <token>`: API 토큰 붙여넣기.
+- `--label <label>`: 브라우저 로그인 토큰에 대해 저장된 레이블(기본값: `CLI token`).
+- `--no-browser`: 브라우저를 열지 않음(`--token` 필요).
+
+검색:
+
+- `clawdhub search "query"`
+- `--limit <n>`: 최대 결과 수.
+
+설치:
+
+- `clawdhub install <slug>`
+- `--version <version>`: 특정 버전 설치.
+- `--force`: 폴더가 이미 존재하는 경우 덮어쓰기.
+
+업데이트:
+
+- `clawdhub update <slug>`
+- `clawdhub update --all`
+- `--version <version>`: 특정 버전으로 업데이트(단일 slug만).
+- `--force`: 로컬 파일이 게시된 버전과 일치하지 않을 때 덮어쓰기.
+
+목록:
+
+- `clawdhub list`(`.clawdhub/lock.json` 읽기)
+
+게시:
+
+- `clawdhub publish <path>`
+- `--slug <slug>`: 스킬 slug.
+- `--name <name>`: 표시 이름.
+- `--version <version>`: Semver 버전.
+- `--changelog <text>`: 변경 로그 텍스트(비어 있을 수 있음).
+- `--tags <tags>`: 쉼표로 구분된 태그(기본값: `latest`).
+
+삭제/복원(소유자/관리자 전용):
+
+- `clawdhub delete <slug> --yes`
+- `clawdhub undelete <slug> --yes`
+
+동기화(로컬 스킬 스캔 + 새/업데이트된 스킬 게시):
+
+- `clawdhub sync`
+- `--root <dir...>`: 추가 스캔 루트.
+- `--all`: 프롬프트 없이 모든 것을 업로드.
+- `--dry-run`: 업로드될 항목 표시.
+- `--bump <type>`: 업데이트에 대한 `patch|minor|major`(기본값: `patch`).
+- `--changelog <text>`: 비대화형 업데이트에 대한 변경 로그.
+- `--tags <tags>`: 쉼표로 구분된 태그(기본값: `latest`).
+- `--concurrency <n>`: 레지스트리 확인(기본값: 4).
+
+## 에이전트를 위한 일반적인 워크플로
+
+### 스킬 검색
+
+```bash
+clawdhub search "postgres backups"
+```
+
+### 새 스킬 다운로드
+
+```bash
+clawdhub install my-skill-pack
+```
+
+### 설치된 스킬 업데이트
+
+```bash
+clawdhub update --all
+```
+
+### 스킬 백업(게시 또는 동기화)
+
+단일 스킬 폴더의 경우:
+
+```bash
+clawdhub publish ./my-skill --slug my-skill --name "My Skill" --version 1.0.0 --tags latest
+```
+
+여러 스킬을 한 번에 스캔하고 백업하려면:
+
+```bash
+clawdhub sync --all
+```
+
+## 고급 세부 정보(기술적)
+
+### 버전 관리 및 태그
+
+- 각 게시는 새로운 **semver** `SkillVersion`을 생성합니다.
+- 태그(예: `latest`)는 버전을 가리킵니다. 태그를 이동하면 롤백할 수 있습니다.
+- 변경 로그는 버전별로 첨부되며 동기화 또는 게시 업데이트 시 비어 있을 수 있습니다.
+
+### 로컬 변경 사항 vs 레지스트리 버전
+
+업데이트는 콘텐츠 해시를 사용하여 로컬 스킬 콘텐츠를 레지스트리 버전과 비교합니다. 로컬 파일이 게시된 버전과 일치하지 않으면 CLI는 덮어쓰기 전에 묻거나(비대화형 실행에서는 `--force` 필요) 확인을 요청합니다.
+
+### 동기화 스캔 및 폴백 루트
+
+`clawdhub sync`는 먼저 현재 workdir을 스캔합니다. 스킬을 찾을 수 없으면 알려진 레거시 위치(예: `~/openclaw/skills` 및 `~/.openclaw/skills`)로 폴백합니다. 이는 추가 플래그 없이 이전 스킬 설치를 찾도록 설계되었습니다.
+
+### 스토리지 및 잠금 파일
+
+- 설치된 스킬은 workdir 아래의 `.clawdhub/lock.json`에 기록됩니다.
+- 인증 토큰은 ClawdHub CLI 구성 파일에 저장됩니다(`CLAWDHUB_CONFIG_PATH`를 통해 오버라이드).
+
+### 텔레메트리(설치 횟수)
+
+로그인한 상태에서 `clawdhub sync`를 실행하면 CLI는 설치 횟수를 계산하기 위해 최소 스냅샷을 전송합니다. 이를 완전히 비활성화할 수 있습니다:
+
+```bash
+export CLAWDHUB_DISABLE_TELEMETRY=1
+```
+
+## 환경 변수
+
+- `CLAWDHUB_SITE`: 사이트 URL 오버라이드.
+- `CLAWDHUB_REGISTRY`: 레지스트리 API URL 오버라이드.
+- `CLAWDHUB_CONFIG_PATH`: CLI가 토큰/구성을 저장하는 위치 오버라이드.
+- `CLAWDHUB_WORKDIR`: 기본 workdir 오버라이드.
+- `CLAWDHUB_DISABLE_TELEMETRY=1`: `sync`에서 텔레메트리 비활성화.

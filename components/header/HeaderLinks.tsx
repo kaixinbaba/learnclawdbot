@@ -8,15 +8,19 @@ import {
     NavigationMenuList,
     NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { Link as I18nLink, usePathname } from "@/i18n/routing";
+import { Link as I18nLink, UI_LOCALES, usePathname } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { HeaderLink } from "@/types/common";
 import { ExternalLink } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 
 const HeaderLinks = () => {
   const tHeader = useTranslations("Header");
   const pathname = usePathname();
+  const locale = useLocale();
+  // For docs-only locales (like ko), non-docs links should go to English
+  const isDocsOnlyLocale = !UI_LOCALES.includes(locale);
 
   const headerLinks: HeaderLink[] = tHeader.raw("links");
   const pricingLink = headerLinks.find((link) => link.id === "pricing");
@@ -42,7 +46,7 @@ const HeaderLinks = () => {
                         className="hover:bg-accent-foreground/10"
                       >
                         <NavigationMenuLink asChild>
-                          <I18nLink
+                          <Link
                             href={child.href}
                             title={child.name}
                             prefetch={
@@ -69,13 +73,35 @@ const HeaderLinks = () => {
                                 {child.description}
                               </div>
                             )}
-                          </I18nLink>
+                          </Link>
                         </NavigationMenuLink>
                       </li>
                     ))}
                   </ul>
                 </NavigationMenuContent>
               </>
+            ) : isDocsOnlyLocale ? (
+              <Link
+                key={link.name}
+                href={link.href}
+                title={link.name}
+                prefetch={
+                  link.target && link.target === "_blank" ? false : true
+                }
+                target={link.target || "_self"}
+                rel={link.rel || undefined}
+                className={cn(
+                  "bg-transparent rounded-xl px-4 py-2 flex items-center gap-x-1 text-sm font-normal text-muted-foreground hover:bg-accent-foreground/10 hover:text-accent-foreground",
+                  pathname === link.href && "font-medium text-accent-foreground"
+                )}
+              >
+                {link.name}
+                {link.target === "_blank" && (
+                  <span className="text-xs">
+                    <ExternalLink className="w-4 h-4" />
+                  </span>
+                )}
+              </Link>
             ) : (
               <I18nLink
                 key={link.name}

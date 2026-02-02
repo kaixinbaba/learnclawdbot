@@ -1,0 +1,61 @@
+---
+summary: "전역 음성 웨이크 워드 (Gateway 소유) 및 node 간 동기화 방식"
+read_when:
+  - 음성 웨이크 워드 동작 또는 기본값 변경 시
+  - 웨이크 워드 동기화가 필요한 새 node 플랫폼 추가 시
+---
+# Voice Wake (Global Wake Words)
+
+OpenClaw는 **웨이크 워드를 Gateway가 소유한 단일 전역 목록**으로 취급합니다.
+
+- **Node별 사용자 지정 웨이크 워드는 없습니다**.
+- **모든 node/앱 UI가 목록을 편집할 수 있습니다**; 변경 사항은 Gateway에 의해 유지되고 모두에게 브로드캐스트됩니다.
+- 각 장치는 여전히 자체 **Voice Wake 활성화/비활성화** 토글을 유지합니다(로컬 UX + 권한이 다름).
+
+## 저장소 (Gateway 호스트)
+
+웨이크 워드는 Gateway 머신에 다음 위치에 저장됩니다:
+
+- `~/.openclaw/settings/voicewake.json`
+
+구조:
+
+```json
+{ "triggers": ["openclaw", "claude", "computer"], "updatedAtMs": 1730000000000 }
+```
+
+## 프로토콜
+
+### 메서드
+
+- `voicewake.get` → `{ triggers: string[] }`
+- `voicewake.set` 매개변수 `{ triggers: string[] }` → `{ triggers: string[] }`
+
+참고:
+- 트리거는 정규화됩니다(트림, 빈 항목 삭제). 빈 목록은 기본값으로 폴백합니다.
+- 안전을 위해 제한이 적용됩니다(수/길이 제한).
+
+### 이벤트
+
+- `voicewake.changed` 페이로드 `{ triggers: string[] }`
+
+수신자:
+- 모든 WebSocket 클라이언트(macOS 앱, WebChat 등)
+- 연결된 모든 node(iOS/Android), node 연결 시에도 초기 "현재 상태" 푸시로 제공
+
+## 클라이언트 동작
+
+### macOS 앱
+
+- 전역 목록을 사용하여 `VoiceWakeRuntime` 트리거를 게이트합니다.
+- Voice Wake 설정에서 "Trigger words"를 편집하면 `voicewake.set`을 호출하고 브로드캐스트에 의존하여 다른 클라이언트와 동기화합니다.
+
+### iOS node
+
+- `VoiceWakeManager` 트리거 감지를 위해 전역 목록을 사용합니다.
+- Settings에서 Wake Words를 편집하면 `voicewake.set`을 호출하고(Gateway WS를 통해) 로컬 웨이크 워드 감지도 반응적으로 유지합니다.
+
+### Android node
+
+- Settings에서 Wake Words 편집기를 노출합니다.
+- Gateway WS를 통해 `voicewake.set`을 호출하여 편집 내용이 모든 곳에서 동기화되도록 합니다.

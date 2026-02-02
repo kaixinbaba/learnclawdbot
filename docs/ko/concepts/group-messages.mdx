@@ -1,0 +1,62 @@
+---
+summary: "WhatsApp 그룹 메시지 처리를 위한 동작 및 config (mentionPatterns은 표면 간에 공유됨)"
+read_when:
+  - 그룹 메시지 규칙 또는 mention을 변경하는 경우
+---
+# 그룹 메시지 (WhatsApp web channel)
+
+목표: Clawd가 WhatsApp 그룹에 앉아 있고, 핑을 받을 때만 깨어나며, 해당 스레드를 개인 DM session과 별도로 유지하도록 합니다.
+
+참고: `agents.list[].groupChat.mentionPatterns`은 이제 Telegram/Discord/Slack/iMessage에서도 사용됩니다; 이 문서는 WhatsApp별 동작에 중점을 둡니다. 다중 agent 설정의 경우, agent당 `agents.list[].groupChat.mentionPatterns`을 설정하세요 (또는 전역 대체로 `messages.groupChat.mentionPatterns` 사용).
+
+## 구현된 것 (2025-12-03)
+- 활성화 mode: `mention` (기본값) 또는 `always`. `mention`은 핑이 필요합니다 (실제 WhatsApp @-mention via `mentionedJids`, 정규식 패턴 또는 텍스트의 어디든지 bot의 E.164). `always`는 모든 메시지에서 agent를 깨우지만 의미 있는 가치를 추가할 수 있을 때만 응답해야 합니다; 그렇지 않으면 무음 token `NO_REPLY`를 반환합니다. 기본값은 config(`channels.whatsapp.groups`)에서 설정할 수 있으며 `/activation`을 통해 그룹당 재정의할 수 있습니다. `channels.whatsapp.groups`가 설정된 경우, 그룹 allowlist로도 작동합니다 (모든 그룹을 허용하려면 `"*"` 포함).
+- 그룹 policy: `channels.whatsapp.groupPolicy`는 그룹 메시지 수락 여부를 제어합니다 (`open|disabled|allowlist`). `allowlist`는 `channels.whatsapp.groupAllowFrom`을 사용합니다 (대체: 명시적 `channels.whatsapp.allowFrom`). 기본값은 `allowlist`입니다 (발신자를 추가할 때까지 차단됨).
+- 그룹당 session: session key는 `agent:<agentId>:whatsapp:group:<jid>`처럼 보이므로 `/verbose on` 또는 `/think high`와 같은 명령 (독립형 메시지로 전송)은 해당 그룹으로 범위가 지정됩니다; 개인 DM state는 영향을 받지 않습니다. Heartbeat은 그룹 스레드에서 건너뜁니다.
+- 컨텍스트 주입: **보류 중인** 그룹 메시지 (기본값 50)가 실행을 트리거하지 *않은* 경우 `[Chat messages since your last reply - for context]` 아래에 접두사가 붙으며, 트리거 라인은 `[Current message - respond to this]` 아래에 있습니다. session에 이미 있는 메시지는 다시 주입되지 않습니다.
+- 발신자 표시: 이제 모든 그룹 배치는 `[from: Sender Name (+E164)]`로 끝나므로 Pi가 누가 말하는지 알 수 있습니다.
+- 일시적/view-once: 텍스트/mention을 추출하기 전에 이를 풉니다, 따라서 그 안의 핑은 여전히 트리거합니다.
+- 그룹 시스템 프롬프트: 그룹 session의 첫 번째 턴 (그리고 `/activation`이 mode를 변경할 때마다)에서 `You are replying inside the WhatsApp group "<subject>". Group members: Alice (+44...), Bob (+43...), … Activation: trigger-only … Address the specific sender noted in the message context.`와 같은 짧은 블러브를 시스템 프롬프트에 주입합니다. 메타데이터를 사용할 수 없는 경우에도 agent에게 그룹 채팅임을 알려줍니다.
+
+## Config 예제 (WhatsApp)
+`~/.openclaw/openclaw.json`에 `groupChat` 블록을 추가하여 WhatsApp이 텍스트 본문에서 시각적 `@`를 제거해도 표시 이름 핑이 작동하도록 합니다:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      groups: {
+        "*": { requireMention: true }
+      }
+    }
+  },
+  agents: {
+    list: [
+      {
+        id: "main",
+        groupChat: {
+          historyLimit: 50,
+          mentionPatterns: [
+            "@?openclaw",
+            "\\+?15555550123"
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+참고:
+- 정규식은 대소문자를 구분하지 않습니다; `@openclaw`와 같은 표시 이름 핑과 `+`/공백이 있거나 없는 원시 번호를 다룹니다.
+- WhatsApp은 누군가 연락처를 탭할 때 `mentionedJids`를 통해 표준 mention을 보내므로 번호 대체는 거의 필요하지 않지만 유용한 안전망입니다.
+
+### 활성화 명령 (소유자만)
+
+그룹 채팅 명령 사용:
+- `/activation mention`
+- `/activation always`
+
+소유자 번호 (`channels.whatsapp.allowFrom`에서, 또는 설정되지 않은 경우 bot 자체의 E.164)만 이를 변경할 수 있습니다. 그룹에서 독립형 메시지로 `/status`를 보내 현재 활성화 mode를 확인하세요.
+
+자세한 내용은 영문 원본을 참조하세요.

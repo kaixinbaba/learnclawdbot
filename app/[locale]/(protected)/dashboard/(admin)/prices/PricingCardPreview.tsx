@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormDescription } from "@/components/ui/form";
-import { DEFAULT_LOCALE, LOCALES } from "@/i18n/routing";
+import { DEFAULT_LOCALE, UI_LOCALES as LOCALES } from "@/i18n/routing";
 import { safeJsonParse } from "@/lib/safeJson";
 import { AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";

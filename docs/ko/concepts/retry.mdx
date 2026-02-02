@@ -1,0 +1,60 @@
+---
+summary: "아웃바운드 provider 호출에 대한 재시도 정책"
+read_when:
+  - Provider 재시도 동작 또는 기본값을 업데이트할 때
+  - Provider 전송 오류 또는 rate limit을 디버깅할 때
+---
+# 재시도 정책
+
+## 목표
+- 다단계 플로우가 아닌 HTTP 요청당 재시도합니다.
+- 현재 단계만 재시도하여 순서를 유지합니다.
+- 멱등성이 아닌 작업을 중복하지 않습니다.
+
+## 기본값
+- 시도 횟수: 3
+- 최대 지연 한도: 30000 ms
+- Jitter: 0.1 (10 퍼센트)
+- Provider 기본값:
+  - Telegram 최소 지연: 400 ms
+  - Discord 최소 지연: 500 ms
+
+## 동작
+### Discord
+- rate-limit 오류(HTTP 429)에서만 재시도합니다.
+- 가능한 경우 Discord `retry_after`를 사용하고, 그렇지 않으면 exponential backoff를 사용합니다.
+
+### Telegram
+- 일시적 오류(429, timeout, connect/reset/closed, temporarily unavailable)에서 재시도합니다.
+- 가능한 경우 `retry_after`를 사용하고, 그렇지 않으면 exponential backoff를 사용합니다.
+- Markdown 파싱 오류는 재시도되지 않으며 plain text로 폴백합니다.
+
+## 구성
+`~/.openclaw/openclaw.json`에서 provider별로 재시도 정책을 설정하세요:
+
+```json5
+{
+  channels: {
+    telegram: {
+      retry: {
+        attempts: 3,
+        minDelayMs: 400,
+        maxDelayMs: 30000,
+        jitter: 0.1
+      }
+    },
+    discord: {
+      retry: {
+        attempts: 3,
+        minDelayMs: 500,
+        maxDelayMs: 30000,
+        jitter: 0.1
+      }
+    }
+  }
+}
+```
+
+## 참고사항
+- 재시도는 요청당 적용됩니다(메시지 전송, 미디어 업로드, 반응, 투표, 스티커).
+- 복합 플로우는 완료된 단계를 재시도하지 않습니다.

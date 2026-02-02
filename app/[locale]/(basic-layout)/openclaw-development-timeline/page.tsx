@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { constructMetadata } from "@/lib/metadata";
-import { Locale, LOCALES } from "@/i18n/routing";
+import { Locale, UI_LOCALES as LOCALES } from "@/i18n/routing";
 import { getTranslations } from "next-intl/server";
 import TimelineClient from "./TimelineClient";
 

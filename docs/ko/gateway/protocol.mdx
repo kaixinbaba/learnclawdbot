@@ -1,0 +1,210 @@
+---
+summary: "Gateway WebSocket 프로토콜: 핸드셰이크, 프레임, 버전 관리"
+read_when:
+  - gateway WS 클라이언트 구현 또는 업데이트 시
+  - 프로토콜 불일치 또는 연결 실패 디버깅 시
+  - 프로토콜 스키마/모델 재생성 시
+---
+
+# Gateway 프로토콜 (WebSocket)
+
+Gateway WS 프로토콜은 OpenClaw의 **단일 제어 플레인 + node 전송**입니다.
+모든 클라이언트(CLI, web UI, macOS 앱, iOS/Android node, 헤드리스 node)가 WebSocket을 통해 연결하고
+핸드셰이크 시 **role** + **scope**를 선언합니다.
+
+## 전송
+
+- WebSocket, JSON 페이로드가 포함된 텍스트 프레임.
+- 첫 번째 프레임은 **반드시** `connect` 요청이어야 합니다.
+
+## 핸드셰이크 (connect)
+
+Gateway → Client (연결 전 챌린지):
+
+```json
+{
+  "type": "event",
+  "event": "connect.challenge",
+  "payload": { "nonce": "…", "ts": 1737264000000 }
+}
+```
+
+Client → Gateway:
+
+```json
+{
+  "type": "req",
+  "id": "…",
+  "method": "connect",
+  "params": {
+    "minProtocol": 3,
+    "maxProtocol": 3,
+    "client": {
+      "id": "cli",
+      "version": "1.2.3",
+      "platform": "macos",
+      "mode": "operator"
+    },
+    "role": "operator",
+    "scopes": ["operator.read", "operator.write"],
+    "caps": [],
+    "commands": [],
+    "permissions": {},
+    "auth": { "token": "…" },
+    "locale": "en-US",
+    "userAgent": "openclaw-cli/1.2.3",
+    "device": {
+      "id": "device_fingerprint",
+      "publicKey": "…",
+      "signature": "…",
+      "signedAt": 1737264000000,
+      "nonce": "…"
+    }
+  }
+}
+```
+
+Gateway → Client:
+
+```json
+{
+  "type": "res",
+  "id": "…",
+  "ok": true,
+  "payload": { "type": "hello-ok", "protocol": 3, "policy": { "tickIntervalMs": 15000 } }
+}
+```
+
+device token이 발급되면, `hello-ok`에도 다음이 포함됩니다:
+
+```json
+{
+  "auth": {
+    "deviceToken": "…",
+    "role": "operator",
+    "scopes": ["operator.read", "operator.write"]
+  }
+}
+```
+
+### Node 예제
+
+```json
+{
+  "type": "req",
+  "id": "…",
+  "method": "connect",
+  "params": {
+    "minProtocol": 3,
+    "maxProtocol": 3,
+    "client": {
+      "id": "ios-node",
+      "version": "1.2.3",
+      "platform": "ios",
+      "mode": "node"
+    },
+    "role": "node",
+    "scopes": [],
+    "caps": ["camera", "canvas", "screen", "location", "voice"],
+    "commands": ["camera.snap", "canvas.navigate", "screen.record", "location.get"],
+    "permissions": { "camera.capture": true, "screen.record": false },
+    "auth": { "token": "…" },
+    "locale": "en-US",
+    "userAgent": "openclaw-ios/1.2.3",
+    "device": {
+      "id": "device_fingerprint",
+      "publicKey": "…",
+      "signature": "…",
+      "signedAt": 1737264000000,
+      "nonce": "…"
+    }
+  }
+}
+```
+
+## 프레이밍
+
+- **요청**: `{type:"req", id, method, params}`  
+- **응답**: `{type:"res", id, ok, payload|error}`  
+- **이벤트**: `{type:"event", event, payload, seq?, stateVersion?}`
+
+부작용이 있는 메서드는 **멱등성 키**가 필요합니다 (스키마 참조).
+
+## Role + scope
+
+### Role
+- `operator` = 제어 플레인 클라이언트 (CLI/UI/자동화).
+- `node` = 기능 호스트 (camera/screen/canvas/system.run).
+
+### Scope (operator)
+일반적인 scope:
+- `operator.read`
+- `operator.write`
+- `operator.admin`
+- `operator.approvals`
+- `operator.pairing`
+
+### Caps/commands/permissions (node)
+Node는 연결 시 기능 주장을 선언합니다:
+- `caps`: 상위 수준 기능 카테고리.
+- `commands`: invoke에 대한 명령 허용 목록.
+- `permissions`: 세밀한 토글 (예: `screen.record`, `camera.capture`).
+
+Gateway는 이를 **주장**으로 취급하고 서버 측 허용 목록을 시행합니다.
+
+## Presence
+
+- `system-presence`는 device identity로 키가 지정된 항목을 반환합니다.
+- Presence 항목에는 `deviceId`, `roles`, `scopes`가 포함되어 UI가
+  device가 **operator**와 **node** 둘 다로 연결하더라도 단일 행을 표시할 수 있습니다.
+
+### Node 헬퍼 메서드
+
+- Node는 `skills.bins`를 호출하여 자동 허용 검사를 위한 현재 skill 실행 파일 목록을 가져올 수 있습니다.
+
+## Exec 승인
+
+- exec 요청에 승인이 필요할 때, gateway는 `exec.approval.requested`를 브로드캐스트합니다.
+- Operator 클라이언트는 `exec.approval.resolve`를 호출하여 해결합니다 (`operator.approvals` scope 필요).
+
+## 버전 관리
+
+- `PROTOCOL_VERSION`은 `src/gateway/protocol/schema.ts`에 있습니다.
+- 클라이언트는 `minProtocol` + `maxProtocol`을 전송합니다; 서버는 불일치를 거부합니다.
+- 스키마 + 모델은 TypeBox 정의에서 생성됩니다:
+  - `pnpm protocol:gen`
+  - `pnpm protocol:gen:swift`
+  - `pnpm protocol:check`
+
+## 인증
+
+- `OPENCLAW_GATEWAY_TOKEN` (또는 `--token`)이 설정되어 있으면, `connect.params.auth.token`이
+  일치해야 하며 그렇지 않으면 소켓이 닫힙니다.
+- 페어링 후, Gateway는 연결 role + scope에 범위가 지정된 **device token**을 발급합니다.
+  이는 `hello-ok.auth.deviceToken`에 반환되며 향후 연결을 위해 클라이언트가 영구 저장해야 합니다.
+- Device token은 `device.token.rotate` 및
+  `device.token.revoke`를 통해 로테이션/취소할 수 있습니다 (`operator.pairing` scope 필요).
+
+## Device identity + 페어링
+
+- Node는 키페어 핑거프린트에서 파생된 안정적인 device identity (`device.id`)를 포함해야 합니다.
+- Gateway는 device + role당 token을 발급합니다.
+- 로컬 자동 승인이 활성화되지 않은 경우 새 device ID에 대한 페어링 승인이 필요합니다.
+- **로컬** 연결은 루프백과 gateway 호스트 자체의 tailnet 주소를 포함합니다
+  (따라서 동일 호스트 tailnet 바인드도 여전히 자동 승인 가능).
+- 모든 WS 클라이언트는 `connect` 중에 `device` identity를 포함해야 합니다 (operator + node).
+  Control UI는 `gateway.controlUi.allowInsecureAuth`가 활성화되어 있을 때만 생략할 수 있습니다
+  (또는 긴급 상황에만 사용하는 `gateway.controlUi.dangerouslyDisableDeviceAuth`).
+- 로컬이 아닌 연결은 서버가 제공한 `connect.challenge` nonce에 서명해야 합니다.
+
+## TLS + 고정
+
+- WS 연결에 TLS가 지원됩니다.
+- 클라이언트는 선택적으로 gateway 인증서 핑거프린트를 고정할 수 있습니다 (`gateway.tls`
+  config와 `gateway.remote.tlsFingerprint` 또는 CLI `--tls-fingerprint` 참조).
+
+## Scope
+
+이 프로토콜은 **전체 gateway API** (status, channels, models, chat,
+agent, sessions, nodes, approvals 등)를 노출합니다. 정확한 표면은
+`src/gateway/protocol/schema.ts`의 TypeBox 스키마로 정의됩니다.

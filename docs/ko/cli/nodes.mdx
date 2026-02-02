@@ -1,0 +1,68 @@
+---
+summary: "`openclaw nodes` CLI 레퍼런스 (list/status/approve/invoke, camera/canvas/screen)"
+read_when:
+  - 페어링된 node를 관리하는 경우 (camera, screen, canvas)
+  - 요청을 승인하거나 node 명령을 호출해야 하는 경우
+---
+
+# `openclaw nodes`
+
+페어링된 node(장치)를 관리하고 node 기능을 호출합니다.
+
+관련 문서:
+- Node 개요: [Nodes](/nodes)
+- Camera: [Camera nodes](/nodes/camera)
+- Images: [Image nodes](/nodes/images)
+
+공통 옵션:
+- `--url`, `--token`, `--timeout`, `--json`
+
+## 공통 명령
+
+```bash
+openclaw nodes list
+openclaw nodes list --connected
+openclaw nodes list --last-connected 24h
+openclaw nodes pending
+openclaw nodes approve <requestId>
+openclaw nodes status
+openclaw nodes status --connected
+openclaw nodes status --last-connected 24h
+```
+
+`nodes list`는 보류 중/페어링된 테이블을 출력합니다. 페어링된 행에는 가장 최근 연결 시간(Last Connect)이 포함됩니다.
+현재 연결된 node만 표시하려면 `--connected`를 사용합니다. 특정 기간 내에 연결된 node로 필터링하려면 
+`--last-connected <duration>`을 사용합니다 (예: `24h`, `7d`).
+
+## Invoke / run
+
+```bash
+openclaw nodes invoke --node <id|name|ip> --command <command> --params <json>
+openclaw nodes run --node <id|name|ip> <command...>
+openclaw nodes run --raw "git status"
+openclaw nodes run --agent main --node <id|name|ip> --raw "git status"
+```
+
+Invoke 플래그:
+- `--params <json>`: JSON 객체 문자열 (기본값 `{}`).
+- `--invoke-timeout <ms>`: node 호출 timeout (기본값 `15000`).
+- `--idempotency-key <key>`: 선택적 idempotency key.
+
+### Exec 스타일 기본값
+
+`nodes run`은 model의 exec 동작(기본값 + 승인)을 반영합니다:
+
+- `tools.exec.*`를 읽습니다 (`agents.list[].tools.exec.*` 재정의 포함).
+- `system.run` 호출 전에 exec 승인(`exec.approval.request`)을 사용합니다.
+- `tools.exec.node`가 설정된 경우 `--node`를 생략할 수 있습니다.
+- `system.run`을 광고하는 node가 필요합니다 (macOS companion app 또는 헤드리스 node host).
+
+플래그:
+- `--cwd <path>`: 작업 디렉토리.
+- `--env <key=val>`: 환경 변수 재정의 (반복 가능).
+- `--command-timeout <ms>`: 명령 timeout.
+- `--invoke-timeout <ms>`: node 호출 timeout (기본값 `30000`).
+- `--needs-screen-recording`: 화면 녹화 권한 필요.
+- `--raw <command>`: shell 문자열 실행 (`/bin/sh -lc` 또는 `cmd.exe /c`).
+- `--agent <id>`: agent 범위 승인/allowlist (구성된 agent가 기본값).
+- `--ask <off|on-miss|always>`, `--security <deny|allowlist|full>`: 재정의.

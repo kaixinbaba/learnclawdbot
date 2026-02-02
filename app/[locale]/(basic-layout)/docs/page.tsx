@@ -30,7 +30,7 @@ export default async function DocsIndexPage({
 }) {
   const { locale } = await params;
   // For untranslated locales, show English docs with a translation notice
-  const hasLocaleDocs = locale === "en" || locale === "zh" || locale === "ja";
+  const hasLocaleDocs = locale === "en" || locale === "zh" || locale === "ja" || locale === "ko";
   const docsLocale = hasLocaleDocs ? locale : "en";
   const sections = await getDocSidebar(docsLocale);
 
@@ -38,14 +38,15 @@ export default async function DocsIndexPage({
     en: "📚 OpenClaw Documentation",
     zh: "📚 OpenClaw 文档",
     ja: "📚 OpenClaw ドキュメント",
+    ko: "📚 OpenClaw 문서",
   };
   const descriptions: Record<string, string> = {
     en: "Browse all documentation to learn how to install, configure, and use OpenClaw.",
     zh: "浏览所有文档，了解如何安装、配置和使用 OpenClaw。",
     ja: "OpenClaw のインストール、設定、使用方法に関するすべてのドキュメントをご覧ください。",
+    ko: "OpenClaw 설치, 구성 및 사용 방법에 대한 모든 문서를 찾아보세요.",
   };
   const translationNotice: Record<string, string> = {
-    ja: "🚧 日本語翻訳は現在進行中です。一部のページは英語で表示されます。翻訳にご協力いただける方は、GitHub でプルリクエストをお送りください！",
   };
 
   return (

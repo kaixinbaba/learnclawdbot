@@ -1,0 +1,120 @@
+---
+title: Sandbox vs Tool Policy vs Elevated
+summary: "tool이 차단되는 이유: sandbox 런타임, tool 허용/거부 정책, elevated exec 게이트"
+read_when: "'sandbox jail'에 걸리거나 tool/elevated 거부가 표시되어 변경할 정확한 config 키를 원할 때."
+status: active
+---
+
+# Sandbox vs Tool Policy vs Elevated
+
+OpenClaw에는 관련되지만 다른 세 가지 제어 기능이 있습니다:
+
+1. **Sandbox** (`agents.defaults.sandbox.*` / `agents.list[].sandbox.*`)는 **tool이 실행되는 위치**를 결정합니다 (Docker vs 호스트).
+2. **Tool policy** (`tools.*`, `tools.sandbox.tools.*`, `agents.list[].tools.*`)는 **어떤 tool을 사용/허용할 수 있는지**를 결정합니다.
+3. **Elevated** (`tools.elevated.*`, `agents.list[].tools.elevated.*`)는 샌드박스에 있을 때 호스트에서 실행하기 위한 **exec 전용 탈출구**입니다.
+
+## 빠른 디버그
+
+inspector를 사용하여 OpenClaw가 *실제로* 무엇을 하고 있는지 확인:
+
+```bash
+openclaw sandbox explain
+openclaw sandbox explain --session agent:main:main
+openclaw sandbox explain --agent work
+openclaw sandbox explain --json
+```
+
+다음을 출력합니다:
+- 유효한 sandbox mode/scope/workspace 액세스
+- 세션이 현재 샌드박스되어 있는지 여부 (main vs non-main)
+- 유효한 sandbox tool allow/deny (그리고 agent/전역/기본값에서 왔는지)
+- elevated 게이트 및 수정 키 경로
+
+## Sandbox: tool이 실행되는 위치
+
+샌드박싱은 `agents.defaults.sandbox.mode`로 제어됩니다:
+- `"off"`: 모든 것이 호스트에서 실행됩니다.
+- `"non-main"`: non-main 세션만 샌드박스됩니다 (그룹/채널에 대한 일반적인 "놀라움").
+- `"all"`: 모든 것이 샌드박스됩니다.
+
+전체 매트릭스 (scope, workspace 마운트, 이미지)는 [Sandboxing](/gateway/sandboxing)을 참조하세요.
+
+### 바인드 마운트 (보안 빠른 확인)
+
+- `docker.binds`는 sandbox 파일시스템을 *뚫습니다*: 마운트한 것은 설정한 모드 (`:ro` 또는 `:rw`)로 컨테이너 내부에 표시됩니다.
+- 모드를 생략하면 기본값은 읽기-쓰기입니다; 소스/비밀에는 `:ro`를 선호하세요.
+- `scope: "shared"`는 agent별 바인드를 무시합니다 (전역 바인드만 적용).
+- `/var/run/docker.sock` 바인딩은 효과적으로 sandbox에 호스트 제어를 넘깁니다; 의도적으로만 하세요.
+- Workspace 액세스 (`workspaceAccess: "ro"`/`"rw"`)는 바인드 모드와 독립적입니다.
+
+## Tool policy: 어떤 tool이 존재하고 호출 가능한지
+
+두 계층이 중요합니다:
+- **Tool 프로파일**: `tools.profile` 및 `agents.list[].tools.profile` (기본 허용 목록)
+- **Provider tool 프로파일**: `tools.byProvider[provider].profile` 및 `agents.list[].tools.byProvider[provider].profile`
+- **전역/agent별 tool 정책**: `tools.allow`/`tools.deny` 및 `agents.list[].tools.allow`/`agents.list[].tools.deny`
+- **Provider tool 정책**: `tools.byProvider[provider].allow/deny` 및 `agents.list[].tools.byProvider[provider].allow/deny`
+- **Sandbox tool 정책** (샌드박스될 때만 적용): `tools.sandbox.tools.allow`/`tools.sandbox.tools.deny` 및 `agents.list[].tools.sandbox.tools.*`
+
+경험 법칙:
+- `deny`가 항상 이깁니다.
+- `allow`가 비어 있지 않으면, 그 외 모든 것은 차단된 것으로 취급됩니다.
+- Tool 정책은 최종 중단점입니다: `/exec`은 거부된 `exec` tool을 재정의할 수 없습니다.
+- `/exec`은 승인된 발신자에 대한 세션 기본값만 변경합니다; tool 액세스를 부여하지 않습니다.
+Provider tool 키는 `provider` (예: `google-antigravity`) 또는 `provider/model` (예: `openai/gpt-5.2`) 중 하나를 허용합니다.
+
+### Tool 그룹 (단축키)
+
+Tool 정책 (전역, agent, sandbox)은 여러 tool로 확장되는 `group:*` 항목을 지원합니다:
+
+```json5
+{
+  tools: {
+    sandbox: {
+      tools: {
+        allow: ["group:runtime", "group:fs", "group:sessions", "group:memory"]
+      }
+    }
+  }
+}
+```
+
+사용 가능한 그룹:
+- `group:runtime`: `exec`, `bash`, `process`
+- `group:fs`: `read`, `write`, `edit`, `apply_patch`
+- `group:sessions`: `sessions_list`, `sessions_history`, `sessions_send`, `sessions_spawn`, `session_status`
+- `group:memory`: `memory_search`, `memory_get`
+- `group:ui`: `browser`, `canvas`
+- `group:automation`: `cron`, `gateway`
+- `group:messaging`: `message`
+- `group:nodes`: `nodes`
+- `group:openclaw`: 모든 내장 OpenClaw tool (제공자 플러그인 제외)
+
+## Elevated: exec 전용 "호스트에서 실행"
+
+Elevated는 추가 tool을 부여하지 **않습니다**; `exec`에만 영향을 미칩니다.
+- 샌드박스되어 있으면, `/elevated on` (또는 `elevated: true`를 가진 `exec`)이 호스트에서 실행됩니다 (승인이 여전히 적용될 수 있음).
+- `/elevated full`을 사용하여 세션에 대한 exec 승인을 건너뜁니다.
+- 이미 직접 실행 중이면, elevated는 효과적으로 no-op입니다 (여전히 게이트됨).
+- Elevated는 skill 범위가 **아니며** tool allow/deny를 재정의하지 **않습니다**.
+- `/exec`은 elevated와 별개입니다. 승인된 발신자에 대한 세션별 exec 기본값만 조정합니다.
+
+게이트:
+- 활성화: `tools.elevated.enabled` (그리고 선택적으로 `agents.list[].tools.elevated.enabled`)
+- 발신자 허용 목록: `tools.elevated.allowFrom.<provider>` (그리고 선택적으로 `agents.list[].tools.elevated.allowFrom.<provider>`)
+
+[Elevated Mode](/tools/elevated)를 참조하세요.
+
+## 일반적인 "sandbox jail" 수정
+
+### "Sandbox tool 정책에 의해 Tool X가 차단됨"
+
+수정 키 (하나 선택):
+- Sandbox 비활성화: `agents.defaults.sandbox.mode=off` (또는 agent별 `agents.list[].sandbox.mode=off`)
+- Sandbox 내에서 tool 허용:
+  - `tools.sandbox.tools.deny` (또는 agent별 `agents.list[].tools.sandbox.tools.deny`)에서 제거
+  - 또는 `tools.sandbox.tools.allow` (또는 agent별 allow)에 추가
+
+### "이게 main이라고 생각했는데, 왜 샌드박스되어 있나요?"
+
+`"non-main"` 모드에서 그룹/채널 키는 main이 *아닙니다*. main 세션 키를 사용하거나 (`sandbox explain`이 표시) 모드를 `"off"`로 전환하세요.

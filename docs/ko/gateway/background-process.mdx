@@ -1,0 +1,82 @@
+---
+summary: "백그라운드 exec 실행 및 프로세스 관리"
+read_when:
+  - 백그라운드 exec 동작을 추가하거나 수정할 때
+  - 장기 실행 exec 작업을 디버깅할 때
+---
+
+# Background Exec + Process Tool
+
+OpenClaw는 `exec` tool을 통해 셸 명령을 실행하고, 장기 실행 작업을 메모리에 유지합니다. `process` tool은 이러한 백그라운드 세션을 관리합니다.
+
+## exec tool
+
+주요 매개변수:
+- `command` (필수)
+- `yieldMs` (기본값 10000): 이 지연 시간 이후 자동 백그라운드 전환
+- `background` (bool): 즉시 백그라운드로 전환
+- `timeout` (초, 기본값 1800): 이 시간 초과 후 프로세스를 종료
+- `elevated` (bool): elevated 모드가 활성화/허용된 경우 host에서 실행
+- 실제 TTY가 필요하신가요? `pty: true`로 설정하세요.
+- `workdir`, `env`
+
+동작:
+- 포그라운드 실행은 출력을 직접 반환합니다.
+- 백그라운드로 전환되면(명시적 또는 타임아웃), tool은 `status: "running"` + `sessionId`와 짧은 tail을 반환합니다.
+- 세션이 폴링되거나 삭제될 때까지 출력이 메모리에 유지됩니다.
+- `process` tool이 허용되지 않으면, `exec`은 동기적으로 실행되고 `yieldMs`/`background`를 무시합니다.
+
+## Child process bridging
+
+exec/process tool 외부에서 장기 실행 child process를 생성할 때(예: CLI 재생성 또는 gateway helper), child-process bridge helper를 연결하여 종료 signal이 전달되고 exit/error 시 listener가 분리되도록 하세요. 이렇게 하면 systemd에서 고아 프로세스를 방지하고 플랫폼 간 종료 동작을 일관되게 유지할 수 있습니다.
+
+환경 재정의:
+- `PI_BASH_YIELD_MS`: 기본 yield (ms)
+- `PI_BASH_MAX_OUTPUT_CHARS`: 메모리 내 출력 용량 (문자)
+- `OPENCLAW_BASH_PENDING_MAX_OUTPUT_CHARS`: 스트림당 보류 중인 stdout/stderr 용량 (문자)
+- `PI_BASH_JOB_TTL_MS`: 완료된 세션의 TTL (ms, 1m–3h로 제한)
+
+Config (권장):
+- `tools.exec.backgroundMs` (기본값 10000)
+- `tools.exec.timeoutSec` (기본값 1800)
+- `tools.exec.cleanupMs` (기본값 1800000)
+ - `tools.exec.notifyOnExit` (기본값 true): 백그라운드 exec이 종료되면 system event를 enqueue하고 heartbeat를 요청합니다.
+
+## process tool
+
+작업:
+- `list`: 실행 중 + 완료된 세션
+- `poll`: 세션의 새 출력을 drain합니다 (종료 상태도 보고)
+- `log`: 집계된 출력을 읽습니다 (`offset` + `limit` 지원)
+- `write`: stdin 전송 (`data`, 선택적 `eof`)
+- `kill`: 백그라운드 세션 종료
+- `clear`: 메모리에서 완료된 세션 제거
+- `remove`: 실행 중이면 kill, 완료되었으면 clear
+
+참고:
+- 백그라운드로 전환된 세션만 메모리에 목록화/유지됩니다.
+- 프로세스 재시작 시 세션이 손실됩니다 (디스크 지속성 없음).
+- Session log는 `process poll/log`를 실행하고 tool 결과가 기록될 때만 채팅 기록에 저장됩니다.
+- `process`는 agent별로 범위가 지정됩니다. 해당 agent가 시작한 세션만 표시됩니다.
+- `process list`에는 빠른 검색을 위해 파생된 `name` (명령 동사 + 대상)이 포함됩니다.
+- `process log`는 line 기반 `offset`/`limit`을 사용합니다 (마지막 N개 line을 가져오려면 `offset` 생략).
+
+## 예제
+
+장기 작업을 실행하고 나중에 폴링:
+```json
+{"tool": "exec", "command": "sleep 5 && echo done", "yieldMs": 1000}
+```
+```json
+{"tool": "process", "action": "poll", "sessionId": "<id>"}
+```
+
+즉시 백그라운드에서 시작:
+```json
+{"tool": "exec", "command": "npm run build", "background": true}
+```
+
+stdin 전송:
+```json
+{"tool": "process", "action": "write", "sessionId": "<id>", "data": "y\n"}
+```

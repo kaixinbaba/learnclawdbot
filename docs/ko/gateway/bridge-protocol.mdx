@@ -1,0 +1,76 @@
+---
+summary: "Bridge protocol (레거시 node): TCP JSONL, pairing, 범위 지정 RPC"
+read_when:
+  - Node client (iOS/Android/macOS node 모드)를 구축하거나 디버깅할 때
+  - Pairing 또는 bridge auth 실패를 조사할 때
+  - Gateway가 노출하는 node surface를 감사할 때
+---
+
+# Bridge protocol (레거시 node transport)
+
+Bridge protocol은 **레거시** node transport (TCP JSONL)입니다. 새로운 node client는 대신 통합 Gateway WebSocket protocol을 사용해야 합니다.
+
+operator 또는 node client를 구축하는 경우 [Gateway protocol](/gateway/protocol)을 사용하세요.
+
+**참고:** 현재 OpenClaw 빌드는 더 이상 TCP bridge listener를 제공하지 않습니다. 이 문서는 역사적 참조를 위해 유지됩니다.
+레거시 `bridge.*` config key는 더 이상 config schema의 일부가 아닙니다.
+
+## 두 가지 모두 있는 이유
+
+- **보안 경계**: bridge는 전체 gateway API surface 대신 작은 allowlist를 노출합니다.
+- **Pairing + node identity**: node 승인은 gateway가 소유하며 node별 token에 연결됩니다.
+- **Discovery UX**: node는 LAN에서 Bonjour를 통해 gateway를 검색하거나 tailnet을 통해 직접 연결할 수 있습니다.
+- **Loopback WS**: 전체 WS control plane은 SSH를 통해 터널링되지 않는 한 로컬에 유지됩니다.
+
+## Transport
+
+- TCP, 한 줄당 하나의 JSON 객체 (JSONL).
+- 선택적 TLS (`bridge.tls.enabled`가 true인 경우).
+- 레거시 기본 listener 포트는 `18790`이었습니다 (현재 빌드는 TCP bridge를 시작하지 않음).
+
+TLS가 활성화되면 discovery TXT 레코드에 `bridgeTls=1`과 `bridgeTlsSha256`이 포함되어 node가 인증서를 고정할 수 있습니다.
+
+## Handshake + pairing
+
+1) Client가 node metadata + token (이미 pairing된 경우)과 함께 `hello`를 보냅니다.  
+2) Pairing되지 않은 경우, gateway는 `error` (`NOT_PAIRED`/`UNAUTHORIZED`)로 응답합니다.  
+3) Client가 `pair-request`를 보냅니다.  
+4) Gateway가 승인을 기다린 다음 `pair-ok`와 `hello-ok`를 보냅니다.
+
+`hello-ok`는 `serverName`을 반환하며 `canvasHostUrl`을 포함할 수 있습니다.
+
+## Frame
+
+Client → Gateway:
+- `req` / `res`: 범위 지정 gateway RPC (chat, sessions, config, health, voicewake, skills.bins)
+- `event`: node signal (voice transcript, agent request, chat subscribe, exec lifecycle)
+
+Gateway → Client:
+- `invoke` / `invoke-res`: node 명령 (`canvas.*`, `camera.*`, `screen.record`,
+  `location.get`, `sms.send`)
+- `event`: 구독된 세션에 대한 chat 업데이트
+- `ping` / `pong`: keepalive
+
+레거시 allowlist 강제는 `src/gateway/server-bridge.ts`에 있었습니다 (제거됨).
+
+## Exec lifecycle event
+
+Node는 `exec.finished` 또는 `exec.denied` event를 발생시켜 system.run 활동을 표시할 수 있습니다.
+이들은 gateway의 system event로 매핑됩니다. (레거시 node는 여전히 `exec.started`를 발생시킬 수 있습니다.)
+
+Payload 필드 (달리 명시되지 않은 한 모두 선택 사항):
+- `sessionKey` (필수): system event를 받을 agent 세션.
+- `runId`: 그룹화를 위한 고유 exec id.
+- `command`: 원시 또는 형식화된 명령 문자열.
+- `exitCode`, `timedOut`, `success`, `output`: 완료 세부 정보 (finished만 해당).
+- `reason`: 거부 사유 (denied만 해당).
+
+## Tailnet 사용
+
+- Bridge를 tailnet IP에 바인딩: `~/.openclaw/openclaw.json`에서 `bridge.bind: "tailnet"`.
+- Client는 MagicDNS 이름 또는 tailnet IP를 통해 연결합니다.
+- Bonjour는 **네트워크를 넘지 못합니다**. 필요한 경우 수동 host/port 또는 wide-area DNS‑SD를 사용하세요.
+
+## 버전 관리
+
+Bridge는 현재 **암시적 v1**입니다 (최소/최대 협상 없음). 하위 호환성이 예상됩니다. 중대한 변경 사항이 있기 전에 bridge protocol 버전 필드를 추가하세요.

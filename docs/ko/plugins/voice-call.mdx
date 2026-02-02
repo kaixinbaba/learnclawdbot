@@ -1,0 +1,236 @@
+---
+summary: "Voice Call plugin: Twilio/Telnyx/Plivo를 통한 아웃바운드 + 인바운드 통화 (plugin 설치 + 설정 + CLI)"
+read_when:
+  - OpenClaw에서 아웃바운드 음성 통화를 하려는 경우
+  - voice-call plugin을 구성하거나 개발하는 경우
+---
+
+# Voice Call (plugin)
+
+Plugin을 통한 OpenClaw 음성 통화. 아웃바운드 알림 및 인바운드 정책이 있는 다중 턴 대화를 지원합니다.
+
+현재 provider:
+- `twilio` (Programmable Voice + Media Streams)
+- `telnyx` (Call Control v2)
+- `plivo` (Voice API + XML 전송 + GetInput 음성)
+- `mock` (개발/네트워크 없음)
+
+빠른 개념 모델:
+- Plugin 설치
+- Gateway 재시작
+- `plugins.entries.voice-call.config` 아래에서 구성
+- `openclaw voicecall ...` 또는 `voice_call` 도구 사용
+
+## 실행 위치 (로컬 vs 원격)
+
+Voice Call plugin은 **Gateway 프로세스 내부에서** 실행됩니다.
+
+원격 Gateway를 사용하는 경우 **Gateway를 실행하는 머신에** plugin을 설치/구성한 다음 Gateway를 재시작하여 로드하세요.
+
+## 설치
+
+### 옵션 A: npm에서 설치 (권장)
+
+```bash
+openclaw plugins install @openclaw/voice-call
+```
+
+이후 Gateway를 재시작하세요.
+
+### 옵션 B: 로컬 폴더에서 설치 (개발, 복사 없음)
+
+```bash
+openclaw plugins install ./extensions/voice-call
+cd ./extensions/voice-call && pnpm install
+```
+
+이후 Gateway를 재시작하세요.
+
+## 설정
+
+`plugins.entries.voice-call.config` 아래에서 설정하세요:
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        enabled: true,
+        config: {
+          provider: "twilio", // 또는 "telnyx" | "plivo" | "mock"
+          fromNumber: "+15550001234",
+          toNumber: "+15550005678",
+
+          twilio: {
+            accountSid: "ACxxxxxxxx",
+            authToken: "..."
+          },
+
+          plivo: {
+            authId: "MAxxxxxxxxxxxxxxxxxxxx",
+            authToken: "..."
+          },
+
+          // Webhook 서버
+          serve: {
+            port: 3334,
+            path: "/voice/webhook"
+          },
+
+          // 공개 노출 (하나 선택)
+          // publicUrl: "https://example.ngrok.app/voice/webhook",
+          // tunnel: { provider: "ngrok" },
+          // tailscale: { mode: "funnel", path: "/voice/webhook" }
+
+          outbound: {
+            defaultMode: "notify" // notify | conversation
+          },
+
+          streaming: {
+            enabled: true,
+            streamPath: "/voice/stream"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+참고:
+- Twilio/Telnyx는 **공개적으로 접근 가능한** webhook URL이 필요합니다.
+- Plivo는 **공개적으로 접근 가능한** webhook URL이 필요합니다.
+- `mock`은 로컬 개발 provider입니다(네트워크 호출 없음).
+- `skipSignatureVerification`은 로컬 테스트 전용입니다.
+- ngrok 무료 티어를 사용하는 경우 정확한 ngrok URL을 `publicUrl`로 설정하세요; 서명 검증은 항상 시행됩니다.
+- `tunnel.allowNgrokFreeTierLoopbackBypass: true`는 `tunnel.provider="ngrok"`이고 `serve.bind`가 루프백(ngrok 로컬 에이전트)인 경우에만 유효하지 않은 서명이 있는 Twilio webhook을 허용합니다. 로컬 개발 전용으로 사용하세요.
+- Ngrok 무료 티어 URL은 변경되거나 중간 동작을 추가할 수 있습니다; `publicUrl`이 변경되면 Twilio 서명이 실패합니다. 프로덕션에서는 안정적인 도메인 또는 Tailscale funnel을 선호하세요.
+
+## 통화용 TTS
+
+Voice Call은 통화에서 스트리밍 음성을 위해 코어 `messages.tts` 설정(OpenAI 또는 ElevenLabs)을 사용합니다. **동일한 형식**으로 plugin 설정 아래에서 재정의할 수 있습니다 — `messages.tts`와 깊은 병합됩니다.
+
+```json5
+{
+  tts: {
+    provider: "elevenlabs",
+    elevenlabs: {
+      voiceId: "pMsXgVXv3BLzUgSXRplE",
+      modelId: "eleven_multilingual_v2"
+    }
+  }
+}
+```
+
+참고:
+- **음성 통화에는 Edge TTS가 무시됩니다**(전화 오디오에는 PCM이 필요하며 Edge 출력은 신뢰할 수 없습니다).
+- Twilio 미디어 스트리밍이 활성화된 경우 코어 TTS가 사용됩니다; 그렇지 않으면 통화는 provider 네이티브 음성으로 폴백합니다.
+
+### 더 많은 예시
+
+코어 TTS만 사용 (재정의 없음):
+
+```json5
+{
+  messages: {
+    tts: {
+      provider: "openai",
+      openai: { voice: "alloy" }
+    }
+  }
+}
+```
+
+통화에만 ElevenLabs로 재정의 (다른 곳에서는 코어 기본값 유지):
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tts: {
+            provider: "elevenlabs",
+            elevenlabs: {
+              apiKey: "elevenlabs_key",
+              voiceId: "pMsXgVXv3BLzUgSXRplE",
+              modelId: "eleven_multilingual_v2"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+통화에 대해서만 OpenAI 모델 재정의 (깊은 병합 예시):
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tts: {
+            openai: {
+              model: "gpt-4o-mini-tts",
+              voice: "marin"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## 인바운드 통화
+
+인바운드 정책은 기본적으로 `disabled`입니다. 인바운드 통화를 활성화하려면 다음을 설정하세요:
+
+```json5
+{
+  inboundPolicy: "allowlist",
+  allowFrom: ["+15550001234"],
+  inboundGreeting: "안녕하세요! 무엇을 도와드릴까요?"
+}
+```
+
+자동 응답은 Agent 시스템을 사용합니다. 다음으로 조정합니다:
+- `responseModel`
+- `responseSystemPrompt`
+- `responseTimeoutMs`
+
+## CLI
+
+```bash
+openclaw voicecall call --to "+15555550123" --message "Hello from OpenClaw"
+openclaw voicecall continue --call-id <id> --message "Any questions?"
+openclaw voicecall speak --call-id <id> --message "One moment"
+openclaw voicecall end --call-id <id>
+openclaw voicecall status --call-id <id>
+openclaw voicecall tail
+openclaw voicecall expose --mode funnel
+```
+
+## Agent 도구
+
+도구 이름: `voice_call`
+
+액션:
+- `initiate_call` (message, to?, mode?)
+- `continue_call` (callId, message)
+- `speak_to_user` (callId, message)
+- `end_call` (callId)
+- `get_status` (callId)
+
+이 저장소는 `skills/voice-call/SKILL.md`에 일치하는 skill 문서를 제공합니다.
+
+## Gateway RPC
+
+- `voicecall.initiate` (`to?`, `message`, `mode?`)
+- `voicecall.continue` (`callId`, `message`)
+- `voicecall.speak` (`callId`, `message`)
+- `voicecall.end` (`callId`)
+- `voicecall.status` (`callId`)

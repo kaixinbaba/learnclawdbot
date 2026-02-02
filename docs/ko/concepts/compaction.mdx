@@ -1,0 +1,52 @@
+---
+summary: "컨텍스트 윈도우 + compaction: OpenClaw가 session을 model 제한 내로 유지하는 방법"
+read_when:
+  - 자동 compaction 및 /compact를 이해하고 싶은 경우
+  - 긴 session이 컨텍스트 제한에 도달하는 것을 디버깅하는 경우
+---
+# 컨텍스트 윈도우 & Compaction
+
+모든 model에는 **컨텍스트 윈도우**(볼 수 있는 최대 token)가 있습니다. 장기 실행 채팅은 메시지 및 tool 결과를 누적합니다; 
+윈도우가 빡빡해지면 OpenClaw는 이전 기록을 **compact**하여 제한 내에 유지합니다.
+
+## Compaction이란
+Compaction은 **이전 대화를 요약**하여 간결한 요약 항목으로 만들고 최근 메시지를 그대로 유지합니다. 
+요약은 session 기록에 저장되므로 향후 요청은 다음을 사용합니다:
+- Compaction 요약
+- Compaction 지점 이후의 최근 메시지
+
+Compaction은 session의 JSONL 기록에 **지속**됩니다.
+
+## 구성
+`agents.defaults.compaction` 설정은 [Compaction config & modes](/concepts/compaction) 참조.
+
+## 자동 compaction (기본적으로 켜짐)
+Session이 model의 컨텍스트 윈도우에 가깝거나 초과하면 OpenClaw는 자동 compaction을 트리거하고 
+compacted 컨텍스트를 사용하여 원래 요청을 재시도할 수 있습니다.
+
+다음이 표시됩니다:
+- verbose 모드에서 `🧹 Auto-compaction complete`
+- `🧹 Compactions: <count>`를 표시하는 `/status`
+
+Compaction 전에 OpenClaw는 디스크에 내구성 있는 노트를 저장하기 위해 **무음 memory flush** 턴을 
+실행할 수 있습니다. 세부 정보 및 config는 [Memory](/concepts/memory) 참조.
+
+## 수동 compaction
+`/compact`를 사용하여 (선택적으로 지침과 함께) compaction pass를 강제로 실행하세요:
+```
+/compact Focus on decisions and open questions
+```
+
+## 컨텍스트 윈도우 소스
+컨텍스트 윈도우는 model별입니다. OpenClaw는 구성된 provider catalog의 model 정의를 사용하여 제한을 결정합니다.
+
+## Compaction vs pruning
+- **Compaction**: 요약하고 JSONL에 **지속**합니다.
+- **Session pruning**: 요청당 **인메모리**로만 이전 **tool 결과**를 정리합니다.
+
+Pruning 세부 정보는 [/concepts/session-pruning](/concepts/session-pruning) 참조.
+
+## 팁
+- Session이 신선하지 않거나 컨텍스트가 비대해진 것처럼 느껴지면 `/compact`를 사용하세요.
+- 큰 tool 출력은 이미 잘립니다; pruning은 tool 결과 누적을 더 줄일 수 있습니다.
+- 완전히 새로운 시작이 필요한 경우, `/new` 또는 `/reset`은 새 session id를 시작합니다.

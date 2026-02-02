@@ -1,0 +1,110 @@
+---
+summary: "Gateway를 찾기 위한 Node discovery 및 transport (Bonjour, Tailscale, SSH)"
+read_when:
+  - Bonjour discovery/광고를 구현하거나 변경할 때
+  - 원격 연결 모드 (직접 대 SSH)를 조정할 때
+  - 원격 node를 위한 node discovery + pairing을 설계할 때
+---
+# Discovery & transport
+
+OpenClaw에는 표면적으로 비슷해 보이는 두 가지 별개의 문제가 있습니다:
+
+1) **Operator 원격 제어**: 다른 곳에서 실행 중인 gateway를 제어하는 macOS menu bar app.
+2) **Node pairing**: iOS/Android (및 향후 node)가 gateway를 찾고 안전하게 pairing.
+
+설계 목표는 모든 네트워크 discovery/광고를 **Node Gateway** (`openclaw gateway`)에 유지하고 client (mac app, iOS)를 소비자로 유지하는 것입니다.
+
+## 용어
+
+- **Gateway**: 상태 (세션, pairing, node registry)를 소유하고 channel을 실행하는 단일 장기 실행 gateway 프로세스. 대부분의 설정은 host당 하나를 사용합니다. 격리된 다중 gateway 설정이 가능합니다.
+- **Gateway WS (control plane)**: 기본적으로 `127.0.0.1:18789`의 WebSocket endpoint. `gateway.bind`를 통해 LAN/tailnet에 바인딩할 수 있습니다.
+- **직접 WS transport**: LAN/tailnet을 향한 Gateway WS endpoint (SSH 없음).
+- **SSH transport (fallback)**: SSH를 통해 `127.0.0.1:18789`를 전달하여 원격 제어.
+- **레거시 TCP bridge (deprecated/제거됨)**: 이전 node transport ([Bridge protocol](/gateway/bridge-protocol) 참조). 더 이상 discovery를 위해 광고되지 않습니다.
+
+프로토콜 세부 정보:
+- [Gateway protocol](/gateway/protocol)
+- [Bridge protocol (레거시)](/gateway/bridge-protocol)
+
+## "직접"과 SSH를 모두 유지하는 이유
+
+- **직접 WS**는 동일한 네트워크 및 tailnet 내에서 최고의 UX를 제공합니다:
+  - Bonjour를 통한 LAN에서의 자동 검색
+  - gateway가 소유한 pairing token + ACL
+  - 셸 액세스가 필요 없습니다. 프로토콜 surface를 tight하고 감사 가능하게 유지할 수 있습니다
+- **SSH**는 보편적인 fallback으로 남아 있습니다:
+  - SSH 액세스가 있는 곳이면 어디든 작동합니다 (관련 없는 네트워크를 넘어서도)
+  - multicast/mDNS 문제를 견딥니다
+  - SSH 외에 새로운 인바운드 포트가 필요하지 않습니다
+
+## Discovery 입력 (client가 gateway가 어디에 있는지 배우는 방법)
+
+### 1) Bonjour / mDNS (LAN만)
+
+Bonjour는 best-effort이며 네트워크를 넘지 못합니다. "동일한 LAN" 편의를 위해서만 사용됩니다.
+
+대상 방향:
+- **Gateway**가 Bonjour를 통해 WS endpoint를 광고합니다.
+- Client가 탐색하고 "gateway 선택" 목록을 표시한 다음 선택한 endpoint를 저장합니다.
+
+문제 해결 및 beacon 세부 정보: [Bonjour](/gateway/bonjour).
+
+#### Service beacon 세부 정보
+
+- Service type:
+  - `_openclaw-gw._tcp` (gateway transport beacon)
+- TXT key (비밀이 아님):
+  - `role=gateway`
+  - `lanHost=<hostname>.local`
+  - `sshPort=22` (또는 광고된 것)
+  - `gatewayPort=18789` (Gateway WS + HTTP)
+  - `gatewayTls=1` (TLS가 활성화된 경우에만)
+  - `gatewayTlsSha256=<sha256>` (TLS가 활성화되고 fingerprint를 사용할 수 있는 경우에만)
+  - `canvasPort=18793` (기본 canvas host 포트; `/__openclaw__/canvas/` 제공)
+  - `cliPath=<path>` (선택 사항; 실행 가능한 `openclaw` entrypoint 또는 binary의 절대 경로)
+  - `tailnetDns=<magicdns>` (선택적 힌트; Tailscale을 사용할 수 있을 때 자동 감지)
+
+비활성화/재정의:
+- `OPENCLAW_DISABLE_BONJOUR=1`은 광고를 비활성화합니다.
+- `~/.openclaw/openclaw.json`의 `gateway.bind`는 Gateway 바인딩 모드를 제어합니다.
+- `OPENCLAW_SSH_PORT`는 TXT에 광고된 SSH 포트를 재정의합니다 (기본값 22).
+- `OPENCLAW_TAILNET_DNS`는 `tailnetDns` 힌트 (MagicDNS)를 게시합니다.
+- `OPENCLAW_CLI_PATH`는 광고된 CLI 경로를 재정의합니다.
+
+### 2) Tailnet (cross-network)
+
+London/Vienna 스타일 설정의 경우 Bonjour는 도움이 되지 않습니다. 권장되는 "직접" 대상은:
+- Tailscale MagicDNS 이름 (선호) 또는 안정적인 tailnet IP.
+
+Gateway가 Tailscale에서 실행 중임을 감지할 수 있으면 client (wide-area beacon 포함)에 대한 선택적 힌트로 `tailnetDns`를 게시합니다.
+
+### 3) 수동 / SSH 대상
+
+직접 경로가 없거나 (직접이 비활성화된 경우) client는 항상 loopback gateway 포트를 전달하여 SSH를 통해 연결할 수 있습니다.
+
+[Remote access](/gateway/remote)를 참조하세요.
+
+## Transport 선택 (client 정책)
+
+권장 client 동작:
+
+1) Pairing된 직접 endpoint가 구성되어 있고 도달 가능한 경우 사용합니다.
+2) 그렇지 않으면 Bonjour가 LAN에서 gateway를 찾으면 원탭 "이 gateway 사용" 선택을 제공하고 직접 endpoint로 저장합니다.
+3) 그렇지 않으면 tailnet DNS/IP가 구성된 경우 직접 시도합니다.
+4) 그렇지 않으면 SSH로 fallback합니다.
+
+## Pairing + auth (직접 transport)
+
+Gateway는 node/client 승인에 대한 source of truth입니다.
+
+- Pairing 요청은 gateway에서 생성/승인/거부됩니다 ([Gateway pairing](/gateway/pairing) 참조).
+- Gateway가 다음을 강제합니다:
+  - auth (token / keypair)
+  - scope/ACL (gateway는 모든 method에 대한 원시 proxy가 아님)
+  - rate limit
+
+## 구성 요소별 책임
+
+- **Gateway**: discovery beacon을 광고하고, pairing 결정을 소유하며, WS endpoint를 호스팅합니다.
+- **macOS app**: gateway를 선택하도록 도와주고, pairing prompt를 표시하며, SSH를 fallback으로만 사용합니다.
+- **iOS/Android node**: 편의를 위해 Bonjour를 탐색하고 pairing된 Gateway WS에 연결합니다.

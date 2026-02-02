@@ -1,0 +1,190 @@
+---
+summary: "한 머신에서 다른 머신으로 OpenClaw 설치 이동(마이그레이션)"
+read_when:
+  - 새 노트북/서버로 OpenClaw를 이동하는 경우
+  - 세션, 인증 및 채널 로그인(WhatsApp 등)을 보존하려는 경우
+---
+# 새 머신으로 OpenClaw 마이그레이션
+
+이 가이드는 **온보딩을 다시 하지 않고** 한 머신에서 다른 머신으로 OpenClaw Gateway를 마이그레이션합니다.
+
+마이그레이션은 개념적으로 간단합니다:
+
+- **상태 디렉토리** (`$OPENCLAW_STATE_DIR`, 기본값: `~/.openclaw/`) 복사 — 여기에는 config, auth, session 및 channel 상태가 포함됩니다.
+- **workspace** (`기본적으로 ~/.openclaw/workspace/`) 복사 — 여기에는 agent 파일(memory, prompt 등)이 포함됩니다.
+
+하지만 **프로필**, **권한** 및 **부분 복사**와 관련된 일반적인 함정이 있습니다.
+
+## 시작하기 전에(마이그레이션할 항목)
+
+### 1) 상태 디렉토리 식별
+
+대부분의 설치는 기본값을 사용합니다:
+
+- **상태 디렉토리:** `~/.openclaw/`
+
+하지만 다음을 사용하는 경우 다를 수 있습니다:
+
+- `--profile <name>` (종종 `~/.openclaw-<profile>/`이 됨)
+- `OPENCLAW_STATE_DIR=/some/path`
+
+확실하지 않은 경우 **이전** 머신에서 실행하세요:
+
+```bash
+openclaw status
+```
+
+출력에서 `OPENCLAW_STATE_DIR` / 프로필에 대한 언급을 찾으세요. 여러 Gateway를 실행하는 경우 각 프로필에 대해 반복하세요.
+
+### 2) workspace 식별
+
+일반적인 기본값:
+
+- `~/.openclaw/workspace/` (권장 workspace)
+- 생성한 사용자 정의 폴더
+
+workspace는 `MEMORY.md`, `USER.md` 및 `memory/*.md`와 같은 파일이 있는 곳입니다.
+
+### 3) 보존할 항목 이해
+
+상태 디렉토리와 workspace **모두**를 복사하면 다음을 유지합니다:
+
+- Gateway 구성 (`openclaw.json`)
+- Auth 프로필 / API 키 / OAuth 토큰
+- 세션 기록 + agent 상태
+- Channel 상태 (예: WhatsApp 로그인/세션)
+- workspace 파일 (memory, skill 노트 등)
+
+workspace **만** 복사하는 경우 (예: Git을 통해) **보존하지 않습니다**:
+
+- 세션
+- 자격 증명
+- channel 로그인
+
+이들은 `$OPENCLAW_STATE_DIR` 아래에 있습니다.
+
+## 마이그레이션 단계 (권장)
+
+### 0단계 — 백업 만들기 (이전 머신)
+
+**이전** 머신에서 파일이 복사 중에 변경되지 않도록 먼저 Gateway를 중지하세요:
+
+```bash
+openclaw gateway stop
+```
+
+(선택 사항이지만 권장) 상태 디렉토리와 workspace를 아카이브하세요:
+
+```bash
+# 프로필 또는 사용자 정의 위치를 사용하는 경우 경로 조정
+cd ~
+tar -czf openclaw-state.tgz .openclaw
+
+tar -czf openclaw-workspace.tgz .openclaw/workspace
+```
+
+여러 프로필/상태 디렉토리(예: `~/.openclaw-main`, `~/.openclaw-work`)가 있는 경우 각각 아카이브하세요.
+
+### 1단계 — 새 머신에 OpenClaw 설치
+
+**새** 머신에 CLI (및 필요한 경우 Node) 설치:
+
+- 참조: [Install](/install)
+
+이 단계에서 온보딩이 새 `~/.openclaw/`를 생성해도 괜찮습니다 — 다음 단계에서 덮어쓸 것입니다.
+
+### 2단계 — 새 머신에 상태 디렉토리 + workspace 복사
+
+**모두** 복사:
+
+- `$OPENCLAW_STATE_DIR` (기본값 `~/.openclaw/`)
+- workspace (기본값 `~/.openclaw/workspace/`)
+
+일반적인 접근 방식:
+
+- tarball을 `scp`하고 추출
+- SSH를 통해 `rsync -a`
+- 외부 드라이브
+
+복사 후 다음을 확인하세요:
+
+- 숨겨진 디렉토리가 포함되었는지 (예: `.openclaw/`)
+- Gateway를 실행하는 사용자에 대한 파일 소유권이 올바른지
+
+### 3단계 — Doctor 실행 (마이그레이션 + 서비스 복구)
+
+**새** 머신에서:
+
+```bash
+openclaw doctor
+```
+
+Doctor는 "안전하고 지루한" 명령입니다. 서비스를 복구하고, 구성 마이그레이션을 적용하며, 불일치에 대해 경고합니다.
+
+그런 다음:
+
+```bash
+openclaw gateway restart
+openclaw status
+```
+
+## 일반적인 함정 (및 피하는 방법)
+
+### 함정: 프로필 / 상태 디렉토리 불일치
+
+이전 Gateway를 프로필(또는 `OPENCLAW_STATE_DIR`)로 실행했고 새 Gateway가 다른 것을 사용하는 경우 다음과 같은 증상이 나타날 수 있습니다:
+
+- 구성 변경이 적용되지 않음
+- channel이 누락됨 / 로그아웃됨
+- 빈 세션 기록
+
+수정: 마이그레이션한 것과 **동일한** 프로필/상태 디렉토리를 사용하여 Gateway/서비스를 실행한 다음 다시 실행하세요:
+
+```bash
+openclaw doctor
+```
+
+### 함정: `openclaw.json`만 복사
+
+`openclaw.json`만으로는 충분하지 않습니다. 많은 provider가 다음 아래에 상태를 저장합니다:
+
+- `$OPENCLAW_STATE_DIR/credentials/`
+- `$OPENCLAW_STATE_DIR/agents/<agentId>/...`
+
+항상 전체 `$OPENCLAW_STATE_DIR` 폴더를 마이그레이션하세요.
+
+### 함정: 권한 / 소유권
+
+root로 복사했거나 사용자를 변경한 경우 Gateway가 자격 증명/세션을 읽지 못할 수 있습니다.
+
+수정: 상태 디렉토리 + workspace가 Gateway를 실행하는 사용자 소유인지 확인하세요.
+
+### 함정: 원격/로컬 모드 간 마이그레이션
+
+- UI(WebUI/TUI)가 **원격** Gateway를 가리키는 경우 원격 호스트가 세션 저장소 + workspace를 소유합니다.
+- 노트북을 마이그레이션해도 원격 Gateway의 상태가 이동하지 않습니다.
+
+원격 모드인 경우 **Gateway 호스트**를 마이그레이션하세요.
+
+### 함정: 백업의 비밀
+
+`$OPENCLAW_STATE_DIR`에는 비밀(API 키, OAuth 토큰, WhatsApp 자격 증명)이 포함되어 있습니다. 백업을 프로덕션 비밀처럼 취급하세요:
+
+- 암호화하여 저장
+- 안전하지 않은 채널을 통한 공유 방지
+- 노출이 의심되는 경우 키 회전
+
+## 확인 체크리스트
+
+새 머신에서 확인:
+
+- `openclaw status`가 Gateway가 실행 중임을 표시
+- channel이 여전히 연결되어 있음 (예: WhatsApp이 재페어링을 요구하지 않음)
+- 대시보드가 열리고 기존 세션을 표시
+- workspace 파일(memory, config)이 있음
+
+## 관련 자료
+
+- [Doctor](/gateway/doctor)
+- [Gateway 문제 해결](/gateway/troubleshooting)
+- [OpenClaw는 데이터를 어디에 저장하나요?](/help/faq#where-does-openclaw-store-its-data)

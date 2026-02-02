@@ -13,15 +13,19 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link as I18nLink } from "@/i18n/routing";
+import { Link as I18nLink, UI_LOCALES } from "@/i18n/routing";
 import { HeaderLink } from "@/types/common";
 import { Menu } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function MobileMenu() {
   const t = useTranslations("Home");
   const tHeader = useTranslations("Header");
+  const locale = useLocale();
+  const isDocsOnlyLocale = !UI_LOCALES.includes(locale);
+  const NavLink = isDocsOnlyLocale ? Link : I18nLink;
 
   const headerLinks: HeaderLink[] = tHeader.raw("links");
   const pricingLink = headerLinks.find((link) => link.id === "pricing");
@@ -63,7 +67,7 @@ export default function MobileMenu() {
                 <DropdownMenuSubContent className="w-40">
                   {link.items.map((child) => (
                     <DropdownMenuItem key={child.name}>
-                      <I18nLink
+                      <Link
                         href={child.href}
                         title={child.name}
                         prefetch={
@@ -81,14 +85,14 @@ export default function MobileMenu() {
                             {child.description}
                           </span>
                         )}
-                      </I18nLink>
+                      </Link>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             ) : (
               <DropdownMenuItem key={link.name}>
-                <I18nLink
+                <NavLink
                   href={link.href}
                   title={link.name}
                   prefetch={
@@ -98,7 +102,7 @@ export default function MobileMenu() {
                   rel={link.rel || undefined}
                 >
                   {link.name}
-                </I18nLink>
+                </NavLink>
               </DropdownMenuItem>
             )
           )}

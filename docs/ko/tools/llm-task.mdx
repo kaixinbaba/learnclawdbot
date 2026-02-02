@@ -1,0 +1,114 @@
+---
+summary: "워크플로를 위한 JSON 전용 LLM 작업 (선택적 플러그인 도구)"
+read_when:
+  - 워크플로 내에서 JSON 전용 LLM 단계를 원할 때
+  - 자동화를 위해 스키마 검증된 LLM 출력이 필요할 때
+---
+
+# LLM Task
+
+`llm-task`는 JSON 전용 LLM 작업을 실행하고
+구조화된 출력을 반환하는 **선택적 플러그인 도구**입니다(선택적으로 JSON Schema에 대해 검증됨).
+
+이는 Lobster와 같은 워크플로 엔진에 이상적입니다: 각 워크플로에 대해 사용자 지정
+OpenClaw 코드를 작성하지 않고 단일 LLM 단계를 추가할 수 있습니다.
+
+## 플러그인 활성화
+
+1) 플러그인 활성화:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "llm-task": { "enabled": true }
+    }
+  }
+}
+```
+
+2) 도구를 allowlist에 추가 (`optional: true`로 등록됨):
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "main",
+        "tools": { "allow": ["llm-task"] }
+      }
+    ]
+  }
+}
+```
+
+## 구성 (선택사항)
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "llm-task": {
+        "enabled": true,
+        "config": {
+          "defaultProvider": "openai-codex",
+          "defaultModel": "gpt-5.2",
+          "defaultAuthProfileId": "main",
+          "allowedModels": ["openai-codex/gpt-5.2"],
+          "maxTokens": 800,
+          "timeoutMs": 30000
+        }
+      }
+    }
+  }
+}
+```
+
+`allowedModels`는 `provider/model` 문자열의 allowlist입니다. 설정된 경우
+목록 외부의 모든 요청은 거부됩니다.
+
+## 도구 매개변수
+
+- `prompt` (문자열, 필수)
+- `input` (임의, 선택사항)
+- `schema` (객체, 선택적 JSON Schema)
+- `provider` (문자열, 선택사항)
+- `model` (문자열, 선택사항)
+- `authProfileId` (문자열, 선택사항)
+- `temperature` (숫자, 선택사항)
+- `maxTokens` (숫자, 선택사항)
+- `timeoutMs` (숫자, 선택사항)
+
+## 출력
+
+파싱된 JSON을 포함하는 `details.json`을 반환합니다(제공된 경우
+`schema`에 대해 검증됨).
+
+## 예제: Lobster 워크플로 단계
+
+```lobster
+openclaw.invoke --tool llm-task --action json --args-json '{
+  "prompt": "Given the input email, return intent and draft.",
+  "input": {
+    "subject": "Hello",
+    "body": "Can you help?"
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "intent": { "type": "string" },
+      "draft": { "type": "string" }
+    },
+    "required": ["intent", "draft"],
+    "additionalProperties": false
+  }
+}'
+```
+
+## 안전 참고사항
+
+- 도구는 **JSON 전용**이며 모델에 JSON만 출력하도록 지시합니다(코드
+  펜스 없음, 주석 없음).
+- 이 실행에서는 모델에 도구가 노출되지 않습니다.
+- `schema`로 검증하지 않는 한 출력을 신뢰할 수 없는 것으로 처리하세요.
+- 부작용이 있는 단계(send, post, exec) 전에 승인을 배치하세요.
