@@ -171,21 +171,23 @@ export function PostList({
         <>
           <div className={gridClass}>
             {(!showTagSelector || selectedTagId === null) &&
-              localPosts.map((post) => (
+              localPosts.map((post, index) => (
                 <PostCard
                   key={`local-${post.slug}`}
                   post={post}
                   baseUrl={baseUrl}
                   showCover={showCover}
+                  priority={index < 3}
                 />
               ))}
 
-            {posts.map((post) => (
+            {posts.map((post, index) => (
               <PostCard
                 key={`server-${post.id}`}
                 post={mapServerPostToCard(post, locale)}
                 baseUrl={baseUrl}
                 showCover={showCover}
+                priority={localPosts.length === 0 && index < 3}
               />
             ))}
           </div>

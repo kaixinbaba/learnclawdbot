@@ -15,6 +15,8 @@ interface PostCardProps {
   baseUrl: string;
   showDescription?: boolean;
   showCover?: boolean;
+  /** Whether this card is above the fold and should load eagerly */
+  priority?: boolean;
 }
 
 function getVisibilityInfo(visibility: string) {
@@ -47,6 +49,7 @@ function PostCardCover({
   post,
   baseUrl,
   showDescription,
+  priority = false,
 }: Omit<PostCardProps, "showCover">) {
   const visibilityInfo = getVisibilityInfo(post.visibility || "public");
 
@@ -63,6 +66,10 @@ function PostCardCover({
             src={post.featuredImageUrl || "/placeholder.svg"}
             alt={post.title}
             fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            quality={75}
+            loading={priority ? "eager" : "lazy"}
+            priority={priority}
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
 
@@ -165,6 +172,7 @@ export function PostCard({
   baseUrl,
   showDescription = true,
   showCover = true,
+  priority = false,
 }: PostCardProps) {
   if (showCover) {
     return (
@@ -172,6 +180,7 @@ export function PostCard({
         post={post}
         baseUrl={baseUrl}
         showDescription={showDescription}
+        priority={priority}
       />
     );
   }
