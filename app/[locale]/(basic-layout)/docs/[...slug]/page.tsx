@@ -8,14 +8,6 @@ import { notFound } from "next/navigation";
 import remarkGfm from "remark-gfm";
 import rehypeDocsLinks from "@/lib/rehype-docs-links";
 
-const mdxOptions = {
-  parseFrontmatter: false,
-  mdxOptions: {
-    remarkPlugins: [remarkGfm],
-    rehypePlugins: [rehypeDocsLinks],
-  },
-};
-
 type Params = Promise<{
   locale: string;
   slug: string[];
@@ -129,7 +121,13 @@ export default async function DocPage({ params }: { params: Params }) {
             <MDXRemote
               source={doc.content}
               components={MDXComponents}
-              options={mdxOptions}
+              options={{
+                parseFrontmatter: false,
+                mdxOptions: {
+                  remarkPlugins: [remarkGfm],
+                  rehypePlugins: [[rehypeDocsLinks, { locale }]],
+                },
+              }}
             />
           </article>
 
