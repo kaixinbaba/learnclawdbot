@@ -162,6 +162,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.16",
+    "@types/hast": "^3.0.4",
     "@types/node": "^20",
     "@types/pg": "^8.15.5",
     "@types/react": "^19.2.7",
@@ -173,6 +174,7 @@
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.16",
     "tsx": "^4.20.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "unist-util-visit": "^5.1.0"
   }
 }

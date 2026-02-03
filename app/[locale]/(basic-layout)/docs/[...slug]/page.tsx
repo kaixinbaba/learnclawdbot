@@ -6,12 +6,13 @@ import { Metadata } from "next";
 import { MDXRemote } from "next-mdx-remote-client/rsc";
 import { notFound } from "next/navigation";
 import remarkGfm from "remark-gfm";
+import rehypeDocsLinks from "@/lib/rehype-docs-links";
 
 const mdxOptions = {
   parseFrontmatter: false,
   mdxOptions: {
     remarkPlugins: [remarkGfm],
-    rehypePlugins: [],
+    rehypePlugins: [rehypeDocsLinks],
   },
 };
 
