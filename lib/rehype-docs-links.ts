@@ -1,30 +1,35 @@
 import { visit } from 'unist-util-visit';
 import type { Root, Element } from 'hast';
 
+const DEFAULT_LOCALE = 'en';
+
+const NON_DOCS_ROUTES = [
+  '/docs/',
+  '/blog/',
+  '/about',
+  '/what-is-openclaw',
+  '/pricing',
+  '/_next/',
+  '/api/',
+  '/static/',
+];
+
 /**
  * Rehype plugin to automatically prefix internal links in docs with /docs/
- * 
- * This fixes the issue where MDX files contain links like /gateway/configuration
- * but the actual route is /docs/gateway/configuration, causing 404s.
- * 
- * The plugin:
- * - Only processes <a> tags with href attributes
- * - Only modifies absolute internal links (starting with /)
- * - Excludes links that already start with /docs/, /blog/, or other known non-docs routes
- * - Excludes external links (http://, https://)
- * - Excludes anchor links (starting with #)
+ * and the current locale prefix (for non-default locales).
+ *
+ * Examples (locale = 'zh'):
+ *   /gateway/configuration → /zh/docs/gateway/configuration
+ *   /concepts/models       → /zh/docs/concepts/models
+ *
+ * Examples (locale = 'en' / default):
+ *   /gateway/configuration → /docs/gateway/configuration
+ *
+ * Skips external links, anchor links, and known non-docs routes.
  */
-export default function rehypeDocsLinks() {
-  const NON_DOCS_ROUTES = [
-    '/docs/',
-    '/blog/',
-    '/about',
-    '/what-is-openclaw',
-    '/pricing',
-    '/_next/',
-    '/api/',
-    '/static/',
-  ];
+export default function rehypeDocsLinks(options?: { locale?: string }) {
+  const locale = options?.locale || DEFAULT_LOCALE;
+  const prefix = locale === DEFAULT_LOCALE ? '/docs' : `/${locale}/docs`;
 
   return (tree: Root) => {
     visit(tree, 'element', (node: Element) => {
@@ -52,8 +57,13 @@ export default function rehypeDocsLinks() {
           return;
         }
 
-        // Add /docs/ prefix to internal links
-        node.properties.href = `/docs${href}`;
+        // Also skip links that already have a locale prefix (e.g. /zh/docs/...)
+        if (/^\/[a-z]{2}\//.test(href)) {
+          return;
+        }
+
+        // Add locale + /docs/ prefix to internal links
+        node.properties.href = `${prefix}${href}`;
       }
     });
   };
