@@ -1,7 +1,11 @@
 import { SiteConfig } from "@/types/siteConfig";
 
-export const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://www.learnclawdbot.org";
+// Always use www version for canonical URLs to avoid 301 redirect chains
+// (learnclawdbot.org → www.learnclawdbot.org causes SEO issues)
+const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.learnclawdbot.org";
+export const BASE_URL = rawUrl.includes("learnclawdbot.org") && !rawUrl.includes("www.")
+  ? rawUrl.replace("://learnclawdbot.org", "://www.learnclawdbot.org")
+  : rawUrl;
 
 export const siteConfig: SiteConfig = {
   name: "Learn OpenClaw",

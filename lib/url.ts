@@ -5,6 +5,10 @@ export function getURL(path: string = '') {
     process.env.NEXT_PUBLIC_SITE_URL ??
     'http://localhost:3000';
   url = url.startsWith('http') ? url : `https://${url}`;
+  // Ensure www prefix for production domain to avoid 301 redirect chains
+  if (url.includes('learnclawdbot.org') && !url.includes('www.')) {
+    url = url.replace('://learnclawdbot.org', '://www.learnclawdbot.org');
+  }
   url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
   url = `${url}${path}`;
   return url;
