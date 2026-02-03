@@ -1,0 +1,333 @@
+---
+title: Как подключить OpenClaw к Telegram
+description: "Пошаговое руководство по настройке OpenClaw с Telegram: создайте бота, настройте шлюз и начните общаться с вашим AI-помощником."
+slug: /integrations/telegram
+tags: chat, integrations
+publishedAt: 2026-01-28
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/telegram_head.webp
+---
+
+# How to Connect OpenClaw to Telegram
+
+> This tutorial walks you through connecting OpenClaw to Telegram — from creating a bot to having your first conversation. Takes about 10 minutes.
+
+---
+
+## Overview
+
+The OpenClaw Telegram integration turns a Telegram bot into a full-featured AI assistant. Once connected, you can:
+
+- Chat with your AI in private messages or group chats
+- Send and receive files, images, and voice messages
+- Use your AI to summarize conversations, answer questions, and automate tasks
+- Access all OpenClaw capabilities from any device with Telegram installed
+
+---
+
+## Prerequisites
+
+Before you start, make sure you have:
+
+- **OpenClaw installed** and working on your machine (run `openclaw --version` to verify)
+- **A Telegram account** (download from [telegram.org](https://telegram.org) if needed)
+- **Network access to Telegram API** — if you're in a region where Telegram is blocked, you'll need a proxy (see [Proxy Settings](#proxy-settings) below)
+
+---
+
+## Step 1: Create a Telegram Bot
+
+Every Telegram integration starts with a bot. You'll create one through Telegram's official [@BotFather](https://t.me/BotFather).
+
+### 1.1 Open BotFather
+
+Search for `@BotFather` in Telegram, or click [this link](https://t.me/BotFather). Start a chat and send:
+
+```
+/newbot
+```
+
+### 1.2 Set a Name and Username
+
+BotFather will ask two questions:
+
+1. **Display name** — anything you like, e.g. `My OpenClaw Assistant`
+2. **Username** — must end in `bot`, e.g. `my_openclaw_bot`
+
+### 1.3 Copy Your Token
+
+After creating the bot, BotFather will send you a message containing your **bot token**. It looks like this:
+
+```
+7123456789:AAH1234567890abcdefghijklmnopqrstuv
+```
+
+> ⚠️ **Keep this token secret.** Anyone with this token can control your bot. If it's compromised, use `/revoke` in BotFather to generate a new one.
+
+### 1.4 Optional Settings
+
+While in BotFather, you may want to configure:
+
+- `/setjoingroups` → **Enable** if you want the bot to work in group chats
+- `/setprivacy` → **Disable** privacy mode if you want the bot to see all messages in groups (not just commands and mentions)
+- `/setdescription` → Set a description shown when users first open your bot
+- `/setcommands` → Define slash commands (e.g. `/ask`, `/summarize`)
+
+---
+
+## Step 2: Configure OpenClaw
+
+There are two ways to pass the bot token to OpenClaw.
+
+### Option A: Environment Variable (Quick)
+
+Set the token as an environment variable before starting the gateway:
+
+```bash
+export TELEGRAM_BOT_TOKEN="7123456789:AAH1234567890abcdefghijklmnopqrstuv"
+```
+
+This is the simplest approach for testing.
+
+### Option B: Configuration File (Recommended)
+
+Add the token to your OpenClaw config file (`~/.openclaw/config.json5`):
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "7123456789:AAH1234567890abcdefghijklmnopqrstuv",
+      dmPolicy: "pairing",  // Require pairing before accepting DMs
+    }
+  }
+}
+```
+
+### Understanding `dmPolicy: "pairing"`
+
+By default, OpenClaw uses `pairing` mode for DMs. This means:
+
+- When someone messages your bot for the first time, they'll receive a **pairing code**
+- You must approve this code from your OpenClaw CLI before the bot responds
+- This prevents unauthorized users from accessing your AI
+
+Other options:
+- `"open"` — anyone can chat with the bot (useful for public bots)
+- `"deny"` — DMs are disabled entirely
+
+---
+
+## Step 3: Start and Verify
+
+### 3.1 Start the Gateway
+
+```bash
+openclaw gateway start
+```
+
+You should see output confirming the Telegram channel is connected:
+
+```
+✓ Telegram bot connected: @my_openclaw_bot
+```
+
+### 3.2 Send Your First Message
+
+Open Telegram and send a message to your bot:
+
+```
+Hello!
+```
+
+### 3.3 Complete Pairing
+
+If you're using `dmPolicy: "pairing"` (the default), the bot will respond with a pairing code:
+
+```
+🔐 Pairing required. Your code: ABC-123
+Please approve this device in your OpenClaw CLI.
+```
+
+In your terminal, approve the pairing:
+
+```bash
+openclaw pair approve ABC-123
+```
+
+### 3.4 Verify the Connection
+
+After pairing, send another message to your bot. You should get an AI response. Congratulations — OpenClaw is now connected to Telegram! 🎉
+
+---
+
+## Advanced Configuration
+
+### Group Chats
+
+To use the bot in groups, add a `groups` section to your config:
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "YOUR_TOKEN",
+      dmPolicy: "pairing",
+      groupPolicy: "open",              // All senders in allowed groups can message
+      groups: {
+        "-1001234567890": {              // Your group's chat ID
+          requireMention: true,          // Bot only responds when @mentioned
+        }
+      }
+    }
+  }
+}
+```
+
+**Key options:**
+- `requireMention: true` — Bot only responds when @mentioned (recommended for active groups)
+- `requireMention: false` — Bot responds to every message
+- `groupPolicy: "open"` — All senders in allowed groups can message
+- `groupPolicy: "allowlist"` — Only senders in `groupAllowFrom` can message (default)
+- `groupPolicy: "disabled"` — No group messages accepted
+
+### How to Get a Chat ID
+
+The easiest way to find a group's chat ID:
+
+1. Add your bot to the group
+2. Send a message in the group
+3. Check your OpenClaw gateway logs — the chat ID will appear there
+
+Alternatively, forward a message from the group to [@userinfobot](https://t.me/userinfobot).
+
+### Privacy Mode
+
+Telegram bots have a **Privacy Mode** enabled by default. In this mode, bots in groups can only see:
+
+- Messages that start with `/` (commands)
+- Messages that @mention the bot
+- Replies to the bot's messages
+- Service messages (members joining/leaving, etc.)
+
+If you want the bot to see **all messages** in a group (e.g. for summarization), disable Privacy Mode:
+
+1. Open `@BotFather`
+2. Send `/setprivacy`
+3. Select your bot
+4. Choose **Disable**
+
+> ⚠️ You must **remove and re-add** the bot to the group for this change to take effect.
+
+### Custom Commands
+
+You can add custom commands to Telegram's slash menu via config:
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "YOUR_TOKEN",
+      customCommands: [
+        { command: "summarize", description: "Summarize the recent conversation" },
+        { command: "translate", description: "Translate the replied message to English" }
+      ]
+    }
+  }
+}
+```
+
+> **Note:** Custom commands are **menu entries only** — they appear in Telegram's `/` menu but OpenClaw does not handle them unless you implement the logic elsewhere. Command names must be lowercase `a-z`, `0-9`, `_` (1–32 chars) and cannot override native commands like `/status` or `/reset`.
+
+### Webhook vs Long Polling
+
+By default, OpenClaw uses **long polling** to receive messages. This works everywhere without extra setup.
+
+For production deployments, you can switch to **webhook mode** for better performance:
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "YOUR_TOKEN",
+      webhookUrl: "https://your-domain.com/telegram-webhook",
+      webhookSecret: "your-random-secret",   // Optional but recommended
+      // webhookPath: "/telegram-webhook",    // Local path, default: /telegram-webhook
+    }
+  }
+}
+```
+
+The local listener binds to `0.0.0.0:8787` and serves `POST /telegram-webhook` by default. If your public URL differs, use a reverse proxy.
+
+**Requirements for webhooks:**
+- A publicly accessible HTTPS URL
+- A valid SSL certificate (Let's Encrypt works fine)
+
+### Proxy Settings
+
+If you're in a region where Telegram is blocked, configure a proxy:
+
+```json5
+{
+  channels: {
+    telegram: {
+      botToken: "YOUR_TOKEN",
+      proxy: "socks5://127.0.0.1:7890"    // SOCKS5 or HTTP proxy URL
+      // proxy: "http://user:pass@127.0.0.1:7890"  // With authentication
+    }
+  }
+}
+```
+
+You can also use the `HTTPS_PROXY` or `ALL_PROXY` environment variable:
+
+```bash
+export HTTPS_PROXY="socks5://127.0.0.1:7890"
+openclaw gateway start
+```
+
+---
+
+## Troubleshooting
+
+### Bot doesn't respond
+
+1. Check that the gateway is running: `openclaw gateway status`
+2. Verify the token is correct — try `/token` in BotFather to see your existing tokens
+3. Check the logs: `openclaw gateway logs`
+4. Make sure pairing is completed (if using `dmPolicy: "pairing"`)
+
+### Group messages not received
+
+1. Check if Privacy Mode is blocking messages (see [Privacy Mode](#privacy-mode) above)
+2. Ensure the group's chat ID is in your config
+3. Make sure the bot has been added to the group as a member
+4. Re-add the bot after changing Privacy Mode settings
+
+### IPv6 issues
+
+Some networks have trouble connecting to Telegram's API over IPv6. Force IPv4:
+
+```bash
+export NODE_OPTIONS="--dns-result-order=ipv4first"
+openclaw gateway start
+```
+
+### 409 Conflict Error
+
+This means another instance is already polling with the same token. Only one process can use long polling at a time.
+
+**Fix:**
+1. Stop all other instances using this token
+2. If using a webhook, remove it first: the gateway will handle this automatically on startup
+3. Wait a few seconds and restart: `openclaw gateway restart`
+
+---
+
+## Further Reading
+
+- [Discord Integration](/blog/integrations/discord) — Connect OpenClaw to Discord
+- [WhatsApp Integration](/blog/integrations/whatsapp) — Connect OpenClaw to WhatsApp
+- [OpenClaw Documentation](https://docs.openclaw.ai) — Full reference

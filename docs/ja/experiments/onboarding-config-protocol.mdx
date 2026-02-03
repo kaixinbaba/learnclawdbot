@@ -1,0 +1,39 @@
+---
+title: "オンボーディングと設定プロトコル"
+summary: "CLI、macOS アプリ、Web UI 全体で共有されるオンボーディングと設定画面"
+---
+
+# オンボーディングと設定プロトコル
+
+目的：CLI、macOS アプリ、Web UI 全体で共有されるオンボーディング + 設定画面。
+
+## コンポーネント
+
+- Wizard エンジン（共有 session + プロンプト + オンボーディング状態）
+- CLI オンボーディングは UI クライアントと同じ wizard フローを使用
+- Gateway RPC は wizard + 設定 schema エンドポイントを公開
+- macOS オンボーディングは wizard ステップモデルを使用
+- Web UI は JSON Schema + UI ヒントから設定フォームをレンダリング
+
+## Gateway RPC
+
+- `wizard.start` パラメータ：`\{ mode?: "local"|"remote", workspace?: string \}`
+- `wizard.next` パラメータ：`\{ sessionId, answer?: \{ stepId, value? \} \}`
+- `wizard.cancel` パラメータ：`\{ sessionId \}`
+- `wizard.status` パラメータ：`\{ sessionId \}`
+- `config.schema` パラメータ：`\{\}`
+
+レスポンス（形状）：
+
+- Wizard：`\{ sessionId, done, step?, status?, error? \}`
+- Config schema：`\{ schema, uiHints, version, generatedAt \}`
+
+## UI ヒント
+
+- `uiHints` はパスでキー付けされ、オプションのメタデータ（label/help/group/order/advanced/sensitive/placeholder）を持つ
+- 機密フィールドはパスワード入力としてレンダリング；リダクションレイヤーなし
+- サポートされていない schema ノードは raw JSON エディタにフォールバック
+
+## 注意事項
+
+- このドキュメントは、オンボーディング/設定のプロトコルリファクタリングを追跡する唯一の場所です

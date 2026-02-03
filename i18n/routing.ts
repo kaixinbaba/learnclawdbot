@@ -3,7 +3,7 @@ import { defineRouting } from 'next-intl/routing';
 
 export const LOCALES = ['en', 'zh', 'ja', 'ko', 'ru']
 // Locales shown in the language switcher UI (site-wide, excludes docs-only locales)
-export const UI_LOCALES = ['en', 'zh', 'ja']
+export const UI_LOCALES = ['en', 'zh', 'ja', 'ko', 'ru']
 export const DEFAULT_LOCALE = 'en'
 export const LOCALE_NAMES: Record<string, string> = {
   'en': "English",

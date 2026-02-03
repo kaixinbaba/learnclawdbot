@@ -21,6 +21,16 @@ const nextConfig = {
       destination: "/ja/dashboard/settings",
       permanent: true,
     },
+    {
+      source: "/ko/dashboard",
+      destination: "/ko/dashboard/settings",
+      permanent: true,
+    },
+    {
+      source: "/ru/dashboard",
+      destination: "/ru/dashboard/settings",
+      permanent: true,
+    },
   ],
   images: {
     unoptimized:
