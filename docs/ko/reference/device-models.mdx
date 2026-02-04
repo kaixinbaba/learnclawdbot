@@ -1,0 +1,47 @@
+---
+title: "디바이스 모델 데이터베이스"
+summary: "macOS 컴패니언 앱에서 Apple 디바이스 모델 식별자를 친숙한 이름으로 매핑"
+---
+
+# 디바이스 모델 데이터베이스 (친숙한 이름)
+
+macOS 컴패니언 앱은 Apple 모델 식별자 (예: `iPad16,6`, `Mac16,6`)를 사람이 읽을 수 있는 이름으로 매핑하여 Instances UI에 친숙한 Apple 디바이스 모델 이름을 표시합니다.
+
+매핑은 다음 위치에 JSON으로 벤더 제공됩니다:
+
+- `apps/macos/Sources/OpenClaw/Resources/DeviceModels/`
+
+## 데이터 소스
+
+현재 MIT 라이선스 리포지토리에서 매핑을 벤더 제공합니다:
+
+- [kyle-seongwoo-jun/apple-device-identifiers](https://github.com/kyle-seongwoo-jun/apple-device-identifiers)
+
+빌드를 결정론적으로 유지하기 위해 JSON 파일은 특정 업스트림 커밋에 고정됩니다 (`apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md`에 기록됨).
+
+## 데이터베이스 업데이트
+
+1. 고정할 업스트림 커밋을 선택 (iOS용 하나, macOS용 하나)
+
+2. `apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md`에서 커밋 해시 업데이트
+
+3. 해당 커밋에 고정된 JSON 파일을 재다운로드:
+
+```bash
+IOS_COMMIT="<ios-device-identifiers.json의 커밋 sha>"
+MAC_COMMIT="<mac-device-identifiers.json의 커밋 sha>"
+
+curl -fsSL "https://raw.githubusercontent.com/kyle-seongwoo-jun/apple-device-identifiers/$\{IOS_COMMIT\}/ios-device-identifiers.json" \\
+  -o apps/macos/Sources/OpenClaw/Resources/DeviceModels/ios-device-identifiers.json
+
+curl -fsSL "https://raw.githubusercontent.com/kyle-seongwoo-jun/apple-device-identifiers/$\{MAC_COMMIT\}/mac-device-identifiers.json" \\
+  -o apps/macos/Sources/OpenClaw/Resources/DeviceModels/mac-device-identifiers.json
+```
+
+4. `apps/macos/Sources/OpenClaw/Resources/DeviceModels/LICENSE.apple-device-identifiers.txt`가 여전히 업스트림과 일치하는지 확인 (업스트림 라이선스가 변경되면 교체)
+
+5. macOS 앱이 깨끗하게 빌드되는지 확인 (경고 없음):
+
+```bash
+swift build --package-path apps/macos
+```

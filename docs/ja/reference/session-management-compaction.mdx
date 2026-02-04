@@ -1,0 +1,244 @@
+---
+title: "セッション管理の深堀り"
+summary: "OpenClaw がセッション、トランスクリプト、圧縮、コンテキスト制限をどのように管理するか"
+---
+
+# セッション管理と圧縮（深堀り）
+
+このドキュメントは、OpenClaw がセッションをエンドツーエンドでどのように管理するかを説明します：
+
+- セッションルーティング（インバウンドメッセージが sessionKey にマッピングされる方法）
+- セッションストア（`sessions.json`）と追跡内容
+- トランスクリプトの永続化（`*.jsonl`）とその構造
+- トランスクリプトの衛生管理（実行前のプロバイダー固有の修正）
+- コンテキスト制限（コンテキストウィンドウ vs 追跡トークン）
+- 圧縮（手動 + 自動圧縮）と圧縮前作業をフックする場所
+- サイレント管理（ユーザーに見える出力を生成すべきでないメモリ書き込みなど）
+
+より高レベルの概要を最初に見たい場合は、以下から始めてください：
+
+- [/concepts/session](/concepts/session)
+- [/concepts/compaction](/concepts/compaction)
+- [/concepts/session-pruning](/concepts/session-pruning)
+- [/reference/transcript-hygiene](/reference/transcript-hygiene)
+
+## 真実の情報源：Gateway
+
+OpenClaw は、セッション状態を所有する単一の Gateway プロセスを中心に設計されています。
+
+- UI（macOS アプリ、web Control UI、TUI）は、セッションリストとトークン数について Gateway にクエリする必要があります
+- リモートモードでは、セッションファイルはリモートホスト上にあります；「ローカル Mac ファイルを確認する」ことは Gateway が使用しているものを反映しません
+
+## 2 つの永続化レイヤー
+
+OpenClaw は 2 つのレイヤーでセッションを永続化します：
+
+### セッションストア（sessions.json）
+
+- キー/値マップ：`sessionKey -> SessionEntry`
+- 小さく、可変で、安全に編集可能（またはエントリを削除）
+- セッションメタデータ（現在のセッション id、最後のアクティビティ、トグル、トークンカウンターなど）を追跡
+
+### トランスクリプト（.jsonl）
+
+- ツリー構造を持つ追加専用トランスクリプト（エントリには id + parentId がある）
+- 実際の会話 + ツール呼び出し + 圧縮サマリーを保存
+- 将来のターンのためにモデルコンテキストを再構築するために使用
+
+## ディスク上の場所
+
+エージェントごと、Gateway ホスト上：
+
+- ストア：`~/.openclaw/agents/<agent>/sessions/sessions.json`
+- トランスクリプト：`~/.openclaw/agents/<agent>/sessions/<sessionId>.jsonl`
+
+Telegram トピックセッション：`.../<sessionKey>-topic-<topicId>.jsonl`
+
+OpenClaw は `src/config/sessions.ts` を介してこれらを解決します。
+
+## セッションキー（sessionKey）
+
+sessionKey は、どの会話バケットにいるかを識別します（ルーティング + 分離）。
+
+一般的なパターン：
+
+- メイン/直接チャット（エージェントごと）：`agent:<agent>:<provider>`（デフォルト main）
+- グループ：`agent:<agent>:<provider>:group:<groupId>`
+- ルーム/チャンネル（Discord/Slack）：`agent:<agent>:<provider>:channel:<channelId>` または `...:room:<roomId>`
+- Cron：`cron:<jobId>`
+- Webhook：`hook:<hookId>`（オーバーライドされない限り）
+
+正規のルールは [/concepts/session](/concepts/session) に文書化されています。
+
+## セッション ID（sessionId）
+
+各 sessionKey は現在の sessionId（会話を続けるトランスクリプトファイル）を指しています。
+
+経験則：
+
+- リセット（`/new`、`/reset`）は、その sessionKey に新しい sessionId を作成
+- 毎日のリセット（デフォルトでゲートウェイホストのローカル時間午前 4:00）は、リセット境界後の次のメッセージで新しい sessionId を作成
+- アイドル期限切れ（`session.reset.idleMinutes` または旧 `session.idleMinutes`）は、アイドルウィンドウ後にメッセージが到着したときに新しい sessionId を作成。毎日 + アイドルの両方が設定されている場合、最初に期限切れになった方が優先
+
+実装の詳細：決定は `src/auto-reply/reply/session.ts` の `initSessionState()` で行われます。
+
+## セッションストアスキーマ（sessions.json）
+
+ストアの値タイプは `src/config/sessions.ts` の `SessionEntry` です。
+
+主要フィールド（完全ではない）：
+
+- `sessionId`：現在のトランスクリプト id（sessionFile が設定されていない限り、ファイル名はこれから派生）
+- `updatedAt`：最後のアクティビティタイムスタンプ
+- `sessionFile`：オプションの明示的なトランスクリプトパスオーバーライド
+- `chatType`：`direct` | `group` | `room`（UI と送信ポリシーを支援）
+- `provider`、`subject`、`room`、`space`、`displayName`：グループ/チャンネルラベリング用のメタデータ
+- **トグル：** `thinkingLevel`、`verboseLevel`、`reasoningLevel`、`elevatedLevel`
+- `sendPolicy`（セッションごとのオーバーライド）
+- **モデル選択：** `providerOverride`、`modelOverride`、`authProfileOverride`
+- **トークンカウンター**（ベストエフォート/プロバイダー依存）：`inputTokens`、`outputTokens`、`totalTokens`、`contextTokens`
+- `compactionCount`：この sessionKey の自動圧縮が完了した回数
+- `memoryFlushAt`：最後の圧縮前メモリフラッシュのタイムスタンプ
+- `memoryFlushCompactionCount`：最後のフラッシュが実行されたときの圧縮カウント
+
+ストアは安全に編集できますが、Gateway が権威です：セッションの実行中にエントリを書き直すか再ハイドレートする可能性があります。
+
+## トランスクリプト構造（*.jsonl）
+
+トランスクリプトは `@mariozechner/pi-coding-agent` の SessionManager によって管理されます。
+
+ファイルは JSONL です：
+
+- 最初の行：セッションヘッダー（`type: "session"`、id、cwd、タイムスタンプ、オプションの parentSession を含む）
+- その後：`id` + `parentId` を持つセッションエントリ（ツリー）
+
+注目すべきエントリタイプ：
+
+- `message`：ユーザー/アシスタント/toolResult メッセージ
+- `custom_message`：モデルコンテキストに入る拡張注入メッセージ（UI から非表示にできる）
+- `custom`：モデルコンテキストに入らない拡張状態
+- `compaction`：`firstKeptEntryId` と `tokensBefore` を持つ永続化された圧縮サマリー
+- `branch_summary`：ツリーブランチをナビゲートするときの永続化されたサマリー
+
+OpenClaw は意図的にトランスクリプトを「修正」しません；Gateway は SessionManager を使用してそれらを読み書きします。
+
+## コンテキストウィンドウ vs 追跡トークン
+
+2 つの異なる概念が重要です：
+
+- **モデルコンテキストウィンドウ：** モデルごとのハードキャップ（モデルに見えるトークン）
+- **セッションストアカウンター：** `sessions.json` に書き込まれるローリング統計（`/status` とダッシュボードに使用）
+
+制限を調整している場合：
+
+- コンテキストウィンドウはモデルカタログから来ます（設定でオーバーライド可能）
+- ストア内の `contextTokens` はランタイム推定/レポート値です；厳密な保証として扱わないでください
+
+詳細については、[/token-use](/token-use) を参照してください。
+
+## 圧縮：それは何か
+
+圧縮は、古い会話をトランスクリプトの永続化された圧縮エントリにまとめ、最近のメッセージをそのまま保持します。
+
+圧縮後、将来のターンは次を見ます：
+
+- 圧縮サマリー
+- `firstKeptEntryId` 以降のメッセージ
+
+圧縮は永続的です（セッション剪定とは異なります）。[/concepts/session-pruning](/concepts/session-pruning) を参照してください。
+
+## 自動圧縮がいつ起こるか（Pi ランタイム）
+
+埋め込まれた Pi エージェントでは、自動圧縮は 2 つのケースでトリガーされます：
+
+1. **オーバーフロー回復：** モデルがコンテキストオーバーフローエラーを返す → 圧縮 → 再試行
+2. **閾値メンテナンス：** 成功したターンの後、以下のとき：
+   ```
+   contextTokens > contextWindow - reserveTokens
+   ```
+
+ここで：
+
+- `contextWindow` はモデルのコンテキストウィンドウ
+- `reserveTokens` はプロンプト + 次のモデル出力のために予約された余裕
+
+これらは Pi ランタイムのセマンティクスです（OpenClaw はイベントを消費しますが、Pi がいつ圧縮するかを決定します）。
+
+## 圧縮設定（reserveTokens, keepRecentTokens）
+
+Pi の圧縮設定は Pi 設定にあります：
+
+```json
+\{
+  "compaction": \{
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000
+  \}
+\}
+```
+
+OpenClaw は埋め込み実行に対して安全フロアも適用します：
+
+- `compaction.reserveTokens < 16384` の場合：16384 に引き上げる
+
+**理由：** 圧縮が避けられなくなる前に、マルチターン「管理」（メモリ書き込みなど）のために十分な余裕を残します。
+
+実装：`src/agents/pi-settings.ts` の `ensurePiCompactionReserveTokens()`（`src/agents/pi-embedded-runner.ts` から呼び出される）。
+
+## ユーザーに見える表面
+
+圧縮とセッション状態は以下を通じて観察できます：
+
+- `/status`（任意のチャットセッションで）
+- `openclaw status`（CLI）
+- `openclaw sessions` / `sessions --json`
+- 詳細モード：🧹 自動圧縮完了 + 圧縮カウント
+
+## サイレント管理（NO_REPLY）
+
+OpenClaw は、ユーザーが中間出力を見るべきでないバックグラウンドタスクの「サイレント」ターンをサポートします。
+
+規約：
+
+- アシスタントは「ユーザーに返信を配信しない」ことを示すために `NO_REPLY` で出力を開始します
+- OpenClaw は配信層でこれを削除/抑制します
+
+2026.1.10 以降、部分チャンクが `NO_REPLY` で始まる場合、OpenClaw はドラフト/タイピングストリーミングも抑制するため、サイレント操作はターン中に部分出力を漏らしません。
+
+## 圧縮前の「メモリフラッシュ」（実装済み）
+
+**目標：** 自動圧縮が起こる前に、永続状態をディスクに書き込む（エージェントワークスペースの `memory/YYYY-MM-DD.md` など）サイレントエージェンティックターンを実行し、圧縮が重要なコンテキストを消去できないようにします。
+
+OpenClaw は**事前閾値フラッシュ**アプローチを使用します：
+
+- セッションコンテキストの使用状況を監視
+- 「ソフト閾値」（Pi の圧縮閾値未満）を超えたとき、エージェントにサイレントの「今すぐメモリを書く」指示を実行
+- `NO_REPLY` を使用するため、ユーザーには何も見えません
+
+設定（`agents.defaults.compaction.memoryFlush`）：
+
+- `enabled`（デフォルト：`true`）
+- `softThresholdTokens`（デフォルト：`4000`）
+- `prompt`（フラッシュターンのユーザーメッセージ）
+- `systemPrompt`（フラッシュターン用の追加システムプロンプト）
+
+注意：
+
+- デフォルトのプロンプト/システムプロンプトには配信を抑制する `NO_REPLY` ヒントが含まれています
+- フラッシュは圧縮サイクルごとに 1 回実行されます（`sessions.json` で追跡）
+- フラッシュは埋め込み Pi セッションにのみ適用されます（CLI バックエンドはスキップします）
+- セッションワークスペースが読み取り専用の場合、フラッシュはスキップされます（`workspaceAccess: "ro"` または `"none"`）
+- ワークスペースファイルレイアウトと書き込みパターンについては [Memory](/concepts/memory) を参照してください
+
+Pi は拡張 API で `session_before_compact` フックも公開していますが、OpenClaw のフラッシュロジックは今日 Gateway 側にあります。
+
+## トラブルシューティングチェックリスト
+
+- **セッションキーが間違っている？** [/concepts/session](/concepts/session) から始めて、`/status` の sessionKey を確認
+- **ストア vs トランスクリプトの不一致？** `openclaw status` から Gateway ホストとストアパスを確認
+- **圧縮スパム？** 確認：
+  - モデルコンテキストウィンドウ（小さすぎる）
+  - 圧縮設定（モデルウィンドウに対して reserveTokens が高すぎると、より早い圧縮を引き起こす可能性がある）
+  - ツール結果の肥大化：セッション剪定を有効化/調整
+- **サイレントターンがリークしている？** 返信が `NO_REPLY`（正確なトークン）で始まることを確認し、ストリーミング抑制修正を含むビルドを使用していることを確認

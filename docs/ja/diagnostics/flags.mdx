@@ -1,0 +1,86 @@
+---
+title: "診断フラグ"
+summary: "すべての場所で詳細なログを有効にせずに、特定のサブシステムに対してターゲット指向のデバッグログを有効化"
+---
+
+# 診断フラグ（Diagnostics Flags）
+
+診断フラグを使用すると、すべての場所で詳細ログを有効にすることなく、ターゲット指向のデバッグログを有効にできます。フラグはオプトインであり、サブシステムがチェックしない限り効果はありません。
+
+## 仕組み
+
+- フラグは文字列です（大文字小文字を区別しません）。
+- 設定でフラグを有効にするか、環境変数でオーバーライドできます。
+- ワイルドカードがサポートされています：
+  - `telegram.*` は `telegram.http` にマッチ
+  - `*` はすべてのフラグを有効化
+
+## 設定で有効化
+
+```json
+{
+  "diagnostics": {
+    "flags": ["telegram.http"]
+  }
+}
+```
+
+複数のフラグ：
+
+```json
+{
+  "diagnostics": {
+    "flags": ["telegram.http", "gateway.*"]
+  }
+}
+```
+
+フラグを変更した後、ゲートウェイを再起動してください。
+
+## 環境変数のオーバーライド（一時的）
+
+```bash
+OPENCLAW_DIAGNOSTICS=telegram.http,telegram.payload
+```
+
+すべてのフラグを無効化：
+
+```bash
+OPENCLAW_DIAGNOSTICS=0
+```
+
+## ログの保存先
+
+フラグは標準の診断ログファイルにログを出力します。デフォルト：
+
+```
+/tmp/openclaw/openclaw-YYYY-MM-DD.log
+```
+
+`logging.file` を設定している場合は、そのパスを使用してください。ログは JSONL 形式（1行に1つの JSON オブジェクト）です。`logging.redactSensitive` に基づいてリダクションが適用されます。
+
+最新のログファイルを選択：
+
+```bash
+ls -t /tmp/openclaw/openclaw-*.log | head -n 1
+```
+
+Telegram HTTP 診断をフィルタ：
+
+```bash
+rg "telegram http error" /tmp/openclaw/openclaw-*.log
+```
+
+または再現中に tail で確認：
+
+```bash
+tail -f /tmp/openclaw/openclaw-$(date +%F).log | rg "telegram http error"
+```
+
+リモートゲートウェイの場合、`openclaw logs --follow` も使用できます（[CLI logs](/cli/logs) 参照）。
+
+## 注意事項
+
+- `logging.level` が `warn` より高く設定されている場合、これらのログが抑制される可能性があります。デフォルトの `info` は問題ありません。
+- フラグは有効のままにしても安全です。特定のサブシステムのログ量にのみ影響します。
+- ログの送信先、レベル、リダクションを変更するには [Logging](/logging) を使用してください。

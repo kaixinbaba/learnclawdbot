@@ -1,0 +1,126 @@
+---
+title: "Контрольный список релиза"
+summary: "Контрольный список релиза для публикации OpenClaw в npm и сборки приложения macOS"
+---
+
+# Контрольный список релиза (npm + macOS)
+
+Используйте pnpm (Node 22+) из корня репозитория. Сохраняйте рабочее дерево чистым перед тегированием/публикацией.
+
+## Триггер оператора
+
+Когда оператор говорит «release», немедленно выполните эту предполетную проверку (никаких дополнительных вопросов, если не заблокировано):
+
+- Прочитайте этот документ и docs/platforms/mac/release.md
+- Загрузите переменные окружения из `~/.profile` и подтвердите, что установлены `SPARKLE_PRIVATE_KEY_FILE` + переменные App Store Connect (`SPARKLE_PRIVATE_KEY_FILE` должен находиться в `~/.profile`)
+- При необходимости используйте ключи Sparkle из `~/Library/CloudStorage/Dropbox/Backup/Sparkle`
+
+### Версия и метаданные
+
+- Обновите версию в `package.json` (например, `2026.1.29`)
+- Запустите `pnpm plugins:sync` для выравнивания версий пакетов расширений + журналов изменений
+- Обновите строки CLI/версии: `src/cli/program.ts` и пользовательский агент Baileys в `src/provider-web.ts`
+- Подтвердите метаданные пакета (name, description, repository, keywords, license) и что карта bin указывает на `openclaw.mjs` для `openclaw`
+- Если зависимости изменились, запустите `pnpm install`, чтобы `pnpm-lock.yaml` был актуальным
+
+### Сборка и артефакты
+
+- Если входные данные A2UI изменились, запустите `pnpm canvas:a2ui:bundle` и закоммитьте обновленный `src/canvas-host/a2ui/a2ui.bundle.js`
+- `pnpm run build` (регенерирует `dist/`)
+- Убедитесь, что npm-пакет `files` включает все необходимые папки `dist/*` (особенно `dist/node-host/**` и `dist/acp/**` для headless node + ACP CLI)
+- Подтвердите, что существует `dist/build-info.json` и включает ожидаемый хэш коммита (баннер CLI использует это для установок npm)
+- Опционально: выполните `npm pack --pack-destination /tmp` после сборки; проверьте содержимое tarball и сохраните его для релиза GitHub (не коммитьте)
+
+### Журнал изменений и документация
+
+- Обновите `CHANGELOG.md` с основными моментами для пользователей (создайте файл, если отсутствует); сохраняйте записи строго в порядке убывания версий
+- Убедитесь, что примеры/флаги README соответствуют текущему поведению CLI (особенно новые команды или опции)
+
+### Проверка
+
+- `pnpm build`
+- `pnpm check`
+- `pnpm test` (или `pnpm test:coverage`, если требуется вывод покрытия)
+- `pnpm release:check` (проверяет содержимое npm pack)
+- `OPENCLAW_INSTALL_SMOKE_SKIP_NONROOT=1 pnpm test:install:smoke` (дымовой тест установки Docker, быстрый путь; обязателен перед релизом)
+
+Если известно, что предыдущий релиз npm сломан, установите `OPENCLAW_INSTALL_SMOKE_PREVIOUS=` или `OPENCLAW_INSTALL_SMOKE_SKIP_PREVIOUS=1` для шага предустановки.
+
+- (Опционально) Полный дымовой тест установщика (добавляет покрытие non-root + CLI): `pnpm test:install:smoke`
+- (Опционально) E2E установщика (Docker, запускает `curl -fsSL https://openclaw.ai/install.sh | bash`, выполняет онбординг, затем запускает реальные вызовы инструментов):
+  - `pnpm test:install:e2e:openai` (требуется `OPENAI_API_KEY`)
+  - `pnpm test:install:e2e:anthropic` (требуется `ANTHROPIC_API_KEY`)
+  - `pnpm test:install:e2e` (требуются оба ключа; запускает обоих провайдеров)
+- (Опционально) Выборочная проверка веб-шлюза, если ваши изменения влияют на пути отправки/получения
+
+### Приложение macOS (Sparkle)
+
+- Соберите + подпишите приложение macOS, затем заархивируйте его для распространения
+- Создайте Sparkle appcast (HTML-заметки через `scripts/make_appcast.sh`) и обновите `appcast.xml`
+- Сохраните zip-файл приложения (и опциональный dSYM zip) для прикрепления к релизу GitHub
+- Следуйте [релизу macOS](/platforms/mac/release) для точных команд и требуемых переменных окружения
+
+`APP_BUILD` должен быть числовым + монотонно возрастающим (без `-beta`), чтобы Sparkle корректно сравнивал версии.
+
+- При нотаризации используйте профиль связки ключей `openclaw-notary`, созданный из переменных окружения App Store Connect API (см. [релиз macOS](/platforms/mac/release))
+
+### Публикация (npm)
+
+- Подтвердите, что `git status` чист; закоммитьте и отправьте по мере необходимости
+- При необходимости выполните `npm login` (проверьте 2FA)
+- `npm publish --access public` (используйте `--tag beta` для предварительных релизов)
+- Проверьте реестр: `npm view openclaw version`, `npm view openclaw dist-tags` и `npx -y openclaw@latest --version` (или `--help`)
+
+### Устранение неполадок (заметки из релиза 2.0.0-beta2)
+
+- **npm pack/publish зависает или создает огромный tarball:** пакет приложения macOS в `dist/OpenClaw.app` (и релизные zip-файлы) попадают в пакет. Исправьте, добавив содержимое публикации в белый список через `package.json` `files` (включите подкаталоги dist, docs, skills; исключите пакеты приложений). Подтвердите с помощью `npm pack --dry-run`, что `dist/OpenClaw.app` не указан.
+
+- **Цикл веб-аутентификации npm для dist-tags:** используйте устаревшую аутентификацию для получения запроса OTP:
+  ```bash
+  NPM_CONFIG_AUTH_TYPE=legacy npm dist-tag add openclaw@X.Y.Z latest
+  ```
+
+- **Проверка npx завершается с ECOMPROMISED:** Блокировка скомпрометирована: повторите с новым кэшем:
+  ```bash
+  NPM_CONFIG_CACHE=/tmp/npm-cache-$(date +%s) npx -y openclaw@latest --version
+  ```
+
+- **Тег требует переназначения после позднего исправления:** принудительно обновите и отправьте тег, затем убедитесь, что ресурсы релиза GitHub все еще совпадают:
+  ```bash
+  git tag -f vX.Y.Z && git push -f origin vX.Y.Z
+  ```
+
+### Релиз GitHub + appcast
+
+- Создайте тег и отправьте: `git tag vX.Y.Z && git push origin vX.Y.Z` (или `git push --tags`)
+- Создайте/обновите релиз GitHub для `vX.Y.Z` с заголовком `openclaw X.Y.Z` (не только тег); тело должно включать полный раздел журнала изменений для этой версии (Основные моменты + Изменения + Исправления), встроенный (без голых ссылок), и не должно повторять заголовок внутри тела
+- Прикрепите артефакты: npm pack tarball (опционально), `OpenClaw-X.Y.Z.zip` и `OpenClaw-X.Y.Z.dSYM.zip` (если создано)
+- Закоммитьте обновленный `appcast.xml` и отправьте (Sparkle питается из main)
+- Из чистого временного каталога (без `package.json`) запустите `npx -y openclaw@latest send --help`, чтобы подтвердить работу точек входа установки/CLI
+- Объявите/поделитесь примечаниями к релизу
+
+## Область публикации плагинов (npm)
+
+Мы публикуем только существующие npm-плагины в области `@openclaw/*`. Встроенные плагины, которых нет в npm, остаются только в дереве диска (все еще поставляются в `extensions/**`).
+
+Процесс получения списка:
+
+- Выполните `npm search @openclaw --json` и захватите имена пакетов
+- Сравните с именами `extensions/*/package.json`
+- Публикуйте только пересечение (уже в npm)
+
+Текущий список npm-плагинов (обновляйте по мере необходимости):
+
+- `@openclaw/bluebubbles`
+- `@openclaw/diagnostics-otel`
+- `@openclaw/discord`
+- `@openclaw/lobster`
+- `@openclaw/matrix`
+- `@openclaw/msteams`
+- `@openclaw/nextcloud-talk`
+- `@openclaw/nostr`
+- `@openclaw/voice-call`
+- `@openclaw/zalo`
+- `@openclaw/zalouser`
+
+Примечания к релизу также должны указывать новые опциональные встроенные плагины, которые не включены по умолчанию (пример: tlon).

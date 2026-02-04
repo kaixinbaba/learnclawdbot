@@ -1,0 +1,107 @@
+---
+title: "トランスクリプトハイジーン"
+summary: "モデル実行前に適用されるプロバイダ固有のトランスクリプト修正"
+---
+
+# トランスクリプトハイジーン（プロバイダ修正）
+
+このドキュメントは、実行前（モデルコンテキスト構築時）にトランスクリプトに適用されるプロバイダ固有の修正について説明します。これらはメモリ内の調整であり、厳格なプロバイダ要件を満たすために使用されます。これらのハイジーンステップは、ディスク上に保存された JSONL トランスクリプトを書き換えません。ただし、別のセッションファイル修復パスが、セッションロード前に無効な行を削除して不正な形式の JSONL ファイルを書き換える場合があります。修復が発生した場合、元のファイルはセッションファイルの横にバックアップされます。
+
+範囲には以下が含まれます：
+
+- Tool call id のサニタイズ
+- Tool call 入力検証
+- Tool 結果ペアリング修復
+- ターン検証/順序付け
+- 思考シグネチャクリーンアップ
+- 画像 payload のサニタイズ
+
+トランスクリプトストレージの詳細が必要な場合は、以下を参照してください：
+
+- [/reference/session-management-compaction](/reference/session-management-compaction)
+
+## 実行場所
+
+すべてのトランスクリプトハイジーンは埋め込みランナーに集中されています：
+
+- **ポリシー選択：** `src/agents/transcript-policy.ts`
+- **サニタイズ/修復適用：** `src/agents/pi-embedded-runner/google.ts` の `sanitizeSessionHistory`
+
+ポリシーは `provider`、`modelApi`、`modelId` を使用して何を適用するかを決定します。
+
+トランスクリプトハイジーンとは別に、セッションファイルはロード前に修復されます（必要に応じて）：
+
+- `src/agents/session-file-repair.ts` の `repairSessionFileIfNeeded`
+- `run/attempt.ts` および `compact.ts`（埋め込みランナー）から呼び出されます
+
+## グローバルルール：画像のサニタイズ
+
+画像 payload は常にサニタイズされ、サイズ制限によるプロバイダ側の拒否を防ぎます（過大な base64 画像のダウンスケール/再圧縮）。
+
+実装：
+
+- `src/agents/pi-embedded-helpers/images.ts` の `sanitizeSessionMessagesImages`
+- `src/agents/tool-images.ts` の `sanitizeContentBlocksImages`
+
+## グローバルルール：不正な形式の tool call
+
+`input` と `arguments` の両方が欠落している Assistant の tool-call ブロックは、モデルコンテキスト構築前に削除されます。これにより、部分的に永続化された tool call からのプロバイダ拒否を防ぎます（例：レート制限失敗後）。
+
+実装：
+
+- `src/agents/session-transcript-repair.ts` の `sanitizeToolCallInputs`
+- `src/agents/pi-embedded-runner/google.ts` の `sanitizeSessionHistory` で適用
+
+## プロバイダマトリックス（現在の動作）
+
+### OpenAI / OpenAI Codex
+
+- 画像サニタイズのみ
+- OpenAI Responses/Codex モデルに切り替える際、孤立した推論シグネチャ（後続のコンテンツブロックがない独立した推論項目）を削除
+- tool call id のサニタイズなし
+- tool 結果ペアリング修復なし
+- ターン検証または再順序付けなし
+- 合成 tool 結果なし
+- 思考シグネチャ除去なし
+
+### Google（Generative AI / Gemini CLI / Antigravity）
+
+- Tool call id のサニタイズ：厳格な英数字
+- Tool 結果ペアリング修復と合成 tool 結果
+- ターン検証（Gemini スタイルのターン交替）
+- Google ターン順序修正（履歴が assistant で始まる場合、小さなユーザーブートストラップを前に追加）
+- Antigravity Claude：思考シグネチャの正規化；署名なし思考ブロックの削除
+
+### Anthropic / Minimax（Anthropic 互換）
+
+- Tool 結果ペアリング修復と合成 tool 結果
+- ターン検証（厳格な交替を満たすために連続したユーザーターンをマージ）
+
+### Mistral（model-id ベースの検出を含む）
+
+- Tool call id のサニタイズ：strict9（英数字長さ9）
+
+### OpenRouter Gemini
+
+- 思考シグネチャクリーンアップ：非 base64 の `thought_signature` 値を除去（base64 は保持）
+
+### その他すべて
+
+- 画像サニタイズのみ
+
+## 過去の動作（2026.1.22 以前）
+
+2026.1.22 リリース前、OpenClaw は複数層のトランスクリプトハイジーンを適用していました：
+
+- `transcript-sanitize` 拡張がすべてのコンテキスト構築時に実行され、以下が可能でした：
+  - tool use/result ペアリングの修復
+  - tool call id のサニタイズ（`_`/`-` を保持する非厳格モードを含む）
+
+- ランナーもプロバイダ固有のサニタイズを実行し、作業が重複していました
+
+- プロバイダポリシーの外で追加の変更が発生していました：
+  - 永続化前に assistant テキストからタグを除去
+  - 空の assistant エラーターンの削除
+  - tool call 後の assistant コンテンツのトリミング
+
+この複雑さがクロスプロバイダの退行を引き起こしました（特に openai-responses の `call_id`|`fc_id` ペアリング）。2026.1.22 のクリーンアップで拡張が削除され、ロジックがランナーに集中され、OpenAI は画像サニタイズ以外何も触らないようになりました。

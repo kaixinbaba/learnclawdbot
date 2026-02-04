@@ -1,0 +1,47 @@
+---
+title: "デバイスモデルデータベース"
+summary: "macOS コンパニオンアプリで Apple デバイスモデル識別子をフレンドリー名にマッピング"
+---
+
+# デバイスモデルデータベース（フレンドリー名）
+
+macOS コンパニオンアプリは、Apple モデル識別子（例：`iPad16,6`、`Mac16,6`）を人間が読める名前にマッピングすることで、Instances UI にフレンドリーな Apple デバイスモデル名を表示します。
+
+マッピングは以下に JSON としてベンダー提供されています：
+
+- `apps/macos/Sources/OpenClaw/Resources/DeviceModels/`
+
+## データソース
+
+現在、MIT ライセンスのリポジトリからマッピングをベンダー提供しています：
+
+- [kyle-seongwoo-jun/apple-device-identifiers](https://github.com/kyle-seongwoo-jun/apple-device-identifiers)
+
+ビルドを確定的に保つため、JSON ファイルは特定のアップストリームコミットに固定されています（`apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md` に記録）。
+
+## データベースの更新
+
+1. 固定したいアップストリームコミットを選択（iOS 用に 1 つ、macOS 用に 1 つ）
+
+2. `apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md` のコミットハッシュを更新
+
+3. これらのコミットに固定された JSON ファイルを再ダウンロード：
+
+```bash
+IOS_COMMIT="<ios-device-identifiers.json のコミット sha>"
+MAC_COMMIT="<mac-device-identifiers.json のコミット sha>"
+
+curl -fsSL "https://raw.githubusercontent.com/kyle-seongwoo-jun/apple-device-identifiers/$\{IOS_COMMIT\}/ios-device-identifiers.json" \\
+  -o apps/macos/Sources/OpenClaw/Resources/DeviceModels/ios-device-identifiers.json
+
+curl -fsSL "https://raw.githubusercontent.com/kyle-seongwoo-jun/apple-device-identifiers/$\{MAC_COMMIT\}/mac-device-identifiers.json" \\
+  -o apps/macos/Sources/OpenClaw/Resources/DeviceModels/mac-device-identifiers.json
+```
+
+4. `apps/macos/Sources/OpenClaw/Resources/DeviceModels/LICENSE.apple-device-identifiers.txt` がまだアップストリームと一致していることを確認（アップストリームライセンスが変更された場合は置き換え）
+
+5. macOS アプリがクリーンにビルドされることを確認（警告なし）：
+
+```bash
+swift build --package-path apps/macos
+```

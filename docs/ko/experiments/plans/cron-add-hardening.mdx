@@ -1,0 +1,60 @@
+---
+title: "Cron Add 강화"
+summary: "cron.add 검증 강화 및 클라이언트 간 스키마 정렬"
+---
+
+# Cron Add 강화 및 스키마 정렬
+
+## 배경
+
+최근 gateway 로그는 잘못된 매개변수(sessionTarget, wakeMode, payload 누락 및 잘못된 형식의 schedule)로 인한 반복적인 cron.add 실패를 보여줍니다. 이는 최소한 하나의 클라이언트(아마도 agent 도구 호출 경로)가 래핑되거나 부분적으로 지정된 작업 페이로드를 전송하고 있음을 나타냅니다. 별도로, TypeScript의 cron provider 열거형, gateway 스키마, CLI 플래그 및 UI 폼 타입 간에 drift가 있으며, cron.status에 대한 UI 불일치(jobCount를 기대하지만 gateway는 jobs를 반환)가 있습니다.
+
+## 목표
+
+- 일반적인 래퍼 페이로드를 정규화하고 누락된 kind 필드를 추론하여 cron.add INVALID_REQUEST 스팸 중지
+- gateway 스키마, cron 타입, CLI 문서 및 UI 폼 전반에 걸쳐 cron provider 목록 정렬
+- agent cron 도구 스키마를 명시적으로 만들어 LLM이 올바른 작업 페이로드를 생성하도록 함
+- Control UI cron status 작업 카운트 표시 수정
+- 정규화 및 도구 동작을 다루는 테스트 추가
+
+## 비목표
+
+- cron 스케줄링 의미론 또는 작업 실행 동작 변경
+- 새로운 schedule kind 또는 cron 표현식 파싱 추가
+- 필요한 필드 수정을 넘어선 cron의 UI/UX 전면 개편
+
+## 발견사항 (현재 격차)
+
+- Gateway의 CronPayloadSchema는 signal + imessage를 제외하지만 TS 타입은 포함함
+- Control UI CronStatus는 jobCount를 기대하지만 gateway는 jobs를 반환함
+- Agent cron 도구 스키마는 임의의 작업 객체를 허용하여 잘못된 입력을 가능하게 함
+- Gateway는 정규화 없이 cron.add를 엄격하게 검증하므로 래핑된 페이로드가 실패함
+
+## 변경 사항
+
+- cron.add 및 cron.update는 이제 일반적인 래퍼 형태를 정규화하고 누락된 kind 필드를 추론함
+- Agent cron 도구 스키마가 gateway 스키마와 일치하여 잘못된 페이로드를 줄임
+- Provider 열거형이 gateway, CLI, UI 및 macOS picker 전반에 정렬됨
+- Control UI는 상태에 대해 gateway의 jobs count 필드를 사용함
+
+## 현재 동작
+
+- **정규화:** 래핑된 data/job 페이로드는 언래핑됨; 안전한 경우 schedule.kind 및 payload.kind가 추론됨
+- **기본값:** 누락된 경우 wakeMode 및 sessionTarget에 안전한 기본값 적용
+- **Provider:** Discord/Slack/Signal/iMessage가 이제 CLI/UI 전반에 걸쳐 일관되게 표시됨
+
+정규화된 형태 및 예제는 [Cron 작업](/automation/cron-jobs)을 참조하세요.
+
+## 검증
+
+- gateway 로그를 모니터링하여 cron.add INVALID_REQUEST 오류 감소 확인
+- 새로 고침 후 Control UI cron status가 작업 카운트를 표시하는지 확인
+
+## 선택적 후속 조치
+
+- 수동 Control UI 스모크 테스트: provider당 cron 작업 추가 + status 작업 카운트 검증
+
+## 미해결 질문
+
+- cron.add가 클라이언트로부터 명시적 상태를 수락해야 하는가 (현재 스키마에서 금지됨)?
+- webchat를 명시적 전달 provider로 허용해야 하는가 (현재 전달 해결에서 필터링됨)?

@@ -1,0 +1,51 @@
+---
+title: "テスト"
+summary: "OpenClaw のテストインフラストラクチャとコマンド"
+---
+
+# テスト（Tests）
+
+- 完全なテストキット（スイート、ライブ、Docker）：[Testing](/testing)
+
+- `pnpm test:force`：デフォルトのコントロールポートを保持している残存ゲートウェイプロセスを強制終了し、分離されたゲートウェイポートで完全な Vitest スイートを実行して、サーバーテストが実行中のインスタンスと衝突しないようにします。以前のゲートウェイ実行がポート 18789 を占有したままの場合に使用します。
+
+- `pnpm test:coverage`：V8 カバレッジで Vitest を実行します。グローバルしきい値は 70% のライン/ブランチ/関数/ステートメントです。カバレッジは、ターゲットをユニットテスト可能なロジックに集中させるため、統合が重いエントリーポイント（CLI 配線、gateway/telegram ブリッジ、webchat 静的サーバー）を除外します。
+
+- `pnpm test:e2e`：ゲートウェイのエンドツーエンドスモークテスト（マルチインスタンス WS/HTTP/node ペアリング）を実行します。
+
+- `pnpm test:live`：プロバイダーのライブテスト（minimax/zai）を実行します。API キーと `LIVE=1`（またはプロバイダー固有の `*_LIVE_TEST=1`）がスキップ解除に必要です。
+
+## モデルレイテンシーベンチマーク（ローカルキー）
+
+スクリプト：[scripts/bench-model.ts](https://github.com/openclaw/openclaw/blob/main/scripts/bench-model.ts)
+
+使用方法：
+
+- `source ~/.profile && pnpm tsx scripts/bench-model.ts --runs 10`
+- オプション環境変数：`MINIMAX_API_KEY`、`MINIMAX_BASE_URL`、`MINIMAX_MODEL`、`ANTHROPIC_API_KEY`
+- デフォルトプロンプト："Reply with a single word: ok. No punctuation or extra text."
+
+最新の実行（2025-12-31、20回実行）：
+
+- minimax 中央値 1279ms（最小 1114、最大 2431）
+- opus 中央値 2454ms（最小 1224、最大 3170）
+
+## オンボーディング E2E（Docker）
+
+Docker はオプションです。これはコンテナ化されたオンボーディングスモークテストにのみ必要です。
+
+クリーンな Linux コンテナでの完全なコールドスタートフロー：
+
+```bash
+scripts/e2e/onboard-docker.sh
+```
+
+このスクリプトは、疑似 tty を介してインタラクティブウィザードを駆動し、config/workspace/session ファイルを検証してから、ゲートウェイを起動して `openclaw health` を実行します。
+
+## QR インポートスモーク（Docker）
+
+Docker 内の Node 22+ で qrcode-terminal が読み込まれることを確認します：
+
+```bash
+pnpm test:docker:qr
+```

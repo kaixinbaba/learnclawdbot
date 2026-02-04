@@ -1,0 +1,47 @@
+---
+title: "База данных моделей устройств"
+summary: "Сопоставление идентификаторов моделей устройств Apple с понятными именами в приложении-компаньоне macOS"
+---
+
+# База данных моделей устройств (понятные имена)
+
+Приложение-компаньон macOS отображает понятные имена моделей устройств Apple в пользовательском интерфейсе Instances, сопоставляя идентификаторы моделей Apple (например, `iPad16,6`, `Mac16,6`) с человекочитаемыми именами.
+
+Сопоставление поставляется в виде JSON в:
+
+- `apps/macos/Sources/OpenClaw/Resources/DeviceModels/`
+
+## Источник данных
+
+В настоящее время мы поставляем сопоставление из репозитория с лицензией MIT:
+
+- [kyle-seongwoo-jun/apple-device-identifiers](https://github.com/kyle-seongwoo-jun/apple-device-identifiers)
+
+Чтобы сохранить детерминированность сборок, файлы JSON привязаны к конкретным upstream-коммитам (записанным в `apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md`).
+
+## Обновление базы данных
+
+1. Выберите upstream-коммиты, к которым хотите привязаться (один для iOS, один для macOS)
+
+2. Обновите хэши коммитов в `apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md`
+
+3. Повторно загрузите файлы JSON, привязанные к этим коммитам:
+
+```bash
+IOS_COMMIT="<sha коммита для ios-device-identifiers.json>"
+MAC_COMMIT="<sha коммита для mac-device-identifiers.json>"
+
+curl -fsSL "https://raw.githubusercontent.com/kyle-seongwoo-jun/apple-device-identifiers/$\{IOS_COMMIT\}/ios-device-identifiers.json" \\
+  -o apps/macos/Sources/OpenClaw/Resources/DeviceModels/ios-device-identifiers.json
+
+curl -fsSL "https://raw.githubusercontent.com/kyle-seongwoo-jun/apple-device-identifiers/$\{MAC_COMMIT\}/mac-device-identifiers.json" \\
+  -o apps/macos/Sources/OpenClaw/Resources/DeviceModels/mac-device-identifiers.json
+```
+
+4. Убедитесь, что `apps/macos/Sources/OpenClaw/Resources/DeviceModels/LICENSE.apple-device-identifiers.txt` все еще соответствует upstream (замените его, если upstream-лицензия изменилась)
+
+5. Убедитесь, что приложение macOS собирается без ошибок (без предупреждений):
+
+```bash
+swift build --package-path apps/macos
+```
