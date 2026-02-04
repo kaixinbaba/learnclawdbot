@@ -1,5 +1,5 @@
 import MDXComponents from "@/components/mdx/MDXComponents";
-import { getDocBySlug, getDocSidebar, listDocSlugs } from "@/lib/docs";
+import { getDocBySlug, getDocSidebar, listDocSlugs, getAvailableLocalesForDoc } from "@/lib/docs";
 import { Link as I18nLink, Locale, LOCALES } from "@/i18n/routing";
 import { constructMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
@@ -32,13 +32,15 @@ export async function generateMetadata({
     });
   }
 
-  // Docs are available in all locales (including docs-only locales like ko)
+  // Check which locales actually have this doc page (for accurate hreflang tags)
+  const availableLocales = await getAvailableLocalesForDoc(slugStr);
+
   return constructMetadata({
     title: `${doc.title} - OpenClaw Docs`,
     description: doc.frontmatter.summary || doc.title,
     locale: locale as Locale,
     path: `/docs/${slugStr}`,
-    availableLocales: LOCALES,
+    availableLocales: availableLocales.length > 0 ? availableLocales : undefined,
   });
 }
 
