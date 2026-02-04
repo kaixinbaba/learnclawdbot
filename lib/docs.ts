@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import matter from "gray-matter";
+import { LOCALES } from "@/i18n/routing";
 
 const DOCS_DIR = path.join(process.cwd(), "docs");
 
@@ -65,6 +66,32 @@ export async function getDocBySlug(
   }
 
   return null;
+}
+
+/**
+ * Get list of locales that have actual content for a specific doc slug.
+ * Used to generate accurate hreflang tags (only for locales with real content).
+ */
+export async function getAvailableLocalesForDoc(slug: string): Promise<string[]> {
+  const available: string[] = [];
+  
+  for (const locale of LOCALES) {
+    const directPath = path.join(DOCS_DIR, locale, `${slug}.mdx`);
+    const indexPath = path.join(DOCS_DIR, locale, slug, "index.mdx");
+    
+    try {
+      await fs.access(directPath);
+      available.push(locale);
+      continue;
+    } catch {}
+    
+    try {
+      await fs.access(indexPath);
+      available.push(locale);
+    } catch {}
+  }
+  
+  return available;
 }
 
 /**
