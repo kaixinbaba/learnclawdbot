@@ -132,3 +132,6 @@ dist
 .pnpm-store
 
 .backup/
+
+# Auto-generated migrations (managed by drizzle)
+lib/db/migrations/
