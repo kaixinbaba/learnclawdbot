@@ -52,10 +52,11 @@ function PostCardCover({
   priority = false,
 }: Omit<PostCardProps, "showCover">) {
   const visibilityInfo = getVisibilityInfo(post.visibility || "public");
+  const slug = post.slug?.replace(/^\//, '') || '';
 
   return (
     <I18nLink
-      href={`${baseUrl}/${post.slug.replace(/^\//, '')}`}
+      href={`${baseUrl}/${slug}`}
       title={post.title}
       prefetch={false}
       className="group block h-full focus:outline-none"
@@ -118,10 +119,11 @@ function PostCardCompact({
   showDescription,
 }: Omit<PostCardProps, "showCover">) {
   const visibilityInfo = getVisibilityInfo(post.visibility || "public");
+  const slug = post.slug?.replace(/^\//, '') || '';
 
   return (
     <I18nLink
-      href={`${baseUrl}/${post.slug.replace(/^\//, '')}`}
+      href={`${baseUrl}/${slug}`}
       title={post.title}
       prefetch={false}
       className="group block w-full focus:outline-none"
