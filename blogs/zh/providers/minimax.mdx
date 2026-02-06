@@ -1,0 +1,89 @@
+---
+title: "OpenClaw + MiniMax：配置 MiniMax 模型完整指南"
+description: 详细教程：如何在 OpenClaw 中配置 MiniMax 大模型，国产多模态 AI 平台。
+slug: /providers/minimax
+tags: minimax, models, guide, provider, china
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/minimax_head.webp
+---
+
+MiniMax 是国内领先的多模态 AI 平台，提供文本生成、语音合成、图像理解等多种能力。本教程教你如何在 OpenClaw 中配置和使用 MiniMax。
+
+## 为什么选择 MiniMax？
+
+- **多模态能力** — 支持文本、语音、图像多种模态，一个平台搞定多种需求
+- **性价比高** — 国内直连，价格友好，适合大规模调用
+- **响应迅速** — 国内服务器，低延迟，响应速度快
+
+## 配置方式
+
+运行 `openclaw onboard`，选择 MiniMax 进行配置。
+
+{/* 截图：OpenClaw onboard 选择 MiniMax */}
+
+### 获取 API Key
+
+**1. 访问 [MiniMax 开放平台](https://www.minimax.chat/)，登录后进入控制台：**
+
+{/* 截图：MiniMax 开放平台首页 */}
+
+**2. 进入 API Key 管理页面，点击创建新的 API Key：**
+
+{/* 截图：MiniMax API Key 管理页面 */}
+
+**3. 填写 Key 名称和备注，点击创建：**
+
+{/* 截图：创建 API Key 对话框 */}
+
+**4. 复制生成的 API Key（只显示一次，请妥善保存）：**
+
+{/* 截图：显示生成的 API Key */}
+
+**5. 在 `openclaw onboard` 中选择 MiniMax，粘贴 API Key：**
+
+{/* 截图：OpenClaw 粘贴 MiniMax API Key */}
+
+### 配置示例
+
+在 OpenClaw 配置文件中，MiniMax 的配置格式如下：
+
+```yaml
+models:
+  minimax:
+    apiKey: YOUR_MINIMAX_API_KEY
+    baseURL: https://api.minimax.chat/v1  # 可选，默认值
+    models:
+      - abab6.5-chat
+      - abab6.5s-chat
+      - abab5.5-chat
+```
+
+## 模型选择
+
+| 模型 | 特点 | 适用场景 |
+|------|------|----------|
+| abab6.5-chat | 最强大、能力全面 | 复杂推理、创意写作、专业任务 |
+| abab6.5s-chat | 快速响应、性价比高 | 日常对话、快速生成、大量调用 |
+| abab5.5-chat | 基础模型、经济实惠 | 简单任务、成本敏感场景 |
+
+## 常见问题
+
+### API Key 在哪里查看？
+
+登录 [MiniMax 开放平台](https://www.minimax.chat/)，进入控制台的 API Key 管理页面即可查看和管理。
+
+### 支持哪些功能？
+
+MiniMax 支持文本生成、function calling、流式输出等功能，具体支持的能力请参考官方文档。
+
+### 如何查看用量和计费？
+
+在 MiniMax 控制台的"用量统计"页面可以查看 API 调用量和费用明细。
+
+## 下一步
+
+- 📦 [返回安装教程](/blog/install-openclaw)
+- 🤖 [用 Ollama 跑本地模型](/blog/openclaw-ollama)（零费用、完全离线）
+- 🌐 [查看更多国内模型](/blog/providers)

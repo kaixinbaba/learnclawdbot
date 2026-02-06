@@ -1,0 +1,62 @@
+---
+title: "OpenClaw + OpenAI：配置 GPT-4/GPT-5 完整指南"
+description: 详细教程：如何在 OpenClaw 中配置 OpenAI 模型，包括 OAuth 登录、API Key 配置、模型选择（GPT-4o/GPT-5）等。
+slug: /providers/openai
+tags: openai, gpt, models, guide, provider
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/openai_head.webp
+---
+
+OpenAI 的 GPT 系列是目前最流行的大语言模型。本教程教你如何在 OpenClaw 中配置和使用 GPT-4/GPT-5。
+
+## 为什么选择 OpenAI？
+
+- **生态成熟** — 最早的商用 LLM，文档和社区支持丰富
+- **多模态能力** — GPT-4o 支持图像、音频输入
+- **工具调用** — Function Calling 能力强大
+
+## 配置方式
+
+### 方式一：OAuth 一键登录（推荐）
+
+运行 `openclaw onboard`，选择 OpenAI：
+
+<img src="/images/blog/providers/openai/oauth-select.png" alt="选择 OpenAI" style="max-width: 60%" />
+
+按提示在打开的浏览器中完成 OAuth 登录。登录完成之后，把浏览器地址栏的 URL 复制出来：
+
+<img src="/images/blog/providers/openai/oauth-copy-url.png" alt="复制浏览器地址" style="max-width: 100%" />
+
+粘贴到终端中：
+
+<img src="/images/blog/providers/openai/oauth-paste-terminal.png" alt="粘贴到终端" style="max-width: 100%" />
+
+选择你想用的模型（推荐 `gpt-5.2-codex`）：
+
+<img src="/images/blog/providers/openai/model-select.png" alt="选择模型" style="max-width: 100%" />
+
+
+### 方式二：API Key 配置
+
+1. 访问 [OpenAI Platform](https://platform.openai.com/)
+
+<img src="/images/blog/providers/openai/api-platform.png" alt="OpenAI Platform" style="max-width: 100%" />
+
+2. 创建 API Key
+
+<img src="/images/blog/providers/openai/api-create-key.png" alt="创建 API Key" style="max-width: 70%" />
+
+记得妥善保存好（只显示一次！）：
+
+<img src="/images/blog/providers/openai/api-save-key.png" alt="保存 API Key" style="max-width: 70%" />
+
+3. 在 `openclaw onboard` 中选择 OpenAI，粘贴 API Key：
+
+<img src="/images/blog/providers/openai/api-paste-openclaw.png" alt="粘贴 API Key 到 OpenClaw" style="max-width: 60%" />
+
+## 下一步
+
+- 📦 [返回安装教程](/blog/install-openclaw)
+- 🤖 [用 Ollama 跑本地模型](/blog/openclaw-ollama)

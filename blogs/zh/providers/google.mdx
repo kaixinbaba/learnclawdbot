@@ -1,0 +1,77 @@
+---
+title: "OpenClaw + Google：配置 Gemini 模型完整指南"
+description: 详细教程：如何在 OpenClaw 中配置 Google Gemini 模型，包括 API Key、Antigravity OAuth、Gemini CLI OAuth 三种方式。
+slug: /providers/google
+tags: gemini, google, models, guide, provider
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/google_gemini_head.webp
+---
+
+Google Gemini 是多模态 AI 模型，支持文本、图像、视频、音频输入，而且有慷慨的免费额度。本教程教你如何在 OpenClaw 中配置和使用 Gemini。
+
+## 为什么选择 Gemini？
+
+- **免费额度** — Google AI Studio 提供免费 API 调用额度
+- **多模态原生** — 支持图像、视频、音频理解
+- **长上下文** — Gemini 1.5 Pro 支持 1M token 上下文
+
+## 配置方式
+
+运行 `openclaw onboard`，选择 Google 后会看到三种认证方式：
+
+<img src="/images/blog/providers/google/auth-method-select.png" alt="选择 Google 认证方式" style="max-width: 60%" />
+
+### 方式一：API Key（推荐，最简单）
+
+**1. 打开 [Google AI Studio](https://aistudio.google.com/apikey)，点击"创建 API 密钥"：**
+
+<img src="/images/blog/providers/google/ai-studio-api-keys.png" alt="Google AI Studio API 密钥页面" style="max-width: 100%" />
+
+**2. 填写密钥名称，选择项目，点击"创建密钥"：**
+
+<img src="/images/blog/providers/google/create-key-dialog.png" alt="创建 API 密钥" style="max-width: 80%" />
+
+**3. 创建成功后，点击复制按钮复制 API Key：**
+
+<img src="/images/blog/providers/google/copy-api-key.png" alt="复制 API Key" style="max-width: 100%" />
+
+**4. 在 OpenClaw 中粘贴 API Key：**
+
+<img src="/images/blog/providers/google/paste-api-key.png" alt="粘贴 API Key 到 OpenClaw" style="max-width: 100%" />
+
+**5. 选择默认模型（推荐 `gemini-3-pro-high`）：**
+
+<img src="/images/blog/providers/google/model-select.png" alt="选择 Gemini 模型" style="max-width: 100%" />
+
+搞定！
+
+### 方式二：Antigravity OAuth
+
+选择 "Google Antigravity OAuth" 后，会打开浏览器进行 Google 账号授权。授权成功后看到：
+
+<img src="/images/blog/providers/google/antigravity-oauth-complete.png" alt="Antigravity OAuth 完成" style="max-width: 100%" />
+
+返回终端继续选择模型即可。
+
+### 方式三：Gemini CLI OAuth（高级）
+
+选择 "Google Gemini CLI OAuth"，需要先安装 Gemini CLI 并配置 Google Cloud 项目。授权成功后看到：
+
+<img src="/images/blog/providers/google/gemini-cli-oauth-complete.png" alt="Gemini CLI OAuth 完成" style="max-width: 100%" />
+
+> ⚠️ 此方式需要设置 `GOOGLE_CLOUD_PROJECT` 环境变量，配置较复杂，建议优先使用 API Key 方式。
+
+## 模型选择
+
+| 模型 | 特点 | 适用场景 |
+|------|------|----------|
+| Gemini 3 Pro High | 最强大、支持推理 | 复杂任务、代码生成 |
+| Gemini 3 Pro | 平衡 | 日常对话、大多数任务 |
+| Gemini 3 Flash | 最快 | 简单任务、大量调用 |
+
+## 下一步
+
+- 📦 [返回安装教程](/blog/install-openclaw)
+- 🤖 [用 Ollama 跑本地模型](/blog/openclaw-ollama)（零费用、完全离线）

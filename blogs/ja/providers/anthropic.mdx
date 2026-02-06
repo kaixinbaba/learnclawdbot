@@ -1,0 +1,88 @@
+---
+title: "OpenClaw + Anthropic：Claudeモデル設定完全ガイド"
+description: 詳細チュートリアル：OpenClawでAnthropic Claudeモデルを設定する方法（setup-tokenとAPI Keyの2つの方法、Claude Opus/Sonnet/Haikuをサポート）。
+slug: /providers/anthropic
+tags: claude, anthropic, models, guide, provider
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/anthropic_head.webp
+---
+
+AnthropicのClaudeは現在最も強力なAIモデルの1つで、安全性と長いコンテキスト能力で知られています。このチュートリアルでは、OpenClawでClaudeを設定および使用する方法を説明します。
+
+## Claudeを選ぶ理由は？
+
+- **長いコンテキスト** — 200K tokenのコンテキストウィンドウをサポート
+- **コーディング能力が強い** — Claude Sonnet/Opusはプログラミングタスクで優れたパフォーマンスを発揮
+- **安全で信頼性が高い** — AnthropicのConstitutional AI設計
+
+## 設定方法
+
+`openclaw onboard`を実行し、Anthropicを選択すると2つの認証方法が表示されます：
+
+<img src="/images/blog/providers/anthropic/auth-method-select.png" alt="Anthropic認証方法を選択" style="max-width: 100%" />
+
+### 方法1：Setup Token（Claude サブスクリプションをお持ちのユーザーに推奨）
+
+Claude Pro/Maxサブスクリプションをお持ちの場合、`claude setup-token`を使用して長期tokenを直接生成できます。
+
+**1. ターミナルで実行：**
+
+```bash
+claude setup-token
+```
+
+システムが有効期限1年のOAuth tokenを生成します：
+
+<img src="/images/blog/providers/anthropic/setup-token-generated.png" alt="setup-tokenを生成" style="max-width: 100%" />
+
+**2. tokenをコピーして、OpenClawに貼り付けます：**
+
+<img src="/images/blog/providers/anthropic/paste-setup-token.png" alt="OpenClawにsetup-tokenを貼り付け" style="max-width: 100%" />
+
+完了です！
+
+### 方法2：API Key（有料APIユーザーに推奨）
+
+Anthropic APIの従量課金制を使用している場合は、API Keyを作成する必要があります。
+
+**1. [Anthropic Console](https://console.anthropic.com/)にアクセスし、API keysページに入り、Create Keyをクリック：**
+
+<img src="/images/blog/providers/anthropic/console-api-keys.png" alt="Anthropic Console API Keys" style="max-width: 100%" />
+
+**2. Key名を入力し、Addをクリック：**
+
+<img src="/images/blog/providers/anthropic/create-api-key-dialog.png" alt="API Keyを作成" style="max-width: 70%" />
+
+**3. 生成されたAPI Keyをコピー（一度だけ表示されます！）：**
+
+<img src="/images/blog/providers/anthropic/save-api-key.png" alt="API Keyを保存" style="max-width: 70%" />
+
+**4. `openclaw onboard`でAnthropic API keyを選択し、Keyを貼り付けます：**
+
+<img src="/images/blog/providers/anthropic/paste-api-key.png" alt="OpenClawにAPI Keyを貼り付け" style="max-width: 100%" />
+
+## モデル選択
+
+| モデル | 特徴 | 適用シーン |
+|------|------|----------|
+| Claude Opus | 最も強力、最も高価 | 複雑な推論、創作、高難度タスク |
+| Claude Sonnet | コストパフォーマンスのバランス | 日常会話、コード生成、ほとんどのタスク |
+| Claude Haiku | 最速で最も安価 | 簡単なタスク、迅速な応答、大量の呼び出し |
+
+## よくある質問
+
+### setup-tokenとAPI Key、どちらを使う？
+
+- **Claude Pro/Maxサブスクリプションをお持ち** → setup-tokenを使用、無料枠内で追加費用なし
+- **サブスクリプションなし、従量課金** → API Keyを使用
+
+### tokenの有効期限が切れたらどうする？
+
+`claude setup-token`を再実行して新しいものを生成し、OpenClawで再設定します。
+
+## 次のステップ
+
+- 📦 [インストールチュートリアルに戻る](/blog/install-openclaw)
+- 🤖 [Ollamaでローカルモデルを実行](/blog/openclaw-ollama)（無料、完全オフライン）

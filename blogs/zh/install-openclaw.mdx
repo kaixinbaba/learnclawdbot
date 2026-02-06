@@ -1,278 +1,129 @@
 ---
-title: 如何安装和配置 OpenClaw：从零开始的完整指南
-description: 手把手教你安装 OpenClaw AI 助手，支持 macOS、Linux、Windows（WSL2），包含 npm 安装、源码安装、向导配置、频道连接等完整步骤。
+title: 如何安装 OpenClaw：从零开始 10 分钟跑起来
+description: 一行命令安装 OpenClaw（原 ClawdBot / MoltBot），运行向导完成配置，立即开始和 AI 助手对话。最简洁的安装教程。
 slug: /install-openclaw
-tags: install, setup, guide, basics
-publishedAt: 2026-02-03
+tags: install, setup, guide, openclaw, clawdbot, moltbot
+publishedAt: 2026-02-05
 status: published
 visibility: public
 featuredImageUrl: /images/features/guide_head_new.jpg
 ---
 
-10分钟装好 OpenClaw，从零到第一条消息。
+一行命令安装，一行命令配置，然后就能用了。
 
-## 系统要求
+OpenClaw（原名 ClawdBot / MoltBot）是一个开源 AI 助手框架，可以连接 Telegram、WhatsApp、Discord 等多个聊天平台，帮你处理日常任务。这篇教程带你从零开始，10 分钟跑起来。
 
-开始之前，确认你的环境满足：
+## 前提条件
 
-- **Node.js** >= 22（必需）
-- **操作系统**：macOS / Linux / Windows（仅限 WSL2）
-- **可选**：Brave Search API key（用于网页搜索功能）
+- **Node.js 22+**（必需，[安装指南](https://nodejs.org/)）
+- **macOS / Linux / Windows（WSL2）**
 
-**重要提示**：
-- Windows 用户必须使用 WSL2，不支持原生 Windows 环境
-- 不推荐使用 Bun 运行时（WhatsApp 和 Telegram 集成有兼容性问题）
+> Windows 用户必须使用 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install)，不支持原生 Windows 环境。
 
-## 安装方式一：一键脚本（推荐）
+## 第一步：安装 OpenClaw
 
-最省心的方式。脚本会自动检测系统、安装依赖、处理权限问题。
-
-### macOS / Linux
+打开[终端](/blog/how-to-open-terminal)（不知道终端是什么？[点这里](/blog/how-to-open-terminal)），运行：
 
 ```bash
-curl -fsSL https://openclaw.bot/install.sh | bash
+curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
-脚本会自动：
-- 检测并安装 Node.js（如果系统缺少）
-- 全局安装 OpenClaw 最新版本
-- 处理 npm 权限问题（避免 EACCES 错误）
-- 配置环境变量
+脚本会自动检测系统环境、安装依赖、配置权限，全程无需手动干预。
 
-### Windows（WSL2）
-
-在 PowerShell 中运行：
-
-```powershell
-iwr -useb https://openclaw.ai/install.ps1 | iex
-```
-
-安装完成后，打开 WSL2 终端继续后续配置。
-
-## 安装方式二：npm/pnpm 全局安装
-
-如果你已经有 Node.js 22+，直接用包管理器安装：
-
-```bash
-npm install -g openclaw@latest
-```
-
-或者用 pnpm（更快）：
-
-```bash
-pnpm add -g openclaw@latest
-```
-
-验证安装：
+安装完成后验证一下：
 
 ```bash
 openclaw --version
 ```
 
-## 安装方式三：从源码安装
+> 📖 其他安装方式（npm 全局安装、源码安装等）请参考[官方安装文档](https://docs.openclaw.ai/install#quick-install-recommended)。
 
-适合想要开发或自定义的用户：
-
-```bash
-git clone https://github.com/openclaw/openclaw.git
-cd openclaw
-pnpm install
-pnpm ui:build
-pnpm build
-```
-
-源码安装后，你可以直接运行 `pnpm start` 或将构建产物链接到全局：
-
-```bash
-pnpm link --global
-```
-
-## 运行入门向导
-
-安装完成后，运行一次性配置向导：
+## 第二步：运行配置向导
 
 ```bash
 openclaw onboard --install-daemon
 ```
 
-向导会引导你完成：
+安全风险同意（不同意就结束了） 推荐选 QuickStart
+<img src="/images/blog/install/agree.webp" alt="安全风险同意" style="max-width: 75%" />
 
-1. **模型认证**
-   - OAuth 登录（推荐，支持 Claude、GPT-4 等）
-   - 或手动输入 API Key
+向导会引导你完成所有必要设置：
 
-2. **Gateway 设置**
-   - 端口配置（默认 18789）
-   - 是否启用 HTTPS
-   - 是否安装为系统服务
+**1. 模型认证**
 
-3. **频道连接**（可选）
-   - WhatsApp（扫码连接）
-   - Telegram（Bot Token）
-   - Discord（Bot Token）
+选择 AI 模型提供商并登录：
 
-4. **后台服务安装**
-   - macOS：安装 LaunchAgent，开机自启
-   - Linux：安装 systemd service
-   - WSL2：手动启动或配置开机脚本
+**国际模型：**
+[OpenAI](/blog/providers/openai) ·
+[Anthropic (Claude)](/blog/providers/anthropic) ·
+[Google (Gemini)](/blog/providers/google) ·
 
-向导完成后，配置会保存到 `~/.openclaw/config.yaml`。
+**本地模型：** [Ollama](/blog/openclaw-ollama)（零费用、完全离线）
 
-## 启动 Gateway
+<img src="/images/blog/install/onboard-model-auth.png" alt="OpenClaw 模型认证选择"  style="max-width: 45%" />
 
-Gateway 是 OpenClaw 的 Web 控制台和 API 服务。
+**2. 频道连接（可选）**
 
-### 检查服务状态
+向导会询问是否立即连接聊天平台。你可以现在连接，也可以之后再配置：
+
+- **Telegram** — 输入 Bot Token（从 [@BotFather](https://t.me/botfather) 获取）
+- **WhatsApp** — 扫描二维码
+- **Discord** — 输入 Bot Token
+
+> 📖 各平台详细配置教程：[Telegram](/blog/integrations/telegram) · [WhatsApp](/blog/integrations/whatsapp) · [Discord](/blog/integrations/discord)
+
+## 第三步：开始对话
+
+配置完成后，你有两种方式和 OpenClaw 交互：
+
+### 方式一：终端 TUI
+
+```bash
+openclaw tui
+```
+
+直接在终端里和 AI 对话，适合开发者和命令行爱好者。
+
+<img src="/images/blog/install/tui-chat.png" alt="OpenClaw TUI 终端交互" />
+
+### 方式二：Web Chat
+
+打开浏览器访问：
+
+```
+http://localhost:18789
+```
+
+图形化聊天界面，体验更友好。
+
+<img src="/images/blog/install/webchat.webp" alt="OpenClaw WebChat 界面" />
+
+🎉 **搞定！** 你现在已经有一个运行中的 AI 助手了。
+
+## 常见问题
+
+### `openclaw` 命令找不到？
+
+npm 全局路径不在 `PATH` 中。运行以下命令修复：
+
+```bash
+export PATH="$PATH:$(npm config get prefix)/bin"
+source ~/.zshrc  # 或 ~/.bashrc
+```
+
+或者直接重新运行安装脚本，它会自动处理。
+
+### Gateway 无法访问？
+
+检查端口是否被占用：
 
 ```bash
 openclaw gateway status
 ```
 
-### 手动前台运行（调试用）
-
-```bash
-openclaw gateway --port 18789 --verbose
-```
-
-### 访问 Dashboard
-
-浏览器打开：
-
-```
-http://127.0.0.1:18789/
-```
-
-Dashboard 提供：
-- 实时消息日志
-- 频道连接管理
-- 技能（插件）配置
-- 系统性能监控
-
-## 快速验证
-
-确认 OpenClaw 正常运行：
-
-```bash
-# 查看整体状态
-openclaw status
-
-# 健康检查
-openclaw health
-
-# 安全审计（可选）
-openclaw security audit --deep
-```
-
-如果一切正常，你会看到：
-- ✅ Gateway 运行中
-- ✅ 模型 API 可访问
-- ✅ 已连接的频道列表
-
-## 连接第一个聊天频道
-
-### WhatsApp
-
-扫码连接，最简单：
-
-```bash
-openclaw channel add whatsapp
-```
-
-终端会显示二维码，用 WhatsApp 扫码即可。连接后，OpenClaw 会接管该账号的消息。
-
-详细教程 → [WhatsApp 集成指南](/blog/integrations/whatsapp)
-
-### Telegram
-
-需要先创建 Bot（通过 [@BotFather](https://t.me/botfather)）：
-
-```bash
-openclaw channel add telegram --token YOUR_BOT_TOKEN
-```
-
-详细教程 → [Telegram 集成指南](/blog/integrations/telegram)
-
-### Discord
-
-创建 Discord Bot 并获取 Token：
-
-```bash
-openclaw channel add discord --token YOUR_BOT_TOKEN
-```
-
-详细教程 → [Discord 集成指南](/blog/integrations/discord)
-
-## 常见问题
-
-### `openclaw` 命令找不到
-
-**原因**：安装路径不在 `PATH` 环境变量中。
-
-**解决方案**：
-
-```bash
-# 查看 npm 全局 bin 路径
-npm config get prefix
-
-# 添加到 PATH（macOS/Linux，添加到 ~/.zshrc 或 ~/.bashrc）
-export PATH="$PATH:$(npm config get prefix)/bin"
-
-# 重新加载配置
-source ~/.zshrc
-```
-
-### npm EACCES 权限错误
-
-**原因**：npm 全局目录需要 sudo 权限。
-
-**解决方案**（推荐）：
-
-```bash
-# 改变 npm 默认安装目录
-mkdir -p ~/.npm-global
-npm config set prefix '~/.npm-global'
-echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc
-source ~/.zshrc
-
-# 重新安装
-npm install -g openclaw@latest
-```
-
-或者直接用一键脚本，它会自动处理这个问题。
-
-### Windows 原生环境不支持
-
-OpenClaw 依赖 Unix 系统调用和文件系统特性，Windows 必须用 WSL2：
-
-1. 启用 WSL2：`wsl --install`
-2. 安装 Ubuntu：`wsl --install -d Ubuntu`
-3. 在 WSL2 终端内重新安装 OpenClaw
-
-### Bun 运行时问题
-
-虽然 Bun 性能更好，但 WhatsApp 和 Telegram 的底层库（baileys、grammy）在 Bun 下有兼容性问题。**强烈建议使用 Node.js 22+**。
-
-### Gateway 启动后无法访问
-
-检查端口占用：
-
-```bash
-lsof -i :18789
-```
-
-如果端口被占用，换个端口：
-
-```bash
-openclaw gateway --port 18790
-```
-
 ## 下一步
 
-安装完成！接下来你可以：
-
-- **新手指南** → [OpenClaw 快速上手](/blog/guide) — 了解基本概念和使用方法
-- **Telegram 集成** → [Telegram 机器人详细配置](/blog/integrations/telegram)
-- **WhatsApp 集成** → [WhatsApp 连接与使用技巧](/blog/integrations/whatsapp)
-- **技能开发** → [编写你的第一个 OpenClaw 技能](/blog/skills/first-skill)
-
-有问题？加入 [OpenClaw Discord 社区](https://discord.gg/openclaw) 或查看 [官方文档](https://docs.openclaw.bot)。
+- 📖 [OpenClaw 快速上手指南](/blog/guide) — 了解核心概念
+- 🤖 [用 Ollama 本地运行免费 AI 模型](/blog/openclaw-ollama) — 零费用、完全离线
+- 💬 [支持的平台和服务一览](/blog/supported-services) — 查看所有集成
+- 🏠 [官方文档](https://docs.openclaw.ai) · [Discord 社区](https://discord.gg/clawd)

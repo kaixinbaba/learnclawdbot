@@ -1,0 +1,129 @@
+---
+title: How to Install OpenClaw: Get Running in 10 Minutes from Scratch
+description: Install OpenClaw (formerly ClawdBot / MoltBot) with a single command, complete setup wizard, and start chatting with your AI assistant instantly. The most concise installation guide.
+slug: /install-openclaw
+tags: install, setup, guide, openclaw, clawdbot, moltbot
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/features/guide_head_new.jpg
+---
+
+One command to install, one command to configure, and you're ready to go.
+
+OpenClaw (formerly ClawdBot / MoltBot) is an open-source AI assistant framework that connects to multiple chat platforms like Telegram, WhatsApp, Discord, and more, helping you handle daily tasks. This tutorial will take you from zero to running in 10 minutes.
+
+## Prerequisites
+
+- **Node.js 22+** (required, [installation guide](https://nodejs.org/))
+- **macOS / Linux / Windows (WSL2)**
+
+> Windows users must use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install). Native Windows is not supported.
+
+## Step 1: Install OpenClaw
+
+Open your [terminal](/blog/how-to-open-terminal) (don't know what a terminal is? [Click here](/blog/how-to-open-terminal)) and run:
+
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
+
+The script will automatically detect your system environment, install dependencies, and configure permissions—no manual intervention needed.
+
+After installation, verify:
+
+```bash
+openclaw --version
+```
+
+> 📖 For other installation methods (npm global install, source install, etc.), see the [official installation docs](https://docs.openclaw.ai/install#quick-install-recommended).
+
+## Step 2: Run Setup Wizard
+
+```bash
+openclaw onboard --install-daemon
+```
+
+Agree to security risks (or it ends here). Recommended to select QuickStart.
+<img src="/images/blog/install/agree.webp" alt="Security risk agreement" style="max-width: 75%" />
+
+The wizard will guide you through all necessary setup:
+
+**1. Model Authentication**
+
+Choose your AI model provider and log in:
+
+**International Models:**
+[OpenAI](/blog/providers/openai) ·
+[Anthropic (Claude)](/blog/providers/anthropic) ·
+[Google (Gemini)](/blog/providers/google) ·
+
+**Local Models:** [Ollama](/blog/openclaw-ollama) (zero cost, fully offline)
+
+<img src="/images/blog/install/onboard-model-auth.png" alt="OpenClaw model authentication selection"  style="max-width: 45%" />
+
+**2. Channel Connection (Optional)**
+
+The wizard will ask if you want to connect chat platforms immediately. You can connect now or configure later:
+
+- **Telegram** — Enter Bot Token (get from [@BotFather](https://t.me/botfather))
+- **WhatsApp** — Scan QR code
+- **Discord** — Enter Bot Token
+
+> 📖 Detailed setup guides for each platform: [Telegram](/blog/integrations/telegram) · [WhatsApp](/blog/integrations/whatsapp) · [Discord](/blog/integrations/discord)
+
+## Step 3: Start Chatting
+
+After setup, you have two ways to interact with OpenClaw:
+
+### Option 1: Terminal TUI
+
+```bash
+openclaw tui
+```
+
+Chat with AI directly in your terminal—perfect for developers and CLI enthusiasts.
+
+<img src="/images/blog/install/tui-chat.png" alt="OpenClaw TUI terminal interface" />
+
+### Option 2: Web Chat
+
+Open your browser and visit:
+
+```
+http://localhost:18789
+```
+
+Graphical chat interface with a friendlier experience.
+
+<img src="/images/blog/install/webchat.webp" alt="OpenClaw WebChat interface" />
+
+🎉 **Done!** You now have a running AI assistant.
+
+## Common Issues
+
+### `openclaw` command not found?
+
+The npm global path is not in your `PATH`. Run these commands to fix:
+
+```bash
+export PATH="$PATH:$(npm config get prefix)/bin"
+source ~/.zshrc  # or ~/.bashrc
+```
+
+Or simply re-run the install script—it will handle this automatically.
+
+### Gateway not accessible?
+
+Check if the port is occupied:
+
+```bash
+openclaw gateway status
+```
+
+## Next Steps
+
+- 📖 [OpenClaw Quick Start Guide](/blog/guide) — Learn core concepts
+- 🤖 [Run Free Local AI Models with Ollama](/blog/openclaw-ollama) — Zero cost, fully offline
+- 💬 [Supported Platforms and Services](/blog/supported-services) — See all integrations
+- 🏠 [Official Docs](https://docs.openclaw.ai) · [Discord Community](https://discord.gg/clawd)

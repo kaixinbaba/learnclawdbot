@@ -1,0 +1,62 @@
+---
+title: "OpenClaw + OpenAI: GPT-4/GPT-5 설정 완전 가이드"
+description: 상세 튜토리얼: OpenClaw에서 OpenAI 모델을 설정하는 방법, OAuth 로그인, API Key 설정, 모델 선택(GPT-4o/GPT-5) 등을 포함합니다.
+slug: /providers/openai
+tags: openai, gpt, models, guide, provider
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/openai_head.webp
+---
+
+OpenAI의 GPT 시리즈는 현재 가장 인기 있는 대형 언어 모델입니다. 이 튜토리얼은 OpenClaw에서 GPT-4/GPT-5를 설정하고 사용하는 방법을 안내합니다.
+
+## OpenAI를 선택하는 이유는?
+
+- **성숙한 생태계** — 최초의 상용 LLM으로 문서와 커뮤니티 지원이 풍부합니다
+- **멀티모달 능력** — GPT-4o는 이미지, 오디오 입력을 지원합니다
+- **도구 호출** — Function Calling 능력이 강력합니다
+
+## 설정 방법
+
+### 방법 1: OAuth 원클릭 로그인(권장)
+
+`openclaw onboard`를 실행하고 OpenAI를 선택합니다:
+
+<img src="/images/blog/providers/openai/oauth-select.png" alt="OpenAI 선택" style="max-width: 60%" />
+
+안내에 따라 열린 브라우저에서 OAuth 로그인을 완료합니다. 로그인이 완료되면 브라우저 주소창의 URL을 복사합니다:
+
+<img src="/images/blog/providers/openai/oauth-copy-url.png" alt="브라우저 주소 복사" style="max-width: 100%" />
+
+터미널에 붙여넣기:
+
+<img src="/images/blog/providers/openai/oauth-paste-terminal.png" alt="터미널에 붙여넣기" style="max-width: 100%" />
+
+사용할 모델을 선택합니다(`gpt-5.2-codex` 권장):
+
+<img src="/images/blog/providers/openai/model-select.png" alt="모델 선택" style="max-width: 100%" />
+
+
+### 방법 2: API Key 설정
+
+1. [OpenAI Platform](https://platform.openai.com/) 방문
+
+<img src="/images/blog/providers/openai/api-platform.png" alt="OpenAI Platform" style="max-width: 100%" />
+
+2. API Key 생성
+
+<img src="/images/blog/providers/openai/api-create-key.png" alt="API Key 생성" style="max-width: 70%" />
+
+안전하게 보관하세요(한 번만 표시됩니다!):
+
+<img src="/images/blog/providers/openai/api-save-key.png" alt="API Key 저장" style="max-width: 70%" />
+
+3. `openclaw onboard`에서 OpenAI를 선택하고 API Key를 붙여넣습니다:
+
+<img src="/images/blog/providers/openai/api-paste-openclaw.png" alt="OpenClaw에 API Key 붙여넣기" style="max-width: 60%" />
+
+## 다음 단계
+
+- 📦 [설치 튜토리얼로 돌아가기](/blog/install-openclaw)
+- 🤖 [Ollama로 로컬 모델 실행하기](/blog/openclaw-ollama)

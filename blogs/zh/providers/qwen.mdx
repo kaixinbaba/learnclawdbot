@@ -1,0 +1,93 @@
+---
+title: "OpenClaw + Qwen：配置通义千问完整指南"
+description: 详细教程：如何在 OpenClaw 中配置阿里云通义千问（Qwen）模型。
+slug: /providers/qwen
+tags: qwen, alibaba, models, guide, provider, china
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/qwen_head.webp
+---
+
+通义千问（Qwen）是阿里云开发的大语言模型，在中文理解和生成方面表现优秀。本教程教你如何在 OpenClaw 中配置和使用通义千问。
+
+## 为什么选择通义千问？
+
+- **中文能力强** — 专门针对中文场景训练，在中文任务上表现出色
+- **阿里生态集成** — 与阿里云服务深度集成，企业用户友好
+- **模型丰富** — 提供多种规格模型，从快速响应到深度推理都有覆盖
+
+## 配置方式
+
+运行 `openclaw onboard`，选择 Qwen 进行配置。
+
+{/* 截图：OpenClaw onboard 选择 Qwen */}
+
+### 获取 API Key
+
+**1. 访问 [阿里云 DashScope](https://dashscope.aliyun.com/)，使用阿里云账号登录：**
+
+{/* 截图：DashScope 首页 */}
+
+**2. 点击右上角头像，进入"API-KEY 管理"：**
+
+{/* 截图：用户菜单下拉，API-KEY 管理入口 */}
+
+**3. 点击"创建新的 API-KEY"：**
+
+{/* 截图：API-KEY 管理页面 */}
+
+**4. 填写 API Key 名称和描述（可选），点击确定：**
+
+{/* 截图：创建 API Key 对话框 */}
+
+**5. 复制生成的 API Key（只显示一次，请务必保存）：**
+
+{/* 截图：显示 API Key 的提示框 */}
+
+**6. 在 `openclaw onboard` 中选择 Qwen，粘贴 API Key：**
+
+{/* 截图：OpenClaw 粘贴 Qwen API Key */}
+
+### 配置示例
+
+在 OpenClaw 配置文件中，通义千问的配置格式如下：
+
+```yaml
+models:
+  qwen:
+    apiKey: YOUR_DASHSCOPE_API_KEY
+    baseURL: https://dashscope.aliyuncs.com/compatible-mode/v1  # 可选，默认值
+    models:
+      - qwen-max
+      - qwen-plus
+      - qwen-turbo
+```
+
+## 模型选择
+
+| 模型 | 特点 | 适用场景 |
+|------|------|----------|
+| qwen-max | 最强大、能力全面 | 复杂推理、专业写作、高难度任务 |
+| qwen-plus | 性价比高、能力均衡 | 日常对话、代码生成、大多数任务 |
+| qwen-turbo | 快速响应、经济实惠 | 简单任务、快速生成、大量调用 |
+
+## 常见问题
+
+### 需要开通什么服务？
+
+访问 DashScope 并创建 API Key 即可，无需额外开通其他阿里云服务。首次使用可能需要实名认证。
+
+### 如何查看用量和计费？
+
+登录 [DashScope 控制台](https://dashscope.console.aliyun.com/)，在"用量中心"可以查看 API 调用量和费用详情。
+
+### 支持哪些高级功能？
+
+通义千问支持流式输出、function calling、多模态（部分模型）等功能。具体能力请参考阿里云官方文档。
+
+## 下一步
+
+- 📦 [返回安装教程](/blog/install-openclaw)
+- 🤖 [用 Ollama 跑本地模型](/blog/openclaw-ollama)（零费用、完全离线）
+- 🌐 [查看更多国内模型](/blog/providers)

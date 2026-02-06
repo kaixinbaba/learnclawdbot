@@ -1,0 +1,129 @@
+---
+title: OpenClawのインストール方法：ゼロから10分で起動
+description: 1つのコマンドでOpenClaw（旧ClawdBot / MoltBot）をインストールし、セットアップウィザードで設定を完了して、すぐにAIアシスタントと会話を始められます。最もシンプルなインストールガイド。
+slug: /install-openclaw
+tags: install, setup, guide, openclaw, clawdbot, moltbot
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/features/guide_head_new.jpg
+---
+
+1つのコマンドでインストール、1つのコマンドで設定、そして使えるようになります。
+
+OpenClaw（旧ClawdBot / MoltBot）は、Telegram、WhatsApp、Discordなど複数のチャットプラットフォームに接続できるオープンソースのAIアシスタントフレームワークで、日常のタスクを処理するのに役立ちます。このチュートリアルでは、ゼロから始めて10分で起動する方法を説明します。
+
+## 前提条件
+
+- **Node.js 22+**（必須、[インストールガイド](https://nodejs.org/)）
+- **macOS / Linux / Windows（WSL2）**
+
+> Windowsユーザーは[WSL2](https://learn.microsoft.com/ja-jp/windows/wsl/install)を使用する必要があります。ネイティブなWindows環境はサポートされていません。
+
+## ステップ1：OpenClawのインストール
+
+[ターミナル](/blog/how-to-open-terminal)を開いて（ターミナルとは何か分からない？[こちらをクリック](/blog/how-to-open-terminal)）、以下を実行します：
+
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
+
+スクリプトがシステム環境を自動的にチェックし、依存関係をインストールし、権限を設定します。手動での介入は一切不要です。
+
+インストール完了後、確認してみましょう：
+
+```bash
+openclaw --version
+```
+
+> 📖 その他のインストール方法（npm グローバルインストール、ソースコードからのインストールなど）については、[公式インストールドキュメント](https://docs.openclaw.ai/install#quick-install-recommended)をご参照ください。
+
+## ステップ2：セットアップウィザードの実行
+
+```bash
+openclaw onboard --install-daemon
+```
+
+セキュリティリスクに同意（同意しない場合は終了します） QuickStartを選択することをお勧めします
+<img src="/images/blog/install/agree.webp" alt="セキュリティリスクへの同意" style="max-width: 75%" />
+
+ウィザードがすべての必要な設定をガイドします：
+
+**1. モデル認証**
+
+AIモデルプロバイダーを選択してログインします：
+
+**国際モデル：**
+[OpenAI](/blog/providers/openai) ·
+[Anthropic (Claude)](/blog/providers/anthropic) ·
+[Google (Gemini)](/blog/providers/google) ·
+
+**ローカルモデル：** [Ollama](/blog/openclaw-ollama)（無料、完全オフライン）
+
+<img src="/images/blog/install/onboard-model-auth.png" alt="OpenClawモデル認証の選択"  style="max-width: 45%" />
+
+**2. チャンネル接続（オプション）**
+
+ウィザードがチャットプラットフォームにすぐに接続するかどうかを尋ねます。今接続することも、後で設定することもできます：
+
+- **Telegram** — Bot Tokenを入力（[@BotFather](https://t.me/botfather)から取得）
+- **WhatsApp** — QRコードをスキャン
+- **Discord** — Bot Tokenを入力
+
+> 📖 各プラットフォームの詳細な設定チュートリアル：[Telegram](/blog/integrations/telegram) · [WhatsApp](/blog/integrations/whatsapp) · [Discord](/blog/integrations/discord)
+
+## ステップ3：会話を始める
+
+設定完了後、OpenClawと対話する方法は2つあります：
+
+### 方法1：ターミナルTUI
+
+```bash
+openclaw tui
+```
+
+ターミナル内で直接AIと会話できます。開発者やコマンドライン愛好者に適しています。
+
+<img src="/images/blog/install/tui-chat.png" alt="OpenClaw TUIターミナル対話" />
+
+### 方法2：Web Chat
+
+ブラウザで以下にアクセス：
+
+```
+http://localhost:18789
+```
+
+グラフィカルなチャットインターフェースで、より使いやすい体験ができます。
+
+<img src="/images/blog/install/webchat.webp" alt="OpenClaw WebChatインターフェース" />
+
+🎉 **完了！** これで、動作中のAIアシスタントが手に入りました。
+
+## よくある質問
+
+### `openclaw`コマンドが見つからない？
+
+npm グローバルパスが`PATH`に含まれていません。以下のコマンドを実行して修正します：
+
+```bash
+export PATH="$PATH:$(npm config get prefix)/bin"
+source ~/.zshrc  # または ~/.bashrc
+```
+
+または、インストールスクリプトを再実行すれば、自動的に処理されます。
+
+### Gatewayにアクセスできない？
+
+ポートが使用されているかどうか確認します：
+
+```bash
+openclaw gateway status
+```
+
+## 次のステップ
+
+- 📖 [OpenClawクイックスタートガイド](/blog/guide) — コアコンセプトを理解する
+- 🤖 [Ollamaでローカル無料AIモデルを実行](/blog/openclaw-ollama) — 無料、完全オフライン
+- 💬 [サポートされているプラットフォームとサービス一覧](/blog/supported-services) — すべての統合を確認
+- 🏠 [公式ドキュメント](https://docs.openclaw.ai) · [Discordコミュニティ](https://discord.gg/clawd)

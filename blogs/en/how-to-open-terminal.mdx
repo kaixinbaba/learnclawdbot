@@ -1,0 +1,79 @@
+---
+title: "How to Open Terminal: Complete Guide for macOS, Linux, and Windows"
+description: Never used a terminal before? Don't worry. This tutorial shows you how to find and open the terminal app on macOS, Linux, and Windows, with screenshots and keyboard shortcuts.
+slug: /how-to-open-terminal
+tags: basics, terminal, beginner, guide
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/features/guide_head_new.jpg
+---
+
+A terminal is a tool for typing commands. It looks like a black window where you type things, and your computer executes the corresponding operations. Many developer tools (including OpenClaw) require the terminal for installation and use.
+
+Don't worry, opening it only takes a few seconds.
+
+## macOS
+
+### Method 1: Spotlight Search (Fastest)
+
+1. Press **⌘ Command + Space**
+2. Type **Terminal**
+3. Press Enter to open
+
+<img src="/images/blog/terminal/macos-spotlight.png" alt="macOS Spotlight search terminal" style="max-width: 75%" />
+
+### Method 2: Open from Launchpad
+
+1. Click the **Launchpad** icon (rocket icon) on your Dock
+2. Type **Terminal** in the search bar at the top
+3. Click to open
+
+<img src="/images/blog/terminal/macos-launchpad.png" alt="macOS Launchpad search terminal" style="max-width: 75%" />
+
+> 💡 **Tip:** After opening, right-click the Terminal icon in your Dock and select "Keep in Dock" for quick access next time.
+
+## Linux
+
+### Ubuntu / Debian
+
+Press **Ctrl + Alt + T** and the terminal will pop up immediately.
+
+Alternatively, search for **Terminal** in your application menu.
+
+### Other Distributions
+
+Most Linux distributions allow you to open the terminal with **Ctrl + Alt + T**. If that doesn't work, search for "Terminal" or "Console" in your application menu.
+
+## Windows
+
+OpenClaw requires **WSL2** (Windows Subsystem for Linux) on Windows and does not support native Windows terminal.
+
+### Step 1: Install WSL2
+
+1. Press **Win + X**, select **Terminal (Admin)** or **PowerShell (Admin)**
+2. Type the following command and press Enter:
+
+```powershell
+wsl --install
+```
+
+3. Wait for installation to complete, then **restart your computer**
+
+### Step 2: Open WSL Terminal
+
+After restart:
+1. Press the **Win key**
+2. Search for **Ubuntu** (or the name of the Linux distribution you installed)
+3. Click to open
+
+The first time you open it, you'll be asked to set a username and password. After that, you're ready to go.
+
+> 📖 For more information about WSL2, see [Microsoft's official documentation](https://learn.microsoft.com/en-us/windows/wsl/install).
+
+## After Opening the Terminal...
+
+You should now see a window waiting for your input, with a blinking cursor. Congratulations, you're ready!
+
+Next, you can:
+- 📦 [Install OpenClaw](/blog/install-openclaw) — Just copy and paste one command
