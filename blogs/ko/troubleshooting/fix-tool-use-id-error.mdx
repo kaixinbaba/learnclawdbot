@@ -10,9 +10,9 @@ isPinned: false
 featuredImageUrl: /images/features/fix_tool_use_id_head.webp
 ---
 
-# Fix: LLM Request Rejected — Unexpected tool_use_id in tool_result Blocks
+# 수정: LLM 요청 거부됨 — tool_result 블록에서 예기치 않은 tool_use_id
 
-If you're using OpenClaw and suddenly hit this error:
+OpenClaw를 사용하다가 갑자기 이런 오류가 발생한다면:
 
 ```
 LLM request rejected: messages.58.content.1: unexpected tool_use_id found
@@ -21,103 +21,103 @@ Each tool_result block must have a corresponding tool_use block in the
 previous message.
 ```
 
-Don't panic. This is a **corrupted session file** issue, and it's easy to fix.
+당황하지 마세요. 이것은 **손상된 세션 파일** 문제이며 쉽게 해결할 수 있습니다.
 
-## What Causes This Error?
+## 이 오류의 원인은 무엇인가요?
 
-When OpenClaw communicates with an LLM (like Claude), it sends the conversation history as a series of messages. Each `tool_result` block must reference a `tool_use` block from the previous message — they work in pairs.
+OpenClaw가 LLM(예: Claude)과 통신할 때, 대화 기록을 일련의 메시지로 전송합니다. 각 `tool_result` 블록은 이전 메시지의 `tool_use` 블록을 참조해야 하며, 이들은 쌍으로 작동합니다.
 
-This error occurs when the session history gets out of sync:
+이 오류는 세션 기록이 동기화되지 않을 때 발생합니다:
 
-- A **session compaction** removed the `tool_use` block but left the `tool_result`
-- The process was **interrupted mid-conversation** (crash, force quit, network timeout)
-- A **manual edit** to session files broke the message chain
+- **세션 압축**이 `tool_use` 블록을 제거했지만 `tool_result`는 남겨둠
+- 대화 중에 **프로세스가 중단됨** (충돌, 강제 종료, 네트워크 시간 초과)
+- 세션 파일을 **수동으로 편집**하여 메시지 체인이 손상됨
 
-The LLM API validates the message structure strictly. If it finds a `tool_result` referencing a `tool_use_id` that doesn't exist in the previous message, it rejects the entire request.
+LLM API는 메시지 구조를 엄격하게 검증합니다. 이전 메시지에 존재하지 않는 `tool_use_id`를 참조하는 `tool_result`를 발견하면 전체 요청을 거부합니다.
 
-## The Fix: Delete the Corrupted Session File
+## 해결 방법: 손상된 세션 파일 삭제
 
-### Step 1: Find Your Session Directory
+### 1단계: 세션 디렉토리 찾기
 
-OpenClaw stores session transcripts as `.jsonl` files. The location depends on your setup:
+OpenClaw는 세션 트랜스크립트를 `.jsonl` 파일로 저장합니다. 위치는 설정에 따라 다릅니다:
 
 ```bash
-# Default location on macOS/Linux
+# macOS/Linux의 기본 위치
 ~/.openclaw/agents/main/sessions/
 
-# Check your workspace
+# 작업 공간 확인
 ls -lt ~/.openclaw/agents/main/sessions/*.jsonl | head -5
 ```
 
-### Step 2: Identify the Corrupted File
+### 2단계: 손상된 파일 식별
 
-The most recently modified `.jsonl` file is likely the culprit:
+가장 최근에 수정된 `.jsonl` 파일이 문제의 원인일 가능성이 높습니다:
 
 ```bash
-# List sessions sorted by modification time (newest first)
+# 수정 시간별로 세션 나열 (최신순)
 ls -lt ~/.openclaw/agents/main/sessions/*.jsonl | head -5
 ```
 
-You'll see something like:
+다음과 같이 표시됩니다:
 
 ```
 -rw-r--r--  1 user  staff  245632 Feb  1 12:30 abc123-def456.jsonl
 -rw-r--r--  1 user  staff  189421 Feb  1 10:15 789ghi-012jkl.jsonl
 ```
 
-### Step 3: Delete the Corrupted Session
+### 3단계: 손상된 세션 삭제
 
 ```bash
-# Remove the most recent session file
+# 가장 최근 세션 파일 제거
 rm ~/.openclaw/agents/main/sessions/<corrupted-file>.jsonl
 ```
 
-Or if you prefer a safer approach:
+또는 더 안전한 방법을 선호한다면:
 
 ```bash
-# Move it instead of deleting
+# 삭제 대신 이동
 mv ~/.openclaw/agents/main/sessions/<corrupted-file>.jsonl /tmp/
 ```
 
-### Step 4: Restart the Gateway
+### 4단계: 게이트웨이 재시작
 
 ```bash
 openclaw gateway restart
 ```
 
-That's it. OpenClaw will start a fresh session and the error should be gone.
+이것으로 끝입니다. OpenClaw가 새로운 세션을 시작하면 오류가 사라집니다.
 
-## Prevention Tips
+## 예방 팁
 
-1. **Don't force-quit OpenClaw** during active tool execution — let it finish or use the `/abort` command
-2. **Avoid editing `.jsonl` files manually** — these are machine-generated transcripts
-3. **Regular gateway restarts** can help clear stale session state
-4. If you see frequent compaction issues, consider adjusting your `compaction` settings in the gateway config
+1. **활성 도구 실행 중에 OpenClaw를 강제 종료하지 마세요** — 완료되도록 하거나 `/abort` 명령을 사용하세요
+2. **`.jsonl` 파일을 수동으로 편집하지 마세요** — 이들은 기계 생성 트랜스크립트입니다
+3. **정기적인 게이트웨이 재시작**은 오래된 세션 상태를 지우는 데 도움이 됩니다
+4. 빈번한 압축 문제가 발생하면 게이트웨이 구성에서 `compaction` 설정을 조정하는 것을 고려하세요
 
-## Understanding the Error Message
+## 오류 메시지 이해하기
 
-Let's break down the error:
+오류를 분석해 봅시다:
 
-| Part | Meaning |
-|------|---------|
-| `messages.58.content.1` | The 59th message (0-indexed), 2nd content block |
-| `unexpected tool_use_id` | Found a tool_result referencing a non-existent tool_use |
-| `toolu_01BuEWGgvuHAY9iAXdbCpCEw` | The specific tool call ID that's orphaned |
-| `Each tool_result block must have a corresponding tool_use block` | The API's validation rule |
+| 부분 | 의미 |
+|------|------|
+| `messages.58.content.1` | 59번째 메시지 (0부터 시작), 2번째 콘텐츠 블록 |
+| `unexpected tool_use_id` | 존재하지 않는 tool_use를 참조하는 tool_result 발견 |
+| `toolu_01BuEWGgvuHAY9iAXdbCpCEw` | 고아가 된 특정 도구 호출 ID |
+| `Each tool_result block must have a corresponding tool_use block` | API의 검증 규칙 |
 
-## Related Issues
+## 관련 문제
 
-- **"All models failed"** — Could be a different issue. Check your API keys and model configuration.
-- **"Session too large"** — Your session history might be too long. OpenClaw handles this with automatic compaction.
-- **Gateway won't start** — Try `openclaw doctor` to diagnose issues.
+- **"All models failed"** — 다른 문제일 수 있습니다. API 키와 모델 구성을 확인하세요.
+- **"Session too large"** — 세션 기록이 너무 길 수 있습니다. OpenClaw는 자동 압축으로 이를 처리합니다.
+- **Gateway won't start** — 문제를 진단하려면 `openclaw doctor`를 시도하세요.
 
-## Summary
+## 요약
 
-| Problem | Corrupted session file with orphaned tool_result blocks |
-|---------|--------------------------------------------------------|
-| Cause | Session compaction, crash, or interruption during tool execution |
-| Fix | Delete the most recent `.jsonl` file in the sessions directory |
-| Time to fix | 30 seconds |
-| Prevention | Don't force-quit during tool execution |
+| 문제 | 고아 tool_result 블록이 있는 손상된 세션 파일 |
+|------|---------------------------------------------|
+| 원인 | 세션 압축, 충돌 또는 도구 실행 중 중단 |
+| 해결 방법 | 세션 디렉토리에서 가장 최근의 `.jsonl` 파일 삭제 |
+| 수정 시간 | 30초 |
+| 예방 | 도구 실행 중에 강제 종료하지 않기 |
 
-This is one of those errors that looks scary but has a simple fix. If you encounter it, just clear the session and move on. Happy automating! 🚀
+이것은 무섭게 보이지만 간단한 해결 방법이 있는 오류 중 하나입니다. 이 오류가 발생하면 세션을 지우고 계속 진행하세요. 즐거운 자동화 되세요! 🚀

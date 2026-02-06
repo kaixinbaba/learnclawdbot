@@ -10,9 +10,9 @@ isPinned: false
 featuredImageUrl: /images/features/fix_tool_use_id_head.webp
 ---
 
-# Fix: LLM Request Rejected — Unexpected tool_use_id in tool_result Blocks
+# Исправление: LLM запрос отклонен — Неожиданный tool_use_id в блоках tool_result
 
-If you're using OpenClaw and suddenly hit this error:
+Если вы используете OpenClaw и внезапно столкнулись с этой ошибкой:
 
 ```
 LLM request rejected: messages.58.content.1: unexpected tool_use_id found
@@ -21,103 +21,103 @@ Each tool_result block must have a corresponding tool_use block in the
 previous message.
 ```
 
-Don't panic. This is a **corrupted session file** issue, and it's easy to fix.
+Не паникуйте. Это проблема с **поврежденным файлом сеанса**, и её легко исправить.
 
-## What Causes This Error?
+## Что вызывает эту ошибку?
 
-When OpenClaw communicates with an LLM (like Claude), it sends the conversation history as a series of messages. Each `tool_result` block must reference a `tool_use` block from the previous message — they work in pairs.
+Когда OpenClaw взаимодействует с LLM (например, Claude), он отправляет историю разговора в виде серии сообщений. Каждый блок `tool_result` должен ссылаться на блок `tool_use` из предыдущего сообщения — они работают парами.
 
-This error occurs when the session history gets out of sync:
+Эта ошибка возникает, когда история сеанса теряет синхронизацию:
 
-- A **session compaction** removed the `tool_use` block but left the `tool_result`
-- The process was **interrupted mid-conversation** (crash, force quit, network timeout)
-- A **manual edit** to session files broke the message chain
+- **Сжатие сеанса** удалило блок `tool_use`, но оставило `tool_result`
+- Процесс был **прерван во время разговора** (сбой, принудительное завершение, тайм-аут сети)
+- **Ручное редактирование** файлов сеанса нарушило цепочку сообщений
 
-The LLM API validates the message structure strictly. If it finds a `tool_result` referencing a `tool_use_id` that doesn't exist in the previous message, it rejects the entire request.
+API LLM строго проверяет структуру сообщений. Если он обнаруживает `tool_result`, ссылающийся на `tool_use_id`, которого нет в предыдущем сообщении, он отклоняет весь запрос.
 
-## The Fix: Delete the Corrupted Session File
+## Исправление: Удаление поврежденного файла сеанса
 
-### Step 1: Find Your Session Directory
+### Шаг 1: Найдите каталог сеансов
 
-OpenClaw stores session transcripts as `.jsonl` files. The location depends on your setup:
+OpenClaw хранит расшифровки сеансов в виде файлов `.jsonl`. Расположение зависит от вашей настройки:
 
 ```bash
-# Default location on macOS/Linux
+# Расположение по умолчанию на macOS/Linux
 ~/.openclaw/agents/main/sessions/
 
-# Check your workspace
+# Проверьте вашу рабочую область
 ls -lt ~/.openclaw/agents/main/sessions/*.jsonl | head -5
 ```
 
-### Step 2: Identify the Corrupted File
+### Шаг 2: Определите поврежденный файл
 
-The most recently modified `.jsonl` file is likely the culprit:
+Последний измененный файл `.jsonl` скорее всего является виновником:
 
 ```bash
-# List sessions sorted by modification time (newest first)
+# Список сеансов, отсортированных по времени изменения (сначала новые)
 ls -lt ~/.openclaw/agents/main/sessions/*.jsonl | head -5
 ```
 
-You'll see something like:
+Вы увидите что-то вроде:
 
 ```
 -rw-r--r--  1 user  staff  245632 Feb  1 12:30 abc123-def456.jsonl
 -rw-r--r--  1 user  staff  189421 Feb  1 10:15 789ghi-012jkl.jsonl
 ```
 
-### Step 3: Delete the Corrupted Session
+### Шаг 3: Удалите поврежденный сеанс
 
 ```bash
-# Remove the most recent session file
+# Удалите самый последний файл сеанса
 rm ~/.openclaw/agents/main/sessions/<corrupted-file>.jsonl
 ```
 
-Or if you prefer a safer approach:
+Или если вы предпочитаете более безопасный подход:
 
 ```bash
-# Move it instead of deleting
+# Переместите вместо удаления
 mv ~/.openclaw/agents/main/sessions/<corrupted-file>.jsonl /tmp/
 ```
 
-### Step 4: Restart the Gateway
+### Шаг 4: Перезапустите шлюз
 
 ```bash
 openclaw gateway restart
 ```
 
-That's it. OpenClaw will start a fresh session and the error should be gone.
+Вот и всё. OpenClaw запустит новый сеанс, и ошибка должна исчезнуть.
 
-## Prevention Tips
+## Советы по предотвращению
 
-1. **Don't force-quit OpenClaw** during active tool execution — let it finish or use the `/abort` command
-2. **Avoid editing `.jsonl` files manually** — these are machine-generated transcripts
-3. **Regular gateway restarts** can help clear stale session state
-4. If you see frequent compaction issues, consider adjusting your `compaction` settings in the gateway config
+1. **Не принудительно завершайте OpenClaw** во время выполнения активных инструментов — дайте ему завершиться или используйте команду `/abort`
+2. **Избегайте ручного редактирования файлов `.jsonl`** — это автоматически сгенерированные расшифровки
+3. **Регулярные перезапуски шлюза** могут помочь очистить устаревшее состояние сеанса
+4. Если вы часто сталкиваетесь с проблемами сжатия, рассмотрите возможность настройки параметров `compaction` в конфигурации шлюза
 
-## Understanding the Error Message
+## Понимание сообщения об ошибке
 
-Let's break down the error:
+Давайте разберем ошибку:
 
-| Part | Meaning |
-|------|---------|
-| `messages.58.content.1` | The 59th message (0-indexed), 2nd content block |
-| `unexpected tool_use_id` | Found a tool_result referencing a non-existent tool_use |
-| `toolu_01BuEWGgvuHAY9iAXdbCpCEw` | The specific tool call ID that's orphaned |
-| `Each tool_result block must have a corresponding tool_use block` | The API's validation rule |
+| Часть | Значение |
+|-------|----------|
+| `messages.58.content.1` | 59-е сообщение (индексация с 0), 2-й блок содержимого |
+| `unexpected tool_use_id` | Найден tool_result, ссылающийся на несуществующий tool_use |
+| `toolu_01BuEWGgvuHAY9iAXdbCpCEw` | Конкретный идентификатор вызова инструмента, который остался "сиротой" |
+| `Each tool_result block must have a corresponding tool_use block` | Правило проверки API |
 
-## Related Issues
+## Связанные проблемы
 
-- **"All models failed"** — Could be a different issue. Check your API keys and model configuration.
-- **"Session too large"** — Your session history might be too long. OpenClaw handles this with automatic compaction.
-- **Gateway won't start** — Try `openclaw doctor` to diagnose issues.
+- **"All models failed"** — Может быть другая проблема. Проверьте ваши API-ключи и конфигурацию модели.
+- **"Session too large"** — История вашего сеанса может быть слишком длинной. OpenClaw обрабатывает это с помощью автоматического сжатия.
+- **Gateway won't start** — Попробуйте `openclaw doctor` для диагностики проблем.
 
-## Summary
+## Резюме
 
-| Problem | Corrupted session file with orphaned tool_result blocks |
-|---------|--------------------------------------------------------|
-| Cause | Session compaction, crash, or interruption during tool execution |
-| Fix | Delete the most recent `.jsonl` file in the sessions directory |
-| Time to fix | 30 seconds |
-| Prevention | Don't force-quit during tool execution |
+| Проблема | Поврежденный файл сеанса с "осиротевшими" блоками tool_result |
+|----------|---------------------------------------------------------------|
+| Причина | Сжатие сеанса, сбой или прерывание во время выполнения инструмента |
+| Исправление | Удалите самый последний файл `.jsonl` в каталоге сеансов |
+| Время исправления | 30 секунд |
+| Предотвращение | Не принудительно завершайте во время выполнения инструмента |
 
-This is one of those errors that looks scary but has a simple fix. If you encounter it, just clear the session and move on. Happy automating! 🚀
+Это одна из тех ошибок, которая выглядит страшно, но имеет простое исправление. Если вы столкнулись с ней, просто очистите сеанс и продолжайте. Приятной автоматизации! 🚀
