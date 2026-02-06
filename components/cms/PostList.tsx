@@ -171,25 +171,29 @@ export function PostList({
         <>
           <div className={gridClass}>
             {(!showTagSelector || selectedTagId === null) &&
-              localPosts.map((post, index) => (
+              localPosts
+                .filter((post) => post && post.slug)
+                .map((post, index) => (
+                  <PostCard
+                    key={`local-${post.slug}`}
+                    post={post}
+                    baseUrl={baseUrl}
+                    showCover={showCover}
+                    priority={index < 3}
+                  />
+                ))}
+
+            {posts
+              .filter((post) => post && post.slug)
+              .map((post, index) => (
                 <PostCard
-                  key={`local-${post.slug}`}
-                  post={post}
+                  key={`server-${post.id}`}
+                  post={mapServerPostToCard(post, locale)}
                   baseUrl={baseUrl}
                   showCover={showCover}
-                  priority={index < 3}
+                  priority={localPosts.length === 0 && index < 3}
                 />
               ))}
-
-            {posts.map((post, index) => (
-              <PostCard
-                key={`server-${post.id}`}
-                post={mapServerPostToCard(post, locale)}
-                baseUrl={baseUrl}
-                showCover={showCover}
-                priority={localPosts.length === 0 && index < 3}
-              />
-            ))}
           </div>
 
           {hasMore && (
