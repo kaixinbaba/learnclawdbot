@@ -44,11 +44,13 @@ jobs:
         run: pnpm run build
         env:
           NODE_ENV: production
+          BETTER_AUTH_SECRET: ci-test-secret-not-for-production
 
       - name: Run E2E tests
         run: pnpm exec playwright test
         env:
           CI: true
+          BETTER_AUTH_SECRET: ci-test-secret-not-for-production
 
       - name: Upload test results
         if: always()
