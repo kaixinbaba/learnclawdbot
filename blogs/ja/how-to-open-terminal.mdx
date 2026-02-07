@@ -1,0 +1,79 @@
+---
+title: "ターミナルの開き方：macOS、Linux、Windows完全ガイド"
+description: ターミナルを使ったことがない？心配いりません。このチュートリアルでは、macOS、Linux、Windowsでターミナルアプリを見つけて開く方法を、スクリーンショットとショートカットキーと共に説明します。
+slug: /how-to-open-terminal
+tags: basics, terminal, beginner, guide
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/features/how_to_open_terminal_head.webp
+---
+
+ターミナル（Terminal）は、コマンドを入力するためのツールです。黒いウィンドウのように見え、そこに文字を入力すると、コンピュータが対応する操作を実行します。多くの開発者ツール（OpenClawを含む）は、ターミナルを通じてインストールおよび使用する必要があります。
+
+心配しないでください、開くのには数秒しかかかりません。
+
+## macOS
+
+### 方法1：Spotlight検索（最速）
+
+1. **⌘ Command + スペースキー**を押す
+2. **Terminal**または**ターミナル**と入力
+3. Enterキーを押して開く
+
+<img src="/images/blog/terminal/macos-spotlight.png" alt="macOS Spotlight検索でターミナル" style="max-width: 75%" />
+
+### 方法2：Launchpadから開く
+
+1. Dockの**Launchpad**アイコン（ロケットアイコン）をクリック
+2. 上部の検索バーに**Terminal**または**ターミナル**と入力
+3. クリックして開く
+
+<img src="/images/blog/terminal/macos-launchpad.png" alt="macOS Launchpadでターミナル検索" style="max-width: 75%" />
+
+> 💡 **おすすめ：** 開いた後、Dockのターミナルアイコンを右クリックし、「Dockに追加」を選択すると、次回から直接クリックして開けます。
+
+## Linux
+
+### Ubuntu / Debian
+
+**Ctrl + Alt + T**を押すと、ターミナルが直接開きます。
+
+または、アプリケーションメニューで**Terminal**を検索します。
+
+### その他のディストリビューション
+
+ほとんどのLinuxディストリビューションでは、**Ctrl + Alt + T**でターミナルを開くことができます。できない場合は、アプリケーションメニューで「Terminal」または「Console」を検索してください。
+
+## Windows
+
+OpenClawはWindowsでは**WSL2**（Windows Subsystem for Linux）を通じて実行する必要があります。ネイティブなWindowsターミナルはサポートされていません。
+
+### ステップ1：WSL2のインストール
+
+1. **Win + X**を押して、**ターミナル（管理者）**または**PowerShell（管理者）**を選択
+2. 以下のコマンドを入力してEnterキーを押す：
+
+```powershell
+wsl --install
+```
+
+3. インストールが完了するのを待ってから**コンピュータを再起動**
+
+### ステップ2：WSLターミナルを開く
+
+再起動後：
+1. **Winキー**を押す
+2. **Ubuntu**（またはインストールしたLinuxディストリビューションの名前）を検索
+3. クリックして開く
+
+初回起動時にユーザー名とパスワードの設定を求められます。設定が完了すると使用できます。
+
+> 📖 WSL2の詳細については、[マイクロソフト公式ドキュメント](https://learn.microsoft.com/ja-jp/windows/wsl/install)をご参照ください。
+
+## ターミナルを開いた後……
+
+これで、入力を待っているウィンドウが表示され、カーソルが点滅しているはずです。おめでとうございます、準備完了です！
+
+次にできること：
+- 📦 [OpenClawのインストール](/blog/install-openclaw) — 1行のコマンドをコピー＆ペーストするだけ

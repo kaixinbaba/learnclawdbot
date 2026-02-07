@@ -1,0 +1,79 @@
+---
+title: "터미널 여는 방법: macOS, Linux, Windows 완전 가이드"
+description: 터미널을 한 번도 사용해본 적이 없나요? 걱정 마세요. 이 튜토리얼은 macOS, Linux, Windows에서 터미널 애플리케이션을 찾고 여는 방법을 스크린샷과 단축키와 함께 안내합니다.
+slug: /how-to-open-terminal
+tags: basics, terminal, beginner, guide
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/features/how_to_open_terminal_head.webp
+---
+
+터미널(Terminal)은 명령어를 입력하는 도구로, 검은색 창처럼 보이며 텍스트를 입력하면 컴퓨터가 해당 작업을 실행합니다. 많은 개발자 도구(OpenClaw 포함)는 터미널을 통해 설치하고 사용해야 합니다.
+
+걱정하지 마세요. 여는 데 몇 초밖에 걸리지 않습니다.
+
+## macOS
+
+### 방법 1: Spotlight 검색(가장 빠름)
+
+1. **⌘ Command + 스페이스바** 누르기
+2. **Terminal** 또는 **터미널** 입력
+3. Enter 키를 눌러 열기
+
+<img src="/images/blog/terminal/macos-spotlight.png" alt="macOS Spotlight 터미널 검색" style="max-width: 75%" />
+
+### 방법 2: Launchpad에서 열기
+
+1. Dock 바에서 **Launchpad** 아이콘(로켓 아이콘) 클릭
+2. 상단 검색 바에 **Terminal** 또는 **터미널** 입력
+3. 클릭하여 열기
+
+<img src="/images/blog/terminal/macos-launchpad.png" alt="macOS Launchpad 터미널 검색" style="max-width: 75%" />
+
+> 💡 **추천:** 열린 후 Dock 바의 터미널 아이콘을 오른쪽 클릭하여 "Dock에 유지"를 선택하면 다음번에 직접 클릭하여 열 수 있습니다.
+
+## Linux
+
+### Ubuntu / Debian
+
+**Ctrl + Alt + T**를 누르면 터미널이 바로 나타납니다.
+
+또는 애플리케이션 메뉴에서 **Terminal**을 검색하세요.
+
+### 다른 배포판
+
+대부분의 Linux 배포판은 **Ctrl + Alt + T**로 터미널을 열 수 있습니다. 작동하지 않으면 애플리케이션 메뉴에서 "Terminal" 또는 "Console"을 검색하세요.
+
+## Windows
+
+OpenClaw는 Windows에서 **WSL2**(Windows Subsystem for Linux)를 통해 실행해야 하며, 네이티브 Windows 터미널은 지원하지 않습니다.
+
+### 1단계: WSL2 설치
+
+1. **Win + X**를 누르고 **터미널(관리자)** 또는 **PowerShell(관리자)** 선택
+2. 다음 명령어를 입력하고 Enter:
+
+```powershell
+wsl --install
+```
+
+3. 설치가 완료되면 **컴퓨터를 재시작**합니다
+
+### 2단계: WSL 터미널 열기
+
+재시작 후:
+1. **Win 키** 누르기
+2. **Ubuntu**(또는 설치한 Linux 배포판 이름) 검색
+3. 클릭하여 열기
+
+처음 열 때 사용자 이름과 비밀번호를 설정하라는 메시지가 표시됩니다. 설정을 완료하면 사용할 수 있습니다.
+
+> 📖 WSL2에 대한 자세한 내용은 [Microsoft 공식 문서](https://learn.microsoft.com/ko-kr/windows/wsl/install)를 참조하세요.
+
+## 터미널을 연 후…
+
+이제 입력을 기다리는 창이 보이고 커서가 깜박이고 있을 것입니다. 축하합니다. 준비가 완료되었습니다!
+
+다음 단계:
+- 📦 [OpenClaw 설치하기](/blog/install-openclaw) — 한 줄의 명령어만 복사하여 붙여넣으면 됩니다

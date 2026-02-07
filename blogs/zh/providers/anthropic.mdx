@@ -1,0 +1,88 @@
+---
+title: "OpenClaw + Anthropic：配置 Claude 模型完整指南"
+description: 详细教程：如何在 OpenClaw 中配置 Anthropic Claude 模型，包括 setup-token 和 API Key 两种方式，支持 Claude Opus/Sonnet/Haiku。
+slug: /providers/anthropic
+tags: claude, anthropic, models, guide, provider
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/anthropic_head.webp
+---
+
+Anthropic 的 Claude 是目前最强大的 AI 模型之一，以安全性和长上下文能力著称。本教程教你如何在 OpenClaw 中配置和使用 Claude。
+
+## 为什么选择 Claude？
+
+- **长上下文** — 支持 200K token 上下文窗口
+- **代码能力强** — Claude Sonnet/Opus 在编程任务上表现出色
+- **安全可靠** — Anthropic 的 Constitutional AI 设计
+
+## 配置方式
+
+运行 `openclaw onboard`，选择 Anthropic 后会看到两种认证方式：
+
+<img src="/images/blog/providers/anthropic/auth-method-select.png" alt="选择 Anthropic 认证方式" style="max-width: 100%" />
+
+### 方式一：Setup Token（推荐有 Claude 订阅的用户）
+
+如果你有 Claude Pro/Max 订阅，可以直接用 `claude setup-token` 生成长期 token。
+
+**1. 在终端运行：**
+
+```bash
+claude setup-token
+```
+
+系统会生成一个有效期 1 年的 OAuth token：
+
+<img src="/images/blog/providers/anthropic/setup-token-generated.png" alt="生成 setup-token" style="max-width: 100%" />
+
+**2. 复制 token，粘贴到 OpenClaw：**
+
+<img src="/images/blog/providers/anthropic/paste-setup-token.png" alt="粘贴 setup-token 到 OpenClaw" style="max-width: 100%" />
+
+搞定！
+
+### 方式二：API Key（推荐付费 API 用户）
+
+如果你使用 Anthropic API 按量付费，需要创建 API Key。
+
+**1. 访问 [Anthropic Console](https://console.anthropic.com/)，进入 API keys 页面，点击 Create Key：**
+
+<img src="/images/blog/providers/anthropic/console-api-keys.png" alt="Anthropic Console API Keys" style="max-width: 100%" />
+
+**2. 填写 Key 名称，点击 Add：**
+
+<img src="/images/blog/providers/anthropic/create-api-key-dialog.png" alt="创建 API Key" style="max-width: 70%" />
+
+**3. 复制生成的 API Key（只显示一次！）：**
+
+<img src="/images/blog/providers/anthropic/save-api-key.png" alt="保存 API Key" style="max-width: 70%" />
+
+**4. 在 `openclaw onboard` 中选择 Anthropic API key，粘贴 Key：**
+
+<img src="/images/blog/providers/anthropic/paste-api-key.png" alt="粘贴 API Key 到 OpenClaw" style="max-width: 100%" />
+
+## 模型选择
+
+| 模型 | 特点 | 适用场景 |
+|------|------|----------|
+| Claude Opus | 最强大、最贵 | 复杂推理、创意写作、高难度任务 |
+| Claude Sonnet | 平衡性价比 | 日常对话、代码生成、大多数任务 |
+| Claude Haiku | 最快最便宜 | 简单任务、快速响应、大量调用 |
+
+## 常见问题
+
+### setup-token 还是 API Key？
+
+- **有 Claude Pro/Max 订阅** → 用 setup-token，免费额度内不额外花钱
+- **没有订阅，按量付费** → 用 API Key
+
+### token 过期了怎么办？
+
+重新运行 `claude setup-token` 生成新的，然后在 OpenClaw 中重新配置。
+
+## 下一步
+
+- 📦 [返回安装教程](/blog/install-openclaw)
+- 🤖 [用 Ollama 跑本地模型](/blog/openclaw-ollama)（零费用、完全离线）

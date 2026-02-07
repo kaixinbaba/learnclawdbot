@@ -1,0 +1,77 @@
+---
+title: "OpenClaw + Google: Gemini 모델 설정 완전 가이드"
+description: "상세 튜토리얼: OpenClaw에서 Google Gemini 모델을 설정하는 방법, API Key, Antigravity OAuth, Gemini CLI OAuth 세 가지 방식 포함."
+slug: /providers/google
+tags: gemini, google, models, guide, provider
+publishedAt: 2026-02-05
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/google_gemini_head.webp
+---
+
+Google Gemini는 텍스트, 이미지, 비디오, 오디오 입력을 지원하는 멀티모달 AI 모델이며, 관대한 무료 할당량을 제공합니다. 이 튜토리얼은 OpenClaw에서 Gemini를 설정하고 사용하는 방법을 안내합니다.
+
+## Gemini를 선택하는 이유는?
+
+- **무료 할당량** — Google AI Studio에서 무료 API 호출 할당량 제공
+- **네이티브 멀티모달** — 이미지, 비디오, 오디오 이해 지원
+- **긴 컨텍스트** — Gemini 1.5 Pro는 1M token 컨텍스트 지원
+
+## 설정 방법
+
+`openclaw onboard`를 실행하고 Google을 선택하면 세 가지 인증 방법이 표시됩니다:
+
+<img src="/images/blog/providers/google/auth-method-select.png" alt="Google 인증 방법 선택" style="max-width: 60%" />
+
+### 방법 1: API Key(권장, 가장 간단함)
+
+**1. [Google AI Studio](https://aistudio.google.com/apikey)를 열고 "API 키 만들기"를 클릭합니다:**
+
+<img src="/images/blog/providers/google/ai-studio-api-keys.png" alt="Google AI Studio API 키 페이지" style="max-width: 100%" />
+
+**2. 키 이름을 입력하고 프로젝트를 선택한 후 "키 만들기"를 클릭합니다:**
+
+<img src="/images/blog/providers/google/create-key-dialog.png" alt="API 키 생성" style="max-width: 80%" />
+
+**3. 생성에 성공하면 복사 버튼을 클릭하여 API Key를 복사합니다:**
+
+<img src="/images/blog/providers/google/copy-api-key.png" alt="API Key 복사" style="max-width: 100%" />
+
+**4. OpenClaw에 API Key를 붙여넣습니다:**
+
+<img src="/images/blog/providers/google/paste-api-key.png" alt="OpenClaw에 API Key 붙여넣기" style="max-width: 100%" />
+
+**5. 기본 모델을 선택합니다(`gemini-3-pro-high` 권장):**
+
+<img src="/images/blog/providers/google/model-select.png" alt="Gemini 모델 선택" style="max-width: 100%" />
+
+완료!
+
+### 방법 2: Antigravity OAuth
+
+"Google Antigravity OAuth"를 선택하면 브라우저가 열려 Google 계정 인증을 진행합니다. 인증에 성공하면 다음과 같이 표시됩니다:
+
+<img src="/images/blog/providers/google/antigravity-oauth-complete.png" alt="Antigravity OAuth 완료" style="max-width: 100%" />
+
+터미널로 돌아가 모델 선택을 계속 진행합니다.
+
+### 방법 3: Gemini CLI OAuth(고급)
+
+"Google Gemini CLI OAuth"를 선택하면 먼저 Gemini CLI를 설치하고 Google Cloud 프로젝트를 설정해야 합니다. 인증에 성공하면 다음과 같이 표시됩니다:
+
+<img src="/images/blog/providers/google/gemini-cli-oauth-complete.png" alt="Gemini CLI OAuth 완료" style="max-width: 100%" />
+
+> ⚠️ 이 방법은 `GOOGLE_CLOUD_PROJECT` 환경 변수를 설정해야 하며 설정이 복잡하므로 API Key 방식을 우선적으로 사용하는 것이 좋습니다.
+
+## 모델 선택
+
+| 모델 | 특징 | 적용 시나리오 |
+|------|------|----------|
+| Gemini 3 Pro High | 가장 강력, 추론 지원 | 복잡한 작업, 코드 생성 |
+| Gemini 3 Pro | 균형 | 일상 대화, 대부분의 작업 |
+| Gemini 3 Flash | 가장 빠름 | 간단한 작업, 대량 호출 |
+
+## 다음 단계
+
+- 📦 [설치 튜토리얼로 돌아가기](/blog/install-openclaw)
+- 🤖 [Ollama로 로컬 모델 실행하기](/blog/openclaw-ollama)(무료, 완전 오프라인)
