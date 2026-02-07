@@ -8,6 +8,19 @@ import { test, expect } from '@playwright/test';
 
 const LANGUAGES = ['en', 'zh', 'ja', 'ko', 'ru'] as const;
 
+// 英文是默认语言，使用 /blog 而不是 /en/blog
+const getBlogPath = (lang: string) => {
+  return lang === 'en' ? '/blog' : `/${lang}/blog`;
+};
+
+const getBlogLinkSelector = (lang: string) => {
+  // 英文链接：/blog/xxx（不带语言前缀）
+  // 其他语言：/zh/blog/xxx, /ja/blog/xxx 等
+  return lang === 'en' 
+    ? 'a[href^="/blog/"]:not([href*="/zh/"]):not([href*="/ja/"]):not([href*="/ko/"]):not([href*="/ru/"])' 
+    : `a[href*="/${lang}/blog/"]`;
+};
+
 test.describe('Link Validation Tests', () => {
   
   test('首页内部链接无 404', async ({ page }) => {
@@ -60,7 +73,7 @@ test.describe('Link Validation Tests', () => {
         }
       });
       
-      await page.goto(`/${lang}/blog`);
+      await page.goto(getBlogPath(lang));
       await page.waitForLoadState('networkidle');
       
       if (failed404s.length > 0) {
@@ -72,11 +85,11 @@ test.describe('Link Validation Tests', () => {
     });
 
     test(`${lang} - 所有博客详情页都能访问`, async ({ page }) => {
-      await page.goto(`/${lang}/blog`);
+      await page.goto(getBlogPath(lang));
       await page.waitForLoadState('networkidle');
       
       // 获取所有博客链接
-      const blogLinks = page.locator(`a[href*="/${lang}/blog/"]`);
+      const blogLinks = page.locator(getBlogLinkSelector(lang));
       const count = await blogLinks.count();
       
       console.log(`[${lang}] 找到 ${count} 个博客链接`);
@@ -85,7 +98,8 @@ test.describe('Link Validation Tests', () => {
       const uniqueUrls = new Set<string>();
       for (let i = 0; i < count; i++) {
         const href = await blogLinks.nth(i).getAttribute('href');
-        if (href && href.includes(`/${lang}/blog/`)) {
+        const blogPathPattern = lang === 'en' ? '/blog/' : `/${lang}/blog/`;
+        if (href && href.includes(blogPathPattern)) {
           // 转换为绝对路径
           const fullUrl = href.startsWith('http') ? href : `http://localhost:3000${href}`;
           uniqueUrls.add(fullUrl);
@@ -129,12 +143,11 @@ test.describe('Link Validation Tests', () => {
   test('导航链接测试 - 主要页面都能访问', async ({ page }) => {
     const mainPages = [
       '/',
-      '/en',
       '/zh',
       '/ja',
       '/ko',
       '/ru',
-      '/en/blog',
+      '/blog',      // 英文默认路由
       '/zh/blog',
       '/ja/blog',
       '/ko/blog',
@@ -170,30 +183,37 @@ test.describe('Link Validation Tests', () => {
   test('博客详情页返回列表链接正常', async ({ page }) => {
     // 测试从详情页能否返回列表页
     for (const lang of LANGUAGES.slice(0, 2)) { // 只测试前两种语言
-      await page.goto(`/${lang}/blog`);
+      const blogPath = getBlogPath(lang);
+      await page.goto(blogPath);
       
       // 点击第一篇博客
-      const firstBlogLink = page.locator(`a[href*="/${lang}/blog/"]`).first();
+      const firstBlogLink = page.locator(getBlogLinkSelector(lang)).first();
       await expect(firstBlogLink).toBeVisible({ timeout: 10000 });
       await firstBlogLink.click();
       
       // 验证进入详情页
-      await expect(page).toHaveURL(new RegExp(`/${lang}/blog/.+`));
+      const blogDetailPattern = lang === 'en' ? /\/blog\/.+/ : new RegExp(`/${lang}/blog/.+`);
+      await expect(page).toHaveURL(blogDetailPattern);
       
       // 查找返回链接（可能是面包屑、返回按钮等）
       // 尝试查找常见的返回元素
-      const backLink = page.locator(`a[href="/${lang}/blog"], a[href*="blog"]:has-text("Back"), a[href*="blog"]:has-text("返回")`).first();
+      const backLinkSelector = lang === 'en' 
+        ? `a[href="/blog"], a[href*="blog"]:has-text("Back"), a[href*="blog"]:has-text("返回")`
+        : `a[href="/${lang}/blog"], a[href*="blog"]:has-text("Back"), a[href*="blog"]:has-text("返回")`;
+      const backLink = page.locator(backLinkSelector).first();
       
       if (await backLink.count() > 0) {
         await backLink.click();
         
         // 验证返回到列表页
-        await expect(page).toHaveURL(new RegExp(`/${lang}/blog$`));
+        const blogListPattern = lang === 'en' ? /\/blog$/ : new RegExp(`/${lang}/blog$`);
+        await expect(page).toHaveURL(blogListPattern);
         console.log(`✓ [${lang}] 返回链接正常`);
       } else {
         // 如果没有返回链接，直接导航测试
-        await page.goto(`/${lang}/blog`);
-        await expect(page).toHaveURL(new RegExp(`/${lang}/blog$`));
+        await page.goto(blogPath);
+        const blogListPattern = lang === 'en' ? /\/blog$/ : new RegExp(`/${lang}/blog$`);
+        await expect(page).toHaveURL(blogListPattern);
         console.log(`ℹ [${lang}] 未找到返回链接，通过直接导航验证`);
       }
     }

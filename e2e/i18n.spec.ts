@@ -16,7 +16,11 @@ const getBlogPath = (lang: string) => {
 };
 
 const getBlogLinkSelector = (lang: string) => {
-  return lang === 'en' ? 'a[href*="/blog/"]' : `a[href*="/${lang}/blog/"]`;
+  // 英文链接：/blog/xxx（不带语言前缀）
+  // 其他语言：/zh/blog/xxx, /ja/blog/xxx 等
+  return lang === 'en' 
+    ? 'a[href^="/blog/"]:not([href*="/zh/"]):not([href*="/ja/"]):not([href*="/ko/"]):not([href*="/ru/"])' 
+    : `a[href*="/${lang}/blog/"]`;
 };
 
 test.describe('Internationalization Tests', () => {
@@ -115,8 +119,8 @@ test.describe('Internationalization Tests', () => {
       // 访问详情页
       await page.goto(href!);
       
-      // 验证详情页加载成功
-      await expect(page.locator('article, main, [role="main"]')).toBeVisible();
+      // 验证详情页加载成功（优先检查 article）
+      await expect(page.locator('article').first()).toBeVisible();
       
       console.log(`[${lang}] 详情页访问成功: ${href}`);
     }

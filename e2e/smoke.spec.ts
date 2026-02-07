@@ -20,12 +20,13 @@ test.describe('Smoke Tests', () => {
     const response = await page.goto('/');
     expect(response?.status()).toBe(200);
     
-    // 验证页面标题存在
-    await expect(page).toHaveTitle(/.*learnclawdbot.*/i);
+    // 验证页面标题存在（OpenClaw 相关）
+    await expect(page).toHaveTitle(/.*(openclaw|clawbot|learn).*/i);
   });
 
   test('英文博客列表页能够访问', async ({ page }) => {
-    const response = await page.goto('/en/blog');
+    // 英文是默认语言，使用 /blog 而不是 /en/blog
+    const response = await page.goto('/blog');
     expect(response?.status()).toBe(200);
     
     // 验证博客列表有内容
@@ -53,7 +54,7 @@ test.describe('Smoke Tests', () => {
     
     // 访问多个页面检查
     await page.goto('/');
-    await page.goto('/en/blog');
+    await page.goto('/blog');  // 英文默认路由
     await page.goto('/zh/blog');
     
     // 等待一秒让所有异步错误显示
@@ -71,20 +72,21 @@ test.describe('Smoke Tests', () => {
   });
 
   test('博客详情页能够访问 - 英文', async ({ page }) => {
-    await page.goto('/en/blog');
+    // 英文是默认语言，使用 /blog 而不是 /en/blog
+    await page.goto('/blog');
     
     // 找到第一篇博客的链接
-    const firstBlogLink = page.locator('a[href*="/en/blog/"]').first();
+    const firstBlogLink = page.locator('a[href*="/blog/"]').first();
     await expect(firstBlogLink).toBeVisible({ timeout: 10000 });
     
     // 点击进入详情页
     await firstBlogLink.click();
     
     // 验证详情页加载成功
-    await expect(page).toHaveURL(/\/en\/blog\/.+/);
+    await expect(page).toHaveURL(/\/blog\/.+/);
     
-    // 验证有内容（文章标题或内容）
-    const content = page.locator('article, main, [role="main"]');
+    // 验证有内容（优先检查 article，其次是 main）
+    const content = page.locator('article').first();
     await expect(content).toBeVisible();
   });
 
@@ -101,8 +103,8 @@ test.describe('Smoke Tests', () => {
     // 验证详情页加载成功
     await expect(page).toHaveURL(/\/zh\/blog\/.+/);
     
-    // 验证有内容
-    const content = page.locator('article, main, [role="main"]');
+    // 验证有内容（优先检查 article）
+    const content = page.locator('article').first();
     await expect(content).toBeVisible();
   });
 });

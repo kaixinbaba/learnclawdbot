@@ -14,7 +14,11 @@ const getBlogPath = (lang: string) => {
 };
 
 const getBlogLinkSelector = (lang: string) => {
-  return lang === 'en' ? 'a[href*="/blog/"]' : `a[href*="/${lang}/blog/"]`;
+  // 英文链接：/blog/xxx（不带语言前缀）
+  // 其他语言：/zh/blog/xxx, /ja/blog/xxx 等
+  return lang === 'en' 
+    ? 'a[href^="/blog/"]:not([href*="/zh/"]):not([href*="/ja/"]):not([href*="/ko/"]):not([href*="/ru/"])' 
+    : `a[href*="/${lang}/blog/"]`;
 };
 
 test.describe('Image Loading Tests', () => {
