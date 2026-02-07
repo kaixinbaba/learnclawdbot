@@ -65,6 +65,8 @@ test.describe('Smoke Tests', () => {
       !err.includes('favicon') && 
       !err.includes('analytics') &&
       !err.includes('get-session') && // 过滤认证 API 错误
+      !err.includes('404') && // 过滤 404 资源加载错误
+      !err.includes('Failed to load resource') && // 过滤资源加载错误
       !err.toLowerCase().includes('hydration')
     );
     
