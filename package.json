@@ -20,7 +20,10 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx lib/db/seed/index.ts",
-    "db:export-pricing": "tsx lib/db/seed/export.ts"
+    "db:export-pricing": "tsx lib/db/seed/export.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.6",
@@ -161,6 +164,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.16",
     "@types/hast": "^3.0.4",
     "@types/node": "^20",
@@ -170,6 +174,7 @@
     "drizzle-kit": "^0.31.4",
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
+    "playwright": "^1.58.2",
     "postcss": "^8.4.38",
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.16",
