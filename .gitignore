@@ -135,3 +135,8 @@ dist
 
 # Auto-generated migrations (managed by drizzle)
 lib/db/migrations/
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
+E2E_TEST_REPORT.md
