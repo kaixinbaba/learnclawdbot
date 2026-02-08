@@ -65,9 +65,9 @@ export default function MobileMenu() {
                 <DropdownMenuSubTrigger className="px-2 py-1.5">
                   {link.name}
                 </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="w-40">
+                <DropdownMenuSubContent className="w-48">
                   {link.items.map((child) => (
-                    <DropdownMenuItem key={child.name}>
+                    <DropdownMenuItem key={child.name} asChild className="cursor-pointer py-3">
                       <Link
                         href={child.href}
                         title={child.name}
@@ -78,7 +78,7 @@ export default function MobileMenu() {
                         }
                         target={child.target || "_self"}
                         rel={child.rel || undefined}
-                        className="flex flex-col gap-y-1"
+                        className="flex flex-col gap-y-1 w-full"
                       >
                         <span>{child.name}</span>
                         {child.description && (
@@ -92,7 +92,7 @@ export default function MobileMenu() {
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             ) : (
-              <DropdownMenuItem key={link.name}>
+              <DropdownMenuItem key={link.name} asChild className="cursor-pointer py-3">
                 <NavLink
                   href={link.href}
                   title={link.name}
@@ -101,6 +101,7 @@ export default function MobileMenu() {
                   }
                   target={link.target || "_self"}
                   rel={link.rel || undefined}
+                  className="w-full"
                 >
                   {link.name}
                 </NavLink>
@@ -109,7 +110,7 @@ export default function MobileMenu() {
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <div className="flex items-center justify-between px-1">
+        <div className="flex items-center justify-between px-2 py-2">
           <LocaleSwitcher />
         </div>
       </DropdownMenuContent>
