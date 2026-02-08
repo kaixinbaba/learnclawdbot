@@ -50,7 +50,7 @@ export default function LocaleSwitcher() {
       <DropdownMenuContent align="end">
         <DropdownMenuRadioGroup value={locale} onValueChange={onSelectChange}>
           {UI_LOCALES.map((cur) => (
-            <DropdownMenuRadioItem key={cur} value={cur}>
+            <DropdownMenuRadioItem key={cur} value={cur} className="py-2.5 cursor-pointer">
               {LOCALE_NAMES[cur]}
             </DropdownMenuRadioItem>
           ))}
