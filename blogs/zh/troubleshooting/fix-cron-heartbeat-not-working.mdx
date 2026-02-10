@@ -1,0 +1,275 @@
+---
+title: "修复：OpenClaw 中 Cron 任务和 Heartbeat 不工作"
+description: "OpenClaw cron 调度器问题、heartbeat 失败和定时任务不触发的全面排查指南"
+slug: /troubleshooting/fix-cron-heartbeat-not-working
+tags: troubleshooting, cron, heartbeat, scheduler, fix
+publishedAt: 2026-02-10
+status: published
+visibility: public
+isPinned: false
+featuredImageUrl: /images/features/cron_heartbeat_troubleshooting_head.webp
+---
+
+# 修复：OpenClaw 中 Cron 任务和 Heartbeat 不工作
+
+OpenClaw 用户最常遇到的问题之一就是定时任务不触发。你已经设置了 cron 任务或 heartbeat,但什么都没发生。本指南涵盖最常见的原因和修复方法。
+
+## 快速诊断
+
+在深入排查之前,先运行这些检查:
+
+```bash
+# Check cron status
+openclaw cron status
+
+# List all scheduled jobs
+openclaw cron list
+
+# Check gateway logs for scheduler errors
+tail -100 ~/.openclaw/logs/gateway.log | grep -i "cron\|heartbeat\|scheduler"
+```
+
+## 常见问题 #1: Cron 任务永远不触发
+
+### 症状
+- 任务显示 `enabled: true` 但从不执行
+- 日志中没有错误,任务只是默默地不运行
+- `openclaw cron list` 显示任务但 `lastRun` 始终为 null
+
+### 原因: Gateway 未运行或已重启
+
+Cron 任务只在 Gateway 运行时触发。如果你:
+- 关闭了终端
+- 重启了电脑  
+- 运行了 `openclaw gateway stop`
+
+你的 cron 任务也停止了。
+
+### 修复方法
+
+```bash
+# Check if gateway is running
+openclaw gateway status
+
+# If not running, start it
+openclaw gateway start
+
+# Or restart to pick up config changes
+openclaw gateway restart
+```
+
+**专业提示:** 使用 `openclaw gateway start --daemon` 在后台运行,或设置系统服务。
+
+---
+
+## 常见问题 #2: Heartbeat 不执行
+
+### 症状
+- 配置了 heartbeat 轮询但智能体从不响应
+- 没有 `HEARTBEAT_OK` 或主动消息
+- 直接发消息时工作正常
+
+### 原因 A: 错误的 wakeMode
+
+最常见的原因是使用 `wakeMode: "next-heartbeat"` 而不理解它的含义。
+
+```json
+// ❌ 这会等待下一个 heartbeat 周期,而不是立即执行
+{
+  "schedule": { "kind": "every", "everyMs": 1800000 },
+  "payload": { "kind": "systemEvent", "text": "Check inbox" },
+  "wakeMode": "next-heartbeat"
+}
+```
+
+### 修复方法
+
+要立即执行,使用 `wakeMode: "now"` 或省略它:
+
+```json
+// ✅ 在调度时立即触发
+{
+  "schedule": { "kind": "every", "everyMs": 1800000 },
+  "payload": { "kind": "systemEvent", "text": "Check inbox" }
+}
+```
+
+### 原因 B: HEARTBEAT.md 为空
+
+如果你的 `HEARTBEAT.md` 文件为空或只包含注释,智能体会正确返回 `HEARTBEAT_OK` 并不做任何事情。
+
+### 修复方法
+
+向 `HEARTBEAT.md` 添加实际任务:
+
+```markdown
+# HEARTBEAT.md
+
+- Check for unread emails (if not checked in last 2 hours)
+- Review calendar for upcoming events in next 24h
+- Check project status if any tasks are overdue
+```
+
+---
+
+## 常见问题 #3: 一次性任务无限循环
+
+### 症状
+- 创建了一个 `schedule.kind: "at"` 的一次性任务
+- 任务重复触发而不是只执行一次
+- 状态显示 "skipped" 但任务继续触发
+
+### 原因: deleteAfterRun 与 Skipped 状态的 Bug
+
+在某些版本中,带有 `deleteAfterRun: true` 的一次性任务在状态为 "skipped" 时不能正确删除。
+
+### 修复方法
+
+**选项 1:** 运行后手动删除任务:
+```bash
+openclaw cron remove --id <job-id>
+```
+
+**选项 2:** 使用变通的调度方式:
+```json
+{
+  "schedule": { 
+    "kind": "at", 
+    "at": "2026-02-10T15:00:00Z"
+  },
+  "deleteAfterRun": true,
+  "payload": { "kind": "systemEvent", "text": "Reminder: Call mom" }
+}
+```
+
+**选项 3:** 更新到修复了此问题的最新 OpenClaw 版本。
+
+---
+
+## 常见问题 #4: 隔离会话任务不通知
+
+### 症状
+- `sessionTarget: "isolated"` 任务运行但你从未看到输出
+- 任务在 `openclaw cron runs` 中显示为已完成
+- 没有消息发送到你的聊天
+
+### 原因: 缺失或配置错误的 Delivery
+
+隔离会话任务需要显式的 delivery 配置来通知结果。
+
+### 修复方法
+
+添加 `delivery` 配置:
+
+```json
+{
+  "sessionTarget": "isolated",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "Summarize today's news"
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "telegram"  // or your channel
+  }
+}
+```
+
+---
+
+## 常见问题 #5: 时区混淆
+
+### 症状
+- 任务在错误的时间触发
+- 早上 8:00 的任务在凌晨 3:00 或午夜触发
+- 调度看起来正确但时间不对
+
+### 原因: UTC vs 本地时间
+
+OpenClaw 默认使用 UTC。如果你写:
+```json
+{ "kind": "at", "at": "2026-02-10T08:00:00" }
+```
+那是 **UTC** 早上 8:00,而不是你的本地时间。
+
+### 修复方法
+
+**选项 1:** 在调度中添加时区:
+```json
+{
+  "kind": "cron",
+  "expr": "0 8 * * *",
+  "tz": "Asia/Shanghai"  // or America/New_York, Europe/London, etc.
+}
+```
+
+**选项 2:** 使用带时区偏移的 ISO 格式:
+```json
+{
+  "kind": "at",
+  "at": "2026-02-10T08:00:00+08:00"
+}
+```
+
+---
+
+## 调试检查清单
+
+如果以上方法都没有解决你的问题,按照这个清单逐项检查:
+
+### 1. 验证 Gateway 正在运行
+```bash
+openclaw gateway status
+# Should show "running"
+```
+
+### 2. 检查任务配置
+```bash
+openclaw cron list --include-disabled
+# Verify schedule, payload, and enabled status
+```
+
+### 3. 查看最近的运行记录
+```bash
+openclaw cron runs --id <job-id> --limit 10
+# Check status of recent executions
+```
+
+### 4. 检查日志中的错误
+```bash
+tail -f ~/.openclaw/logs/gateway.log | grep -E "cron|scheduler|heartbeat"
+```
+
+### 5. 测试手动触发
+```bash
+openclaw cron run --id <job-id>
+# Forces immediate execution to test if job works
+```
+
+### 6. 验证 JSON 语法
+```bash
+# Check your config file for JSON errors
+cat ~/.openclaw/openclaw.json | jq .
+```
+
+---
+
+## 预防提示
+
+1. **始终使用 `openclaw cron run` 测试**,然后再依赖调度
+2. **设置日志记录**来捕获调度器事件
+3. **在所有调度中使用显式时区**
+4. **使用 heartbeat 监控** - 设置每日 "I'm alive" 任务来捕获静默失败
+5. **保持 OpenClaw 更新** - 许多调度器 bug 在新版本中已修复
+
+---
+
+## 仍然卡住了?
+
+如果你已经尝试了一切:
+
+1. 查看 [OpenClaw GitHub Issues](https://github.com/openclaw/openclaw/issues) 了解已知 bug
+2. 运行 `openclaw doctor` 进行自动诊断
+3. 在 [OpenClaw Discord](https://discord.com/invite/clawd) 中分享你的配置(已删除敏感信息)
+
+记住: 大多数 cron 问题归结为 gateway 未运行、时区混淆或缺少 delivery 配置。从这三点开始排查。
