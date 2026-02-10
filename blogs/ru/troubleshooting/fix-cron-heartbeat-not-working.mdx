@@ -1,0 +1,275 @@
+---
+title: "Исправление: Cron задачи и Heartbeat не работают в OpenClaw"
+description: "Полное руководство по устранению проблем планировщика cron в OpenClaw, сбоев heartbeat и невыполнения запланированных задач"
+slug: /troubleshooting/fix-cron-heartbeat-not-working
+tags: troubleshooting, cron, heartbeat, scheduler, fix
+publishedAt: 2026-02-10
+status: published
+visibility: public
+isPinned: false
+featuredImageUrl: /images/features/cron_heartbeat_troubleshooting_head.webp
+---
+
+# Исправление: Cron задачи и Heartbeat не работают в OpenClaw
+
+Одна из самых распространенных проблем, с которыми сталкиваются пользователи OpenClaw, — это невыполнение запланированных задач. Вы настроили cron задачу или heartbeat, но ничего не происходит. Это руководство охватывает наиболее частые причины и способы их устранения.
+
+## Быстрая диагностика
+
+Перед углубленным анализом выполните эти проверки:
+
+```bash
+# Check cron status
+openclaw cron status
+
+# List all scheduled jobs
+openclaw cron list
+
+# Check gateway logs for scheduler errors
+tail -100 ~/.openclaw/logs/gateway.log | grep -i "cron\|heartbeat\|scheduler"
+```
+
+## Распространенная проблема #1: Cron задачи никогда не запускаются
+
+### Симптомы
+- Задачи показывают `enabled: true`, но никогда не выполняются
+- Нет ошибок в логах, задачи просто молча не запускаются
+- `openclaw cron list` показывает задачи, но `lastRun` всегда null
+
+### Причина: Gateway не запущен или перезапущен
+
+Cron задачи запускаются только когда Gateway работает. Если вы:
+- Закрыли терминал
+- Перезапустили компьютер  
+- Выполнили `openclaw gateway stop`
+
+Ваши cron задачи тоже остановились.
+
+### Решение
+
+```bash
+# Check if gateway is running
+openclaw gateway status
+
+# If not running, start it
+openclaw gateway start
+
+# Or restart to pick up config changes
+openclaw gateway restart
+```
+
+**Совет профи:** Используйте `openclaw gateway start --daemon` для работы в фоновом режиме или настройте системную службу.
+
+---
+
+## Распространенная проблема #2: Heartbeat не выполняется
+
+### Симптомы
+- Настроен опрос heartbeat, но агент не отвечает
+- Нет `HEARTBEAT_OK` или проактивных сообщений
+- При прямом сообщении работает нормально
+
+### Причина A: Неправильный wakeMode
+
+Самая распространенная причина — использование `wakeMode: "next-heartbeat"` без понимания его значения.
+
+```json
+// ❌ Это ожидает следующего цикла heartbeat, а не немедленного выполнения
+{
+  "schedule": { "kind": "every", "everyMs": 1800000 },
+  "payload": { "kind": "systemEvent", "text": "Check inbox" },
+  "wakeMode": "next-heartbeat"
+}
+```
+
+### Решение
+
+Для немедленного выполнения используйте `wakeMode: "now"` или опустите его:
+
+```json
+// ✅ Запускается немедленно при планировании
+{
+  "schedule": { "kind": "every", "everyMs": 1800000 },
+  "payload": { "kind": "systemEvent", "text": "Check inbox" }
+}
+```
+
+### Причина B: Пустой HEARTBEAT.md
+
+Если ваш файл `HEARTBEAT.md` пуст или содержит только комментарии, агент корректно возвращает `HEARTBEAT_OK` и ничего не делает.
+
+### Решение
+
+Добавьте реальные задачи в `HEARTBEAT.md`:
+
+```markdown
+# HEARTBEAT.md
+
+- Check for unread emails (if not checked in last 2 hours)
+- Review calendar for upcoming events in next 24h
+- Check project status if any tasks are overdue
+```
+
+---
+
+## Распространенная проблема #3: Одноразовые задачи зацикливаются
+
+### Симптомы
+- Создана одноразовая задача с `schedule.kind: "at"`
+- Задача запускается повторно вместо одного раза
+- Статус показывает "skipped", но задача продолжает срабатывать
+
+### Причина: Баг deleteAfterRun со статусом Skipped
+
+В некоторых версиях одноразовые задачи с `deleteAfterRun: true` не удаляются должным образом, когда их статус "skipped".
+
+### Решение
+
+**Вариант 1:** Вручную удалите задачу после выполнения:
+```bash
+openclaw cron remove --id <job-id>
+```
+
+**Вариант 2:** Используйте обходное решение для расписания:
+```json
+{
+  "schedule": { 
+    "kind": "at", 
+    "at": "2026-02-10T15:00:00Z"
+  },
+  "deleteAfterRun": true,
+  "payload": { "kind": "systemEvent", "text": "Reminder: Call mom" }
+}
+```
+
+**Вариант 3:** Обновитесь до последней версии OpenClaw, где это исправлено.
+
+---
+
+## Распространенная проблема #4: Изолированные задачи не уведомляют
+
+### Симптомы
+- Задачи с `sessionTarget: "isolated"` выполняются, но вы не видите вывод
+- Задача показывает статус завершена в `openclaw cron runs`
+- Сообщение не доставляется в ваш чат
+
+### Причина: Отсутствует или неправильно настроена доставка
+
+Изолированные задачи требуют явной настройки delivery для объявления результатов.
+
+### Решение
+
+Добавьте конфигурацию `delivery`:
+
+```json
+{
+  "sessionTarget": "isolated",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "Summarize today's news"
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "telegram"  // or your channel
+  }
+}
+```
+
+---
+
+## Распространенная проблема #5: Путаница с часовыми поясами
+
+### Симптомы
+- Задачи запускаются в неправильное время
+- Задача на 8:00 утра запускается в 3:00 утра или в полночь
+- Расписание выглядит правильно, но время не совпадает
+
+### Причина: UTC vs местное время
+
+OpenClaw использует UTC по умолчанию. Если вы пишете:
+```json
+{ "kind": "at", "at": "2026-02-10T08:00:00" }
+```
+Это 8:00 утра **UTC**, а не ваше местное время.
+
+### Решение
+
+**Вариант 1:** Добавьте часовой пояс в расписание:
+```json
+{
+  "kind": "cron",
+  "expr": "0 8 * * *",
+  "tz": "Asia/Shanghai"  // or America/New_York, Europe/London, etc.
+}
+```
+
+**Вариант 2:** Используйте ISO формат со смещением часового пояса:
+```json
+{
+  "kind": "at",
+  "at": "2026-02-10T08:00:00+08:00"
+}
+```
+
+---
+
+## Чек-лист отладки
+
+Если ни одно из вышеперечисленного не решило вашу проблему, пройдите по этому списку:
+
+### 1. Проверьте, что Gateway запущен
+```bash
+openclaw gateway status
+# Should show "running"
+```
+
+### 2. Проверьте конфигурацию задачи
+```bash
+openclaw cron list --include-disabled
+# Verify schedule, payload, and enabled status
+```
+
+### 3. Просмотрите недавние запуски
+```bash
+openclaw cron runs --id <job-id> --limit 10
+# Check status of recent executions
+```
+
+### 4. Проверьте логи на ошибки
+```bash
+tail -f ~/.openclaw/logs/gateway.log | grep -E "cron|scheduler|heartbeat"
+```
+
+### 5. Протестируйте ручной запуск
+```bash
+openclaw cron run --id <job-id>
+# Forces immediate execution to test if job works
+```
+
+### 6. Проверьте синтаксис JSON
+```bash
+# Check your config file for JSON errors
+cat ~/.openclaw/openclaw.json | jq .
+```
+
+---
+
+## Советы по предотвращению
+
+1. **Всегда тестируйте с `openclaw cron run`** перед тем, как полагаться на расписание
+2. **Настройте логирование** для захвата событий планировщика
+3. **Используйте явные часовые пояса** во всех расписаниях
+4. **Мониторьте с помощью heartbeat** - настройте ежедневную задачу "I'm alive" для отслеживания тихих сбоев
+5. **Поддерживайте OpenClaw в актуальном состоянии** - многие баги планировщика исправлены в новых версиях
+
+---
+
+## Все еще застряли?
+
+Если вы попробовали все:
+
+1. Проверьте [OpenClaw GitHub Issues](https://github.com/openclaw/openclaw/issues) на известные баги
+2. Запустите `openclaw doctor` для автоматической диагностики
+3. Поделитесь своей конфигурацией (с удаленными данными) в [OpenClaw Discord](https://discord.com/invite/clawd)
+
+Помните: большинство проблем с cron сводятся к тому, что gateway не запущен, путанице с часовыми поясами или отсутствию конфигурации delivery. Начните с этих трех пунктов.
