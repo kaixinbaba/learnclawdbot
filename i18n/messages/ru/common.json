@@ -137,29 +137,29 @@
     }
   },
   "About": {
-    "title": "About OpenClaw: AI Automation Tool",
-    "description": "Master OpenClaw (formerly Clawbot and Moltbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
+    "title": "Об OpenClaw: Инструмент ИИ-автоматизации",
+    "description": "Освойте OpenClaw (ранее Clawbot и Moltbot) с помощью наших пошаговых руководств. Узнайте, как автоматизировать электронную почту, календарь и задачи через WhatsApp и Telegram."
   },
   "Moltbot": {
-    "title": "What Was Moltbot? (Now OpenClaw)",
-    "description": "Moltbot was an earlier name for OpenClaw (formerly Clawbot). This page preserves historical context and points to the latest OpenClaw resources."
+    "title": "Что такое Moltbot? (Теперь OpenClaw)",
+    "description": "Moltbot — это прежнее название OpenClaw (ранее Clawbot). Эта страница сохраняет историческую информацию и содержит ссылки на актуальные ресурсы OpenClaw."
   },
   "OpenClaw": {
-    "title": "What is OpenClaw: AI Automation Guide",
-    "description": "Master OpenClaw (formerly Clawbot and Moltbot) with our step-by-step tutorials. Learn how to automate emails, calendar, and flights via WhatsApp & Telegram."
+    "title": "Что такое OpenClaw: Руководство по ИИ-автоматизации",
+    "description": "Освойте OpenClaw (ранее Clawbot и Moltbot) с помощью наших пошаговых руководств. Узнайте, как автоматизировать электронную почту, календарь и задачи через WhatsApp и Telegram."
   },
   "Clawdbot": {
-    "metaTitle": "What Is Clawbot? (Now OpenClaw) - AI Assistant for WhatsApp & Telegram",
-    "metaDescription": "Clawbot was an early name for OpenClaw. The product was later known as Moltbot and is now OpenClaw.",
-    "importantUpdate": "Important Update",
-    "title": "Clawbot Is Now OpenClaw",
-    "description": "Clawbot was the original name of the AI assistant now known as OpenClaw (formerly Moltbot). This page preserves the history and points to the latest OpenClaw resources.",
-    "subtitle": "We've evolved! Clawbot became Moltbot and is now OpenClaw, but it's still the same powerful AI assistant you love.",
-    "cta": "Check Out OpenClaw",
-    "whatWasClawdbot": "What Was Clawbot?",
-    "whatWasClawdbotDesc": "Clawbot was the original name of our AI assistant designed to live inside WhatsApp and Telegram. It helped users manage emails, calendar events, and tasks without leaving their chat app.",
-    "whyChange": "Why the Change?",
-    "imageAlt": "OpenClaw Rebranding Announcement"
+    "metaTitle": "Что такое Clawbot? (Теперь OpenClaw) — ИИ-ассистент для WhatsApp и Telegram",
+    "metaDescription": "Clawbot — это раннее название OpenClaw. Позже продукт назывался Moltbot, а теперь — OpenClaw.",
+    "importantUpdate": "Важное обновление",
+    "title": "Clawbot теперь называется OpenClaw",
+    "description": "Clawbot — это первоначальное название ИИ-ассистента, который теперь известен как OpenClaw (ранее Moltbot). Эта страница сохраняет историческую информацию и содержит ссылки на актуальные ресурсы OpenClaw.",
+    "subtitle": "Мы развиваемся! Clawbot стал Moltbot, а теперь — OpenClaw, но это по-прежнему тот же мощный ИИ-ассистент, который вам нравится.",
+    "cta": "Узнать об OpenClaw",
+    "whatWasClawdbot": "Что такое Clawbot?",
+    "whatWasClawdbotDesc": "Clawbot — это первоначальное название нашего ИИ-ассистента, созданного для работы в WhatsApp и Telegram. Он помогал пользователям управлять электронной почтой, событиями календаря и задачами, не выходя из мессенджера.",
+    "whyChange": "Почему изменилось название?",
+    "imageAlt": "Объявление о ребрендинге OpenClaw"
   },
   "AIDemo": {
     "title": "AI Capabilities Demo",
