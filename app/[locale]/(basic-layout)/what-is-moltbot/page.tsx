@@ -48,7 +48,7 @@ export async function generateMetadata({
 
   return constructMetadata({
     page: "Moltbot",
-    title: "What Was Moltbot? (Now OpenClaw)",
+    title: t("title"),
     description: t("description"),
     locale: locale as Locale,
     path: `/what-is-moltbot`, // Updated path
