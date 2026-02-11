@@ -1,0 +1,598 @@
+---
+title: "How to Fix Claude Token Authentication Errors in OpenClaw"
+description: "Complete guide to resolving Anthropic API key authentication failures, token verification errors, and Claude integration issues in OpenClaw"
+slug: /troubleshooting/fix-claude-authentication-errors
+tags: troubleshooting, claude, anthropic, authentication, api-key, setup
+publishedAt: 2026-02-11
+status: published
+visibility: public
+isPinned: false
+featuredImageUrl: /images/features/claude_auth_troubleshooting_head.webp
+---
+
+# How to Fix Claude Token Authentication Errors in OpenClaw
+
+Authentication errors are one of the most frustrating issues when setting up OpenClaw with Claude. You've got your API key from Anthropic, entered it into the configuration, but you're still seeing errors like "Invalid API key" or "Authentication failed." This comprehensive guide will help you diagnose and fix these issues step by step.
+
+## Quick Diagnosis Checklist
+
+Before diving deep, verify these basics:
+
+```bash
+# 1. Check your OpenClaw version
+openclaw --version
+
+# 2. Verify your config file location
+openclaw config path
+
+# 3. Test your gateway status
+openclaw gateway status
+
+# 4. Check recent logs for auth errors
+tail -100 ~/.openclaw/logs/gateway.log | grep -i "auth\|anthropic\|claude"
+```
+
+## Understanding OpenClaw's Authentication Flow
+
+OpenClaw uses a multi-step process to authenticate with Anthropic's API:
+
+1. **Configuration Loading**: OpenClaw reads your API key from `~/.openclaw/config.json`
+2. **Token Validation**: On first use, OpenClaw sends a test request to verify the token
+3. **Model Discovery**: OpenClaw queries available Claude models for your account
+4. **Request Signing**: Each API call includes your token in the Authorization header
+
+Authentication can fail at any of these stages. Let's troubleshoot each one.
+
+## Common Error #1: "Invalid Authentication Token"
+
+### Symptoms
+
+```
+Error: Invalid authentication token
+Status: 401 Unauthorized
+Provider: anthropic
+```
+
+### Root Causes
+
+This error typically means your API key is malformed, expired, or incorrectly copied.
+
+### Fix Step 1: Verify Your API Key Format
+
+Anthropic API keys follow a specific format: `sk-ant-api03-...` (newer format) or `sk-ant-...` (older format).
+
+```bash
+# Check your current config
+cat ~/.openclaw/config.json | grep -A 5 "anthropic"
+```
+
+**Common mistakes:**
+- Extra spaces before/after the key
+- Missing the `sk-ant-` prefix
+- Copy-paste errors (hidden characters)
+- Using an older deprecated key format
+
+### Fix Step 2: Generate a Fresh API Key
+
+1. Visit the [Anthropic Console](https://console.anthropic.com/)
+2. Navigate to **Settings** → **API Keys**
+3. Click **"Create Key"**
+4. Copy the new key immediately (it won't be shown again)
+5. Update your OpenClaw config:
+
+```bash
+# Method 1: Using openclaw CLI
+openclaw config set models.anthropic.apiKey "sk-ant-api03-YOUR-NEW-KEY-HERE"
+
+# Method 2: Manual edit
+nano ~/.openclaw/config.json
+```
+
+### Fix Step 3: Update Config Correctly
+
+Your `config.json` should look like this:
+
+```json
+{
+  "models": {
+    "anthropic": {
+      "apiKey": "sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "defaultModel": "claude-sonnet-4-5"
+    }
+  }
+}
+```
+
+**Important:** After updating the config, restart the gateway:
+
+```bash
+openclaw gateway restart
+```
+
+## Common Error #2: "API Key Verification Failed"
+
+### Symptoms
+
+```
+Error: Failed to verify Anthropic API key
+Message: Could not authenticate with provided credentials
+```
+
+### Root Causes
+
+This error occurs when OpenClaw successfully reads your key but Anthropic's API rejects it during validation.
+
+### Fix Step 1: Check Your Anthropic Account Status
+
+1. Log in to [Anthropic Console](https://console.anthropic.com/)
+2. Verify your account is in good standing
+3. Check if you have any usage limits or billing issues
+4. Confirm your API access is active (some accounts require approval)
+
+### Fix Step 2: Verify API Key Permissions
+
+Anthropic API keys can have restricted permissions. Ensure your key has:
+- **API access enabled**
+- **Claude model access** (specifically the models you want to use)
+- **Not restricted by IP whitelist** (if you enabled this feature)
+
+### Fix Step 3: Test Your Key Directly
+
+Verify your API key works outside OpenClaw:
+
+```bash
+# Test with curl
+curl https://api.anthropic.com/v1/messages \
+  -H "content-type: application/json" \
+  -H "x-api-key: YOUR_API_KEY_HERE" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude-sonnet-4-5",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+**Expected response:**
+```json
+{
+  "id": "msg_01...",
+  "type": "message",
+  "role": "assistant",
+  "content": [{"type": "text", "text": "Hello! How can I help you?"}],
+  ...
+}
+```
+
+**If this fails**, your API key is the problem—regenerate it in the Anthropic Console.
+
+**If this works**, the issue is with OpenClaw's configuration—continue to the next section.
+
+## Common Error #3: Network & Proxy Issues
+
+### Symptoms
+
+```
+Error: Failed to connect to api.anthropic.com
+ETIMEDOUT / ECONNREFUSED / CERT_INVALID
+```
+
+### Root Causes
+
+- Corporate firewall blocking api.anthropic.com
+- VPN interfering with connections
+- Proxy settings not configured
+- SSL certificate issues
+
+### Fix Step 1: Test Network Connectivity
+
+```bash
+# Test basic connectivity
+ping api.anthropic.com
+
+# Test HTTPS access
+curl -I https://api.anthropic.com/v1/messages
+```
+
+### Fix Step 2: Configure Proxy (If Required)
+
+If you're behind a corporate proxy, configure OpenClaw to use it:
+
+```json
+{
+  "models": {
+    "anthropic": {
+      "apiKey": "sk-ant-api03-...",
+      "proxy": "http://proxy.company.com:8080"
+    }
+  }
+}
+```
+
+Or set environment variables:
+
+```bash
+export HTTPS_PROXY=http://proxy.company.com:8080
+export NO_PROXY=localhost,127.0.0.1
+
+openclaw gateway restart
+```
+
+### Fix Step 3: SSL Certificate Troubleshooting
+
+**macOS users:** If you see SSL certificate errors:
+
+```bash
+# Update system certificates
+/Applications/Python\ 3.x/Install\ Certificates.command
+
+# Or set OpenSSL path
+export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+```
+
+**Docker users:** Ensure your container has updated CA certificates:
+
+```dockerfile
+RUN apt-get update && apt-get install -y ca-certificates
+```
+
+## Common Error #4: Config File Location Issues
+
+### Symptoms
+
+- Config changes don't take effect
+- OpenClaw says "No API key configured"
+- Works in CLI but not in UI/Telegram
+
+### Root Causes
+
+OpenClaw might be reading from a different config file than you're editing.
+
+### Fix: Verify Config Path
+
+```bash
+# Find where OpenClaw is reading config from
+openclaw config path
+
+# Output example:
+# /Users/yourname/.openclaw/config.json
+
+# Make sure you're editing THIS file
+```
+
+**Common pitfall:** If you installed OpenClaw via Docker, your config might be in:
+- Container path: `/root/.openclaw/config.json`
+- Host mount: `~/openclaw-config/config.json`
+
+Check your `docker-compose.yml`:
+
+```yaml
+services:
+  openclaw:
+    volumes:
+      - ./config:/root/.openclaw  # Config is in ./config/ directory
+```
+
+## Common Error #5: Model Selection Issues
+
+### Symptoms
+
+```
+Error: Model "claude-3-opus-20240229" not available
+Error: Requested model requires higher tier access
+```
+
+### Root Causes
+
+- Model name typo
+- Account tier doesn't include requested model
+- Using deprecated model identifiers
+
+### Fix Step 1: Use Correct Model Names
+
+OpenClaw supports these Claude models:
+
+| Model Identifier | Display Name | API Key Required Tier |
+|-----------------|--------------|----------------------|
+| `claude-opus-4-5` | Claude Opus 4.5 | Pro/Enterprise |
+| `claude-sonnet-4-5` | Claude Sonnet 4.5 | Free/Pro |
+| `claude-sonnet-3-7` | Claude Sonnet 3.7 | Free/Pro |
+| `claude-haiku-4` | Claude Haiku 4 | Free/Pro |
+
+**Important:** Don't use the full API identifiers like `claude-3-5-sonnet-20241022`. OpenClaw uses simplified names.
+
+### Fix Step 2: Update Your Config
+
+```json
+{
+  "models": {
+    "anthropic": {
+      "apiKey": "sk-ant-api03-...",
+      "defaultModel": "claude-sonnet-4-5"  // ✅ Correct format
+    }
+  }
+}
+```
+
+### Fix Step 3: Verify Model Access
+
+Check which models your API key can access:
+
+```bash
+curl https://api.anthropic.com/v1/models \
+  -H "x-api-key: YOUR_API_KEY_HERE" \
+  -H "anthropic-version: 2023-06-01"
+```
+
+## Environment Variables vs Config File
+
+OpenClaw can read API keys from multiple sources. Priority order:
+
+1. **Environment variables** (highest priority)
+2. **Config file** (`~/.openclaw/config.json`)
+3. **Default values** (lowest priority)
+
+### Using Environment Variables
+
+```bash
+# Set via environment
+export ANTHROPIC_API_KEY="sk-ant-api03-..."
+
+# Or in .env file
+echo 'ANTHROPIC_API_KEY=sk-ant-api03-...' >> ~/.openclaw/.env
+
+# Restart gateway
+openclaw gateway restart
+```
+
+**When to use env vars:**
+- Deployment on cloud platforms (Heroku, Railway)
+- Docker containers with secrets management
+- CI/CD pipelines
+- Keeping secrets out of version control
+
+### Using Config File
+
+```json
+{
+  "models": {
+    "anthropic": {
+      "apiKey": "sk-ant-api03-..."
+    }
+  }
+}
+```
+
+**When to use config file:**
+- Local development
+- Multiple API key management
+- Model-specific configurations
+- Easier troubleshooting
+
+**Pro tip:** Never commit `config.json` with real API keys to Git. Use `.gitignore`:
+
+```bash
+echo ".openclaw/config.json" >> .gitignore
+```
+
+## Security Best Practices
+
+### 1. Rotate Keys Regularly
+
+Generate new API keys every 90 days:
+
+```bash
+# Revoke old key in Anthropic Console
+# Generate new key
+# Update OpenClaw config
+openclaw config set models.anthropic.apiKey "NEW_KEY"
+openclaw gateway restart
+```
+
+### 2. Use Read-Only Keys (When Available)
+
+If Anthropic offers read-only or restricted-scope keys, use them for non-critical applications.
+
+### 3. Monitor Usage
+
+Check your Anthropic Console regularly for:
+- Unexpected API calls
+- Unusual usage patterns
+- Failed authentication attempts
+
+### 4. Secure Config Files
+
+```bash
+# Restrict config file permissions (Linux/macOS)
+chmod 600 ~/.openclaw/config.json
+
+# Only your user can read it
+ls -la ~/.openclaw/config.json
+# Output: -rw------- 1 yourname staff
+```
+
+### 5. Use Secrets Management (Production)
+
+For production deployments, use proper secrets management:
+
+**Docker Secrets:**
+```yaml
+services:
+  openclaw:
+    secrets:
+      - anthropic_api_key
+secrets:
+  anthropic_api_key:
+    external: true
+```
+
+**Kubernetes Secrets:**
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: openclaw-secrets
+data:
+  anthropic-api-key: c2stYW50LWFwaTA...  # base64 encoded
+```
+
+## Advanced Troubleshooting
+
+### Enable Debug Logging
+
+Get detailed authentication logs:
+
+```bash
+# Set log level to debug
+openclaw config set logLevel debug
+
+# Restart and tail logs
+openclaw gateway restart
+tail -f ~/.openclaw/logs/gateway.log | grep -i anthropic
+```
+
+### Test Authentication Flow Step-by-Step
+
+Create a test script:
+
+```javascript
+// test-auth.js
+const Anthropic = require('@anthropic-ai/sdk');
+
+const client = new Anthropic({
+  apiKey: 'YOUR_API_KEY_HERE'
+});
+
+async function testAuth() {
+  try {
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'Hi' }]
+    });
+    console.log('✅ Authentication successful');
+    console.log('Model:', message.model);
+    console.log('Response:', message.content[0].text);
+  } catch (error) {
+    console.error('❌ Authentication failed:', error.message);
+    console.error('Status:', error.status);
+    console.error('Type:', error.type);
+  }
+}
+
+testAuth();
+```
+
+Run it:
+```bash
+npm install @anthropic-ai/sdk
+node test-auth.js
+```
+
+### Check for Known Issues
+
+Search the OpenClaw GitHub issues:
+```bash
+# Search for similar problems
+open "https://github.com/openclaw/openclaw/issues?q=is%3Aissue+anthropic+authentication"
+```
+
+## Still Having Issues?
+
+If you've tried everything above and authentication still fails:
+
+### 1. Gather Diagnostic Info
+
+```bash
+# Create a diagnostic report
+openclaw --version > debug-info.txt
+openclaw config path >> debug-info.txt
+openclaw gateway status >> debug-info.txt
+tail -50 ~/.openclaw/logs/gateway.log >> debug-info.txt
+
+# Redact your API key before sharing!
+sed -i 's/sk-ant-api03-[^ ]*/sk-ant-REDACTED/g' debug-info.txt
+```
+
+### 2. Ask for Help
+
+- **OpenClaw Discord**: [discord.gg/openclaw](https://discord.gg/openclaw)
+- **GitHub Issues**: [github.com/openclaw/openclaw/issues](https://github.com/openclaw/openclaw/issues)
+- **Stack Overflow**: Tag with `openclaw` and `anthropic-api`
+
+### 3. Common Community Solutions
+
+**Problem:** "Works in curl but not OpenClaw"
+- **Solution:** Check Node.js version compatibility (requires Node 18+)
+
+**Problem:** "Authentication succeeds but requests fail"
+- **Solution:** Verify model name format (use simplified names like `claude-sonnet-4-5`)
+
+**Problem:** "Intermittent authentication failures"
+- **Solution:** Anthropic API might be rate-limiting. Add retry logic or reduce request frequency.
+
+## Preventing Future Issues
+
+### 1. Keep OpenClaw Updated
+
+```bash
+# Check for updates
+openclaw update check
+
+# Update to latest version
+openclaw update install
+```
+
+### 2. Subscribe to Status Updates
+
+- Anthropic Status: [status.anthropic.com](https://status.anthropic.com)
+- OpenClaw Releases: [github.com/openclaw/openclaw/releases](https://github.com/openclaw/openclaw/releases)
+
+### 3. Use Health Checks
+
+Add a cron job to monitor authentication:
+
+```json
+{
+  "schedule": { "kind": "every", "everyMs": 3600000 },
+  "payload": {
+    "kind": "systemEvent",
+    "text": "Test Claude API connection and report status"
+  }
+}
+```
+
+## Summary Checklist
+
+Use this quick reference when troubleshooting:
+
+- [ ] API key format is correct (`sk-ant-api03-...`)
+- [ ] No spaces or hidden characters in key
+- [ ] Key is valid in Anthropic Console
+- [ ] Account has API access enabled
+- [ ] Config file path is correct
+- [ ] Gateway has been restarted after config changes
+- [ ] Network connectivity to api.anthropic.com works
+- [ ] Proxy settings configured (if needed)
+- [ ] Model name uses correct format
+- [ ] SSL certificates are up to date
+- [ ] Environment variables don't conflict with config
+- [ ] Log level set to debug for troubleshooting
+
+## Conclusion
+
+Claude authentication errors in OpenClaw are usually caused by simple configuration mistakes: incorrect API key format, wrong config file location, or outdated credentials. By following this guide systematically, you should be able to identify and fix the issue quickly.
+
+Remember these key points:
+1. **Always restart the gateway** after config changes
+2. **Test your API key directly** with curl to isolate the problem
+3. **Use environment variables** for production deployments
+4. **Enable debug logging** when troubleshooting
+5. **Keep your API keys secure** and rotate them regularly
+
+If you found this guide helpful, check out our related troubleshooting guides:
+- [Configuring Multiple AI Models in OpenClaw](/troubleshooting/multi-model-setup)
+- [Fixing Session Memory Issues](/troubleshooting/fix-session-memory)
+- [OpenClaw Installation Guide](/guide)
+
+Have questions or found another solution? Share your experience in the [OpenClaw community](https://discord.gg/openclaw)!
