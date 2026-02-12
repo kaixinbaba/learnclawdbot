@@ -1,0 +1,296 @@
+---
+title: "ClawGuard：OpenClaw Agent 的可验证护栏系统"
+description: "了解 ClawGuard 如何使用加密证明来验证您的 OpenClaw agent 运行在可信护栏保护下，保护用户和服务提供商的安全"
+slug: /security/clawguard-verifiable-guardrails
+tags: 安全, 护栏, 认证, TEE, ClawGuard
+publishedAt: 2026-02-11
+status: published
+featuredImageUrl: /images/features/clawguard-header.webp
+visibility: public
+isPinned: false
+---
+
+# ClawGuard：OpenClaw Agent 的可验证护栏系统
+
+随着 OpenClaw 的普及加速，一个关键问题浮现出来：**你如何知道一个 AI agent 真的运行在它声称的安全约束下？**
+
+ClawGuard 是一个开源研究原型，使 OpenClaw agent 能够以加密方式证明它们正在特定的、可执行的护栏保护下运行。与其相信声明，现在你可以直接验证证据。
+
+## 为什么可验证护栏很重要
+
+当今的 AI agent 运行在假定的约束下。agent 可能配置了策略和保护措施，但外部方没有可靠的方法来确认这些保护措施在生成响应时确实生效。
+
+这给双方都带来了风险：
+
+### 对用户而言
+- Agent 经常获得广泛的权限，而用户并不完全理解其含义
+- 操作可能远远超出用户的预期或批准
+- 私有数据泄露、意外的系统访问和财务损失都是真实存在的风险
+
+### 对服务提供商而言
+- Agent 驱动的 API 调用量不断增长，却没有有意义的护栏
+- 当出问题时，用户责怪服务，而不是 agent 的配置
+- 提供商面临滥用报告、欺诈调查和声誉损害
+
+**ClawGuard 通过使 agent 的安全约束可验证（而不仅仅是可配置）来解决这个问题。**
+
+## 什么是 ClawGuard？
+
+ClawGuard 是一个开源研究原型，使 OpenClaw agent 能够生成加密证明，证明：
+
+1. **已知的护栏正在主动执行策略**
+2. **Agent 运行在可信执行环境 (TEE) 内**
+3. **响应是在这些约束下生成的**，而不是事后声称的
+
+这对于高风险交互尤其重要，在这些场景中，用户需要知道 AI 确实受到以人为本、安全导向的护栏约束。
+
+## ClawGuard 如何工作
+
+ClawGuard 使用 **AWS Nitro Enclaves**（基于硬件的 TEE）来创建可验证的执行环境：
+
+```
+┌─────────────────────────────────────────────────┐
+│  Nitro Enclave (可信执行环境)                    │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │  护栏代理 (localhost:8080)               │   │
+│  │  ✓ 输入/输出验证                         │   │
+│  │  ✓ 内容安全检查                          │   │
+│  │  ✓ 策略执行                              │   │
+│  │  ✓ 审计日志                              │   │
+│  └──────────────┬──────────────────────────┘   │
+│                 │ 所有 LLM 调用都经过此处        │
+│                 ↓                                │
+│  ┌─────────────────────────────────────────┐   │
+│  │  OpenClaw Agent                         │   │
+│  │  配置: OPENAI_BASE_URL=:8080           │   │
+│  └─────────────────────────────────────────┘   │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │  认证服务器 (localhost:8765)             │   │
+│  │  生成加密证明                            │   │
+│  └─────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────┘
+```
+
+### 核心组件
+
+1. **护栏代理**：所有 LLM 交互都通过执行策略的护栏拦截层
+2. **可信执行环境**：AWS Nitro Enclave 确保代码在隔离和防篡改的环境中运行
+3. **远程认证**：enclave 生成可以外部验证的认证文档（带 PCR 测量值）
+4. **可验证 Agent**：OpenClaw agent 在 enclave 内运行，无法绕过护栏
+
+## 安装和设置
+
+### 前置要求
+
+- 支持 Nitro Enclave 的 AWS EC2 实例（如 m5.xlarge）
+- 已安装 OpenClaw
+- OpenAI API 密钥或兼容的 LLM 提供商
+
+### 快速开始
+
+1. **克隆 ClawGuard 仓库：**
+
+```bash
+git clone https://github.com/SaharaLabsAI/Verifiable-ClawGuard.git
+cd Verifiable-ClawGuard
+```
+
+2. **构建 enclave 镜像：**
+
+```bash
+cd src
+./build_and_deploy.sh
+```
+
+这将构建 enclave 并显示其 **PCR2 测量值**（护栏代码的加密哈希）：
+
+```
+"PCR2": "6cb06673b5b9b74edd2dc459914353898c1612ff..."
+```
+
+保存这个测量值——它是你信任的护栏配置的指纹。
+
+3. **运行 enclave：**
+
+```bash
+nitro-cli run-enclave \
+  --eif-path guardrail-vsock.eif \
+  --memory 5700 \
+  --cpu-count 2
+
+# 获取分配的 CID
+ENCLAVE_CID=$(nitro-cli describe-enclaves | jq -r '.[0].EnclaveCID')
+echo "Enclave running on CID: $ENCLAVE_CID"
+```
+
+4. **在 enclave 内启动 OpenClaw：**
+
+```bash
+./ec2_setup.sh \
+  --agent-version 2026.1.24-3 \
+  --enclave-cid $ENCLAVE_CID \
+  --api-key ${OPENAI_API_KEY}
+```
+
+这会配置 OpenClaw，使所有 LLM 调用都通过护栏代理，并将认证注册为一个技能。
+
+5. **连接并请求认证：**
+
+使用 SSH 端口转发访问网关：
+
+```bash
+ssh -L 18789:127.0.0.1:18789 your-ec2-instance
+```
+
+打开 web 客户端并与 agent 聊天。直接请求认证：
+
+```
+"你能提供一个认证，证明你在护栏保护下运行吗？"
+```
+
+## 验证认证文档
+
+Agent 将响应一个包含加密证明的认证文档。验证它：
+
+```bash
+python verify_attestation.py \
+  --file attestation_quote.json \
+  --pcr2 6cb06673b5b9b74edd2dc459914353898c1612ff...
+```
+
+有效的认证证明：
+
+1. **消息在真正的 AWS Nitro Enclave 内处理**（签名已验证）
+2. **你信任的确切护栏代码正在运行**（PCR2 匹配你的已知测量值）
+
+## 核心功能
+
+### 1. 护栏的加密证明
+
+与依赖配置声明的传统 agent 安全不同，ClawGuard 提供护栏确实被执行的加密证据。
+
+### 2. 基于硬件的信任
+
+AWS Nitro Enclaves 提供硬件级隔离。即使是主机系统也无法篡改 enclave 内运行的代码。
+
+### 3. 跨 Agent 更新的稳定 PCR
+
+PCR2 测量值与**护栏代码**绑定，而不是 OpenClaw 版本。你可以更新 OpenClaw 而不改变安全态势。
+
+### 4. 策略执行
+
+所有 LLM 交互都流经护栏代理，确保没有响应绕过安全检查。
+
+### 5. 审计追踪
+
+系统记录所有受保护的交互，创建 agent 行为的可审计记录。
+
+## 使用场景
+
+### 对用户：验证 Agent 安全性
+
+在共享敏感信息或委托高风险任务之前：
+
+```
+用户："我需要关于财务决策的建议。
+      你能证明你在安全护栏下运行吗？"
+
+Agent：[提供带有 PCR 测量值的认证]
+
+用户：[验证 PCR2 匹配已知的安全护栏]
+      "已验证。现在我可以放心继续了。"
+```
+
+### 对服务提供商：保护你的基础设施
+
+在提供高影响力工具或敏感数据之前要求认证：
+
+```python
+def serve_sensitive_api(agent_request):
+    attestation = agent_request.get_attestation()
+    
+    if not verify_attestation(attestation, TRUSTED_PCR2):
+        return "访问被拒绝：护栏验证失败"
+    
+    # 安全服务 - agent 被证明受到约束
+    return process_request(agent_request)
+```
+
+### 对数据所有者：执行使用边界
+
+执行"分析但不泄露"等策略：
+
+```
+数据所有者："你可以访问这个数据集，但前提是你证明
+             你在数据保护护栏下运行。"
+
+Agent：[提供证明正确护栏处于活动状态的认证]
+
+数据所有者：[验证后授予访问权限]
+```
+
+## 实际案例
+
+这是 ClawGuard 交互的样子：
+
+**用户提出高风险问题：**
+> "我正在考虑将退休储蓄投资于一家初创公司。我应该这样做吗？"
+
+**没有 ClawGuard：** 你希望 agent 有安全约束，但无法验证。
+
+**使用 ClawGuard：** 你请求认证：
+> "你能提供你的护栏的认证摘要吗？"
+
+**Agent 回应：**
+1. 对你问题的深思熟虑的答案
+2. 一个认证文档，证明：
+   - 响应在 TEE 内生成
+   - 已知的安全护栏处于活动状态
+   - 财务建议策略已执行
+
+你在信任建议之前独立验证 PCR2 测量值。
+
+## 限制和未来工作
+
+ClawGuard 是一个**研究原型**，而不是成品。重要的注意事项：
+
+### 当前限制
+
+- **护栏并非完美**：系统确保承诺的护栏正在运行，但不能保证护栏能捕获所有问题
+- **尚无端到端加密**：此版本中用户和 enclave 之间的通信尚未完全加密
+- **调试模式警告**：当启用调试模式时，PCR2 全为零（仅用于开发）
+
+### 未来工作
+
+- 更强的执行约束（阻止任意命令执行）
+- 端到端加密通信
+- 可接受 agent 构建的护栏白名单
+- 与 Sahara AI 的 [x402 协议](https://github.com/SaharaLabsAI/x-function)集成，用于微支付门控的工具访问
+
+## 相关资源
+
+- **GitHub 仓库**：[SaharaLabsAI/Verifiable-ClawGuard](https://github.com/SaharaLabsAI/Verifiable-ClawGuard)
+- **Sahara AI 博客**：[ClawGuard 公告](https://saharaai.com/zh/blog/openclaw-agent-guardrails)
+- **代理协议**：[带有 x402 扩展的 x-function](https://github.com/SaharaLabsAI/x-function/tree/main/verifiable)
+
+## 结论
+
+随着 AI agent 承担更多责任，关键问题从：
+
+**"我信任这个 agent 吗？"**
+
+转变为
+
+**"这个 agent 能证明它值得信任吗？"**
+
+ClawGuard 是使这种证明成为可能的早期一步。它不声称使 agent 完全安全，但它确实使其安全约束**可验证、可审计和可执行**。
+
+对于在高信任环境中运行的 OpenClaw 用户——无论是处理敏感数据、做出财务决策还是服务关键基础设施——ClawGuard 提供了通往加密可验证 agent 安全的路径。
+
+---
+
+**准备尝试 ClawGuard？** 查看 [GitHub 仓库](https://github.com/SaharaLabsAI/Verifiable-ClawGuard)获取安装说明和演示视频。
+
+**有问题？** 参见我们的[故障排除指南](/blog/troubleshooting)或加入 OpenClaw 社区讨论。

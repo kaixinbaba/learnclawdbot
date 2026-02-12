@@ -1,0 +1,296 @@
+---
+title: "ClawGuard: Verifiable Guardrails for OpenClaw Agents"
+description: "Learn how ClawGuard uses cryptographic proof to verify that your OpenClaw agent runs behind trusted guardrails, protecting both users and service providers"
+slug: /security/clawguard-verifiable-guardrails
+tags: security, guardrails, attestation, TEE, ClawGuard
+publishedAt: 2026-02-11
+status: published
+featuredImageUrl: /images/features/clawguard-header.webp
+visibility: public
+isPinned: false
+---
+
+# ClawGuard: Verifiable Guardrails for OpenClaw Agents
+
+As OpenClaw adoption accelerates, a critical question emerges: **How do you know an AI agent is actually running with the safety constraints it claims to have?**
+
+ClawGuard is an open-source prototype that enables OpenClaw agents to cryptographically prove they're operating behind specific, enforceable guardrails. Instead of trusting declarations, you can now verify evidence directly.
+
+## Why Verifiable Guardrails Matter
+
+Today's AI agents operate under assumed constraints. An agent may be configured with policies and safeguards, but there's no reliable way for external parties to confirm those protections are actually in effect when a response is generated.
+
+This creates risks on both sides:
+
+### For Users
+- Agents often receive broad permissions without users fully understanding the implications
+- Actions can go far beyond what users intended or approved
+- Private data exposure, unintended system access, and financial harm are real risks
+
+### For Service Providers
+- Growing volume of agent-driven API calls without meaningful guardrails
+- When things go wrong, users blame the service, not the agent's configuration
+- Providers face abuse reports, fraud investigations, and reputational damage
+
+**ClawGuard solves this by making agent safety constraints verifiable, not just configurable.**
+
+## What is ClawGuard?
+
+ClawGuard is an open-source research prototype that enables OpenClaw agents to produce cryptographic proof that:
+
+1. **A known guardrail is actively enforcing policy**
+2. **The agent runs inside a Trusted Execution Environment (TEE)**
+3. **Responses are generated under those constraints**, not merely claimed after the fact
+
+This matters especially for high-stake interactions where users need to know the AI is actually constrained by human-centric, safety-oriented guardrails.
+
+## How ClawGuard Works
+
+ClawGuard uses **AWS Nitro Enclaves** (a hardware-based TEE) to create a verifiable execution environment:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Nitro Enclave (Trusted Execution Environment)  │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │  Guardrail Proxy (localhost:8080)       │   │
+│  │  ✓ Input/output validation              │   │
+│  │  ✓ Content safety checks                │   │
+│  │  ✓ Policy enforcement                   │   │
+│  │  ✓ Audit logging                        │   │
+│  └──────────────┬──────────────────────────┘   │
+│                 │ All LLM calls flow through    │
+│                 ↓                                │
+│  ┌─────────────────────────────────────────┐   │
+│  │  OpenClaw Agent                         │   │
+│  │  Configured: OPENAI_BASE_URL=:8080     │   │
+│  └─────────────────────────────────────────┘   │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │  Attestation Server (localhost:8765)    │   │
+│  │  Generates cryptographic proof          │   │
+│  └─────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+1. **Guardrail Proxy**: All LLM interactions are routed through a guardrail interception layer that enforces policies
+2. **Trusted Execution Environment**: AWS Nitro Enclave ensures code runs isolated and tamper-proof
+3. **Remote Attestation**: The enclave produces attestations (with PCR measurements) that can be verified externally
+4. **Verifiable Agent**: OpenClaw agent runs inside the enclave, unable to bypass the guardrail
+
+## Installation and Setup
+
+### Prerequisites
+
+- AWS EC2 instance with Nitro Enclave support (e.g., m5.xlarge)
+- OpenClaw installed
+- OpenAI API key or compatible LLM provider
+
+### Quick Start
+
+1. **Clone the ClawGuard repository:**
+
+```bash
+git clone https://github.com/SaharaLabsAI/Verifiable-ClawGuard.git
+cd Verifiable-ClawGuard
+```
+
+2. **Build the enclave image:**
+
+```bash
+cd src
+./build_and_deploy.sh
+```
+
+This will build the enclave and display its **PCR2 measurement** (a cryptographic hash of the guardrail code):
+
+```
+"PCR2": "6cb06673b5b9b74edd2dc459914353898c1612ff..."
+```
+
+Save this measurement — it's the fingerprint of your trusted guardrail configuration.
+
+3. **Run the enclave:**
+
+```bash
+nitro-cli run-enclave \
+  --eif-path guardrail-vsock.eif \
+  --memory 5700 \
+  --cpu-count 2
+
+# Get the assigned CID
+ENCLAVE_CID=$(nitro-cli describe-enclaves | jq -r '.[0].EnclaveCID')
+echo "Enclave running on CID: $ENCLAVE_CID"
+```
+
+4. **Launch OpenClaw inside the enclave:**
+
+```bash
+./ec2_setup.sh \
+  --agent-version 2026.1.24-3 \
+  --enclave-cid $ENCLAVE_CID \
+  --api-key ${OPENAI_API_KEY}
+```
+
+This configures OpenClaw so all LLM calls pass through the guardrail proxy, and registers attestation as a skill.
+
+5. **Connect and request attestation:**
+
+Use SSH port forwarding to access the gateway:
+
+```bash
+ssh -L 18789:127.0.0.1:18789 your-ec2-instance
+```
+
+Open the web client and chat with the agent. Request attestation directly:
+
+```
+"Can you provide an attestation that you're running behind a guardrail?"
+```
+
+## Verifying Attestations
+
+The agent will respond with an attestation document containing cryptographic proof. Verify it:
+
+```bash
+python verify_attestation.py \
+  --file attestation_quote.json \
+  --pcr2 6cb06673b5b9b74edd2dc459914353898c1612ff...
+```
+
+A valid attestation proves:
+
+1. **Message was processed inside a genuine AWS Nitro Enclave** (signature verified)
+2. **Exact guardrail code you trust is running** (PCR2 matches your known measurement)
+
+## Core Features
+
+### 1. Cryptographic Proof of Guardrails
+
+Unlike traditional agent safety that relies on configuration claims, ClawGuard provides cryptographic evidence that guardrails are actually enforced.
+
+### 2. Hardware-Based Trust
+
+AWS Nitro Enclaves provide hardware-level isolation. Even the host system cannot tamper with code running inside the enclave.
+
+### 3. Stable PCR Across Agent Updates
+
+The PCR2 measurement is tied to the **guardrail code**, not the OpenClaw version. You can update OpenClaw without changing the security posture.
+
+### 4. Policy Enforcement
+
+All LLM interactions flow through the guardrail proxy, ensuring no response bypasses safety checks.
+
+### 5. Audit Trail
+
+The system logs all guarded interactions, creating an auditable record of agent behavior.
+
+## Use Cases
+
+### For Users: Verify Agent Safety
+
+Before sharing sensitive information or delegating high-stake tasks:
+
+```
+User: "I need advice on a financial decision. 
+       Can you prove you're running with safety guardrails?"
+
+Agent: [provides attestation with PCR measurements]
+
+User: [verifies PCR2 matches known safe guardrail]
+      "Verified. Now I'm comfortable proceeding."
+```
+
+### For Service Providers: Protect Your Infrastructure
+
+Require attestation before serving high-impact tools or sensitive data:
+
+```python
+def serve_sensitive_api(agent_request):
+    attestation = agent_request.get_attestation()
+    
+    if not verify_attestation(attestation, TRUSTED_PCR2):
+        return "Access denied: guardrail verification failed"
+    
+    # Safe to serve - agent is provably constrained
+    return process_request(agent_request)
+```
+
+### For Data Owners: Enforce Usage Boundaries
+
+Enforce policies like "analyze but don't exfiltrate":
+
+```
+Data owner: "You can access this dataset, but only if you prove 
+             you're running behind the data-protection guardrail."
+
+Agent: [provides attestation proving correct guardrail is active]
+
+Data owner: [grants access after verification]
+```
+
+## Real-World Example
+
+Here's what a ClawGuard interaction looks like:
+
+**User asks a high-stake question:**
+> "I'm considering investing my retirement savings in a startup. Should I do it?"
+
+**Without ClawGuard:** You hope the agent has safety constraints, but can't verify them.
+
+**With ClawGuard:** You request attestation:
+> "Can you provide an attested summary of your guardrails?"
+
+**Agent responds with:**
+1. A thoughtful answer to your question
+2. An attestation document proving:
+   - Response was generated inside a TEE
+   - Known safety guardrail was active
+   - Financial advice policy was enforced
+
+You independently verify the PCR2 measurement before trusting the advice.
+
+## Limitations and Future Work
+
+ClawGuard is a **research prototype**, not a finished product. Important caveats:
+
+### Current Limitations
+
+- **Guardrails aren't perfect**: The system ensures the promised guardrail is running, but can't guarantee the guardrail catches everything
+- **No end-to-end encryption yet**: Communication between user and enclave isn't fully encrypted in this version
+- **Debug mode caveat**: When debug mode is enabled, PCR2 is all zeros (for development only)
+
+### Future Work
+
+- Stronger execution constraints (blocking arbitrary command execution)
+- End-to-end encrypted communication
+- Guardrail allowlists for acceptable agent builds
+- Integration with Sahara AI's [x402 protocol](https://github.com/SaharaLabsAI/x-function) for micropayment-gated tool access
+
+## Related Resources
+
+- **GitHub Repository**: [SaharaLabsAI/Verifiable-ClawGuard](https://github.com/SaharaLabsAI/Verifiable-ClawGuard)
+- **Sahara AI Blog**: [ClawGuard Announcement](https://saharaai.com/zh/blog/openclaw-agent-guardrails)
+- **Agentic Protocols**: [x-function with x402 extensions](https://github.com/SaharaLabsAI/x-function/tree/main/verifiable)
+
+## Conclusion
+
+As AI agents take on more responsibility, the critical question shifts from:
+
+**"Do I trust this agent?"**
+
+to
+
+**"Can this agent prove it deserves trust?"**
+
+ClawGuard is an early step toward making that proof possible. It doesn't claim to make agents perfectly safe, but it does make their safety constraints **verifiable, auditable, and enforceable**.
+
+For OpenClaw users operating in high-trust environments — whether handling sensitive data, making financial decisions, or serving critical infrastructure — ClawGuard offers a path toward cryptographically verifiable agent safety.
+
+---
+
+**Ready to try ClawGuard?** Check out the [GitHub repository](https://github.com/SaharaLabsAI/Verifiable-ClawGuard) for installation instructions and demo videos.
+
+**Have questions?** See our [troubleshooting guide](/blog/troubleshooting) or join the OpenClaw community discussions.
