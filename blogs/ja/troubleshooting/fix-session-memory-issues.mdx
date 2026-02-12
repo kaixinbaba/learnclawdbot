@@ -1,0 +1,555 @@
+---
+title: "OpenClawのセッションメモリとコンテキスト管理の問題を修正する"
+description: "OpenClawのセッション圧縮、メモリ損失、コンテキストウィンドウの問題をトラブルシューティングして修正する方法を学びます。"
+slug: "troubleshooting/fix-session-memory-issues"
+publishedAt: "2026-02-13"
+updatedAt: "2026-02-13"
+status: "published"
+visibility: "public"
+tags: ["troubleshooting", "session", "memory", "compaction"]
+featuredImageUrl: "/images/blog/fix-session-memory-issues.png"
+---
+
+# OpenClawのセッションメモリとコンテキスト管理の問題を修正する
+
+セッションメモリとコンテキスト管理は、OpenClawアーキテクチャの重要なコンポーネントです。問題が発生すると—コンテキストウィンドウのオーバーフロー、圧縮中の重要な情報の損失、セッションの無制限な肥大化—エージェントのパフォーマンスと信頼性に大きな影響を与える可能性があります。このガイドは、これらの問題を診断して修正するのに役立ちます。
+
+## OpenClawのセッションアーキテクチャを理解する
+
+### 2層永続化システム
+
+OpenClawは2つの異なる層を通じてセッション状態を維持します:
+
+1. **セッションストア (`sessions.json`)**
+   - セッションメタデータを格納するキーバリューマップ
+   - 場所: `~/.openclaw/agents/<agentId>/sessions/sessions.json`
+   - 追跡: セッションID、最終アクティビティ、トグル状態、トークンカウンター、圧縮回数
+   - 手動編集が安全
+
+2. **セッショントランスクリプト (`<sessionId>.jsonl`)**
+   - 完全な会話ツリーを含む追加専用JSONLファイル
+   - 場所: `~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
+   - 格納: メッセージ、ツール呼び出し、圧縮サマリー、分岐点
+   - 将来のターンのコンテキストを再構築するために使用
+
+**重要な原則**: Gatewayが真実のソースです。リモートモードでは、これらのファイルはローカルマシンではなくリモートホストに存在します。
+
+### セッションキーの仕組み
+
+OpenClawは`sessionKey`を使用して会話をルーティングおよび分離します:
+
+- **メイン/ダイレクトチャット**: `agent:<agentId>:main` (デフォルト)
+- **グループチャット**: `agent:<agentId>:<channel>:group:<id>`
+- **Discord/Slackルーム**: `agent:<agentId>:<channel>:channel:<id>`
+- **Cronジョブ**: `cron:<job.id>`
+- **Webhook**: `hook:<uuid>`
+
+任意のチャットで `/status` を使用して、現在のセッションキーとコンテキスト使用状況を表示できます。
+
+## コンテキストウィンドウと圧縮を理解する
+
+### 圧縮とは何か?
+
+各モデルには**コンテキストウィンドウ**があります—1回のリクエストで処理できる最大トークン数です。長時間実行される会話はメッセージとツール結果を蓄積し、最終的にこの制限に近づきます。OpenClawの**圧縮**機能は、古い会話履歴をコンパクトなサマリーに要約し、最近のメッセージのみをそのまま保持します。
+
+圧縮は**永続的**です: サマリーはセッショントランスクリプトに保存されるため、将来のリクエストでは以下が表示されます:
+- 圧縮サマリー
+- 圧縮ポイント以降の最近のメッセージ
+
+### 自動圧縮がトリガーされるタイミング
+
+OpenClawの組み込みPiエージェントは、2つのシナリオで自動圧縮をトリガーします:
+
+1. **オーバーフローリカバリ**: モデルがコンテキストオーバーフローエラーを返す → 圧縮 → 再試行
+2. **しきい値メンテナンス**: 成功したターン後、以下の場合:
+   ```
+   contextTokens > contextWindow - reserveTokens
+   ```
+
+### 圧縮 vs. セッションプルーニング
+
+これらは2つの異なるメカニズムです:
+
+| 機能 | 圧縮 | セッションプルーニング |
+|------|------|---------------------|
+| **機能** | 会話履歴を要約して永続化 | メモリ内の古いツール結果をトリミング |
+| **永続性** | JSONLトランスクリプトに書き込み | 一時的、リクエストごとのみ |
+| **対象** | すべてのメッセージタイプ | ツール結果のみ |
+| **トリガー** | コンテキストウィンドウしきい値 | キャッシュTTL有効期限 |
+
+## 一般的なセッションメモリの問題
+
+### 問題 #1: 圧縮中の認証情報の損失
+
+**症状**: 自動圧縮後、エージェントがAPIキー、SSH認証情報、またはワークスペース状態を「忘れる」。
+
+**根本原因**: 最近のメッセージにのみ保存されている重要なコンテキストが、エージェントが永続ストレージに書き込む前に要約されてしまう。
+
+**解決策**: 圧縮前のメモリフラッシュを有効にする。
+
+メモリフラッシュは圧縮前にサイレントなエージェントターンを実行し、エージェントに重要な情報をディスクに書き込むよう促します:
+
+```json5
+// ~/.openclaw/openclaw.json
+{
+  agents: {
+    defaults: {
+      compaction: {
+        reserveTokensFloor: 20000,
+        memoryFlush: {
+          enabled: true,
+          softThresholdTokens: 4000,
+          systemPrompt: "セッションが圧縮に近づいています。今すぐ永続メモリを保存してください。",
+          prompt: "永続的なメモを memory/YYYY-MM-DD.md に書き込んでください; 保存するものがない場合は NO_REPLY と返信してください。"
+        }
+      }
+    }
+  }
+}
+```
+
+**仕組み**:
+- トリガー条件: `contextTokens > (contextWindow - reserveTokensFloor - softThresholdTokens)`
+- 圧縮サイクルごとに1回実行 (`sessions.json` で追跡)
+- `NO_REPLY` 規約を使用してユーザーに見える出力を抑制
+- ワークスペースが書き込み可能な場合にのみ実行
+
+### 問題 #2: ツール結果によるコンテキストウィンドウの肥大化
+
+**症状**: ユーザーメッセージが少ないにもかかわらず、セッションが急速にコンテキスト制限に近づく。
+
+**根本原因**: 大きなツール出力 (例: `exec` ログ、ファイル読み取り、Webスクレイピング) がトランスクリプトに蓄積される。
+
+**解決策**: キャッシュTTLセッションプルーニングを有効にする。
+
+```json5
+{
+  agents: {
+    defaults: {
+      contextPruning: {
+        mode: "cache-ttl",
+        ttl: "5m",
+        keepLastAssistants: 3,
+        softTrimRatio: 0.3,
+        hardClearRatio: 0.5,
+        minPrunableToolChars: 50000,
+        softTrim: {
+          maxChars: 4000,
+          headChars: 1500,
+          tailChars: 1500
+        },
+        hardClear: {
+          enabled: true,
+          placeholder: "[古いツール結果の内容がクリアされました]"
+        }
+      }
+    }
+  }
+}
+```
+
+**Anthropicユーザー向けのスマートデフォルト**:
+- OAuth/セットアップトークンプロファイル: `cache-ttl` 有効、ハートビート `1h`
+- APIキープロファイル: `cache-ttl` 有効、ハートビート `30m`、キャッシュTTL `1h`
+
+**プルーニングされる内容**:
+- `toolResult` メッセージのみ (ユーザー/アシスタントメッセージは変更されない)
+- 最後のN個のアシスタントメッセージより前のツール結果
+- 特大の結果はソフトトリミング (ヘッド + テールを保持し、`...` で接続)
+- 非常に古い結果はプレースホルダーテキストでハードクリア
+- 画像ブロックは常に保護される
+
+### 問題 #3: 過剰な圧縮トリガー
+
+**症状**: `🧹 自動圧縮完了` が頻繁に表示される、短いセッションでも。
+
+**根本原因**:
+1. ワークロードに対してモデルのコンテキストウィンドウが小さすぎる
+2. コンテキストウィンドウに対して `reserveTokens` が高すぎる
+3. セッション開始時に注入されるワークスペースファイルが非常に大きい
+
+**診断**:
+
+```bash
+# 現在のセッション状態を確認
+# チャット内:
+/status
+
+# CLIから:
+openclaw status
+
+# コンテキストの内訳を確認
+# チャット内:
+/context detail
+```
+
+**解決策**:
+
+1. **予約トークンフロアを増やす** (より多くのヘッドルームを確保):
+```json5
+{
+  agents: {
+    defaults: {
+      compaction: {
+        reserveTokensFloor: 25000  // デフォルト: 20000
+      }
+    }
+  }
+}
+```
+
+2. **ワークスペースファイル注入を減らす** (ブートストラップファイルサイズを制限):
+```json5
+{
+  agents: {
+    defaults: {
+      bootstrapMaxChars: 15000  // デフォルト: 20000
+    }
+  }
+}
+```
+
+3. **手動圧縮を戦略的に使用**:
+```
+/compact 決定事項と未解決の質問に焦点を当てる
+```
+
+### 問題 #4: セッション分離によるプライベートコンテキストの漏洩
+
+**症状**: DMからの個人情報がグループチャットに表示される、または複数のユーザーが互いのコンテキストを見る。
+
+**根本原因**: デフォルトの `session.dmScope = "main"` がすべてのDMを1つのセッションキーに共有する。
+
+**解決策**: マルチユーザーシナリオでセキュアDMモードを有効にする。
+
+```json5
+{
+  session: {
+    // チャネル + 送信者ごとにDMコンテキストを分離
+    dmScope: "per-channel-peer",
+    
+    // マルチアカウント受信箱の場合:
+    // dmScope: "per-account-channel-peer",
+    
+    // オプション: チャネル間で同じ人をリンク
+    identityLinks: {
+      alice: ["telegram:123456789", "discord:987654321"]
+    }
+  }
+}
+```
+
+**DMスコープオプション**:
+- `main` (デフォルト): すべてのDMが1つのセッションを共有—シングルユーザーの継続性に最適
+- `per-peer`: チャネル間で送信者IDごとに分離
+- `per-channel-peer`: チャネル + 送信者ごとに分離 (共有受信箱に推奨)
+- `per-account-channel-peer`: アカウント + チャネル + 送信者ごとに分離 (マルチアカウント)
+
+## 手動メモリ管理のベストプラクティス
+
+### NO_REPLY規約
+
+サイレントメンテナンス操作を実行する場合は、`NO_REPLY` プレフィックスを使用して配信を抑制します:
+
+```
+NO_REPLY
+
+[エージェントがメモリ書き込み、ファイル更新などを実行]
+```
+
+出力が `NO_REPLY` で始まる場合、OpenClawはドラフト/入力インジケーターを抑制し、サイレント操作中の部分的な漏洩を防ぎます。
+
+### メモリファイルの組織
+
+OpenClawはメモリにプレーンMarkdownを使用します:
+
+```
+~/.openclaw/workspace/
+├── MEMORY.md              # 長期的な厳選メモリ (メインセッションのみ)
+├── memory/
+│   ├── 2026-02-10.md     # 日次ログ (追加のみ)
+│   ├── 2026-02-11.md
+│   └── 2026-02-13.md
+└── AGENTS.md, SOUL.md, USER.md など
+```
+
+**ベストプラクティス**:
+- **決定と設定** → `MEMORY.md`
+- **日次コンテキストとメモ** → `memory/YYYY-MM-DD.md`
+- **「メンタルノート」に頼らない** → 重要なことはすべてディスクに書き込む
+- **MEMORY.mdはメインセッションでのみロード** → グループコンテキストでは決して (セキュリティ)
+
+### メモリ検索設定
+
+OpenClawはメモリファイル上にベクトルインデックスを構築してセマンティック検索を行うことができます:
+
+```json5
+{
+  agents: {
+    defaults: {
+      memorySearch: {
+        enabled: true,
+        provider: "openai",  // または "gemini"、"local"
+        model: "text-embedding-3-small",
+        
+        // ハイブリッド検索 (BM25 + ベクトル)
+        query: {
+          hybrid: {
+            enabled: true,
+            vectorWeight: 0.7,
+            textWeight: 0.3,
+            candidateMultiplier: 4
+          }
+        },
+        
+        // 追加ディレクトリをインデックス化
+        extraPaths: ["../team-docs", "/srv/shared-notes/overview.md"]
+      }
+    }
+  }
+}
+```
+
+**プロバイダーオプション**:
+- `openai`: OpenAI埋め込みAPIを使用 (コスト削減のためバッチインデックス化をサポート)
+- `gemini`: Google Gemini埋め込みを使用
+- `local`: GGUFモデルでnode-llama-cppを使用 (〜300MBに自動ダウンロード)
+
+**ハイブリッド検索の利点**:
+- ベクトル: セマンティックマッチング ("Mac Studio gateway host" ≈ "ゲートウェイを実行しているマシン")
+- BM25: 正確なトークン (ID、エラーコード、コードシンボル)
+- 組み合わせ: 両方の長所
+
+## トークンコストとコンテキスト使用のデバッグ
+
+### チャットでトークン使用を表示
+
+```bash
+# 現在のセッション状態を表示
+/status
+
+# レスポンスごとの使用フッターを有効化
+/usage tokens     # トークンカウントを表示
+/usage full       # トークン + 推定コストを表示 (APIキーのみ)
+/usage cost       # ログからのローカルコストサマリーを表示
+
+# 使用フッターを無効化
+/usage off
+
+# コンテキストの内訳を表示
+/context list     # 高レベルの内訳
+/context detail   # ファイルごとの詳細サイズ
+```
+
+### コスト見積もりを理解する
+
+OpenClawはモデル価格設定から コストを見積もります:
+
+```json5
+{
+  models: {
+    providers: {
+      anthropic: {
+        models: [
+          {
+            id: "claude-sonnet-4-5",
+            cost: {
+              input: 3.0,      // 1Mトークンあたりのドル
+              output: 15.0,
+              cacheRead: 0.3,
+              cacheWrite: 3.75
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+**プルーニングによるキャッシュ動作**:
+- AnthropicプロンプトキャッシュはTTLウィンドウ内でのみ適用
+- キャッシュTTLプルーニングはキャッシュ期限切れ時にキャッシュ書き込みコストを削減
+- ハートビートはキャッシュをウォームに保つことができる (間隔をキャッシュTTLのすぐ下に設定)
+
+**例: 1hキャッシュをウォームに保つ**:
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "anthropic/claude-opus-4-5"
+      },
+      models: {
+        "anthropic/claude-opus-4-5": {
+          params: {
+            cacheRetention: "long"
+          }
+        }
+      },
+      heartbeat: {
+        every: "55m"  // 1hキャッシュTTLのすぐ下
+      }
+    }
+  }
+}
+```
+
+## 高度: LanceDBによる長期メモリ
+
+広範なメモリ要件を持つ本番環境デプロイメントの場合、OpenClawは代替メモリバックエンドとしてLanceDBをサポートしています:
+
+```json5
+{
+  plugins: {
+    slots: {
+      memory: "memory-lancedb"  // デフォルトの "memory-core" の代わりに
+    }
+  }
+}
+```
+
+**LanceDBの利点**:
+- 大規模データセット向けに最適化された永続ベクトルストレージ
+- 大規模でのパフォーマンス向上 (数千のメモリエントリ)
+- 自動リコールとキャプチャワークフロー
+- 高度なフィルタリングとメタデータクエリ
+
+**前提条件**:
+- 個別のLanceDBサーバー/インスタンス
+- 接続詳細の追加設定
+
+## 高度: QMDメモリバックエンド (実験的)
+
+QMDはローカルファーストの検索サイドカーでBM25 + ベクトル + 再ランキングを組み合わせます:
+
+```json5
+{
+  memory: {
+    backend: "qmd",
+    qmd: {
+      includeDefaultMemory: true,
+      update: { interval: "5m", debounceMs: 15000 },
+      limits: { maxResults: 6, timeoutMs: 4000 },
+      scope: {
+        default: "deny",
+        rules: [{ action: "allow", match: { chatType: "direct" } }]
+      },
+      paths: [
+        { name: "docs", path: "~/notes", pattern: "**/*.md" }
+      ]
+    }
+  }
+}
+```
+
+**前提条件**:
+- QMD CLIをインストール: `bun install -g github.com/tobi/qmd`
+- 拡張機能をサポートするSQLite: `brew install sqlite` (macOS)
+- 最初の検索でGGUFモデルを自動ダウンロード (~300MB)
+
+**QMD機能**:
+- ローカルファースト (外部APIなし)
+- ハイブリッド検索 (BM25 + ベクトル + 再ランキング)
+- セッショントランスクリプトインデックス化 (オプトイン)
+- カスタムコレクションサポート
+
+## トラブルシューティングチェックリスト
+
+### 1. セッションキーの問題
+
+```bash
+# 現在のセッションキーを確認
+/status
+
+# セッションルーティングが期待どおりか確認
+openclaw sessions --json
+
+# dmScope設定を確認
+cat ~/.openclaw/openclaw.json | grep -A5 dmScope
+```
+
+### 2. コンテキストウィンドウの問題
+
+```bash
+# 現在のコンテキスト使用状況を表示
+/status
+
+# 詳細な内訳
+/context detail
+
+# モデルのコンテキストウィンドウを確認
+openclaw models list | grep <model-name>
+
+# 手動圧縮をトリガー
+/compact 最近の決定と未解決のタスクを含める
+```
+
+### 3. メモリが永続化されない
+
+```bash
+# メモリファイルが存在するか確認
+ls -la ~/.openclaw/workspace/memory/
+
+# メモリフラッシュ設定を確認
+cat ~/.openclaw/openclaw.json | grep -A10 memoryFlush
+
+# ワークスペースアクセスを確認 (書き込み可能であるべき)
+openclaw status | grep workspace
+```
+
+### 4. 過剰なトークンコスト
+
+```bash
+# セッションプルーニングを有効化
+# ~/.openclaw/openclaw.json を編集:
+{
+  "agents": {
+    "defaults": {
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "5m"
+      }
+    }
+  }
+}
+
+# ゲートウェイを再起動
+openclaw gateway restart
+
+# コスト削減を監視
+/usage cost
+```
+
+### 5. サイレント操作の漏洩
+
+操作が正確な `NO_REPLY` トークンで始まることを確認:
+
+```
+NO_REPLY
+
+メモリ書き込み操作を実行中...
+```
+
+ストリーミング抑制にはOpenClawビルド `2026.1.10` 以降が必要です。
+
+## 結論
+
+OpenClawのセッションメモリとコンテキスト管理システムは強力ですが、最適に設定するには理解が必要です。主なポイント:
+
+1. **圧縮前メモリフラッシュを有効化**して認証情報の損失を防ぐ
+2. **キャッシュTTLセッションプルーニングを使用**してツール結果の肥大化を制御
+3. **マルチユーザーシナリオでセキュアDMモードを設定**
+4. **`/usage` および `/context` コマンドでトークンコストを監視**
+5. **重要な情報をディスクに書き込む** (メモリ内状態に決して頼らない)
+6. **スケールに応じて適切なメモリバックエンドを選択** (core、LanceDB、またはQMD)
+
+これらの設定とトラブルシューティング技術により、信頼性の高いメモリ永続化と最適なトークン使用で健全なセッションを維持できます。
+
+## さらに読む
+
+- [OpenClawセッションドキュメント](https://docs.openclaw.ai/concepts/session)
+- [圧縮の詳細](https://docs.openclaw.ai/concepts/compaction)
+- [メモリアーキテクチャ](https://docs.openclaw.ai/concepts/memory)
+- [トークン使用とコスト](https://docs.openclaw.ai/token-use)
+- [セッションプルーニング](https://docs.openclaw.ai/concepts/session-pruning)

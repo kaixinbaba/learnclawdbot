@@ -1,0 +1,555 @@
+---
+title: "OpenClaw의 세션 메모리 및 컨텍스트 관리 문제 해결"
+description: "OpenClaw의 세션 압축, 메모리 손실 및 컨텍스트 윈도우 문제를 해결하는 방법을 배웁니다."
+slug: "troubleshooting/fix-session-memory-issues"
+publishedAt: "2026-02-13"
+updatedAt: "2026-02-13"
+status: "published"
+visibility: "public"
+tags: ["troubleshooting", "session", "memory", "compaction"]
+featuredImageUrl: "/images/blog/fix-session-memory-issues.png"
+---
+
+# OpenClaw의 세션 메모리 및 컨텍스트 관리 문제 해결
+
+세션 메모리와 컨텍스트 관리는 OpenClaw 아키텍처의 중요한 구성 요소입니다. 문제가 발생하면—컨텍스트 윈도우 오버플로, 압축 중 중요한 정보 손실, 세션의 무제한 팽창—에이전트의 성능과 안정성에 큰 영향을 미칠 수 있습니다. 이 가이드는 이러한 문제를 진단하고 해결하는 데 도움이 됩니다.
+
+## OpenClaw 세션 아키텍처 이해
+
+### 2계층 지속성 시스템
+
+OpenClaw는 두 가지 계층을 통해 세션 상태를 유지합니다:
+
+1. **세션 스토어 (`sessions.json`)**
+   - 세션 메타데이터를 저장하는 키-값 맵
+   - 위치: `~/.openclaw/agents/<agentId>/sessions/sessions.json`
+   - 추적: 세션 ID, 마지막 활동, 토글 상태, 토큰 카운터, 압축 횟수
+   - 수동 편집 가능
+
+2. **세션 트랜스크립트 (`<sessionId>.jsonl`)**
+   - 전체 대화 트리를 포함하는 추가 전용 JSONL 파일
+   - 위치: `~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
+   - 저장: 메시지, 도구 호출, 압축 요약, 분기점
+   - 향후 턴의 컨텍스트를 재구성하는 데 사용
+
+**중요 원칙**: Gateway가 진실의 소스입니다. 원격 모드에서는 이러한 파일이 로컬 머신이 아닌 원격 호스트에 있습니다.
+
+### 세션 키 작동 방식
+
+OpenClaw는 `sessionKey`를 사용하여 대화를 라우팅하고 격리합니다:
+
+- **메인/다이렉트 채팅**: `agent:<agentId>:main` (기본값)
+- **그룹 채팅**: `agent:<agentId>:<channel>:group:<id>`
+- **Discord/Slack 룸**: `agent:<agentId>:<channel>:channel:<id>`
+- **Cron 작업**: `cron:<job.id>`
+- **Webhook**: `hook:<uuid>`
+
+모든 채팅에서 `/status`를 사용하여 현재 세션 키와 컨텍스트 사용량을 확인할 수 있습니다.
+
+## 컨텍스트 윈도우와 압축 이해
+
+### 압축이란?
+
+각 모델에는 **컨텍스트 윈도우**가 있습니다—한 번의 요청에서 처리할 수 있는 최대 토큰 수입니다. 장기 실행 대화는 메시지와 도구 결과를 축적하여 결국 이 제한에 접근합니다. OpenClaw의 **압축** 기능은 오래된 대화 기록을 간결한 요약으로 요약하고 최근 메시지만 그대로 유지합니다.
+
+압축은 **영구적**입니다: 요약은 세션 트랜스크립트에 저장되므로 향후 요청에서 다음을 볼 수 있습니다:
+- 압축 요약
+- 압축 지점 이후의 최근 메시지
+
+### 자동 압축이 트리거되는 시점
+
+OpenClaw의 내장 Pi 에이전트는 두 가지 시나리오에서 자동 압축을 트리거합니다:
+
+1. **오버플로 복구**: 모델이 컨텍스트 오버플로 오류를 반환 → 압축 → 재시도
+2. **임계값 유지**: 성공적인 턴 이후, 다음의 경우:
+   ```
+   contextTokens > contextWindow - reserveTokens
+   ```
+
+### 압축 vs. 세션 프루닝
+
+이들은 두 가지 다른 메커니즘입니다:
+
+| 기능 | 압축 | 세션 프루닝 |
+|------|------|----------|
+| **기능** | 대화 기록 요약 및 영구 저장 | 메모리 내 오래된 도구 결과 트리밍 |
+| **영구성** | JSONL 트랜스크립트에 기록 | 임시, 요청당만 |
+| **대상** | 모든 메시지 유형 | 도구 결과만 |
+| **트리거** | 컨텍스트 윈도우 임계값 | 캐시 TTL 만료 |
+
+## 일반적인 세션 메모리 문제
+
+### 문제 #1: 압축 중 자격 증명 손실
+
+**증상**: 자동 압축 후 에이전트가 API 키, SSH 자격 증명 또는 작업 공간 상태를 "잊어버립니다".
+
+**근본 원인**: 최근 메시지에만 저장된 중요한 컨텍스트가 에이전트가 영구 스토리지에 작성하기 전에 요약됩니다.
+
+**해결책**: 압축 전 메모리 플러시를 활성화합니다.
+
+메모리 플러시는 압축 전에 자동 에이전트 턴을 실행하여 에이전트에게 중요한 정보를 디스크에 작성하도록 유도합니다:
+
+```json5
+// ~/.openclaw/openclaw.json
+{
+  agents: {
+    defaults: {
+      compaction: {
+        reserveTokensFloor: 20000,
+        memoryFlush: {
+          enabled: true,
+          softThresholdTokens: 4000,
+          systemPrompt: "세션이 압축에 가까워지고 있습니다. 지금 영구 메모리를 저장하십시오.",
+          prompt: "영구 메모를 memory/YYYY-MM-DD.md에 작성하십시오; 저장할 것이 없으면 NO_REPLY로 응답하십시오."
+        }
+      }
+    }
+  }
+}
+```
+
+**작동 방식**:
+- 트리거 조건: `contextTokens > (contextWindow - reserveTokensFloor - softThresholdTokens)`
+- 압축 주기당 한 번 실행 (`sessions.json`에서 추적)
+- `NO_REPLY` 규칙을 사용하여 사용자에게 보이는 출력 억제
+- 작업 공간이 쓰기 가능한 경우에만 실행
+
+### 문제 #2: 도구 결과로 인한 컨텍스트 윈도우 팽창
+
+**증상**: 사용자 메시지가 적음에도 불구하고 세션이 빠르게 컨텍스트 제한에 접근합니다.
+
+**근본 원인**: 큰 도구 출력 (예: `exec` 로그, 파일 읽기, 웹 스크래핑)이 트랜스크립트에 축적됩니다.
+
+**해결책**: 캐시 TTL 세션 프루닝을 활성화합니다.
+
+```json5
+{
+  agents: {
+    defaults: {
+      contextPruning: {
+        mode: "cache-ttl",
+        ttl: "5m",
+        keepLastAssistants: 3,
+        softTrimRatio: 0.3,
+        hardClearRatio: 0.5,
+        minPrunableToolChars: 50000,
+        softTrim: {
+          maxChars: 4000,
+          headChars: 1500,
+          tailChars: 1500
+        },
+        hardClear: {
+          enabled: true,
+          placeholder: "[오래된 도구 결과 내용이 지워졌습니다]"
+        }
+      }
+    }
+  }
+}
+```
+
+**Anthropic 사용자를 위한 스마트 기본값**:
+- OAuth/설정 토큰 프로필: `cache-ttl` 활성화, 하트비트 `1h`
+- API 키 프로필: `cache-ttl` 활성화, 하트비트 `30m`, 캐시 TTL `1h`
+
+**프루닝되는 내용**:
+- `toolResult` 메시지만 (사용자/어시스턴트 메시지는 수정되지 않음)
+- 마지막 N개의 어시스턴트 메시지 이전의 도구 결과
+- 초대형 결과는 소프트 트리밍 (헤드 + 테일 유지, `...`로 연결)
+- 매우 오래된 결과는 플레이스홀더 텍스트로 하드 클리어
+- 이미지 블록은 항상 보호됨
+
+### 문제 #3: 과도한 압축 트리거
+
+**증상**: `🧹 자동 압축 완료`가 짧은 세션에서도 자주 표시됩니다.
+
+**근본 원인**:
+1. 워크로드에 대해 모델 컨텍스트 윈도우가 너무 작음
+2. 컨텍스트 윈도우에 대해 `reserveTokens`가 너무 높게 설정됨
+3. 세션 시작 시 주입되는 작업 공간 파일이 매우 큼
+
+**진단**:
+
+```bash
+# 현재 세션 상태 확인
+# 채팅에서:
+/status
+
+# CLI에서:
+openclaw status
+
+# 컨텍스트 분석 확인
+# 채팅에서:
+/context detail
+```
+
+**해결책**:
+
+1. **예약 토큰 플로어 증가** (더 많은 여유 공간 확보):
+```json5
+{
+  agents: {
+    defaults: {
+      compaction: {
+        reserveTokensFloor: 25000  // 기본값: 20000
+      }
+    }
+  }
+}
+```
+
+2. **작업 공간 파일 주입 감소** (부트스트랩 파일 크기 제한):
+```json5
+{
+  agents: {
+    defaults: {
+      bootstrapMaxChars: 15000  // 기본값: 20000
+    }
+  }
+}
+```
+
+3. **수동 압축을 전략적으로 사용**:
+```
+/compact 결정 사항과 미해결 질문에 집중
+```
+
+### 문제 #4: 세션 격리로 인한 개인 컨텍스트 유출
+
+**증상**: DM의 개인 정보가 그룹 채팅에 표시되거나 여러 사용자가 서로의 컨텍스트를 봅니다.
+
+**근본 원인**: 기본 `session.dmScope = "main"`이 모든 DM을 하나의 세션 키로 공유합니다.
+
+**해결책**: 다중 사용자 시나리오에서 보안 DM 모드를 활성화합니다.
+
+```json5
+{
+  session: {
+    // 채널 + 발신자별로 DM 컨텍스트 격리
+    dmScope: "per-channel-peer",
+    
+    // 다중 계정 받은편지함의 경우:
+    // dmScope: "per-account-channel-peer",
+    
+    // 선택 사항: 채널 간에 동일한 사람 연결
+    identityLinks: {
+      alice: ["telegram:123456789", "discord:987654321"]
+    }
+  }
+}
+```
+
+**DM 범위 옵션**:
+- `main` (기본값): 모든 DM이 하나의 세션 공유—단일 사용자 연속성에 적합
+- `per-peer`: 채널 간 발신자 ID별로 격리
+- `per-channel-peer`: 채널 + 발신자별로 격리 (공유 받은편지함에 권장)
+- `per-account-channel-peer`: 계정 + 채널 + 발신자별로 격리 (다중 계정)
+
+## 수동 메모리 관리 모범 사례
+
+### NO_REPLY 규칙
+
+자동 유지 관리 작업을 실행할 때 `NO_REPLY` 접두사를 사용하여 전달을 억제합니다:
+
+```
+NO_REPLY
+
+[에이전트가 메모리 쓰기, 파일 업데이트 등을 수행]
+```
+
+출력이 `NO_REPLY`로 시작하면 OpenClaw는 드래프트/입력 표시기를 억제하여 자동 작업 중 부분 유출을 방지합니다.
+
+### 메모리 파일 구성
+
+OpenClaw는 메모리에 일반 Markdown을 사용합니다:
+
+```
+~/.openclaw/workspace/
+├── MEMORY.md              # 장기, 선별된 메모리 (메인 세션만)
+├── memory/
+│   ├── 2026-02-10.md     # 일일 로그 (추가만)
+│   ├── 2026-02-11.md
+│   └── 2026-02-13.md
+└── AGENTS.md, SOUL.md, USER.md 등
+```
+
+**모범 사례**:
+- **결정 및 환경 설정** → `MEMORY.md`
+- **일일 컨텍스트 및 메모** → `memory/YYYY-MM-DD.md`
+- **"정신 메모"에 의존하지 말 것** → 중요한 모든 것을 디스크에 작성
+- **MEMORY.md는 메인 세션에서만 로드** → 그룹 컨텍스트에서는 절대 안 됨 (보안)
+
+### 메모리 검색 구성
+
+OpenClaw는 메모리 파일에 벡터 인덱스를 구축하여 의미 검색을 수행할 수 있습니다:
+
+```json5
+{
+  agents: {
+    defaults: {
+      memorySearch: {
+        enabled: true,
+        provider: "openai",  // 또는 "gemini", "local"
+        model: "text-embedding-3-small",
+        
+        // 하이브리드 검색 (BM25 + 벡터)
+        query: {
+          hybrid: {
+            enabled: true,
+            vectorWeight: 0.7,
+            textWeight: 0.3,
+            candidateMultiplier: 4
+          }
+        },
+        
+        // 추가 디렉토리 인덱싱
+        extraPaths: ["../team-docs", "/srv/shared-notes/overview.md"]
+      }
+    }
+  }
+}
+```
+
+**제공업체 옵션**:
+- `openai`: OpenAI 임베딩 API 사용 (비용 절감을 위한 배치 인덱싱 지원)
+- `gemini`: Google Gemini 임베딩 사용
+- `local`: GGUF 모델로 node-llama-cpp 사용 (~300MB로 자동 다운로드)
+
+**하이브리드 검색의 이점**:
+- 벡터: 의미 매칭 ("Mac Studio gateway host" ≈ "게이트웨이를 실행하는 머신")
+- BM25: 정확한 토큰 (ID, 오류 코드, 코드 기호)
+- 조합: 양쪽의 장점
+
+## 토큰 비용 및 컨텍스트 사용 디버깅
+
+### 채팅에서 토큰 사용 확인
+
+```bash
+# 현재 세션 상태 표시
+/status
+
+# 응답별 사용 푸터 활성화
+/usage tokens     # 토큰 수 표시
+/usage full       # 토큰 + 예상 비용 표시 (API 키만)
+/usage cost       # 로그에서 로컬 비용 요약 표시
+
+# 사용 푸터 비활성화
+/usage off
+
+# 컨텍스트 분석 보기
+/context list     # 상위 수준 분석
+/context detail   # 파일별 세부 크기
+```
+
+### 비용 추정 이해
+
+OpenClaw는 모델 가격 구성에서 비용을 추정합니다:
+
+```json5
+{
+  models: {
+    providers: {
+      anthropic: {
+        models: [
+          {
+            id: "claude-sonnet-4-5",
+            cost: {
+              input: 3.0,      // 1M 토큰당 달러
+              output: 15.0,
+              cacheRead: 0.3,
+              cacheWrite: 3.75
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+**프루닝을 사용한 캐시 동작**:
+- Anthropic 프롬프트 캐싱은 TTL 윈도우 내에서만 적용
+- 캐시 TTL 프루닝은 캐시 만료 시 캐시 쓰기 비용 감소
+- 하트비트는 캐시를 따뜻하게 유지할 수 있음 (간격을 캐시 TTL 바로 아래로 설정)
+
+**예: 1h 캐시를 따뜻하게 유지**:
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "anthropic/claude-opus-4-5"
+      },
+      models: {
+        "anthropic/claude-opus-4-5": {
+          params: {
+            cacheRetention: "long"
+          }
+        }
+      },
+      heartbeat: {
+        every: "55m"  // 1h 캐시 TTL 바로 아래
+      }
+    }
+  }
+}
+```
+
+## 고급: LanceDB를 사용한 장기 메모리
+
+광범위한 메모리 요구 사항이 있는 프로덕션 배포의 경우 OpenClaw는 대체 메모리 백엔드로 LanceDB를 지원합니다:
+
+```json5
+{
+  plugins: {
+    slots: {
+      memory: "memory-lancedb"  // 기본 "memory-core" 대신
+    }
+  }
+}
+```
+
+**LanceDB 이점**:
+- 대규모 데이터 세트에 최적화된 영구 벡터 스토리지
+- 대규모에서 더 나은 성능 (수천 개의 메모리 항목)
+- 자동 회수 및 캡처 워크플로
+- 고급 필터링 및 메타데이터 쿼리
+
+**전제 조건**:
+- 별도의 LanceDB 서버/인스턴스
+- 연결 세부 정보에 대한 추가 구성
+
+## 고급: QMD 메모리 백엔드 (실험적)
+
+QMD는 로컬 우선 검색 사이드카에서 BM25 + 벡터 + 재순위를 결합합니다:
+
+```json5
+{
+  memory: {
+    backend: "qmd",
+    qmd: {
+      includeDefaultMemory: true,
+      update: { interval: "5m", debounceMs: 15000 },
+      limits: { maxResults: 6, timeoutMs: 4000 },
+      scope: {
+        default: "deny",
+        rules: [{ action: "allow", match: { chatType: "direct" } }]
+      },
+      paths: [
+        { name: "docs", path: "~/notes", pattern: "**/*.md" }
+      ]
+    }
+  }
+}
+```
+
+**전제 조건**:
+- QMD CLI 설치: `bun install -g github.com/tobi/qmd`
+- 확장을 지원하는 SQLite: `brew install sqlite` (macOS)
+- 첫 검색 시 GGUF 모델 자동 다운로드 (~300MB)
+
+**QMD 기능**:
+- 로컬 우선 (외부 API 없음)
+- 하이브리드 검색 (BM25 + 벡터 + 재순위)
+- 세션 트랜스크립트 인덱싱 (옵트인)
+- 사용자 정의 컬렉션 지원
+
+## 문제 해결 체크리스트
+
+### 1. 세션 키 문제
+
+```bash
+# 현재 세션 키 확인
+/status
+
+# 세션 라우팅이 예상대로인지 확인
+openclaw sessions --json
+
+# dmScope 구성 확인
+cat ~/.openclaw/openclaw.json | grep -A5 dmScope
+```
+
+### 2. 컨텍스트 윈도우 문제
+
+```bash
+# 현재 컨텍스트 사용량 보기
+/status
+
+# 세부 분석
+/context detail
+
+# 모델 컨텍스트 윈도우 확인
+openclaw models list | grep <model-name>
+
+# 수동 압축 트리거
+/compact 최근 결정 및 미해결 작업 포함
+```
+
+### 3. 메모리가 지속되지 않음
+
+```bash
+# 메모리 파일이 존재하는지 확인
+ls -la ~/.openclaw/workspace/memory/
+
+# 메모리 플러시 구성 확인
+cat ~/.openclaw/openclaw.json | grep -A10 memoryFlush
+
+# 작업 공간 액세스 확인 (쓰기 가능해야 함)
+openclaw status | grep workspace
+```
+
+### 4. 과도한 토큰 비용
+
+```bash
+# 세션 프루닝 활성화
+# ~/.openclaw/openclaw.json 편집:
+{
+  "agents": {
+    "defaults": {
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "5m"
+      }
+    }
+  }
+}
+
+# 게이트웨이 재시작
+openclaw gateway restart
+
+# 비용 절감 모니터링
+/usage cost
+```
+
+### 5. 자동 작업 유출
+
+작업이 정확한 `NO_REPLY` 토큰으로 시작하는지 확인:
+
+```
+NO_REPLY
+
+메모리 쓰기 작업 수행 중...
+```
+
+스트리밍 억제에는 OpenClaw 빌드 `2026.1.10` 이상이 필요합니다.
+
+## 결론
+
+OpenClaw의 세션 메모리 및 컨텍스트 관리 시스템은 강력하지만 최적으로 구성하려면 이해가 필요합니다. 주요 내용:
+
+1. **압축 전 메모리 플러시 활성화**로 자격 증명 손실 방지
+2. **캐시 TTL 세션 프루닝 사용**으로 도구 결과 팽창 제어
+3. **다중 사용자 시나리오에서 보안 DM 모드 구성**
+4. **`/usage` 및 `/context` 명령으로 토큰 비용 모니터링**
+5. **중요한 정보를 디스크에 작성** (메모리 내 상태에 의존하지 말 것)
+6. **규모에 맞는 적절한 메모리 백엔드 선택** (core, LanceDB 또는 QMD)
+
+이러한 구성 및 문제 해결 기술을 통해 안정적인 메모리 지속성과 최적의 토큰 사용으로 건강한 세션을 유지할 수 있습니다.
+
+## 더 읽기
+
+- [OpenClaw 세션 문서](https://docs.openclaw.ai/concepts/session)
+- [압축 심층 분석](https://docs.openclaw.ai/concepts/compaction)
+- [메모리 아키텍처](https://docs.openclaw.ai/concepts/memory)
+- [토큰 사용 및 비용](https://docs.openclaw.ai/token-use)
+- [세션 프루닝](https://docs.openclaw.ai/concepts/session-pruning)
