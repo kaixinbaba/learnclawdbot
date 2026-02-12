@@ -1,0 +1,295 @@
+---
+title: "완벽 가이드: Windows, macOS, Linux에서 OpenClaw 설정하기"
+description: "모든 주요 플랫폼에서 OpenClaw를 설치하는 단계별 가이드. 일반적인 Node.js, npm 및 종속성 문제 해결"
+slug: /troubleshooting/openclaw-setup-installation-guide
+tags: installation, setup, troubleshooting, node.js, cross-platform
+publishedAt: 2026-02-12
+status: published
+visibility: public
+isPinned: false
+featuredImageUrl: /images/features/openclaw-setup-guide.webp
+---
+
+# 완벽 가이드: Windows, macOS, Linux에서 OpenClaw 설정하기
+
+시스템에서 OpenClaw를 실행하는 것은 간단해야 하지만, 다른 운영 체제에는 고유한 문제가 있습니다. 이 가이드는 **Windows**, **macOS**, **Linux**에서 설치하는 방법을 단계별로 안내하며 일반적인 함정과 수정 사항을 다룹니다.
+
+## 전제 조건: 먼저 필요한 것
+
+OpenClaw를 설치하기 전에 다음이 있는지 확인하세요:
+
+### 1. Node.js (v18 이상)
+
+OpenClaw에는 최신 Node.js 런타임이 필요합니다. 버전 확인:
+
+```bash
+node --version
+```
+
+Node.js가 없거나 이전 버전이 있는 경우 설치:
+
+**macOS (Homebrew 사용):**
+```bash
+brew install node
+```
+
+**Windows (winget 사용):**
+```powershell
+winget install OpenJS.NodeJS
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+**Linux (Fedora/RHEL):**
+```bash
+sudo dnf install nodejs
+```
+
+### 2. npm 또는 pnpm
+
+npm은 Node.js와 함께 제공되지만 pnpm이 더 빠르고 효율적입니다:
+
+```bash
+npm install -g pnpm
+```
+
+## OpenClaw 설치
+
+### 1단계: npm을 통해 설치
+
+```bash
+npm install -g @anthropic-ai/openclaw
+```
+
+또는 pnpm 사용:
+
+```bash
+pnpm add -g @anthropic-ai/openclaw
+```
+
+### 2단계: 설치 확인
+
+```bash
+openclaw --version
+```
+
+버전 번호(예: `0.5.2`)가 표시되어야 합니다.
+
+## 플랫폼별 설정
+
+### 🪟 Windows
+
+#### 문제 #1: PowerShell 실행 정책
+
+**증상:** `openclaw: 파일...을 로드할 수 없습니다. 이 시스템에서 스크립트 실행이 비활성화되어 있습니다`
+
+**수정:**
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+#### 문제 #2: 긴 경로 지원
+
+Windows에는 npm 설치를 중단할 수 있는 260자 경로 제한이 있습니다.
+
+**수정:** 레지스트리에서 긴 경로 활성화
+```powershell
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+```
+
+또는 WSL2(Windows Subsystem for Linux) 사용:
+```powershell
+wsl --install
+```
+
+그런 다음 WSL 내부에 OpenClaw 설치:
+```bash
+# WSL 내부
+npm install -g @anthropic-ai/openclaw
+```
+
+#### 문제 #3: Node-gyp 컴파일 오류
+
+**증상:** 설치 중 빌드 도구 누락 오류
+
+**수정:** Windows 빌드 도구 설치
+```powershell
+npm install -g windows-build-tools
+```
+
+또는 Microsoft에서 Visual Studio 빌드 도구를 수동으로 설치.
+
+### 🍎 macOS
+
+#### 문제 #1: 권한 거부됨
+
+**증상:** `npm install -g` 실행 시 `EACCES: permission denied`
+
+**수정:** npm에서 `sudo`를 사용하지 마세요. 대신 사용자 디렉토리를 사용하도록 npm 구성:
+
+```bash
+mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc
+source ~/.zshrc
+```
+
+그런 다음 재설치:
+```bash
+npm install -g @anthropic-ai/openclaw
+```
+
+#### 문제 #2: 설치 후 명령을 찾을 수 없음
+
+**증상:** 설치 성공 후에도 `openclaw: command not found`
+
+**수정:** npm 전역 bin이 PATH에 있는지 확인:
+```bash
+echo $PATH | grep npm
+```
+
+누락된 경우 `~/.zshrc`에 추가:
+```bash
+export PATH="$(npm config get prefix)/bin:$PATH"
+```
+
+#### 문제 #3: Rosetta 필요 (M1/M2 Mac)
+
+일부 종속성은 Apple Silicon에서 Rosetta 2가 필요할 수 있습니다:
+
+```bash
+softwareupdate --install-rosetta
+```
+
+### 🐧 Linux
+
+#### 문제 #1: 전역 설치 시 EACCES
+
+**증상:** macOS와 동일한 권한 오류
+
+**수정:** 동일한 솔루션 - 사용자 디렉토리 사용:
+```bash
+mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+npm install -g @anthropic-ai/openclaw
+```
+
+#### 문제 #2: 종속성 누락 (Ubuntu/Debian)
+
+**증상:** 네이티브 모듈의 빌드 오류
+
+**수정:**
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential python3
+```
+
+#### 문제 #3: Snap Node.js 문제
+
+Snap을 통해 Node.js를 설치한 경우 권한 문제가 발생할 수 있습니다.
+
+**수정:** Snap 버전 제거 및 공식 저장소 사용:
+```bash
+sudo snap remove node
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+## 첫 구성
+
+설치 후 OpenClaw 구성:
+
+### 1. API 키 설정
+
+```bash
+openclaw configure
+```
+
+프롬프트를 따라 Anthropic API 키를 추가합니다.
+
+### 2. Gateway 시작
+
+```bash
+openclaw gateway start
+```
+
+### 3. 설정 테스트
+
+```bash
+openclaw chat "안녕하세요, OpenClaw!"
+```
+
+응답이 표시되면 축하합니다! 🎉
+
+## 일반적인 설치 후 문제
+
+### Gateway가 시작되지 않음
+
+**로그 확인:**
+```bash
+tail -f ~/.openclaw/logs/gateway.log
+```
+
+**일반적인 수정:**
+- 포트 3000이 이미 사용 중 → 구성에서 포트 변경
+- 구성 파일 누락 → `openclaw configure` 다시 실행
+- 방화벽 차단 → 방화벽 설정에서 Node.js 허용
+
+### 오래된 버전
+
+OpenClaw 업데이트:
+```bash
+npm update -g @anthropic-ai/openclaw
+```
+
+또는 pnpm 사용:
+```bash
+pnpm update -g @anthropic-ai/openclaw
+```
+
+### 완전 재설치
+
+모든 것이 실패하면:
+```bash
+# 제거
+npm uninstall -g @anthropic-ai/openclaw
+
+# 캐시 지우기
+npm cache clean --force
+
+# 재설치
+npm install -g @anthropic-ai/openclaw
+```
+
+## 플랫폼 비교
+
+| 기능 | Windows | macOS | Linux |
+|------|---------|-------|-------|
+| 네이티브 터미널 | ❌ WSL2 사용 | ✅ 우수 | ✅ 우수 |
+| 설치 속도 | 🐢 느림 | 🚀 빠름 | 🚀 빠름 |
+| 빌드 도구 필요 | ⚠️ 자주 | 🟢 드물게 | ⚠️ 가끔 |
+| 권장 설정 | WSL2 + Ubuntu | 네이티브 | 네이티브 |
+
+## 다음 단계
+
+설치가 완료되면 탐색:
+- **[프로바이더 구성](/providers/anthropic)** - Claude, OpenAI, Google 설정
+- **[Heartbeat 설정](/troubleshooting/fix-cron-heartbeat-not-working)** - 예약된 작업 활성화
+- **[터미널 기본](/how-to-open-terminal)** - 터미널 명령 학습
+
+## 여전히 문제가 있나요?
+
+막힌 경우:
+1. [GitHub Issues](https://github.com/anthropics/claude-quickstarts/issues) 확인
+2. [공식 문서](https://docs.openclaw.ai) 검토
+3. 커뮤니티 Discord에 참여하여 실시간 도움 받기
+
+---
+
+**프로 팁:** Windows에서는 WSL2가 최고의 OpenClaw 경험을 제공합니다. Windows 내에서 Linux를 실행하는 것과 같으며 완전한 터미널 기능을 갖추고 있습니다.
