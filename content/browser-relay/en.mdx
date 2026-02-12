@@ -1,0 +1,183 @@
+---
+title: OpenClaw Browser Relay - Installation and Usage Guide
+description: Learn how to install and use the OpenClaw Browser Relay Chrome extension to let AI control your browser and automate tasks
+slug: browser-relay
+lastUpdated: "2026-02-12"
+coverImage: "/images/blog/browser-relay-hero.svg"
+---
+
+# OpenClaw Browser Relay - Installation and Usage Guide
+
+The OpenClaw Browser Relay is a powerful Chrome extension that enables seamless communication between your browser and OpenClaw AI. With this extension, you can grant OpenClaw the ability to interact with web pages, automate repetitive tasks, and perform complex browser-based operations on your behalf.
+
+## What Is Browser Relay?
+
+Browser Relay acts as a bridge between your Chrome browser and OpenClaw AI. Think of it as a "remote control" that allows the AI to:
+
+- **Navigate web pages** - Open URLs, click links, and browse websites
+- **Fill out forms** - Automatically enter data into web forms
+- **Extract information** - Read and analyze content from web pages
+- **Interact with elements** - Click buttons, select options, and manipulate page elements
+- **Take screenshots** - Capture visual information from websites
+- **Execute automation** - Perform multi-step workflows across different websites
+
+The extension operates in a secure, controlled manner - you maintain full control and can see everything the AI does in real-time.
+
+## Installation Steps
+
+Installing the Browser Relay extension requires loading it manually as an unpacked extension. Here's how:
+
+### Step 1: Locate the Extension Files
+
+The Browser Relay extension comes bundled with OpenClaw. Find the extension files at:
+
+```
+~/.openclaw/extensions/browser-relay/
+```
+
+If you don't see this directory, make sure you have the latest version of OpenClaw installed.
+
+### Step 2: Open Chrome Extensions
+
+1. Open Google Chrome
+2. Navigate to `chrome://extensions/` in the address bar
+3. Alternatively, click the three-dot menu → **More tools** → **Extensions**
+
+### Step 3: Enable Developer Mode
+
+In the top-right corner of the Extensions page, toggle on **Developer mode**.
+
+### Step 4: Load the Extension
+
+1. Click the **Load unpacked** button that appears after enabling Developer mode
+2. Navigate to the `~/.openclaw/extensions/browser-relay/` directory
+3. Select the folder and click **Select Folder** (or **Open** on some systems)
+
+### Step 5: Verify Installation
+
+After loading, you should see the OpenClaw Browser Relay extension in your extensions list. You'll also notice a new icon in your Chrome toolbar (usually near the address bar).
+
+## How to Use Browser Relay
+
+Once installed, using Browser Relay is straightforward:
+
+### Attaching a Tab
+
+To allow OpenClaw to control a specific browser tab:
+
+1. **Navigate to the page** you want OpenClaw to interact with
+2. **Click the Browser Relay icon** in your Chrome toolbar
+3. The extension icon will change to show it's **attached** to the current tab
+4. A badge or indicator (usually "ON") confirms the connection
+
+**Important:** OpenClaw can only control tabs that are explicitly attached. This security measure ensures you always know which tabs the AI has access to.
+
+### Detaching a Tab
+
+To disconnect OpenClaw from a tab:
+
+1. Click the Browser Relay icon again
+2. The badge will turn off, indicating the tab is no longer attached
+
+### Working with Multiple Tabs
+
+You can attach different tabs at different times, but typically only one tab is controlled at a time. When you ask OpenClaw to perform browser actions, it will use the currently attached tab.
+
+## Common Use Cases
+
+Here are some practical ways to leverage Browser Relay with OpenClaw:
+
+### 1. Web Research and Data Extraction
+
+**Example:** "Extract all product prices from this e-commerce page and create a comparison table."
+
+OpenClaw can navigate product listings, extract structured data, and present it in an organized format.
+
+### 2. Form Filling and Submissions
+
+**Example:** "Fill out this contact form with my information and submit it."
+
+Perfect for repetitive form submissions, surveys, or registration processes.
+
+### 3. Automated Testing
+
+**Example:** "Test the login flow on this website using these credentials."
+
+QA engineers can use OpenClaw to automate browser-based testing scenarios.
+
+### 4. Content Monitoring
+
+**Example:** "Check this page every hour and notify me if the 'Out of Stock' status changes."
+
+Monitor websites for specific changes or updates automatically.
+
+### 5. Multi-Step Workflows
+
+**Example:** "Search for flights from New York to London on these three websites and compare the cheapest options."
+
+Chain together multiple actions across different sites to complete complex tasks.
+
+### 6. Screenshot and Documentation
+
+**Example:** "Take screenshots of each step in this tutorial and save them to a folder."
+
+Document processes or capture visual information systematically.
+
+## Tips and Best Practices
+
+### Security Considerations
+
+- **Only attach trusted tabs** - Be cautious about which sites you give OpenClaw access to
+- **Review actions** - Watch what OpenClaw does, especially on sites handling sensitive information
+- **Detach when done** - Disconnect tabs you're no longer using with OpenClaw
+
+### Performance Tips
+
+- **Close unnecessary tabs** - Browser Relay works best when Chrome isn't overloaded
+- **Use specific instructions** - Clear commands help OpenClaw perform actions more accurately
+- **Wait for page loads** - Complex pages may need time to fully load before interaction
+
+### Troubleshooting
+
+**Extension icon not appearing?**
+- Make sure Developer mode is enabled
+- Try reloading the extension from `chrome://extensions/`
+
+**Can't attach tab?**
+- Refresh the page and try again
+- Some protected pages (like `chrome://` URLs) cannot be controlled
+
+**Actions not working?**
+- Ensure the tab is still attached (check for the "ON" badge)
+- Verify OpenClaw is running and connected
+
+## Profile Selection in OpenClaw
+
+When using browser commands with OpenClaw, you'll need to specify which browser profile to use:
+
+- **`profile="chrome"`** - Uses the Browser Relay extension to take over your existing Chrome tabs
+- **`profile="openclaw"`** - Uses OpenClaw's isolated, managed browser instance
+
+For Browser Relay, always use `profile="chrome"`:
+
+```
+Use the browser with profile="chrome" to fill out the form on the current tab.
+```
+
+## Getting Help
+
+If you encounter issues or have questions:
+
+- Check the [OpenClaw Documentation](https://docs.openclaw.ai/)
+- Visit the [OpenClaw GitHub Repository](https://github.com/openclaw/openclaw)
+- Join the OpenClaw community forums
+
+## Conclusion
+
+The OpenClaw Browser Relay extension transforms how you interact with the web by giving your AI assistant hands-on control of your browser. Whether you're automating repetitive tasks, extracting data, or testing web applications, Browser Relay makes it possible to delegate browser-based work to OpenClaw with confidence.
+
+Install it today and experience the power of AI-assisted browsing!
+
+---
+
+*Last updated: February 12, 2026*

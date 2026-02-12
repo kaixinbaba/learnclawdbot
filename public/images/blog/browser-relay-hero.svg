@@ -1,0 +1,78 @@
+<svg width="1792" height="1024" viewBox="0 0 1792 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="browserGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e9ecef;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1792" height="1024" fill="url(#bgGradient)"/>
+  
+  <!-- Grid pattern -->
+  <g opacity="0.1">
+    <path d="M0 0 L1792 0 L1792 1024 L0 1024 Z" fill="none" stroke="white" stroke-width="2" stroke-dasharray="40 40"/>
+  </g>
+  
+  <!-- Browser window -->
+  <g transform="translate(346, 212)">
+    <rect width="600" height="400" rx="12" fill="url(#browserGradient)" stroke="#dee2e6" stroke-width="2"/>
+    <!-- Browser header -->
+    <rect width="600" height="60" rx="12" fill="#e9ecef"/>
+    <rect y="60" width="600" height="2" fill="#dee2e6"/>
+    <!-- Browser dots -->
+    <circle cx="30" cy="30" r="8" fill="#ff5f57"/>
+    <circle cx="60" cy="30" r="8" fill="#ffbd2e"/>
+    <circle cx="90" cy="30" r="8" fill="#28ca42"/>
+    <!-- Address bar -->
+    <rect x="130" y="18" width="440" height="24" rx="12" fill="white" stroke="#dee2e6" stroke-width="1"/>
+    <text x="150" y="35" font-family="Arial, sans-serif" font-size="14" fill="#6c757d">openclaw.ai</text>
+    
+    <!-- Content area with abstract page elements -->
+    <rect x="40" y="100" width="520" height="20" rx="4" fill="#dee2e6" opacity="0.5"/>
+    <rect x="40" y="140" width="400" height="15" rx="4" fill="#dee2e6" opacity="0.3"/>
+    <rect x="40" y="170" width="450" height="15" rx="4" fill="#dee2e6" opacity="0.3"/>
+    <rect x="40" y="200" width="480" height="15" rx="4" fill="#dee2e6" opacity="0.3"/>
+  </g>
+  
+  <!-- Chrome extension icon (top right of browser) -->
+  <g transform="translate(846, 242)">
+    <circle cx="30" cy="30" r="24" fill="#667eea" filter="url(#glow)"/>
+    <path d="M 30 18 L 30 42 M 18 30 L 42 30" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="30" cy="30" r="6" fill="white"/>
+  </g>
+  
+  <!-- Relay connection lines -->
+  <g opacity="0.8">
+    <path d="M 876 272 Q 1000 350 1100 412" stroke="#a855f7" stroke-width="4" stroke-dasharray="10 10" fill="none" filter="url(#glow)">
+      <animate attributeName="stroke-dashoffset" from="0" to="20" dur="1s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  
+  <!-- AI Assistant icon -->
+  <g transform="translate(1100, 362)">
+    <circle cx="50" cy="50" r="50" fill="#a855f7" filter="url(#glow)"/>
+    <!-- AI brain/circuit pattern -->
+    <circle cx="40" cy="40" r="6" fill="white"/>
+    <circle cx="60" cy="40" r="6" fill="white"/>
+    <circle cx="50" cy="60" r="6" fill="white"/>
+    <path d="M 40 40 L 50 60 L 60 40 M 35 50 L 50 60 L 65 50" stroke="white" stroke-width="2" fill="none"/>
+    <text x="50" y="85" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white" text-anchor="middle">AI</text>
+  </g>
+  
+  <!-- Title text -->
+  <text x="896" y="680" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="white" text-anchor="middle">OpenClaw Browser Relay</text>
+  <text x="896" y="740" font-family="Arial, sans-serif" font-size="28" fill="white" text-anchor="middle" opacity="0.9">Connect Your Browser to AI Control</text>
+</svg>
