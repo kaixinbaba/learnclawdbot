@@ -11,6 +11,27 @@ export default async function HomeComponent({ locale }: { locale: string }) {
       <BG1 />
 
       {messages.Landing.Hero && <Hero />}
+
+      {/* Scroll hint for timeline discovery */}
+      <div className="text-center py-12 animate-bounce">
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-muted-foreground text-sm font-medium">
+            ↓ Scroll down to see OpenClaw development timeline
+          </span>
+          <svg
+            className="w-6 h-6 text-muted-foreground/60"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </div>
+      </div>
+
       <TimelineClient locale={locale} />
     </div>
   );

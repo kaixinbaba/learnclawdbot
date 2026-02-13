@@ -189,5 +189,91 @@
     ],
     "category": "improvement",
     "impact": "low"
+  },
+  {
+    "id": "v2026-2-2",
+    "type": "major",
+    "date": "2026-02-04",
+    "version": "v2026.2.2",
+    "title": "Feishu Integration & Agents Dashboard",
+    "description": "Major feature release with Feishu/Lark plugin support, Web UI Agents dashboard, and QMD memory backend.",
+    "highlights": [
+      "Feishu/Lark plugin with Chinese documentation",
+      "Web UI Agents dashboard for managing agent files/tools/skills",
+      "QMD memory backend for workspace context",
+      "Healthcheck skill and bootstrap audit guidance",
+      "Security hardening: operator approvals, access-group gating, SSRF checks"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-3",
+    "type": "release",
+    "date": "2026-02-05",
+    "version": "v2026.2.3",
+    "title": "Telegram TypeScript Cleanup & Cron Improvements",
+    "description": "Comprehensive Telegram codebase TypeScript migration and enhanced cron job delivery modes.",
+    "highlights": [
+      "Removed all @ts-nocheck from Telegram codebase",
+      "Cloudflare AI Gateway provider setup",
+      "Cron announce delivery mode for isolated jobs",
+      "Per-channel/account responsePrefix overrides",
+      "Moonshot (.cn) provider support"
+    ],
+    "category": "improvement",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-2-6",
+    "type": "major",
+    "date": "2026-02-07",
+    "version": "v2026.2.6",
+    "title": "Model Expansion & Token Dashboard",
+    "description": "Support for Anthropic Opus 4.6, OpenAI Codex gpt-5.3, xAI Grok provider, and Web UI token usage dashboard.",
+    "highlights": [
+      "Anthropic Opus 4.6 and OpenAI Codex gpt-5.3-codex support",
+      "xAI (Grok) provider integration",
+      "Web UI token usage dashboard",
+      "Native Voyage AI memory support",
+      "Skill/plugin code safety scanner"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-9",
+    "type": "major",
+    "date": "2026-02-09",
+    "version": "v2026.2.9",
+    "title": "iOS Node App & Device Pairing",
+    "description": "Revolutionary iOS node app with device pairing and phone control plugins for cross-device automation.",
+    "highlights": [
+      "iOS alpha node app with setup-code onboarding",
+      "Device pairing system (iOS/Android)",
+      "Phone control plugins via Telegram /pair",
+      "Comprehensive BlueBubbles channel cleanup",
+      "Gateway agent management RPC methods"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-12",
+    "type": "major",
+    "date": "2026-02-13",
+    "version": "v2026.2.12",
+    "title": "Security Hardening & Hook System Improvements",
+    "description": "Comprehensive security hardening with SSRF protection, webhook verification, and hook session routing fixes.",
+    "highlights": [
+      "SSRF protection for URL-based file/image inputs",
+      "Hook session routing hardening with defaultSessionKey",
+      "Constant-time webhook verification",
+      "Browser control auth requirements",
+      "Cron scheduler reliability improvements",
+      "50+ bug fixes across channels and subsystems"
+    ],
+    "category": "security",
+    "impact": "high"
   }
 ]
