@@ -189,5 +189,91 @@
     ],
     "category": "improvement",
     "impact": "low"
+  },
+  {
+    "id": "v2026-2-2",
+    "type": "major",
+    "date": "2026-02-04",
+    "version": "v2026.2.2",
+    "title": "飞书集成与 Agents 仪表板",
+    "description": "重大功能发布：飞书/Lark 插件支持、Web UI Agents 仪表板和 QMD 记忆后端。",
+    "highlights": [
+      "飞书/Lark 插件支持及中文文档",
+      "Web UI Agents 仪表板管理 agent 文件/工具/技能",
+      "QMD 记忆后端支持工作区上下文",
+      "健康检查技能和引导审计指南",
+      "安全加固：操作者审批、访问组门控、SSRF 检查"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-3",
+    "type": "release",
+    "date": "2026-02-05",
+    "version": "v2026.2.3",
+    "title": "Telegram TypeScript 清理与 Cron 改进",
+    "description": "全面的 Telegram 代码库 TypeScript 迁移和增强的定时任务交付模式。",
+    "highlights": [
+      "移除 Telegram 代码库所有 @ts-nocheck",
+      "Cloudflare AI Gateway 提供者设置",
+      "隔离任务的 Cron announce 交付模式",
+      "按渠道/账户的 responsePrefix 覆盖",
+      "Moonshot (.cn) 提供者支持"
+    ],
+    "category": "improvement",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-2-6",
+    "type": "major",
+    "date": "2026-02-07",
+    "version": "v2026.2.6",
+    "title": "模型扩展与 Token 仪表板",
+    "description": "支持 Anthropic Opus 4.6、OpenAI Codex gpt-5.3、xAI Grok 提供者和 Web UI token 使用仪表板。",
+    "highlights": [
+      "Anthropic Opus 4.6 和 OpenAI Codex gpt-5.3-codex 支持",
+      "xAI (Grok) 提供者集成",
+      "Web UI token 使用仪表板",
+      "原生 Voyage AI 记忆支持",
+      "技能/插件代码安全扫描器"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-9",
+    "type": "major",
+    "date": "2026-02-09",
+    "version": "v2026.2.9",
+    "title": "iOS Node 应用与设备配对",
+    "description": "革命性的 iOS node 应用，支持设备配对和跨设备自动化的手机控制插件。",
+    "highlights": [
+      "iOS alpha node 应用支持设置码引导",
+      "设备配对系统 (iOS/Android)",
+      "通过 Telegram /pair 的手机控制插件",
+      "全面的 BlueBubbles 渠道清理",
+      "网关 agent 管理 RPC 方法"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-12",
+    "type": "major",
+    "date": "2026-02-13",
+    "version": "v2026.2.12",
+    "title": "安全加固与 Hook 系统改进",
+    "description": "全面的安全加固：SSRF 防护、webhook 验证和 hook 会话路由修复。",
+    "highlights": [
+      "URL 文件/图片输入的 SSRF 防护",
+      "使用 defaultSessionKey 加固 Hook 会话路由",
+      "常量时间 webhook 验证",
+      "浏览器控制认证要求",
+      "Cron 调度器可靠性改进",
+      "跨渠道和子系统 50+ bug 修复"
+    ],
+    "category": "security",
+    "impact": "high"
   }
 ]
