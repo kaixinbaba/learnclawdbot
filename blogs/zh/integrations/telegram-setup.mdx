@@ -1,0 +1,654 @@
+---
+title: OpenClaw 的 Telegram 机器人设置 - QR 码、Webhook 和轮询完整指南
+description: 逐步学习如何为 OpenClaw 设置 Telegram 机器人。解决机器人无法接收消息、webhook 配置和轮询模式问题等常见问题。
+slug: /integrations/telegram-setup
+tags: telegram, integration, setup, webhook, polling, troubleshooting
+publishedAt: 2026-02-13
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/telegram_head.webp
+---
+
+# OpenClaw 的 Telegram 机器人设置：完整指南
+
+Telegram 是最受欢迎的机器人集成消息平台之一,提供强大的 API 和出色的开发者体验。将您的 OpenClaw 实例与 Telegram 集成,可以让您通过安全加密的消息与 Claude 互动,跨设备管理对话,并利用 Telegram 的丰富功能,如内联键盘、文件共享和群聊支持。
+
+这份综合指南将引导您完成完整的 **openclaw telegram bot setup(OpenClaw Telegram 机器人设置)**流程,从使用 BotFather 创建机器人到基于真实 GitHub 报告的常见问题故障排除。无论您是为快速本地开发设置轮询模式,还是为生产部署配置 webhook,本指南都能满足您的需求。
+
+## 先决条件
+
+在开始 **openclaw telegram bot setup** 之前,请确保您具备:
+
+- **已安装并运行 OpenClaw** - 建议使用 0.5.0 或更高版本
+- **Telegram 账号** - 可在移动端、桌面端或网页端使用
+- **基本的终端/命令行知识** - 用于运行 OpenClaw 命令
+- **可选:公网 HTTPS 端点** - 仅 webhook 模式需要
+
+## 第 1 步:使用 BotFather 创建机器人
+
+BotFather 是 Telegram 官方用于创建和管理其他机器人的机器人。这是任何 **openclaw telegram bot setup** 的起点。
+
+### 创建机器人
+
+1. 打开 Telegram 并搜索 **@BotFather**
+2. 开始对话并发送 `/newbot`
+3. 按照提示操作:
+   - **机器人名称**:选择一个显示名称(例如 "My OpenClaw Assistant")
+   - **机器人用户名**:必须以 "bot" 结尾(例如 "my_openclaw_bot")
+4. BotFather 将回复您的 **机器人令牌** - 类似 `123456789:ABCdefGHIjklMNOpqrsTUVwxyz` 的字符串
+
+**⚠️ 安全警告**:您的机器人令牌就像密码。切勿将其提交到版本控制或公开分享。任何拥有此令牌的人都可以控制您的机器人。
+
+### 基本机器人设置
+
+通过 BotFather 配置这些重要设置:
+
+**隐私模式** (`/setprivacy`):
+- 如果您希望机器人在群聊中看到所有消息,请**禁用**隐私模式
+- 如果机器人只应看到提及它或直接回复的消息,请**启用**(默认)
+
+**群组权限** (`/setjoingroups`):
+- 如果您想将机器人添加到群组对话中,请**启用**
+- 仅用于私人一对一互动,请**禁用**
+
+**命令** (`/setcommands`):
+您可以选择性地设置命令建议:
+```
+status - 检查 OpenClaw 状态
+help - 显示可用命令
+reset - 重置对话上下文
+```
+
+## 第 2 步:配置 OpenClaw
+
+现在您有了机器人令牌,是时候配置 **openclaw telegram** 集成了。
+
+### 基本配置
+
+开始使用 **telegram bot polling mode(Telegram 机器人轮询模式)** 的最小配置:
+
+1. 如果 OpenClaw 网关正在运行,请停止它:
+```bash
+openclaw gateway stop
+```
+
+2. 编辑您的 OpenClaw 配置文件(通常是 `~/.openclaw/config.yaml` 或类似文件):
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      token: "YOUR_BOT_TOKEN_HERE"
+      dmPolicy: "pair-once"
+```
+
+**配置选项说明:**
+
+- `enabled`: 必须为 `true` 才能激活 Telegram 插件
+- `token`: 来自 BotFather 的机器人令牌
+- `dmPolicy`: 控制私信行为
+  - `"pair-once"`: 用户必须先配对,然后可以自由聊天(推荐)
+  - `"open"`: 任何人都可以无需配对直接向您的机器人发消息
+  - `"allowlist-only"`: 只有预先批准的用户才能互动
+
+### 高级选项
+
+对于生产部署或多用户场景,请考虑这些额外设置:
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      token: "YOUR_BOT_TOKEN_HERE"
+      dmPolicy: "allowlist-only"
+      allowlist:
+        - 123456789  # 您的 Telegram 用户 ID
+        - 987654321  # 另一个已批准的用户 ID
+      groupPolicy: "allowlist-only"
+      groupAllowlist:
+        - -1001234567890  # 群聊 ID(注意负号前缀)
+      streamMode: true
+```
+
+**高级选项说明:**
+
+- `allowlist`: 允许与您的机器人互动的 Telegram 用户 ID 数组
+- `groupPolicy`: 与 `dmPolicy` 相同的选项,但用于群聊
+- `groupAllowlist`: 您的机器人可以响应的群聊 ID 数组
+- `streamMode`: 当为 `true` 时,实时分块发送响应,为长响应提供更好的用户体验
+
+**查找您的 Telegram 用户 ID:**
+
+找到用户 ID 最简单的方法是向机器人发消息并检查 OpenClaw 日志,或使用 Telegram 上的 @userinfobot 等机器人。
+
+## 第 3 步:选择连接模式
+
+OpenClaw 支持两种接收 Telegram 消息的方法:**轮询**和 **webhook**。每种方法都有不同的优势和权衡。
+
+### 选项 A:轮询模式(默认)
+
+**工作原理:**
+轮询模式通过让 OpenClaw 定期检查 Telegram 服务器是否有新消息来工作,通常每 1-3 秒一次。这是默认模式,不需要额外的 **openclaw telegram webhook config(OpenClaw Telegram webhook 配置)**。
+
+**优势:**
+- ✅ **设置简单** - 基本配置即可开箱即用
+- ✅ **无需公网 IP** - 非常适合开发和本地测试
+- ✅ **可在防火墙后工作** - 无需入站网络配置
+- ✅ **易于调试** - 所有逻辑都在本地进程中运行
+
+**劣势:**
+- ⚠️ **轻微延迟** - 接收消息前有 1-3 秒延迟
+- ⚠️ **资源使用** - 持续轮询消耗 CPU 和网络带宽
+- ⚠️ **扩展限制** - 不适合高流量场景
+
+**配置:**
+轮询模式默认启用。除了第 2 步中的基本设置外,无需额外配置。
+
+### 选项 B:Webhook 模式
+
+**工作原理:**
+Webhook 模式配置 Telegram 通过 HTTPS POST 请求直接将新消息推送到您的 OpenClaw 实例。这需要一个可公开访问的端点。
+
+**优势:**
+- ✅ **即时传递** - 零轮询延迟,消息立即到达
+- ✅ **资源高效** - 无持续轮询开销
+- ✅ **可扩展** - 更适合生产和高流量场景
+
+**劣势:**
+- ⚠️ **需要公网 HTTPS 端点** - 必须可从 Telegram 服务器访问
+- ⚠️ **需要 SSL 证书** - 不支持自签名证书
+- ⚠️ **设置更复杂** - 需要反向代理或云托管
+
+**配置:**
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      token: "YOUR_BOT_TOKEN_HERE"
+      dmPolicy: "pair-once"
+      webhook:
+        enabled: true
+        url: "https://your-domain.com/telegram/webhook"
+        secretToken: "your-random-secret-string-here"
+        port: 8443  # 可选,默认为 OpenClaw 的主端口
+```
+
+**Webhook 设置步骤:**
+
+1. **生成密钥令牌**用于 webhook 验证:
+```bash
+openssl rand -hex 32
+```
+
+2. **配置反向代理**(nginx 示例):
+```nginx
+location /telegram/webhook {
+    proxy_pass http://localhost:3000/telegram/webhook;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
+3. **确保配置了 SSL** - Telegram 需要带有有效证书的 HTTPS(Let's Encrypt 效果很好)
+
+4. **重启 OpenClaw** - webhook 将自动向 Telegram 注册
+
+### 轮询 vs Webhook 对比
+
+| 功能 | 轮询模式 | Webhook 模式 |
+|------|---------|-------------|
+| **设置复杂度** | 简单 ✅ | 中等 ⚠️ |
+| **需要公网 IP** | 否 ✅ | 是 ⚠️ |
+| **消息延迟** | 1-3 秒 ⚠️ | 即时 ✅ |
+| **资源使用** | 较高 ⚠️ | 较低 ✅ |
+| **最适合** | 开发、本地测试 | 生产、扩展 |
+| **调试难度** | 较易 ✅ | 中等 ⚠️ |
+
+**建议:** 从轮询模式开始进行初始设置和测试。当部署到生产环境或消息延迟成为问题时,迁移到 webhook。
+
+## 第 4 步:测试您的机器人
+
+配置完成后,启动 OpenClaw 网关并测试集成:
+
+### 启动 OpenClaw
+
+```bash
+openclaw gateway start
+```
+
+观察启动日志中的 Telegram 初始化:
+```
+[INFO] Telegram plugin enabled
+[INFO] Telegram: Polling mode active
+[INFO] Bot username: @my_openclaw_bot
+```
+
+### 发送第一条消息
+
+1. 打开 Telegram 并找到您的机器人(搜索您创建的用户名)
+2. 发送 `/start` 开始对话
+3. 如果您配置了 `dmPolicy: "pair-once"`,您需要完成配对过程
+4. 发送测试消息,如 "你好!"
+5. 您的 OpenClaw 实例应该通过 Claude 响应
+
+### 验证状态
+
+检查 OpenClaw 状态以确认 **telegram bot polling mode** 正在工作:
+
+```bash
+openclaw status
+```
+
+您应该看到指示 Telegram 已连接的输出:
+```
+Plugins:
+  telegram: ✓ Connected (@my_openclaw_bot)
+```
+
+### 理解配对流程
+
+如果您配置了 `dmPolicy: "pair-once"`:
+
+1. 用户向机器人发送第一条消息
+2. OpenClaw 生成配对请求
+3. 用户必须确认配对(具体流程取决于您的 OpenClaw 版本)
+4. 配对后,接受来自该用户的所有消息
+
+这种安全模型可防止未经授权访问您的 Claude 实例。
+
+## 常见问题故障排除
+
+基于 OpenClaw 社区报告的真实 GitHub issue,以下是最常见的问题及其解决方案。
+
+### 问题:机器人无法接收消息(轮询模式)
+
+**基于 GitHub Issue [#6665](https://github.com/openclaw/openclaw/issues/6665)**
+
+**症状:**
+- `openclaw status` 显示 Telegram 插件为 "✓ Connected"
+- 您可以在 Telegram 中看到机器人在线
+- 发送给机器人的消息没有收到任何响应
+- **openclaw telegram not receiving messages** 出现在您的搜索历史中
+
+**诊断步骤:**
+
+1. **验证机器人令牌是否正确:**
+```bash
+grep -A 5 "telegram:" ~/.openclaw/config.yaml
+```
+
+2. **检查 webhook 是否干扰轮询:**
+Telegram 不允许同时使用两种模式。如果之前配置了 webhook,它会阻止轮询。
+
+测试 webhook 状态:
+```bash
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
+```
+
+如果您看到带有值的 `url` 字段,则表示 webhook 模式处于活动状态并阻止轮询。
+
+3. **检查用户 ID 和 allowlist 配置:**
+如果您使用 `dmPolicy: "allowlist-only"`,请确保您的 Telegram 用户 ID 在 allowlist 中。
+
+通过向机器人发消息并检查 OpenClaw 日志来查找您的用户 ID:
+```bash
+openclaw gateway logs | grep "Telegram user"
+```
+
+4. **验证插件实际已启用:**
+```bash
+openclaw config get plugins.entries.telegram.enabled
+```
+
+应返回 `true`。
+
+**解决方案:**
+
+**解决方案 A:清除 webhook 以启用轮询**
+```bash
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/deleteWebhook?drop_pending_updates=true"
+```
+
+**解决方案 B:完全重启网关**
+```bash
+openclaw gateway stop
+sleep 2
+openclaw gateway start
+```
+
+**解决方案 C:检查并修复 allowlist 配置**
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      token: "YOUR_BOT_TOKEN"
+      dmPolicy: "allowlist-only"
+      allowlist:
+        - 123456789  # 在此添加您的实际用户 ID
+```
+
+**解决方案 D:清除待处理更新**
+
+有时旧消息会堵塞队列:
+```bash
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates?offset=-1"
+```
+
+实施解决方案后,通过向机器人发送新消息进行测试。
+
+### 问题:网络中断期间网关崩溃
+
+**基于 GitHub Issue [#6676](https://github.com/openclaw/openclaw/issues/6676)**
+
+**症状:**
+- OpenClaw 网关正常运行
+- 短暂的网络中断(WiFi 断开、ISP 故障、VPN 重连)
+- 网关崩溃,错误:`Unhandled promise rejection: fetch failed`
+- 网络恢复后 **telegram bot not working**
+
+**根本原因:**
+
+早期版本的 OpenClaw Telegram 插件在轮询请求期间没有正确处理网络错误,导致未处理的 promise 拒绝,从而导致 Node.js 进程崩溃。
+
+**解决方案:**
+
+**解决方案 A:升级到最新 OpenClaw 版本(推荐)**
+
+此问题已在 OpenClaw v0.5.2 及更高版本中修复:
+```bash
+npm install -g openclaw@latest
+# 或
+brew upgrade openclaw  # 如果通过 Homebrew 安装
+```
+
+验证版本:
+```bash
+openclaw --version
+```
+
+**解决方案 B:配置自动重启(systemd)**
+
+对于 Linux 服务器,配置 systemd 在崩溃时自动重启:
+
+创建 `/etc/systemd/system/openclaw.service`:
+```ini
+[Unit]
+Description=OpenClaw Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+WorkingDirectory=/home/youruser
+ExecStart=/usr/local/bin/openclaw gateway start --no-daemon
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启用并启动:
+```bash
+sudo systemctl enable openclaw
+sudo systemctl start openclaw
+```
+
+**解决方案 C:使用重启循环脚本(临时解决方法)**
+
+对于开发或没有 systemd 的系统:
+
+```bash
+#!/bin/bash
+while true; do
+  openclaw gateway start
+  echo "Gateway crashed, restarting in 5 seconds..."
+  sleep 5
+done
+```
+
+另存为 `run-openclaw.sh`,使其可执行并运行:
+```bash
+chmod +x run-openclaw.sh
+./run-openclaw.sh
+```
+
+**预防:**
+
+- 保持 OpenClaw 更新到最新版本
+- 监控网关日志以获取早期警告信号
+- 在生产环境中使用进程管理器(systemd、PM2、supervisord)
+- 如果使用自定义插件,配置网络重试逻辑
+
+### 问题:Markdown 表格导致空消息
+
+**基于 GitHub Issue [#6652](https://github.com/openclaw/openclaw/issues/6652)**
+
+**症状:**
+- Claude 生成包含 markdown 表格的响应
+- Telegram API 返回错误:`message text is empty`
+- 用户没有收到响应或收到错误消息
+- 问题仅在包含表格的响应中出现
+
+**根本原因:**
+
+Telegram 的 markdown 解析器对复杂格式有限制。当 OpenClaw 尝试发送 markdown 表格(使用 `|` 管道字符和对齐标记)时,Telegram 的解析器有时会将整个消息作为无效内容剥离,导致空消息错误。
+
+**解决方案:**
+
+**解决方案 A:避免在 Telegram 响应中使用表格**
+
+配置您的 OpenClaw 提示以避免 Telegram 的表格格式:
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      systemPrompt: |
+        为 Telegram 格式化响应时:
+        - 使用项目符号列表而非表格
+        - 使用简单的 markdown(粗体、斜体、代码)
+        - 避免复杂的格式结构
+```
+
+**解决方案 B:使用项目符号列表代替**
+
+将表格数据转换为结构化列表:
+
+❌ **不要使用:**
+```markdown
+| 功能 | 状态 |
+|------|------|
+| 轮询 | 活动 |
+| Webhook | 非活动 |
+```
+
+✅ **改用:**
+```markdown
+**连接状态:**
+• 轮询: 活动 ✅
+• Webhook: 非活动 ⚠️
+```
+
+**解决方案 C:链接到外部格式化内容**
+
+对于复杂数据,发送链接代替:
+```markdown
+我为您准备了详细的对比表:
+👉 https://your-domain.com/comparison
+
+要点总结:
+• 功能 A: 可用
+• 功能 B: 即将推出
+```
+
+**解决方案 D:使用 HTML 模式(高级)**
+
+OpenClaw 可以配置为以 HTML 模式而非 Markdown 发送 Telegram 消息:
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      parseMode: "HTML"  # 而非 "Markdown"
+```
+
+然后使用 HTML 表格:
+```html
+<table>
+  <tr><th>功能</th><th>状态</th></tr>
+  <tr><td>轮询</td><td>活动</td></tr>
+</table>
+```
+
+**注意:** HTML 模式对复杂格式的支持更好,但需要对特殊字符进行 HTML 安全转义。
+
+### 问题:QR 码在终端中无法渲染
+
+**基于 GitHub Issue [#6640](https://github.com/openclaw/openclaw/issues/6640)**
+
+**症状:**
+- 初始设置期间,OpenClaw 显示用于配对的 QR 码
+- QR 码显示为乱码或方框
+- 在 macOS Terminal.app 和某些 Linux 终端上特别常见
+- 使初始设置变得困难
+
+**根本原因:**
+
+QR 码使用 Unicode 块字符渲染。某些终端模拟器不能正确支持所需的 Unicode 范围或存在字体渲染问题。
+
+**解决方案:**
+
+**解决方案 A:使用现代终端模拟器**
+
+推荐的具有出色 Unicode 支持的终端:
+
+- **macOS**: [iTerm2](https://iterm2.com/) 或 [Kitty](https://sw.kovidgoyal.net/kitty/)
+- **Linux**: [Kitty](https://sw.kovidgoyal.net/kitty/)、[Alacritty](https://alacritty.org/) 或 GNOME Terminal
+- **Windows**: [Windows Terminal](https://aka.ms/terminal) 或 [WezTerm](https://wezfurlong.org/wezterm/)
+
+**解决方案 B:配置具有适当 Unicode 支持的字体**
+
+安装并配置完全支持 Unicode 块字符的字体:
+
+1. 安装 [JetBrains Mono](https://www.jetbrains.com/lp/mono/) 或 [Fira Code](https://github.com/tonsky/FiraCode)
+2. 在首选项中设置为终端字体
+3. 重启终端并重试
+
+**解决方案 C:无需 QR 码手动配置**
+
+通过手动配置完全跳过 QR 码配对:
+
+```bash
+# 无需扫描 QR 码,直接编辑配置
+openclaw config set plugins.entries.telegram.token "YOUR_BOT_TOKEN"
+openclaw config set plugins.entries.telegram.enabled true
+```
+
+**解决方案 D:使用基于 Web 的设置(如果可用)**
+
+某些 OpenClaw 版本提供基于 Web 的配置 UI:
+
+```bash
+openclaw gateway config --web
+```
+
+这将打开一个浏览器界面,您可以在其中配置 Telegram 而无需终端 QR 码。
+
+## 安全最佳实践
+
+保护您的 **openclaw telegram bot setup** 至关重要,因为它代表您提供对 Claude AI 的访问。
+
+### 1. 保护您的机器人令牌
+
+- **切勿将令牌提交到 git** - 使用环境变量或版本控制之外的配置文件
+- **定期轮换令牌** - 如果怀疑受到攻击,请创建新机器人
+- **使用密钥管理** - HashiCorp Vault、AWS Secrets Manager 或加密配置文件等工具
+
+### 2. 使用 Allowlist 进行访问控制
+
+始终在生产环境中配置 allowlist:
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      dmPolicy: "allowlist-only"
+      allowlist:
+        - 123456789  # 仅批准的用户
+```
+
+### 3. 定期审查机器人权限
+
+通过 BotFather 检查您的机器人可以做什么:
+- `/mybots` → 选择您的机器人 → 审查设置
+- 禁用未使用的功能(群组、内联模式等)
+- 如果不需要,限制群组权限
+
+### 4. 使用 Webhook 密钥令牌
+
+使用 **openclaw telegram webhook config** 时,始终设置密钥令牌:
+
+```yaml
+webhook:
+  secretToken: "use-a-long-random-string-here"
+```
+
+Telegram 将其包含在 `X-Telegram-Bot-Api-Secret-Token` 标头中,允许您验证请求是否真实。
+
+### 5. 监控使用情况和日志
+
+定期查看谁在使用您的机器人:
+```bash
+openclaw gateway logs | grep "Telegram message from"
+```
+
+为异常活动模式设置警报。
+
+### 6. 保持 OpenClaw 更新
+
+定期发布安全修复:
+```bash
+openclaw update
+# 或
+npm update -g openclaw
+```
+
+## 相关资源
+
+- **[OpenClaw 初学者指南](/blog/guide)** - OpenClaw 设置完整介绍
+- **[修复会话内存问题](/blog/troubleshooting/fix-session-memory-issues)** - 常见问题故障排除指南
+- **[官方 Telegram Bot API 文档](https://core.telegram.org/bots/api)** - 深入了解 Telegram 的功能
+- **[OpenClaw 插件开发](https://docs.openclaw.org/plugins)** - 使用自定义功能扩展 OpenClaw
+- **[GitHub Issues 仓库](https://github.com/openclaw/openclaw/issues)** - 报告错误和请求功能
+
+## 总结
+
+设置 **openclaw telegram bot setup** 提供了一种强大、灵活的方式,通过世界上最受欢迎的消息平台之一与 Claude AI 互动。以下是我们涵盖的内容:
+
+**关键步骤:**
+1. ✅ 使用 BotFather 创建机器人并获取令牌
+2. ✅ 使用基本设置配置 OpenClaw(令牌、dmPolicy)
+3. ✅ 在轮询(简单)和 webhook(生产)模式之间选择
+4. ✅ 测试您的机器人并验证配对工作流
+5. ✅ 使用真实解决方案排除常见问题
+
+**记住:**
+- **轮询模式**非常适合入门和本地开发
+- **Webhook 模式**更适合具有较低延迟的生产部署
+- **Allowlist 配置**对于安全至关重要
+- **保持 OpenClaw 更新**以避免已知问题,如网络崩溃错误
+- **避免 markdown 表格**在 Telegram 响应中,以防止空消息错误
+
+无论您遇到 **openclaw telegram not receiving messages**、配置 **openclaw telegram webhook config** 还是排除 **telegram bot polling mode** 问题,本指南都提供了基于社区报告的实际 GitHub issue 的真实解决方案。
+
+祝您在 Telegram 上与 Claude 聊天愉快! 🤖✨
