@@ -1,0 +1,534 @@
+---
+title: OpenClaw Discord統合 - ロール、スレッド、フォーラムチャンネル、権限設定ガイド
+description: OpenClaw Discord ボット統合の完全ガイド。ロール、権限、スレッド、フォーラムチャンネルの設定方法と、一般的な問題のトラブルシューティングを学びます。
+slug: /integrations/discord-setup
+tags: discord, integration, bot, setup, permissions, threads, forum channels
+publishedAt: 2026-02-13
+status: published
+visibility: public
+featuredImageUrl: /images/blog/discord-integration.png
+---
+
+# OpenClaw Discord統合：完全セットアップガイド
+
+Discordは、ロール、権限、スレッド、フォーラムチャンネルなどの豊富な機能を提供する、最も強力なボット統合プラットフォームの1つです。OpenClawインスタンスとDiscordを統合することで、単純なメッセージングを超えた高度な自動化、マルチサーバー管理、高度な権限制御が可能になります。
+
+この包括的なガイドでは、ボットの作成と基本権限の設定から、スレッド管理やフォーラムチャンネルサポートなどの高度な機能の活用まで、**openclaw discord setup** プロセス全体をご案内します。スレッド作成に影響を与える重要なフォーラムチャンネルの落とし穴（GitHub Issue #6601に基づく）を含む実際の問題についても説明します。
+
+## Discord + OpenClawを選ぶ理由
+
+Discordの広範なAPIと豊富な機能セットは、OpenClaw統合に最適なプラットフォームです：
+
+- **詳細な権限**：きめ細かいセキュリティのためのロールベースのアクセス制御
+- **豊富な組織構造**：サーバー、カテゴリ、チャンネル、スレッド、フォーラム
+- **スケーラビリティ**：複数のサーバー、数百のチャンネル、数千のユーザーを処理
+- **ネイティブ機能**：リアクション、埋め込み、ボタン、スラッシュコマンドなど
+- **開発者フレンドリー**：優れたドキュメントと堅牢なAPI
+
+コミュニティサーバーの管理、チームの調整、カスタム自動化ワークフローの構築のいずれの場合でも、**openclaw discord permissions** とチャンネル管理により、前例のない制御が可能になります。
+
+## 前提条件
+
+**openclaw discord setup** を開始する前に、以下を確認してください：
+
+- **OpenClawがインストールされ実行中** - バージョン0.5.0以降を推奨
+- **Discordアカウント** - ボットを作成する権限を持つ
+- **サーバー管理者アクセス** - テスト用に少なくとも1つのDiscordサーバー
+- **Discordの構造の基本的な理解** - サーバー、チャンネル、ロール
+- **HTTPSエンドポイント（オプション）** - 本番環境でwebhookモードを使用する場合のみ必要
+
+## パート1：Discordボットの作成
+
+### ステップ1：Discord開発者ポータルのセットアップ
+
+**アプリケーションの作成：**
+
+1. [Discord開発者ポータル](https://discord.com/developers/applications)にアクセス
+2. **"New Application"** をクリック
+3. 名前を入力（例："OpenClaw Assistant"）
+4. 開発者利用規約に同意
+5. **"Create"** をクリック
+
+**ボットユーザーの作成：**
+
+1. アプリケーション内で **"Bot"** タブに移動
+2. **"Add Bot"** をクリック
+3. **"Yes, do it!"** をクリックして確認
+
+**ボットトークンの取得：**
+
+1. Botタブで **"TOKEN"** セクションを見つける
+2. **"Reset Token"** をクリック（初回の場合は "Copy"）
+3. トークンをコピー - これが `DISCORD_BOT_TOKEN` です
+
+**⚠️ 重要なセキュリティ警告**：ボットトークンはマスターパスワードのようなものです。このトークンを持っている人は誰でもボットを制御できます。バージョン管理にコミットしたり、公開したり、スクリーンショットに含めたりしないでください。
+
+### ステップ2：必要なIntentsの有効化
+
+DiscordではBot機能のために「特権Intents」を明示的に有効にする必要があります。
+
+**OpenClawに必要なIntents：**
+
+Botタブで **"Privileged Gateway Intents"** までスクロールして有効化：
+
+1. **✅ Server Members Intent**
+   - 用途：ユーザー検索、許可リストのマッチング、メンバー情報
+   
+2. **✅ Message Content Intent**
+   - 用途：サーバー内でメッセージテキストを読む
+   - これがないと：ボットは接続しますがメッセージを読めず、応答しません
+   - **これは「ボットが応答しない」問題の第1の原因です**
+
+3. **❌ Presence Intent**（オプション）
+   - OpenClawの基本機能には不要
+
+**よくある間違い**：ボットを有効にしたがMessage Content Intentを有効にするのを忘れる。これによりボットはオンラインに見えますが、メッセージに応答しません。
+
+### ステップ3：ボット権限の設定
+
+**推奨される最小権限：**
+
+基本的な **openclaw discord setup** のために、Botタブでこれらの権限を有効にします：
+
+- ✅ **View Channels** - チャンネルリストを表示
+- ✅ **Send Messages** - ユーザーに返信
+- ✅ **Read Message History** - 会話コンテキストにアクセス
+- ✅ **Embed Links** - リッチ埋め込みを送信
+- ✅ **Attach Files** - ファイルと画像を共有
+- ✅ **Add Reactions** - メッセージにリアクション
+- ✅ **Use External Emojis** - 他のサーバーのカスタム絵文字を使用
+
+**セキュリティのベストプラクティス**：実際に必要な権限のみを付与します。後でいつでも追加できます。
+
+### ステップ4：招待URLの生成
+
+**OAuth2 URLジェネレーターの使用：**
+
+1. アプリケーションで **"OAuth2"** → **"URL Generator"** に移動
+
+2. **Scopes** を選択：
+   - ✅ `bot` - コアボット機能
+   - ✅ `applications.commands` - スラッシュコマンドサポート
+
+3. **Bot Permissions** を選択：
+   - ステップ3で決定した権限をチェック
+
+4. 生成されたURLをコピー
+
+**ボットを招待：**
+
+1. ブラウザで生成されたURLを開く
+2. ボットを追加するサーバーを選択
+3. 権限を確認
+4. **"承認"** をクリック
+
+## パート2：OpenClaw設定
+
+### 基本的なDiscord設定
+
+**設定ファイルのセットアップ：**
+
+OpenClaw設定ファイル（通常は `~/.openclaw/config.yaml` または `~/.openclaw/config.json`）を編集：
+
+```json
+{
+  "channels": {
+    "discord": {
+      "enabled": true,
+      "token": "YOUR_BOT_TOKEN_HERE"
+    }
+  }
+}
+```
+
+**環境変数の使用（本番環境推奨）：**
+
+```bash
+export DISCORD_BOT_TOKEN="YOUR_BOT_TOKEN_HERE"
+```
+
+**OpenClawの起動：**
+
+```bash
+openclaw gateway start
+```
+
+ログでDiscord初期化を確認：
+
+```
+[INFO] Discord channel enabled
+[INFO] Discord: Connected as @YourBotName#1234
+```
+
+### アクセス制御の理解
+
+OpenClawは2つの主要なポリシーを通じてDiscord統合のための高度なアクセス制御を提供します：DMポリシーとグループ（ギルド）ポリシー。
+
+**DMポリシーオプション：**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "dm": {
+        "policy": "pairing",  // 推奨デフォルト
+        "enabled": true
+      }
+    }
+  }
+}
+```
+
+**利用可能なDMポリシー：**
+
+1. **`pairing`**（推奨）- 初回ユーザーはペアリングプロセスを完了する必要がある
+2. **`allowlist`** - 事前承認されたユーザーのみがボットにDMできる
+3. **`open`** - 誰でもボットにDMできる
+4. **`disabled`** - DM機能を完全に無効化
+
+**グループ/ギルドポリシーオプション：**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "groupPolicy": "allowlist"  // デフォルト
+    }
+  }
+}
+```
+
+**利用可能なグループポリシー：**
+
+1. **`allowlist`**（デフォルト）- 各サーバー/チャンネルの明示的な設定が必要
+2. **`open`** - 追加されたすべてのサーバーでボットが応答
+3. **`disabled`** - すべてのギルドメッセージを無視
+
+### 許可リストの設定
+
+**ユーザー許可リスト（DM）：**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "dm": {
+        "policy": "allowlist",
+        "allowFrom": [
+          "123456789012345678",  // ユーザーID（推奨）
+          "steipete"             // ユーザー名（起動時に解決）
+        ]
+      }
+    }
+  }
+}
+```
+
+**DiscordユーザーIDの確認方法：**
+
+1. 開発者モードを有効化：ユーザー設定 → 詳細設定 → 開発者モード
+2. どこでもユーザー名を右クリック → ユーザーIDをコピー
+
+**ギルド（サーバー）許可リスト：**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "groupPolicy": "allowlist",
+      "guilds": {
+        "123456789012345678": {  // ギルドID（数値）
+          "slug": "my-awesome-server",
+          "users": ["987654321098765432"],
+          "requireMention": true  // @メンション時のみ応答
+        }
+      }
+    }
+  }
+}
+```
+
+## パート3：ロールと権限の設定
+
+### チャンネルごとの設定
+
+同じサーバー内の異なるチャンネルに対して異なる動作を設定します。
+
+**例：マルチチャンネルセットアップ**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "guilds": {
+        "123456789012345678": {
+          "slug": "my-server",
+          "requireMention": true,
+          "users": ["987654321098765432"],
+          
+          "channels": {
+            "general": {
+              "allow": true,
+              "requireMention": false
+            },
+            
+            "help": {
+              "allow": true,
+              "requireMention": true,
+              "users": ["111111111111111111"],
+              "systemPrompt": "回答を短く、初心者に優しくしてください。"
+            },
+            
+            "admin": {
+              "allow": true,
+              "users": ["987654321098765432"],
+              "skills": ["ssh", "exec", "filesystem"],
+              "systemPrompt": "完全なシステムアクセス権があります。注意してください。"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**チャンネル設定オプション：**
+
+- **`allow`**: `true`/`false` - このチャンネルでボットが応答するかどうか
+- **`requireMention`**: @メンション時のみボットが応答
+- **`users`**: チャンネル固有のユーザー許可リスト
+- **`skills`**: 利用可能なOpenClawスキルを制限
+- **`systemPrompt`**: チャンネル固有のAI指示
+- **`enabled`**: チャンネルを完全に無効化
+
+### ツールとアクション権限
+
+```json
+{
+  "channels": {
+    "discord": {
+      "actions": {
+        "reactions": true,
+        "stickers": true,
+        "polls": true,
+        "messages": true,
+        "threads": true,
+        "pins": true,
+        "search": true,
+        
+        // 高信頼アクション（デフォルトで無効）
+        "roles": false,
+        "moderation": false,
+        "presence": false
+      }
+    }
+  }
+}
+```
+
+## パート4：スレッドとフォーラムチャンネルのサポート
+
+### Discordのスレッドタイプの理解
+
+Discordには3種類のスレッドがあります：
+
+1. **公開スレッド**：テキストチャンネルで作成、全員に表示
+2. **プライベートスレッド**：テキストチャンネル内の招待のみのスレッド
+3. **フォーラムスレッド**：フォーラムチャンネル内の投稿（特殊ケース！）
+
+### 基本的なスレッド設定
+
+```json
+{
+  "channels": {
+    "discord": {
+      "actions": {
+        "threads": true
+      }
+    }
+  }
+}
+```
+
+**CLIを介したスレッドの作成：**
+
+```bash
+openclaw message thread-create \
+  --channel discord \
+  --target channel:123456789012345678 \
+  --thread-name "ディスカッショントピック"
+```
+
+### フォーラムチャンネルのサポート（重要な落とし穴！）
+
+**フォーラムチャンネルの落とし穴（GitHub Issue #6601）：**
+
+標準の `thread-create` アクションを使用してフォーラムチャンネルでスレッドを作成しようとすると、次のエラーが発生する可能性があります：
+
+```
+Error: フォーラムチャンネルでスレッドを作成できません
+```
+
+**なぜこれが起こるのか：**
+
+フォーラムチャンネルは標準の `createThread` APIエンドポイントをサポートしていません。代わりに、異なるシグネチャと要件を持つ `startThreadInForumChannel` を使用する必要があります。
+
+**フォーラム投稿を作成する正しい方法：**
+
+```bash
+openclaw message thread-create \
+  --channel discord \
+  --target channel:123456789012345678 \
+  --thread-name "投稿タイトル" \
+  --message "最初のメッセージ内容"  # フォーラム投稿には必須！
+```
+
+**重要な違い**：フォーラム投稿には初期メッセージが**必要**です。通常のスレッドは空でも構いません。
+
+**フォーラム固有の設定：**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "guilds": {
+        "123456789012345678": {
+          "channels": {
+            "forum-channel-id": {
+              "allow": true,
+              "requireMention": false,
+              "systemPrompt": "これはフォーラムチャンネルです。投稿を作成する際は、常にトピックを説明する初期メッセージを含めてください。"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## パート5：一般的な問題とトラブルシューティング
+
+### 問題1：ボットがメッセージに応答しない
+
+**症状：**
+- ボットがDiscordでオンラインと表示される
+- `openclaw status` でDiscordが接続済みと表示
+- ギルドチャンネルのメッセージに応答しない
+
+**診断手順：**
+
+1. **Message Content Intentを確認：**
+```bash
+# Discord開発者ポータル → アプリ → Bot → Privileged Gateway Intents
+# 「Message Content Intent」が有効になっていることを確認
+```
+
+有効になっていない場合は、有効にしてOpenClawを再起動：
+```bash
+openclaw gateway restart
+```
+
+2. **チャンネル権限を確認：**
+```bash
+openclaw message permissions --channel discord --target channel:YOUR_CHANNEL_ID
+```
+
+3. **OpenClaw設定を確認：**
+```bash
+openclaw config get channels.discord.groupPolicy
+```
+
+`allowlist` の場合、ギルド/チャンネルが設定されていることを確認：
+```bash
+openclaw config get channels.discord.guilds
+```
+
+**解決策：**
+
+**解決策A**：Message Content Intentを有効化（最も一般的な修正）
+**解決策B**：許可リストにギルド/チャンネルを追加
+**解決策C**：メンション要件を無効化（必要に応じて）
+
+### 問題2：フォーラムチャンネルでのスレッド作成が失敗する
+
+**GitHub Issue #6601に基づく**
+
+**症状：**
+- 通常のテキストチャンネルでは `thread-create` が動作する
+- フォーラムチャンネルでは「無効なチャンネルタイプ」エラーで失敗
+
+**解決策：**
+
+フォーラムチャンネルには異なるアプローチが必要です。詳細については、上記のフォーラムチャンネルセクションを参照してください。
+
+**クイックフィックス：**
+
+```bash
+# フォーラム投稿を作成する際にメッセージを含める
+openclaw message thread-create \
+  --channel discord \
+  --target channel:FORUM_CHANNEL_ID \
+  --thread-name "投稿タイトル" \
+  --message "初期投稿内容"  # これは必須です！
+```
+
+## セキュリティのベストプラクティス
+
+### 1. トークンのセキュリティ
+
+**すべきこと：**
+- ✅ トークンに環境変数を使用
+- ✅ 暗号化されたボールトにトークンを保存
+- ✅ 定期的にトークンをローテーション
+- ✅ 開発と本番で異なるトークンを使用
+
+**してはいけないこと：**
+- ❌ トークンをgitにコミット
+- ❌ スクリーンショットやログでトークンを共有
+- ❌ 複数のプロジェクトで同じトークンを使用
+
+### 2. 最小権限の原則
+
+必要なものだけを付与します。最小限から始めて、必要に応じて追加します。
+
+### 3. 監査とモニタリング
+
+```bash
+# ボットを使用しているユーザーを確認
+openclaw gateway logs | grep "Discord message from" | tail -50
+
+# 失敗した認証試行を確認
+openclaw gateway logs | grep "not authorized"
+```
+
+## 関連リソース
+
+- **[OpenClaw初心者ガイド](/blog/guide)** - OpenClawが初めての方はここから
+- **[Telegramセットアップガイド](/blog/integrations/telegram-setup)** - 代替メッセージングプラットフォーム
+- **[セッションメモリの問題の修正](/blog/troubleshooting/fix-session-memory-issues)** - トラブルシューティングガイド
+- **[公式Discord Bot文書](https://discord.com/developers/docs)** - Discord APIの詳細
+- **[OpenClaw Discordチャンネル文書](https://docs.openclaw.org/channels/discord)** - 公式技術リファレンス
+
+## まとめ
+
+このガイドでは、包括的な **openclaw discord setup** について説明しました：
+
+✅ **ボット作成**：開発者ポータルのセットアップ、Intents、権限
+✅ **基本設定**：トークン管理、アクセス制御ポリシー
+✅ **ロールと権限**：ギルドレベル、チャンネルレベル、ユーザーレベルの許可リスト
+✅ **スレッドとフォーラム**：標準スレッド、フォーラムチャンネル、重要なフォーラムの落とし穴
+✅ **マルチサーバーセットアップ**：異なる設定で複数のギルドを管理
+✅ **トラブルシューティング**：一般的な問題に対する実際の解決策
+✅ **セキュリティ**：本番環境デプロイのベストプラクティス
+
+**重要なポイント：**
+
+1. **Message Content Intentが重要** - 「ボットが応答しない」の第1の原因
+2. **フォーラムチャンネルには特別な処理が必要** - メッセージ内容を含める
+3. **許可リストポリシーから始める** - 必要に応じて徐々に開放
+4. **本番設定ではIDを使用** - Slugはドキュメント用
+5. **最小限の権限を付与** - 必要な場合のみ追加
+
+OpenClawでDiscordを楽しんでください！🤖💬

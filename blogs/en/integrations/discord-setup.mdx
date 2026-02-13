@@ -1,0 +1,1150 @@
+---
+title: Discord Integration for OpenClaw - Roles, Threads, Forum Channels & Permissions Setup Guide
+description: Complete guide to setting up Discord bot integration with OpenClaw. Learn how to configure roles, permissions, threads, forum channels, and troubleshoot common issues.
+slug: /integrations/discord-setup
+tags: discord, integration, bot, setup, permissions, threads, forum channels
+publishedAt: 2026-02-13
+status: published
+visibility: public
+featuredImageUrl: /images/blog/discord-integration.png
+---
+
+# Discord Integration for OpenClaw: Complete Setup Guide
+
+Discord is one of the most powerful platforms for bot integration, offering rich features like roles, permissions, threads, and forum channels. Integrating your OpenClaw instance with Discord enables sophisticated automation, multi-server management, and advanced permission controls that go far beyond simple messaging.
+
+This comprehensive guide walks you through the complete **openclaw discord setup** process, from creating your bot and configuring basic permissions to leveraging advanced features like thread management and forum channel support. We'll cover real-world issues including the critical forum channel gotcha that affects thread creation (based on GitHub Issue #6601).
+
+## Why Discord + OpenClaw?
+
+Discord's extensive API and rich feature set make it an ideal platform for OpenClaw integration:
+
+- **Granular Permissions**: Role-based access control for fine-grained security
+- **Rich Organization**: Servers, categories, channels, threads, and forums
+- **Scalability**: Handle multiple servers, hundreds of channels, thousands of users
+- **Native Features**: Reactions, embeds, buttons, slash commands, and more
+- **Developer-Friendly**: Excellent documentation and robust API
+
+Whether you're managing a community server, coordinating a team, or building custom automation workflows, **openclaw discord permissions** and channel management give you unprecedented control.
+
+## Prerequisites
+
+Before starting your **openclaw discord setup**, ensure you have:
+
+- **OpenClaw installed and running** - Version 0.5.0 or later recommended
+- **Discord account** - With permission to create bots
+- **Server admin access** - On at least one Discord server for testing
+- **Basic understanding of Discord's structure** - Servers, channels, roles
+- **HTTPS endpoint (optional)** - Only required for webhook mode in production
+
+## Part 1: Creating Your Discord Bot
+
+### Step 1: Discord Developer Portal Setup
+
+The Discord Developer Portal is where you create and manage bot applications.
+
+**Creating the Application:**
+
+1. Navigate to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Click **"New Application"**
+3. Enter a name (e.g., "OpenClaw Assistant")
+4. Accept the Developer Terms of Service
+5. Click **"Create"**
+
+**Creating the Bot User:**
+
+1. In your application, navigate to the **"Bot"** tab
+2. Click **"Add Bot"**
+3. Confirm by clicking **"Yes, do it!"**
+4. Your bot is now created
+
+**Obtaining the Bot Token:**
+
+1. In the Bot tab, find the **"TOKEN"** section
+2. Click **"Reset Token"** (or "Copy" if it's your first time)
+3. Copy the token - this is your `DISCORD_BOT_TOKEN`
+
+**⚠️ Critical Security Warning**: Your bot token is like a master password. Anyone with this token can control your bot. Never commit it to version control, share it publicly, or include it in screenshots. Store it securely using environment variables or encrypted configuration files.
+
+### Step 2: Enable Required Intents
+
+Discord requires you to explicitly enable "privileged intents" for certain bot capabilities.
+
+**Why Intents Matter:**
+
+Intents control what events your bot can receive from Discord. Without proper intents, your bot will connect successfully but won't see messages or be able to respond.
+
+**Required Intents for OpenClaw:**
+
+In the Bot tab, scroll to **"Privileged Gateway Intents"** and enable:
+
+1. **✅ Server Members Intent**
+   - Required for: User lookups, allowlist matching, member information
+   - Without this: Name-based allowlists won't work, member queries will fail
+
+2. **✅ Message Content Intent**
+   - Required for: Reading message text in guilds
+   - Without this: Bot connects but cannot read messages, appears unresponsive
+   - **This is the #1 cause of "bot not responding" issues**
+
+3. **❌ Presence Intent** (optional)
+   - Only needed if: You want to receive presence updates about other users
+   - OpenClaw doesn't require this for basic functionality
+   - Note: Setting your bot's own status (online/idle/dnd) does NOT require this intent
+
+**Common Mistake**: Enabling the bot but forgetting to enable Message Content Intent. This causes the bot to appear online but never respond to messages.
+
+### Step 3: Configure Bot Permissions
+
+Discord's permission system is granular. You'll need to decide what your bot can do.
+
+**Recommended Minimal Permissions:**
+
+For basic **openclaw discord setup**, enable these permissions in the Bot tab:
+
+- ✅ **View Channels** - See channel list
+- ✅ **Send Messages** - Reply to users
+- ✅ **Read Message History** - Access conversation context
+- ✅ **Embed Links** - Send rich embeds
+- ✅ **Attach Files** - Share files and images
+- ✅ **Add Reactions** - React to messages
+- ✅ **Use External Emojis** - Use custom emojis from other servers
+
+**Advanced Permissions (Optional):**
+
+For advanced features, consider:
+
+- ✅ **Manage Messages** - Pin, delete messages (requires trust)
+- ✅ **Manage Channels** - Create/edit channels (for automation)
+- ✅ **Manage Roles** - Assign roles (high trust level)
+- ✅ **Create Public Threads** - Start threads in channels
+- ✅ **Create Private Threads** - Start private discussions
+- ✅ **Manage Threads** - Archive, delete, manage threads
+- ❌ **Administrator** - Avoid unless absolutely necessary
+
+**Security Best Practice**: Grant only the permissions your use case actually needs. You can always add more later. The principle of least privilege prevents accidents and limits damage if your token is compromised.
+
+### Step 4: Generate Invite URL
+
+Now you'll create an invite link to add your bot to a server.
+
+**Using OAuth2 URL Generator:**
+
+1. In your application, navigate to **"OAuth2"** → **"URL Generator"**
+
+2. Select **Scopes**:
+   - ✅ `bot` - Core bot functionality
+   - ✅ `applications.commands` - Slash commands support
+
+3. Select **Bot Permissions**:
+   - Check the permissions you determined in Step 3
+   - The URL generator will create a permission integer automatically
+
+4. **Copy the Generated URL** at the bottom
+
+**Inviting the Bot:**
+
+1. Open the generated URL in your browser
+2. Select the server where you want to add the bot
+3. Review the permissions (Discord shows exactly what you're granting)
+4. Click **"Authorize"**
+5. Complete the CAPTCHA if prompted
+
+Your bot should now appear offline in your server's member list.
+
+## Part 2: OpenClaw Configuration
+
+### Basic Discord Configuration
+
+The minimal configuration to get your **openclaw discord** integration running.
+
+**Configuration File Setup:**
+
+Edit your OpenClaw config file (typically `~/.openclaw/config.yaml` or `~/.openclaw/config.json`):
+
+```json
+{
+  "channels": {
+    "discord": {
+      "enabled": true,
+      "token": "YOUR_BOT_TOKEN_HERE"
+    }
+  }
+}
+```
+
+**Using Environment Variables (Recommended for Production):**
+
+Instead of storing the token in config, use an environment variable:
+
+```bash
+export DISCORD_BOT_TOKEN="YOUR_BOT_TOKEN_HERE"
+```
+
+Then your config can be simplified to:
+
+```json
+{
+  "channels": {
+    "discord": {
+      "enabled": true
+    }
+  }
+}
+```
+
+OpenClaw automatically uses the `DISCORD_BOT_TOKEN` environment variable as a fallback.
+
+**Starting OpenClaw:**
+
+```bash
+openclaw gateway start
+```
+
+Watch the logs for Discord initialization:
+
+```
+[INFO] Discord channel enabled
+[INFO] Discord: Connected as @YourBotName#1234
+[INFO] Discord: Serving 1 guild(s)
+```
+
+### Understanding Access Control
+
+OpenClaw provides sophisticated access control for Discord integration through two main policies: DM policy and group (guild) policy.
+
+**DM Policy Options:**
+
+Controls who can send direct messages to your bot.
+
+```json
+{
+  "channels": {
+    "discord": {
+      "dm": {
+        "policy": "pairing",  // Recommended default
+        "enabled": true
+      }
+    }
+  }
+}
+```
+
+**Available DM Policies:**
+
+1. **`pairing`** (Recommended)
+   - First-time users must complete a pairing process
+   - After pairing, users can chat freely
+   - Pairing codes expire after 1 hour
+   - Approve via: `openclaw pairing approve discord <code>`
+
+2. **`allowlist`**
+   - Only pre-approved users can DM the bot
+   - Requires explicit `allowFrom` list
+   - Strictest security model
+
+3. **`open`**
+   - Anyone can DM the bot
+   - Requires setting `"allowFrom": ["*"]`
+   - Use with caution in production
+
+4. **`disabled`**
+   - Completely disables DM functionality
+   - Bot will ignore all direct messages
+
+**Group/Guild Policy Options:**
+
+Controls bot behavior in Discord servers (guilds).
+
+```json
+{
+  "channels": {
+    "discord": {
+      "groupPolicy": "allowlist"  // Default
+    }
+  }
+}
+```
+
+**Available Group Policies:**
+
+1. **`allowlist`** (Default)
+   - Requires explicit configuration for each server/channel
+   - Most secure option for production
+   - No response unless specifically configured
+
+2. **`open`**
+   - Bot responds in any server it's added to
+   - Good for testing, risky for production
+   - Can lead to unexpected interactions
+
+3. **`disabled`**
+   - Bot ignores all guild messages
+   - DM-only mode
+
+### Allowlist Configuration
+
+For production deployments, configure explicit allowlists to control access.
+
+**User Allowlist (DM):**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "dm": {
+        "policy": "allowlist",
+        "allowFrom": [
+          "123456789012345678",  // User ID (recommended)
+          "steipete",            // Username (resolved at startup)
+          "<@987654321098765432>"  // Mention format
+        ]
+      }
+    }
+  }
+}
+```
+
+**Finding Your Discord User ID:**
+
+1. Enable Developer Mode: User Settings → Advanced → Developer Mode
+2. Right-click your username anywhere → Copy User ID
+3. Use this numeric ID in your config
+
+**Guild (Server) Allowlist:**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "groupPolicy": "allowlist",
+      "guilds": {
+        "123456789012345678": {  // Guild ID (numeric)
+          "slug": "my-awesome-server",  // Optional friendly name
+          "users": [
+            "987654321098765432",  // Allowed users in this guild
+            "steipete"
+          ],
+          "requireMention": true  // Respond only when @mentioned
+        }
+      }
+    }
+  }
+}
+```
+
+**Finding Guild and Channel IDs:**
+
+1. Enable Developer Mode (same as above)
+2. Right-click server name → Copy Server ID (guild ID)
+3. Right-click channel name → Copy Channel ID
+
+## Part 3: Roles and Permissions Configuration
+
+One of Discord's most powerful features is its role-based permission system. OpenClaw can leverage this for sophisticated access control.
+
+### Per-Channel Configuration
+
+Configure different behavior for different channels within the same server.
+
+**Example: Multi-Channel Setup**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "guilds": {
+        "123456789012345678": {
+          "slug": "my-server",
+          "requireMention": true,  // Default for all channels
+          "users": ["987654321098765432"],  // Guild-wide allowlist
+          
+          "channels": {
+            "general": {
+              "allow": true,
+              "requireMention": false  // Override: no mention required
+            },
+            
+            "help": {
+              "allow": true,
+              "requireMention": true,
+              "users": ["111111111111111111"],  // Channel-specific allowlist
+              "systemPrompt": "Keep answers short and beginner-friendly."
+            },
+            
+            "admin": {
+              "allow": true,
+              "users": ["987654321098765432"],  // Restricted channel
+              "skills": ["ssh", "exec", "filesystem"],  // Enable powerful tools
+              "systemPrompt": "You have full system access. Be careful."
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Channel Configuration Options:**
+
+- **`allow`**: `true`/`false` - Whether bot responds in this channel
+- **`requireMention`**: Bot only responds when @mentioned
+- **`users`**: Channel-specific user allowlist (overrides guild-level)
+- **`skills`**: Limit which OpenClaw skills are available
+- **`systemPrompt`**: Channel-specific instructions for the AI
+- **`enabled`**: Completely disable the channel
+
+**Wildcard Channel Configuration:**
+
+Apply default settings to all channels:
+
+```json
+{
+  "guilds": {
+    "123456789012345678": {
+      "channels": {
+        "*": {  // Applies to all channels unless overridden
+          "requireMention": true,
+          "allow": true
+        },
+        "admin": {  // Specific override for admin channel
+          "requireMention": false
+        }
+      }
+    }
+  }
+}
+```
+
+### Tool and Action Permissions
+
+Control what the AI can do on Discord through action gates.
+
+**Default Action Permissions:**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "actions": {
+        "reactions": true,        // React to messages
+        "stickers": true,         // Send stickers
+        "emojiUploads": true,     // Upload custom emojis
+        "stickerUploads": true,   // Upload custom stickers
+        "polls": true,            // Create polls
+        "permissions": true,      // Query channel permissions
+        "messages": true,         // Read/send/edit/delete messages
+        "threads": true,          // Create/manage threads
+        "pins": true,             // Pin/unpin messages
+        "search": true,           // Search message history
+        "memberInfo": true,       // Query member information
+        "roleInfo": true,         // Query role information
+        "channelInfo": true,      // Query channel information
+        "channels": true,         // Create/edit/delete channels
+        "voiceStatus": true,      // Query voice status
+        "events": true,           // Create/manage events
+        
+        // High-trust actions (disabled by default)
+        "roles": false,           // Add/remove roles
+        "moderation": false,      // Timeout/kick/ban users
+        "presence": false         // Change bot status
+      }
+    }
+  }
+}
+```
+
+**Per-Guild Tool Overrides:**
+
+```json
+{
+  "guilds": {
+    "123456789012345678": {
+      "tools": {
+        "allow": ["read", "write", "search"],  // Only these tools
+        "deny": ["exec", "ssh"]  // Explicitly deny these
+      },
+      
+      "channels": {
+        "admin": {
+          "tools": {
+            "alsoAllow": ["exec", "ssh"]  // Add tools for this channel only
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Per-Sender Tool Policies:**
+
+Grant different permissions to different users:
+
+```json
+{
+  "guilds": {
+    "123456789012345678": {
+      "toolsBySender": {
+        "987654321098765432": {  // Specific user ID
+          "allow": "*"  // Full access to all tools
+        },
+        "*": {  // Everyone else
+          "allow": ["search", "web_search", "read"]
+        }
+      }
+    }
+  }
+}
+```
+
+## Part 4: Thread and Forum Channel Support
+
+Discord's thread and forum features enable organized, topic-based discussions. OpenClaw supports these advanced features with some important caveats.
+
+### Understanding Discord's Thread Types
+
+Discord has three types of threads:
+
+1. **Public Threads**: Created in text channels, visible to everyone
+2. **Private Threads**: Invite-only threads in text channels
+3. **Forum Threads**: Posts in forum channels (special case!)
+
+### Basic Thread Configuration
+
+Enable thread creation and management:
+
+```json
+{
+  "channels": {
+    "discord": {
+      "actions": {
+        "threads": true  // Enable thread actions
+      }
+    }
+  }
+}
+```
+
+**Creating Threads via CLI:**
+
+```bash
+# Create a thread in a text channel
+openclaw message thread-create \
+  --channel discord \
+  --target channel:123456789012345678 \
+  --thread-name "Discussion Topic" \
+  --message-id 987654321098765432  # Optional: thread from existing message
+```
+
+**Creating Threads via Agent:**
+
+The OpenClaw AI agent can create threads when appropriate:
+
+```
+User: Create a thread called "Bug Reports" in the support channel
+Agent: I'll create that thread for you.
+[Agent calls discord tool with thread-create action]
+Agent: Thread created! You can find it in the support channel.
+```
+
+### Forum Channel Support (Critical Gotcha!)
+
+Forum channels are a special type of channel introduced by Discord. They work differently from regular text channels and require special handling.
+
+**What Are Forum Channels?**
+
+Forum channels display posts as a list of threads. Each post is actually a thread with its own messages. Think of it like a traditional forum (Reddit-style) built into Discord.
+
+**The Forum Channel Gotcha (GitHub Issue #6601):**
+
+When trying to create a thread in a forum channel using the standard `thread-create` action, you may encounter:
+
+```
+Error: Cannot create thread in forum channel
+```
+
+or
+
+```
+Error: Invalid channel type for thread creation
+```
+
+**Why This Happens:**
+
+Forum channels don't support the standard `createThread` API endpoint. Instead, you must use `startThreadInForumChannel` which has a different signature and requirements.
+
+**The Correct Way to Create Forum Posts:**
+
+**Method 1: Using the Dedicated Forum Action**
+
+```bash
+openclaw message thread-create \
+  --channel discord \
+  --target channel:123456789012345678 \  # Forum channel ID
+  --thread-name "Post Title" \
+  --message "First message content"  # Required for forum posts!
+```
+
+**Key Difference**: Forum posts **require** an initial message. Regular threads can be empty.
+
+**Method 2: Agent-Aware Configuration**
+
+Ensure your OpenClaw agent knows about forum channels:
+
+```json
+{
+  "guilds": {
+    "123456789012345678": {
+      "channels": {
+        "bug-reports": {  // This is a forum channel
+          "allow": true,
+          "systemPrompt": "This is a forum channel. When creating posts here, always include an initial message describing the topic."
+        }
+      }
+    }
+  }
+}
+```
+
+**Method 3: Pre-Flight Channel Type Check**
+
+Before attempting thread creation, the agent can check channel type:
+
+```bash
+openclaw message channel-info --channel discord --target channel:123456789012345678
+```
+
+Response includes `"type": 15` for forum channels (vs. `"type": 0` for text channels).
+
+**Forum-Specific Configuration:**
+
+```json
+{
+  "channels": {
+    "discord": {
+      "guilds": {
+        "123456789012345678": {
+          "channels": {
+            "forum-channel-id": {
+              "allow": true,
+              "requireMention": false,  // Forum posts don't need mentions
+              "systemPrompt": "This is a forum channel. Create posts with descriptive titles and initial messages. Each post becomes a thread."
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Thread Inheritance
+
+Threads automatically inherit configuration from their parent channel:
+
+```json
+{
+  "channels": {
+    "help": {
+      "allow": true,
+      "requireMention": true,
+      "skills": ["search", "docs"],
+      "systemPrompt": "Be helpful and concise."
+    }
+  }
+}
+```
+
+All threads created in `#help` will have:
+- Mention requirement
+- Access to search and docs skills only
+- The same system prompt
+
+**Override Thread Settings:**
+
+You can explicitly configure individual threads by their thread ID:
+
+```json
+{
+  "channels": {
+    "123456789012345678": {  // Specific thread ID
+      "requireMention": false,  // Override parent channel
+      "systemPrompt": "This thread is for X. Focus on Y."
+    }
+  }
+}
+```
+
+### Listing and Managing Threads
+
+**List All Active Threads:**
+
+```bash
+openclaw message thread-list \
+  --channel discord \
+  --guild-id 123456789012345678
+```
+
+**Include Archived Threads:**
+
+```bash
+openclaw message thread-list \
+  --channel discord \
+  --guild-id 123456789012345678 \
+  --include-archived
+```
+
+**Reply to a Thread:**
+
+```bash
+openclaw message thread-reply \
+  --channel discord \
+  --target 987654321098765432 \  # Thread ID
+  --message "Response message"
+```
+
+## Part 5: Advanced Multi-Server Setup
+
+Managing multiple Discord servers with different configurations.
+
+### Multi-Server Configuration Example
+
+```json
+{
+  "channels": {
+    "discord": {
+      "groupPolicy": "allowlist",
+      
+      "guilds": {
+        "111111111111111111": {
+          "slug": "personal-server",
+          "requireMention": false,
+          "users": ["987654321098765432"],
+          "channels": {
+            "*": { "allow": true }
+          }
+        },
+        
+        "222222222222222222": {
+          "slug": "work-team",
+          "requireMention": true,
+          "users": ["987654321098765432", "111111111111111111"],
+          "channels": {
+            "general": { 
+              "allow": true,
+              "requireMention": false 
+            },
+            "support": {
+              "allow": true,
+              "systemPrompt": "You are a helpful support assistant. Keep responses professional."
+            }
+          }
+        },
+        
+        "333333333333333333": {
+          "slug": "community-server",
+          "requireMention": true,
+          "reactionNotifications": "own",  // Only notify for reactions on bot's messages
+          "channels": {
+            "bot-commands": {
+              "allow": true,
+              "requireMention": false,
+              "skills": ["search", "web_search", "weather"]  // Limited public skills
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Using Slugs vs IDs
+
+OpenClaw supports both numeric IDs and friendly slugs.
+
+**Slugs for Readability:**
+
+```json
+{
+  "guilds": {
+    "my-awesome-server": {  // Slug (automatically generated: lowercase, dashes)
+      "channels": {
+        "general": { "allow": true },
+        "help": { "allow": true }
+      }
+    }
+  }
+}
+```
+
+**IDs for Reliability:**
+
+```json
+{
+  "guilds": {
+    "123456789012345678": {  // Numeric ID (recommended)
+      "slug": "my-awesome-server",  // Optional friendly reference
+      "channels": {
+        "987654321098765432": { "allow": true }  // Channel ID
+      }
+    }
+  }
+}
+```
+
+**Best Practice**: Use IDs in production configs (they never change), use slugs for readability in comments or documentation.
+
+### Multi-Account Support
+
+Run multiple bot accounts from one OpenClaw instance:
+
+```json
+{
+  "channels": {
+    "discord": {
+      "accounts": [
+        {
+          "name": "personal-bot",
+          "token": "PERSONAL_BOT_TOKEN",
+          "dm": {
+            "policy": "pairing"
+          }
+        },
+        {
+          "name": "work-bot",
+          "token": "WORK_BOT_TOKEN",
+          "groupPolicy": "allowlist",
+          "guilds": {
+            "222222222222222222": {
+              "channels": {
+                "*": { "allow": true }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+## Part 6: Common Issues and Troubleshooting
+
+### Issue 1: Bot Not Responding to Messages
+
+**Based on Community Reports and GitHub Issues**
+
+**Symptoms:**
+- Bot appears online in Discord
+- `openclaw status` shows Discord as connected
+- Bot never responds to messages in guild channels
+
+**Diagnostic Steps:**
+
+1. **Check Message Content Intent:**
+```bash
+# Visit Discord Developer Portal → Your App → Bot → Privileged Gateway Intents
+# Ensure "Message Content Intent" is enabled
+```
+
+If not enabled, enable it and restart OpenClaw:
+```bash
+openclaw gateway restart
+```
+
+2. **Verify Channel Permissions:**
+```bash
+openclaw message permissions --channel discord --target channel:YOUR_CHANNEL_ID
+```
+
+Ensure the bot has:
+- View Channels
+- Send Messages
+- Read Message History
+
+3. **Check OpenClaw Configuration:**
+```bash
+openclaw config get channels.discord.groupPolicy
+```
+
+If `allowlist`, ensure the guild/channel is configured:
+```bash
+openclaw config get channels.discord.guilds
+```
+
+4. **Test with Direct Mention:**
+
+In Discord, try: `@YourBot hello`
+
+If this works but normal messages don't, your config has `requireMention: true`.
+
+**Solutions:**
+
+**Solution A**: Enable Message Content Intent (most common fix)
+**Solution B**: Add guild/channel to allowlist
+**Solution C**: Disable mention requirement (if desired)
+**Solution D**: Check bot role permissions in Discord Server Settings
+
+### Issue 2: Thread Creation Fails in Forum Channels
+
+**Based on GitHub Issue #6601**
+
+**Symptoms:**
+- `thread-create` works in normal text channels
+- Fails in forum channels with "Invalid channel type" error
+- **openclaw discord forum channels** searches led you here
+
+**Solution:**
+
+Forum channels require a different approach. See the Forum Channel section above for details.
+
+**Quick Fix:**
+
+```bash
+# Include a message when creating forum posts
+openclaw message thread-create \
+  --channel discord \
+  --target channel:FORUM_CHANNEL_ID \
+  --thread-name "Post Title" \
+  --message "Initial post content"  # This is required!
+```
+
+### Issue 3: Permission Denied Errors
+
+**Symptoms:**
+- Bot has correct intents
+- Channel appears in allowlist
+- Still getting "not authorized" errors
+
+**Diagnostic Steps:**
+
+1. **Check user allowlist:**
+```bash
+openclaw config get channels.discord.guilds.GUILD_ID.users
+```
+
+2. **Verify user ID:**
+```bash
+# Have the user send a message, then check logs:
+openclaw gateway logs | grep "Discord message from"
+```
+
+3. **Check channel-specific allowlist:**
+```bash
+openclaw config get channels.discord.guilds.GUILD_ID.channels.CHANNEL.users
+```
+
+**Solutions:**
+
+**Solution A**: Add user to guild-level allowlist
+**Solution B**: Add user to channel-level allowlist  
+**Solution C**: Change policy to `open` for testing (not recommended for production)
+
+### Issue 4: Reactions Not Working
+
+**Symptoms:**
+- Bot can send messages
+- Cannot add reactions
+- Reaction commands fail silently
+
+**Diagnostic Steps:**
+
+1. **Check reaction permission:**
+```bash
+openclaw config get channels.discord.actions.reactions
+```
+
+Should be `true`.
+
+2. **Check bot Discord permissions:**
+- Server Settings → Roles → Your Bot Role
+- Ensure "Add Reactions" is enabled
+
+3. **Check emoji format:**
+```bash
+# Unicode emoji (should work anywhere)
+openclaw message react --channel discord --target channel:ID --message-id ID --emoji "✅"
+
+# Custom emoji (guild-specific)
+openclaw message react --channel discord --target channel:ID --message-id ID --emoji "<:name:123456789>"
+```
+
+**Solutions:**
+
+**Solution A**: Enable reactions in OpenClaw config
+**Solution B**: Grant "Add Reactions" permission in Discord
+**Solution C**: Use correct emoji format (unicode vs custom)
+
+### Issue 5: Slash Commands Not Appearing
+
+**Symptoms:**
+- Bot connected successfully
+- Typing `/` doesn't show bot commands
+- Commands worked before but disappeared
+
+**Diagnostic Steps:**
+
+1. **Check OAuth2 scopes:**
+- Did you invite the bot with `applications.commands` scope?
+- If not, you need to re-invite with updated scopes
+
+2. **Check command registration:**
+```bash
+openclaw config get channels.discord.commands.native
+```
+
+Should be `true` or `"auto"`.
+
+3. **Force command sync:**
+```bash
+openclaw gateway restart
+# Commands re-register on startup
+```
+
+**Solutions:**
+
+**Solution A**: Re-invite bot with `applications.commands` scope
+**Solution B**: Enable native commands in config
+**Solution C**: Wait up to 1 hour for Discord to propagate commands globally
+**Solution D**: Restart OpenClaw gateway to force re-registration
+
+## Security Best Practices
+
+### 1. Token Security
+
+**DO:**
+- ✅ Use environment variables for tokens
+- ✅ Store tokens in encrypted vaults (AWS Secrets Manager, HashiCorp Vault)
+- ✅ Rotate tokens periodically
+- ✅ Use different tokens for development and production
+
+**DON'T:**
+- ❌ Commit tokens to git
+- ❌ Share tokens in screenshots or logs
+- ❌ Use the same token across multiple projects
+- ❌ Store tokens in plaintext config files in shared locations
+
+### 2. Principle of Least Privilege
+
+**Bot Permissions:**
+Grant only what's needed. Start minimal and add as required.
+
+**User Allowlists:**
+Be explicit about who can use the bot:
+
+```json
+{
+  "dm": {
+    "policy": "allowlist",
+    "allowFrom": ["YOUR_USER_ID"]  // Start with just you
+  }
+}
+```
+
+**Tool Restrictions:**
+Limit dangerous tools in public channels:
+
+```json
+{
+  "channels": {
+    "public-bot-commands": {
+      "tools": {
+        "allow": ["search", "weather", "web_search"],
+        "deny": ["exec", "ssh", "filesystem"]
+      }
+    }
+  }
+}
+```
+
+### 3. Audit and Monitoring
+
+**Log Reviews:**
+```bash
+# Review who's using the bot
+openclaw gateway logs | grep "Discord message from" | tail -50
+
+# Check for failed auth attempts
+openclaw gateway logs | grep "not authorized"
+```
+
+**Periodic Config Audits:**
+```bash
+# Review current allowlists
+openclaw config get channels.discord.guilds
+
+# Check enabled actions
+openclaw config get channels.discord.actions
+```
+
+### 4. Webhook Security
+
+If using webhooks (advanced topic, not covered in detail here):
+
+```json
+{
+  "webhook": {
+    "enabled": true,
+    "url": "https://your-domain.com/discord/webhook",
+    "secretToken": "use-a-long-random-secret"  // REQUIRED
+  }
+}
+```
+
+Generate strong secret:
+```bash
+openssl rand -hex 32
+```
+
+### 5. Rate Limiting and Abuse Prevention
+
+OpenClaw includes built-in rate limit handling:
+
+```json
+{
+  "retry": {
+    "attempts": 3,
+    "minDelayMs": 500,
+    "maxDelayMs": 30000,
+    "jitter": 0.1
+  }
+}
+```
+
+This protects your bot from hitting Discord's rate limits and getting temporarily banned.
+
+## Related Resources
+
+- **[OpenClaw Beginner's Guide](/blog/guide)** - Start here if you're new to OpenClaw
+- **[Telegram Setup Guide](/blog/integrations/telegram-setup)** - Alternative messaging platform
+- **[Fix Session Memory Issues](/blog/troubleshooting/fix-session-memory-issues)** - Troubleshooting guide
+- **[Official Discord Bot Documentation](https://discord.com/developers/docs)** - Deep dive into Discord API
+- **[OpenClaw Discord Channel Documentation](https://docs.openclaw.org/channels/discord)** - Official technical reference
+- **[GitHub Issues: discord tag](https://github.com/openclaw/openclaw/issues?q=label%3Adiscord)** - Community-reported issues
+
+## Summary
+
+This guide covered comprehensive **openclaw discord setup** including:
+
+✅ **Bot Creation**: Developer Portal setup, intents, permissions  
+✅ **Basic Configuration**: Token management, access control policies  
+✅ **Roles & Permissions**: Guild-level, channel-level, user-level allowlists  
+✅ **Threads & Forums**: Standard threads, forum channels, and the critical forum gotcha  
+✅ **Multi-Server Setup**: Managing multiple guilds with different configurations  
+✅ **Troubleshooting**: Real-world solutions to common issues  
+✅ **Security**: Best practices for production deployments
+
+**Key Takeaways:**
+
+1. **Message Content Intent is critical** - #1 cause of "bot not responding"
+2. **Forum channels require special handling** - Include message content
+3. **Start with allowlist policy** - Open up gradually as needed
+4. **Use IDs in production configs** - Slugs for documentation
+5. **Grant minimal permissions** - Add more only when necessary
+
+Whether you're setting up **openclaw discord permissions** for a small team or managing **openclaw discord forum channels** in a large community, this guide provides the foundation for a robust, secure Discord integration.
+
+Happy Discord-ing with OpenClaw! 🤖💬
