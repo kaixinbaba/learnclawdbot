@@ -1,0 +1,279 @@
+[
+  {
+    "id": "launch",
+    "type": "milestone",
+    "date": "2026-01-12",
+    "version": "v2026.1.11",
+    "title": "OpenClaw 초기 릴리스",
+    "description": "OpenClaw가 메모리 검색, 플러그인 시스템, 멀티채널 지원을 포함한 획기적인 기능과 함께 출시되었습니다.",
+    "highlights": [
+      "에이전트 메모리를 위한 벡터 검색",
+      "음성 통화 지원이 포함된 플러그인 아키텍처",
+      "멀티채널 메시징 (Slack, Telegram, Discord, WhatsApp)",
+      "고급 압축 및 세이프가드 모드"
+    ],
+    "category": "launch",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-12",
+    "type": "major",
+    "date": "2026-01-13",
+    "version": "v2026.1.12",
+    "title": "채널 아키텍처 및 메모리 시스템",
+    "description": "주요 아키텍처 변경: 채팅 제공자가 자동 마이그레이션과 함께 '채널'로 이름 변경. 벡터 검색으로 메모리 시스템 강화.",
+    "highlights": [
+      "채널 아키텍처 통합",
+      "SQLite 기반 벡터 메모리 인덱싱",
+      "합성 제공자 지원",
+      "Cron 스케줄링 개선"
+    ],
+    "category": "architecture",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-14",
+    "type": "major",
+    "date": "2026-01-15",
+    "version": "v2026.1.14",
+    "title": "웹 도구 및 브라우저 제어",
+    "description": "Brave API 기반 web_search 및 web_fetch 도구 도입, 브라우저 자동화를 위한 Chrome 확장 프로그램 릴레이.",
+    "highlights": [
+      "Brave API 통합 웹 검색",
+      "Chrome 확장 프로그램 릴레이 테이크오버 모드",
+      "CLI를 통한 원격 브라우저 제어",
+      "HTTP 후크가 포함된 채널 플러그인"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-15",
+    "type": "major",
+    "date": "2026-01-16",
+    "version": "v2026.1.15",
+    "title": "보안 및 제공자 인증",
+    "description": "제공자 인증 레지스트리, 암호화된 토큰 저장소, 개선된 원격 CDP 지원으로 보안 강화.",
+    "highlights": [
+      "플러그인용 OAuth/API 키 플로우",
+      "암호화된 인증 토큰 (Keychain/SecurePrefs)",
+      "원격 Browserless/CDP 지원",
+      "에이전트별 하트비트 구성"
+    ],
+    "category": "security",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-16",
+    "type": "major",
+    "date": "2026-01-17",
+    "version": "v2026.1.16",
+    "title": "후크 시스템 및 미디어 이해",
+    "description": "번들 후크와 포괄적인 미디어 이해 (이미지/오디오/비디오)를 갖춘 혁신적인 후크 시스템.",
+    "highlights": [
+      "CLI 도구가 포함된 후크 시스템",
+      "인바운드 미디어 이해",
+      "세션 ID 크로스 링킹",
+      "Zalo Personal 플러그인 지원"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-20",
+    "type": "major",
+    "date": "2026-01-21",
+    "version": "v2026.1.20",
+    "title": "Control UI 새로고침 및 ACP 통합",
+    "description": "향상된 TUI, 메모리 도구, IDE 통합을 위한 ACP (에이전트 통신 프로토콜)로 주요 UI 개편.",
+    "highlights": [
+      "마크다운 복사 기능이 있는 새로워진 Control UI",
+      "TUI의 구문 강조",
+      "IDE 통합을 위한 ACP",
+      "하이브리드 BM25 + 벡터 메모리 검색"
+    ],
+    "category": "ui",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-21",
+    "type": "major",
+    "date": "2026-01-22",
+    "version": "v2026.1.21",
+    "title": "아이덴티티 및 승인 시스템",
+    "description": "아바타가 있는 커스텀 어시스턴트 아이덴티티, 실행 승인 시스템, 주요 캐시 최적화.",
+    "highlights": [
+      "Control UI의 커스텀 아이덴티티 아바타",
+      "승격 모드가 있는 실행 승인 게이트",
+      "캐시 TTL 최적화",
+      "Signal 타이핑/읽음 확인"
+    ],
+    "category": "feature",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-22",
+    "type": "release",
+    "date": "2026-01-23",
+    "version": "v2026.1.22",
+    "title": "압축 세이프가드 강화",
+    "description": "압축을 위한 프로그레시브 폴백이 있는 적응형 청킹으로 안정성 향상.",
+    "highlights": [
+      "적응형 압축 청킹",
+      "Antigravity 사용량 추적",
+      "BlueBubbles 음성 메모 지원"
+    ],
+    "category": "improvement",
+    "impact": "low"
+  },
+  {
+    "id": "v2026-1-23",
+    "type": "major",
+    "date": "2026-01-24",
+    "version": "v2026.1.23",
+    "title": "TTS 코어 및 HTTP 도구 API",
+    "description": "모델 기반 태그가 있는 텍스트-음성 변환이 코어로 이동. 직접 도구 호출을 위한 새 HTTP 엔드포인트.",
+    "highlights": [
+      "표현 태그가 있는 코어 TTS",
+      "/tools/invoke HTTP API",
+      "채널별 하트비트 제어",
+      "Tlon/Urbit 채널 플러그인"
+    ],
+    "category": "feature",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-1-24",
+    "type": "release",
+    "date": "2026-01-25",
+    "version": "v2026.1.24",
+    "title": "Ollama 및 LINE 지원",
+    "description": "문서가 포함된 Ollama 검색 및 LINE 메시징 API 플러그인.",
+    "highlights": [
+      "Ollama 로컬 모델 검색",
+      "LINE Messaging API 플러그인",
+      "Edge TTS 폴백",
+      "Telegram DM 토픽을 세션으로"
+    ],
+    "category": "integration",
+    "impact": "low"
+  },
+  {
+    "id": "v2026-1-29",
+    "type": "major",
+    "date": "2026-01-30",
+    "version": "v2026.1.29",
+    "title": "OpenClaw 리브랜딩",
+    "description": "Clawdbot에서 OpenClaw로 완전한 리브랜딩, 강화된 보안 및 게이트웨이 개선.",
+    "highlights": [
+      "npm 패키지가 'openclaw'로 이름 변경",
+      "확장 프로그램이 @openclaw/* 스코프로 이동",
+      "게이트웨이 인증 강제",
+      "Venice API 키 통합"
+    ],
+    "category": "rebrand",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-1-30",
+    "type": "release",
+    "date": "2026-01-31",
+    "version": "v2026.1.30",
+    "title": "CLI 완성 및 빌드 최적화",
+    "description": "셸 완성 명령과 tsdown/tsgo를 통한 더 빠른 TypeScript 빌드.",
+    "highlights": [
+      "셸 완성 (Zsh/Bash/PowerShell/Fish)",
+      "Kimi K2.5 모델 지원",
+      "MiniMax OAuth 통합",
+      "TypeScript 빌드 속도 향상"
+    ],
+    "category": "improvement",
+    "impact": "low"
+  },
+  {
+    "id": "v2026-2-2",
+    "type": "major",
+    "date": "2026-02-04",
+    "version": "v2026.2.2",
+    "title": "Feishu 통합 및 Agents 대시보드",
+    "description": "Feishu/Lark 플러그인 지원, Web UI Agents 대시보드, QMD 메모리 백엔드를 포함한 주요 기능 릴리스.",
+    "highlights": [
+      "중국어 문서가 포함된 Feishu/Lark 플러그인",
+      "에이전트 파일/도구/스킬 관리를 위한 Web UI Agents 대시보드",
+      "워크스페이스 컨텍스트를 위한 QMD 메모리 백엔드",
+      "헬스체크 스킬 및 부트스트랩 감사 가이던스",
+      "보안 강화: 운영자 승인, 액세스 그룹 게이팅, SSRF 검사"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-3",
+    "type": "release",
+    "date": "2026-02-05",
+    "version": "v2026.2.3",
+    "title": "Telegram TypeScript 정리 및 Cron 개선",
+    "description": "포괄적인 Telegram 코드베이스 TypeScript 마이그레이션 및 향상된 cron 작업 전달 모드.",
+    "highlights": [
+      "Telegram 코드베이스에서 모든 @ts-nocheck 제거",
+      "Cloudflare AI Gateway 제공자 설정",
+      "격리된 작업을 위한 Cron announce 전달 모드",
+      "채널/계정별 responsePrefix 오버라이드",
+      "Moonshot (.cn) 제공자 지원"
+    ],
+    "category": "improvement",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-2-6",
+    "type": "major",
+    "date": "2026-02-07",
+    "version": "v2026.2.6",
+    "title": "모델 확장 및 토큰 대시보드",
+    "description": "Anthropic Opus 4.6, OpenAI Codex gpt-5.3, xAI Grok 제공자, Web UI 토큰 사용 대시보드 지원.",
+    "highlights": [
+      "Anthropic Opus 4.6 및 OpenAI Codex gpt-5.3-codex 지원",
+      "xAI (Grok) 제공자 통합",
+      "Web UI 토큰 사용 대시보드",
+      "네이티브 Voyage AI 메모리 지원",
+      "스킬/플러그인 코드 보안 스캐너"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-9",
+    "type": "major",
+    "date": "2026-02-09",
+    "version": "v2026.2.9",
+    "title": "iOS Node 앱 및 기기 페어링",
+    "description": "기기 페어링과 크로스 기기 자동화를 위한 전화 제어 플러그인을 갖춘 혁신적인 iOS 노드 앱.",
+    "highlights": [
+      "설정 코드 온보딩이 있는 iOS alpha 노드 앱",
+      "기기 페어링 시스템 (iOS/Android)",
+      "Telegram /pair를 통한 전화 제어 플러그인",
+      "포괄적인 BlueBubbles 채널 정리",
+      "게이트웨이 에이전트 관리 RPC 메서드"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-12",
+    "type": "major",
+    "date": "2026-02-13",
+    "version": "v2026.2.12",
+    "title": "보안 강화 및 후크 시스템 개선",
+    "description": "SSRF 보호, webhook 검증, 후크 세션 라우팅 수정을 포함한 포괄적인 보안 강화.",
+    "highlights": [
+      "URL 기반 파일/이미지 입력에 대한 SSRF 보호",
+      "defaultSessionKey를 사용한 후크 세션 라우팅 강화",
+      "상수 시간 webhook 검증",
+      "브라우저 제어 인증 요구 사항",
+      "Cron 스케줄러 안정성 개선",
+      "채널 및 서브시스템 전반에 걸친 50개 이상의 버그 수정"
+    ],
+    "category": "security",
+    "impact": "high"
+  }
+]

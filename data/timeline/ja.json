@@ -189,5 +189,91 @@
     ],
     "category": "improvement",
     "impact": "low"
+  },
+  {
+    "id": "v2026-2-2",
+    "type": "major",
+    "date": "2026-02-04",
+    "version": "v2026.2.2",
+    "title": "飛書統合と Agents ダッシュボード",
+    "description": "飛書/Lark プラグインサポート、Web UI Agents ダッシュボード、QMD メモリバックエンドを含む主要機能リリース。",
+    "highlights": [
+      "飛書/Lark プラグインと中国語ドキュメント",
+      "エージェントファイル/ツール/スキル管理用 Web UI Agents ダッシュボード",
+      "ワークスペースコンテキスト用 QMD メモリバックエンド",
+      "ヘルスチェックスキルとブートストラップ監査ガイダンス",
+      "セキュリティ強化：オペレーター承認、アクセスグループゲーティング、SSRF チェック"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-3",
+    "type": "release",
+    "date": "2026-02-05",
+    "version": "v2026.2.3",
+    "title": "Telegram TypeScript クリーンアップと Cron 改善",
+    "description": "Telegram コードベースの包括的な TypeScript 移行と強化された cron ジョブ配信モード。",
+    "highlights": [
+      "Telegram コードベースからすべての @ts-nocheck を削除",
+      "Cloudflare AI Gateway プロバイダー設定",
+      "隔離ジョブ用 Cron announce 配信モード",
+      "チャンネル/アカウント別 responsePrefix オーバーライド",
+      "Moonshot (.cn) プロバイダーサポート"
+    ],
+    "category": "improvement",
+    "impact": "medium"
+  },
+  {
+    "id": "v2026-2-6",
+    "type": "major",
+    "date": "2026-02-07",
+    "version": "v2026.2.6",
+    "title": "モデル拡張とトークンダッシュボード",
+    "description": "Anthropic Opus 4.6、OpenAI Codex gpt-5.3、xAI Grok プロバイダー、Web UI トークン使用ダッシュボードをサポート。",
+    "highlights": [
+      "Anthropic Opus 4.6 と OpenAI Codex gpt-5.3-codex サポート",
+      "xAI (Grok) プロバイダー統合",
+      "Web UI トークン使用ダッシュボード",
+      "ネイティブ Voyage AI メモリサポート",
+      "スキル/プラグインコードセキュリティスキャナー"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-9",
+    "type": "major",
+    "date": "2026-02-09",
+    "version": "v2026.2.9",
+    "title": "iOS Node アプリとデバイスペアリング",
+    "description": "デバイスペアリングとクロスデバイス自動化用電話制御プラグインを備えた革新的な iOS ノードアプリ。",
+    "highlights": [
+      "セットアップコードオンボーディング付き iOS alpha ノードアプリ",
+      "デバイスペアリングシステム（iOS/Android）",
+      "Telegram /pair 経由の電話制御プラグイン",
+      "包括的な BlueBubbles チャンネルクリーンアップ",
+      "ゲートウェイエージェント管理 RPC メソッド"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-12",
+    "type": "major",
+    "date": "2026-02-13",
+    "version": "v2026.2.12",
+    "title": "セキュリティ強化とフックシステム改善",
+    "description": "SSRF 保護、webhook 検証、フックセッションルーティング修正を含む包括的なセキュリティ強化。",
+    "highlights": [
+      "URL ベースのファイル/画像入力に対する SSRF 保護",
+      "defaultSessionKey によるフックセッションルーティング強化",
+      "定時 webhook 検証",
+      "ブラウザ制御認証要件",
+      "Cron スケジューラーの信頼性改善",
+      "チャンネルとサブシステム全体で 50 以上のバグ修正"
+    ],
+    "category": "security",
+    "impact": "high"
   }
 ]

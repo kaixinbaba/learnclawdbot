@@ -18,6 +18,8 @@ import { useTranslations } from "next-intl";
 import enTimelineData from "@/data/timeline/en.json";
 import zhTimelineData from "@/data/timeline/zh.json";
 import jaTimelineData from "@/data/timeline/ja.json";
+import koTimelineData from "@/data/timeline/ko.json";
+import ruTimelineData from "@/data/timeline/ru.json";
 
 // Icon mapping based on category
 const categoryIcons = {
@@ -80,6 +82,14 @@ function TimelineNode({
       return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
     } else if (locale === "ja") {
       return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+    } else if (locale === "ko") {
+      return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+    } else if (locale === "ru") {
+      return date.toLocaleDateString("ru-RU", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
     } else {
       return date.toLocaleDateString("en-US", {
         year: "numeric",
@@ -210,6 +220,10 @@ export default function TimelineClient({ locale }: { locale: string }) {
         return zhTimelineData;
       case "ja":
         return jaTimelineData;
+      case "ko":
+        return koTimelineData;
+      case "ru":
+        return ruTimelineData;
       default:
         return enTimelineData;
     }
