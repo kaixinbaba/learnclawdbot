@@ -12,4 +12,515 @@ featuredImageUrl: /images/features/guide_head_new.webp
 
 # OpenClaw Beginner's Guide
 
-OpenClaw is a new AI agent tool designed for executing tasks rather than simple chatting.
+Welcome to OpenClaw! This guide will help you get started with your own AI personal assistant that actually gets things done.
+
+## What is OpenClaw?
+
+OpenClaw is an open-source AI personal assistant gateway that connects you to powerful AI agents through your favorite messaging apps. Unlike traditional chatbots that just talk, OpenClaw is designed to **execute tasks** — it can browse the web, control your smart home, manage your calendar, write code, and much more.
+
+### Core Philosophy: Action Over Conversation
+
+Most AI assistants stop at giving you answers. OpenClaw goes further — it takes action. Need to check your email? OpenClaw can do it. Want to automate your browser? Done. Need to deploy code? OpenClaw handles it. This fundamental difference makes OpenClaw a true **personal assistant** rather than just a chatbot.
+
+### Multi-Channel Support
+
+OpenClaw acts as a gateway, connecting one AI agent to multiple messaging platforms:
+
+- **Telegram** — Easy setup, great for beginners
+- **Discord** — Perfect for communities and teams
+- **WhatsApp** — Use your daily messenger
+- **iMessage** — Native iOS/macOS integration
+- **Email** — Traditional but powerful
+- And more!
+
+You install OpenClaw once, and your AI assistant becomes available everywhere you chat.
+
+### A Brief History
+
+OpenClaw has evolved through several iterations:
+- **Moltbot** — The original experiment
+- **Clawbot** — First stable release
+- **OpenClaw** — Current open-source incarnation
+
+Each version improved on the core idea: giving you a personal AI agent that integrates seamlessly into your daily workflow.
+
+## Key Features
+
+### Multi-Channel Gateway
+
+One OpenClaw instance can serve multiple chat platforms simultaneously. Set it up once, chat with your assistant from Telegram, Discord, or WhatsApp — your conversations and context follow you everywhere.
+
+### AI Agent Integration
+
+OpenClaw supports multiple AI providers:
+- **Anthropic Claude** (recommended) — Excellent reasoning and tool use
+- **OpenAI GPT** — Versatile and powerful
+- **Google Gemini** — Fast and multimodal
+- **Pi** — Conversational and friendly
+- **Custom models** — Bring your own
+
+Switch between models or run multiple agents for different purposes.
+
+### Browser Automation
+
+OpenClaw can control web browsers through the [Browser Relay](/blog/browser-relay) feature. Need to fill out forms, scrape data, or automate repetitive web tasks? Your agent can do it while you watch or work in the background.
+
+### Smart Home Control
+
+Integrate with **Home Assistant** to control lights, thermostats, cameras, and more through natural conversation. "Turn off the living room lights" just works.
+
+### Developer Workflows
+
+OpenClaw excels at developer tasks:
+- Read and write code
+- Git operations (commit, push, PR creation)
+- Code reviews
+- CI/CD pipeline management
+- Server administration via SSH
+
+### Skills System
+
+OpenClaw's capabilities are extensible through a **skills system**. Each skill provides specific functionality — from calendar management to image generation. You can create custom skills to fit your unique needs.
+
+## What You'll Need
+
+Before getting started, make sure you have:
+
+1. **A computer** running macOS, Linux, or Windows
+2. **Node.js 18+** or **Docker** for running OpenClaw
+3. **An AI provider API key** — We recommend starting with [Anthropic Claude](https://console.anthropic.com/)
+4. **A messaging app account** — Telegram, Discord, or WhatsApp
+
+That's it! The basic setup is surprisingly simple.
+
+## Quick Installation
+
+OpenClaw offers several installation methods. Here's a quick overview:
+
+### Via Homebrew (macOS/Linux)
+
+```bash
+brew install openclaw/tap/openclaw
+```
+
+### Via npm
+
+```bash
+npm install -g openclaw
+```
+
+### Via Docker
+
+```bash
+docker pull openclaw/openclaw:latest
+```
+
+### From Source
+
+```bash
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+npm install
+npm run build
+```
+
+For detailed installation instructions, including Windows setup, troubleshooting, and environment configuration, see the [Complete Installation Guide](/blog/openclaw-setup-installation-guide).
+
+## First-Time Setup: The Onboard Wizard
+
+Once installed, OpenClaw provides an interactive setup wizard to get you started:
+
+```bash
+openclaw onboard
+```
+
+This command launches a friendly walkthrough that helps you:
+
+### 1. Choose Your AI Provider
+
+The wizard will ask which AI service you want to use. For beginners, we recommend **Anthropic Claude** for its excellent reasoning and tool-use capabilities.
+
+### 2. Set Your API Key
+
+You'll need to provide an API key from your chosen provider:
+
+- **Anthropic**: Get yours at [console.anthropic.com](https://console.anthropic.com/)
+- **OpenAI**: Visit [platform.openai.com](https://platform.openai.com/)
+- **Google**: Check [ai.google.dev](https://ai.google.dev/)
+
+The wizard will securely store your key in the configuration file.
+
+### 3. Configure Your First Channel
+
+Next, you'll set up your first messaging channel. The wizard supports:
+- Telegram (easiest for beginners)
+- Discord
+- WhatsApp
+- Email
+
+Choose one to start — you can add more channels later!
+
+## Connecting Your First Channel
+
+Let's walk through setting up your first channel. We'll cover the three most popular options.
+
+### Option A: Telegram (Recommended for Beginners)
+
+Telegram is the easiest way to get started with OpenClaw.
+
+**Step 1: Create a Bot with BotFather**
+
+1. Open Telegram and search for `@BotFather`
+2. Send `/newbot` to start creating your bot
+3. Choose a name (e.g., "My OpenClaw Assistant")
+4. Choose a username (must end in 'bot', e.g., `my_openclaw_bot`)
+5. BotFather will give you a **bot token** — save this!
+
+**Step 2: Configure OpenClaw**
+
+```bash
+openclaw channel add telegram
+```
+
+When prompted, paste your bot token.
+
+**Step 3: Start Chatting**
+
+1. Find your bot in Telegram (search for the username you created)
+2. Send `/start` to begin
+3. Try saying "Hello!" — your AI assistant should respond!
+
+### Option B: Discord
+
+Discord is great for communities and teams.
+
+**Step 1: Create a Discord Application**
+
+1. Go to [discord.com/developers/applications](https://discord.com/developers/applications)
+2. Click "New Application" and give it a name
+3. Navigate to the "Bot" tab
+4. Click "Add Bot" and confirm
+5. Under "Token", click "Reset Token" and copy it (save securely!)
+6. Enable these Privileged Gateway Intents:
+   - Presence Intent
+   - Server Members Intent
+   - Message Content Intent
+
+**Step 2: Configure OpenClaw**
+
+```bash
+openclaw channel add discord
+```
+
+Paste your bot token when prompted.
+
+**Step 3: Invite to Your Server**
+
+1. In the Discord Developer Portal, go to "OAuth2" → "URL Generator"
+2. Select scopes: `bot` and `applications.commands`
+3. Select permissions: At minimum, `Read Messages/View Channels`, `Send Messages`, `Read Message History`
+4. Copy the generated URL and open it in your browser
+5. Select your server and authorize
+
+**Step 4: Start Chatting**
+
+In any channel where the bot has access, mention it or DM it directly to start a conversation!
+
+### Option C: WhatsApp
+
+WhatsApp requires QR code pairing and is slightly more complex.
+
+**Step 1: Configure OpenClaw**
+
+```bash
+openclaw channel add whatsapp
+```
+
+**Step 2: Scan QR Code**
+
+OpenClaw will display a QR code in your terminal. Open WhatsApp on your phone and scan it:
+
+1. Open WhatsApp
+2. Tap Menu (⋮) or Settings
+3. Tap "Linked Devices"
+4. Tap "Link a Device"
+5. Scan the QR code from your terminal
+
+**Step 3: Start Chatting**
+
+Once paired, send a message to the linked device (yourself) to test the connection!
+
+For more details on WhatsApp setup and troubleshooting, check the [official documentation](https://openclaw.org/docs).
+
+## Your First Conversation
+
+Now that your channel is connected, let's have your first conversation with your AI assistant!
+
+### Sending Your First Message
+
+Try something simple:
+
+```
+Hello! Can you help me?
+```
+
+Your assistant should introduce itself and ask what you need. OpenClaw agents are designed to be helpful, friendly, and action-oriented.
+
+### Understanding Agent Responses
+
+When you ask your assistant to do something, you'll notice it thinks through the task step-by-step. For example:
+
+```
+You: Search the web for the latest news about AI
+Agent: I'll search for recent AI news for you.
+[Agent uses web_search tool]
+Agent: Here's what I found: [results with links and summaries]
+```
+
+The agent tells you what it's doing, uses the appropriate tools, and returns useful results.
+
+### Essential Commands
+
+OpenClaw supports several built-in commands:
+
+**Check Status:**
+```
+/status
+```
+Shows your current session, active model, and system status.
+
+**Get Help:**
+```
+/help
+```
+Lists available commands and basic usage instructions.
+
+**View Context:**
+```
+/context
+```
+Displays current session context and memory.
+
+**Restart Session:**
+```
+/restart
+```
+Clears the current conversation and starts fresh.
+
+These commands work across all channels and are your go-to tools for managing your assistant.
+
+## Understanding the Basics
+
+### Sessions
+
+Every conversation with OpenClaw happens in a **session**. Think of a session as a conversation context — it remembers what you've said, what tasks are in progress, and relevant background information.
+
+**Key Session Concepts:**
+
+- **Isolation**: Each chat (DM, channel, group) has its own session
+- **Memory**: Sessions remember your conversation history
+- **Context**: The agent knows what you were talking about
+- **Persistence**: Sessions survive restarts (they're saved to disk)
+
+If you're experiencing issues with your agent forgetting things or mixing up contexts, check out the [Session Memory Guide](/blog/troubleshooting/fix-session-memory-issues) for troubleshooting tips.
+
+### Commands
+
+We covered the essential commands above, but OpenClaw supports many more:
+
+- `/thinking` — Toggle reasoning display
+- `/model` — Switch AI models
+- `/skills` — List available skills
+- `/config` — Show current configuration
+
+For a complete command reference, see the [official documentation](https://openclaw.org/docs/commands).
+
+### The Control UI
+
+OpenClaw includes a web-based control panel for managing your setup.
+
+**Access the UI:**
+
+```bash
+openclaw start
+```
+
+Then open your browser to `http://localhost:3000` (default port).
+
+**What You Can Do:**
+
+- View all active sessions
+- See conversation history
+- Manage channel configurations
+- Monitor system health
+- Adjust agent settings
+- View logs and debugging info
+
+The Control UI is especially helpful when running multiple channels or debugging issues.
+
+## Common Tasks
+
+Let's explore what you can actually **do** with OpenClaw.
+
+### Code Assistance
+
+OpenClaw excels at helping with programming tasks:
+
+```
+You: Create a Python script that reads a CSV file and calculates the average of the numbers in the second column.
+
+Agent: [Creates and explains the code]
+```
+
+The agent can read files in your workspace, write new code, explain complex concepts, and even debug errors.
+
+### Calendar and Email Management
+
+With the right skills enabled:
+
+```
+You: What's on my calendar tomorrow?
+Agent: [Checks calendar and lists events]
+
+You: Send an email to john@example.com about our meeting
+Agent: [Drafts email and asks for confirmation before sending]
+```
+
+### Web Search and Research
+
+Your agent can search the web and summarize findings:
+
+```
+You: Research the best practices for React hooks and summarize them for me
+Agent: [Searches, reads articles, and provides a comprehensive summary]
+```
+
+### Browser Automation
+
+Using the [Browser Relay](/blog/browser-relay) feature, your agent can control a web browser:
+
+```
+You: Go to example.com and fill out the contact form with my details
+Agent: [Opens browser, navigates, fills form, and submits]
+```
+
+This is incredibly powerful for automating repetitive web tasks or testing web applications.
+
+### Smart Home Control
+
+If you've integrated Home Assistant:
+
+```
+You: Turn off all the lights
+Agent: [Sends command to Home Assistant]
+
+You: What's the temperature in the living room?
+Agent: [Checks sensor and reports back]
+```
+
+### File Management and Organization
+
+```
+You: Organize all the PDF files in my Downloads folder by date
+Agent: [Scans folder, creates date-based subfolders, moves files]
+```
+
+The possibilities are endless! Your assistant has access to powerful tools and can combine them creatively to solve complex tasks.
+
+## Troubleshooting
+
+Running into issues? Here are quick links to common problems and solutions:
+
+### Authentication Issues
+
+If you're getting API authentication errors:
+- [Fix Claude Authentication Errors](/blog/troubleshooting/fix-claude-authentication-errors)
+
+### Tool Errors
+
+If you see "tool_use_id" or similar errors:
+- [Fix Tool Use ID Error](/blog/troubleshooting/fix-tool-use-id-error)
+
+### Cron and Heartbeat Problems
+
+If scheduled tasks or heartbeats aren't working:
+- [Fix Cron/Heartbeat Issues](/blog/troubleshooting/fix-cron-heartbeat-not-working)
+
+### Session Memory Issues
+
+If your agent forgets things or contexts get mixed up:
+- [Fix Session Memory Issues](/blog/troubleshooting/fix-session-memory-issues)
+
+### General Debugging
+
+For general troubleshooting:
+1. Check logs: `openclaw logs`
+2. Restart the gateway: `openclaw restart`
+3. Verify your configuration: `openclaw config show`
+4. Check system status: `/status` command in chat
+
+If problems persist, visit the [OpenClaw GitHub Issues](https://github.com/openclaw/openclaw/issues) or join the community Discord.
+
+## What's Next?
+
+Congratulations! You've set up OpenClaw and learned the basics. Here's how to take it further:
+
+### Explore the Skills System
+
+Skills extend your agent's capabilities. Explore available skills:
+
+```bash
+openclaw skills list
+```
+
+Install new skills:
+
+```bash
+openclaw skills install calendar
+openclaw skills install home-assistant
+```
+
+You can even create custom skills tailored to your workflow!
+
+### Configure Multiple Agents
+
+Run different AI agents for different purposes:
+- A Claude agent for complex reasoning
+- A GPT agent for creative writing
+- A local model for privacy-sensitive tasks
+
+### Join the Community
+
+Connect with other OpenClaw users:
+
+- **Discord**: [discord.gg/openclaw](https://discord.gg/openclaw) — Get help, share setups, and discuss features
+- **GitHub**: [github.com/openclaw/openclaw](https://github.com/openclaw/openclaw) — Report bugs, request features, contribute code
+- **Documentation**: [openclaw.org/docs](https://openclaw.org/docs) — Comprehensive guides and references
+
+### Advanced Topics
+
+Once you're comfortable with the basics, explore:
+- Multi-agent orchestration
+- Custom skill development
+- Advanced browser automation
+- Integration with your development environment
+- Self-hosting and privacy configurations
+
+### Keep Learning
+
+Check out other guides on this blog:
+- [Complete Installation Guide](/blog/openclaw-setup-installation-guide)
+- [Browser Relay Guide](/blog/browser-relay)
+- [Troubleshooting Section](/blog/troubleshooting/fix-claude-authentication-errors)
+
+---
+
+## Final Thoughts
+
+OpenClaw transforms how you interact with AI. Instead of just chatting, you're working **with** an intelligent assistant that can take real action in your digital world.
+
+Start small — set up one channel, try a few tasks, get comfortable. Then expand: add more channels, enable more skills, automate more of your workflow.
+
+The goal is simple: give you back time and mental energy by automating the tedious parts of your digital life. Your AI assistant is here to help — put it to work!
+
+**Welcome to OpenClaw. Let's build something amazing together.**
