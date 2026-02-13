@@ -1,0 +1,654 @@
+---
+title: Telegram Bot Setup for OpenClaw - Complete Guide to QR Codes, Webhooks & Polling
+description: Learn how to set up Telegram bot for OpenClaw step by step. Troubleshoot common issues like bot not receiving messages, webhook configuration, and polling mode problems.
+slug: /integrations/telegram-setup
+tags: telegram, integration, setup, webhook, polling, troubleshooting
+publishedAt: 2026-02-13
+status: published
+visibility: public
+featuredImageUrl: /images/integrations/telegram_head.webp
+---
+
+# Telegram Bot Setup for OpenClaw: Complete Guide
+
+Telegram is one of the most popular messaging platforms for bot integration, offering a robust API and excellent developer experience. Integrating your OpenClaw instance with Telegram allows you to interact with Claude through secure, encrypted messages, manage conversations across devices, and leverage Telegram's rich features like inline keyboards, file sharing, and group chat support.
+
+This comprehensive guide walks you through the complete **openclaw telegram bot setup** process, from creating your bot with BotFather to troubleshooting common issues based on real-world GitHub reports. Whether you're setting up polling mode for quick local development or configuring webhooks for production deployments, this guide has you covered.
+
+## Prerequisites
+
+Before you begin your **openclaw telegram bot setup**, ensure you have:
+
+- **OpenClaw installed and running** - Version 0.5.0 or later recommended
+- **Telegram account** - Available on mobile, desktop, or web
+- **Basic terminal/command-line knowledge** - For running OpenClaw commands
+- **Optional: Public HTTPS endpoint** - Required only for webhook mode
+
+## Step 1: Create Your Bot with BotFather
+
+BotFather is Telegram's official bot for creating and managing other bots. This is your starting point for any **openclaw telegram bot setup**.
+
+### Creating the Bot
+
+1. Open Telegram and search for **@BotFather**
+2. Start a conversation and send `/newbot`
+3. Follow the prompts:
+   - **Bot name**: Choose a display name (e.g., "My OpenClaw Assistant")
+   - **Bot username**: Must end in "bot" (e.g., "my_openclaw_bot")
+4. BotFather will respond with your **bot token** - a string like `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`
+
+**⚠️ Security Warning**: Your bot token is like a password. Never commit it to version control or share it publicly. Anyone with this token can control your bot.
+
+### Essential Bot Settings
+
+Configure these important settings through BotFather:
+
+**Privacy Mode** (`/setprivacy`):
+- **Disable** privacy mode if you want your bot to see all messages in group chats
+- **Enable** (default) if the bot should only see messages that mention it or are direct replies
+
+**Group Permissions** (`/setjoingroups`):
+- **Enable** if you want to add your bot to group conversations
+- **Disable** for private, one-on-one interactions only
+
+**Commands** (`/setcommands`):
+You can optionally set up command suggestions:
+```
+status - Check OpenClaw status
+help - Show available commands
+reset - Reset conversation context
+```
+
+## Step 2: Configure OpenClaw
+
+Now that you have your bot token, it's time to configure the **openclaw telegram** integration.
+
+### Basic Configuration
+
+The minimal configuration to get started with **telegram bot polling mode**:
+
+1. Stop your OpenClaw gateway if it's running:
+```bash
+openclaw gateway stop
+```
+
+2. Edit your OpenClaw configuration file (typically `~/.openclaw/config.yaml` or similar):
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      token: "YOUR_BOT_TOKEN_HERE"
+      dmPolicy: "pair-once"
+```
+
+**Configuration Options Explained:**
+
+- `enabled`: Must be `true` to activate the Telegram plugin
+- `token`: Your bot token from BotFather
+- `dmPolicy`: Controls direct message behavior
+  - `"pair-once"`: User must initiate pairing, then can chat freely (recommended)
+  - `"open"`: Anyone can message your bot without pairing
+  - `"allowlist-only"`: Only pre-approved users can interact
+
+### Advanced Options
+
+For production deployments or multi-user scenarios, consider these additional settings:
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      token: "YOUR_BOT_TOKEN_HERE"
+      dmPolicy: "allowlist-only"
+      allowlist:
+        - 123456789  # Your Telegram user ID
+        - 987654321  # Another approved user ID
+      groupPolicy: "allowlist-only"
+      groupAllowlist:
+        - -1001234567890  # Group chat ID (note the negative prefix)
+      streamMode: true
+```
+
+**Advanced Options Explained:**
+
+- `allowlist`: Array of Telegram user IDs permitted to interact with your bot
+- `groupPolicy`: Same options as `dmPolicy`, but for group chats
+- `groupAllowlist`: Array of group chat IDs where your bot can respond
+- `streamMode`: When `true`, sends responses in real-time chunks for better UX with long responses
+
+**Finding Your Telegram User ID:**
+
+The easiest way to find your user ID is to message your bot and check the OpenClaw logs, or use a bot like @userinfobot on Telegram.
+
+## Step 3: Choose Your Connection Mode
+
+OpenClaw supports two methods for receiving Telegram messages: **polling** and **webhooks**. Each has distinct advantages and trade-offs.
+
+### Option A: Polling Mode (Default)
+
+**How It Works:**
+Polling mode works by having OpenClaw periodically check Telegram's servers for new messages, typically every 1-3 seconds. This is the default mode and requires no additional **openclaw telegram webhook config**.
+
+**Advantages:**
+- ✅ **Simple setup** - Works out of the box with basic configuration
+- ✅ **No public IP required** - Perfect for development and local testing
+- ✅ **Works behind firewalls** - No inbound network configuration needed
+- ✅ **Easy to debug** - All logic runs in your local process
+
+**Disadvantages:**
+- ⚠️ **Slight latency** - 1-3 second delay before receiving messages
+- ⚠️ **Resource usage** - Continuous polling consumes CPU and network bandwidth
+- ⚠️ **Scaling limitations** - Not ideal for high-traffic scenarios
+
+**Configuration:**
+Polling mode is enabled by default. No additional configuration needed beyond the basic setup in Step 2.
+
+### Option B: Webhook Mode
+
+**How It Works:**
+Webhook mode configures Telegram to push new messages directly to your OpenClaw instance via HTTPS POST requests. This requires a publicly accessible endpoint.
+
+**Advantages:**
+- ✅ **Instant delivery** - Zero polling delay, messages arrive immediately
+- ✅ **Resource efficient** - No continuous polling overhead
+- ✅ **Scalable** - Better for production and high-traffic scenarios
+
+**Disadvantages:**
+- ⚠️ **Requires public HTTPS endpoint** - Must be accessible from Telegram's servers
+- ⚠️ **SSL certificate required** - Self-signed certificates not supported
+- ⚠️ **More complex setup** - Needs reverse proxy or cloud hosting
+
+**Configuration:**
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      token: "YOUR_BOT_TOKEN_HERE"
+      dmPolicy: "pair-once"
+      webhook:
+        enabled: true
+        url: "https://your-domain.com/telegram/webhook"
+        secretToken: "your-random-secret-string-here"
+        port: 8443  # Optional, defaults to OpenClaw's main port
+```
+
+**Webhook Setup Steps:**
+
+1. **Generate a secret token** for webhook verification:
+```bash
+openssl rand -hex 32
+```
+
+2. **Configure your reverse proxy** (nginx example):
+```nginx
+location /telegram/webhook {
+    proxy_pass http://localhost:3000/telegram/webhook;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
+3. **Ensure SSL is configured** - Telegram requires HTTPS with a valid certificate (Let's Encrypt works great)
+
+4. **Restart OpenClaw** - The webhook will be automatically registered with Telegram
+
+### Polling vs Webhook Comparison
+
+| Feature | Polling Mode | Webhook Mode |
+|---------|--------------|--------------|
+| **Setup Complexity** | Simple ✅ | Moderate ⚠️ |
+| **Public IP Required** | No ✅ | Yes ⚠️ |
+| **Message Latency** | 1-3 seconds ⚠️ | Instant ✅ |
+| **Resource Usage** | Higher ⚠️ | Lower ✅ |
+| **Best For** | Development, local testing | Production, scaling |
+| **Debugging** | Easier ✅ | Moderate ⚠️ |
+
+**Recommendation:** Start with polling mode for initial setup and testing. Migrate to webhooks when deploying to production or when message latency becomes a concern.
+
+## Step 4: Test Your Bot
+
+Once configured, start your OpenClaw gateway and test the integration:
+
+### Starting OpenClaw
+
+```bash
+openclaw gateway start
+```
+
+Watch the startup logs for Telegram initialization:
+```
+[INFO] Telegram plugin enabled
+[INFO] Telegram: Polling mode active
+[INFO] Bot username: @my_openclaw_bot
+```
+
+### Sending Your First Message
+
+1. Open Telegram and find your bot (search for the username you created)
+2. Send `/start` to initiate the conversation
+3. If you configured `dmPolicy: "pair-once"`, you'll need to complete the pairing process
+4. Send a test message like "Hello!"
+5. Your OpenClaw instance should respond through Claude
+
+### Verifying Status
+
+Check the OpenClaw status to confirm the **telegram bot polling mode** is working:
+
+```bash
+openclaw status
+```
+
+You should see output indicating Telegram is connected:
+```
+Plugins:
+  telegram: ✓ Connected (@my_openclaw_bot)
+```
+
+### Understanding the Pairing Flow
+
+If you configured `dmPolicy: "pair-once"`:
+
+1. User sends their first message to the bot
+2. OpenClaw generates a pairing request
+3. User must confirm pairing (exact flow depends on your OpenClaw version)
+4. After pairing, all messages are accepted from that user
+
+This security model prevents unauthorized access to your Claude instance.
+
+## Troubleshooting Common Issues
+
+Based on real-world GitHub issues reported by the OpenClaw community, here are the most common problems and their solutions.
+
+### Issue: Bot Not Receiving Messages (Polling Mode)
+
+**Based on GitHub Issue [#6665](https://github.com/openclaw/openclaw/issues/6665)**
+
+**Symptoms:**
+- `openclaw status` shows Telegram plugin as "✓ Connected"
+- You can see your bot online in Telegram
+- Messages sent to the bot don't receive any response
+- **openclaw telegram not receiving messages** appears in your search history
+
+**Diagnostic Steps:**
+
+1. **Verify bot token is correct:**
+```bash
+grep -A 5 "telegram:" ~/.openclaw/config.yaml
+```
+
+2. **Check if webhook is interfering with polling:**
+Telegram doesn't allow both modes simultaneously. If a webhook was previously configured, it blocks polling.
+
+Test webhook status:
+```bash
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
+```
+
+If you see a `url` field with a value, webhook mode is active and blocking polling.
+
+3. **Check user ID and allowlist configuration:**
+If you're using `dmPolicy: "allowlist-only"`, ensure your Telegram user ID is in the allowlist.
+
+Find your user ID by messaging the bot and checking OpenClaw logs:
+```bash
+openclaw gateway logs | grep "Telegram user"
+```
+
+4. **Verify plugin is actually enabled:**
+```bash
+openclaw config get plugins.entries.telegram.enabled
+```
+
+Should return `true`.
+
+**Solutions:**
+
+**Solution A: Clear webhook to enable polling**
+```bash
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/deleteWebhook?drop_pending_updates=true"
+```
+
+**Solution B: Restart gateway completely**
+```bash
+openclaw gateway stop
+sleep 2
+openclaw gateway start
+```
+
+**Solution C: Check and fix allowlist configuration**
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      token: "YOUR_BOT_TOKEN"
+      dmPolicy: "allowlist-only"
+      allowlist:
+        - 123456789  # Add your actual user ID here
+```
+
+**Solution D: Clear pending updates**
+
+Sometimes old messages can clog the queue:
+```bash
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates?offset=-1"
+```
+
+After implementing a solution, test by sending a new message to your bot.
+
+### Issue: Gateway Crashes During Network Interruption
+
+**Based on GitHub Issue [#6676](https://github.com/openclaw/openclaw/issues/6676)**
+
+**Symptoms:**
+- OpenClaw gateway running normally
+- Brief network interruption (WiFi disconnect, ISP hiccup, VPN reconnect)
+- Gateway crashes with error: `Unhandled promise rejection: fetch failed`
+- **telegram bot not working** after network recovery
+
+**Root Cause:**
+
+Earlier versions of OpenClaw's Telegram plugin didn't properly handle network errors during polling requests, leading to unhandled promise rejections that crashed the Node.js process.
+
+**Solutions:**
+
+**Solution A: Upgrade to latest OpenClaw version (Recommended)**
+
+This issue was fixed in OpenClaw v0.5.2 and later:
+```bash
+npm install -g openclaw@latest
+# or
+brew upgrade openclaw  # if installed via Homebrew
+```
+
+Verify version:
+```bash
+openclaw --version
+```
+
+**Solution B: Configure automatic restart (systemd)**
+
+For Linux servers, configure systemd to automatically restart on crashes:
+
+Create `/etc/systemd/system/openclaw.service`:
+```ini
+[Unit]
+Description=OpenClaw Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+WorkingDirectory=/home/youruser
+ExecStart=/usr/local/bin/openclaw gateway start --no-daemon
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl enable openclaw
+sudo systemctl start openclaw
+```
+
+**Solution C: Use a restart loop script (Temporary workaround)**
+
+For development or systems without systemd:
+
+```bash
+#!/bin/bash
+while true; do
+  openclaw gateway start
+  echo "Gateway crashed, restarting in 5 seconds..."
+  sleep 5
+done
+```
+
+Save as `run-openclaw.sh`, make executable, and run:
+```bash
+chmod +x run-openclaw.sh
+./run-openclaw.sh
+```
+
+**Prevention:**
+
+- Keep OpenClaw updated to the latest version
+- Monitor gateway logs for early warning signs
+- Use a process manager (systemd, PM2, supervisord) in production
+- Configure network retry logic if using custom plugins
+
+### Issue: Empty Messages with Markdown Tables
+
+**Based on GitHub Issue [#6652](https://github.com/openclaw/openclaw/issues/6652)**
+
+**Symptoms:**
+- Claude generates a response containing markdown tables
+- Telegram API returns error: `message text is empty`
+- User receives no response or an error message
+- Issue occurs only with responses containing tables
+
+**Root Cause:**
+
+Telegram's markdown parser has limitations with complex formatting. When OpenClaw attempts to send markdown tables (which use `|` pipe characters and alignment markers), Telegram's parser sometimes strips the entire message as invalid, resulting in an empty message error.
+
+**Solutions:**
+
+**Solution A: Avoid tables in Telegram responses**
+
+Configure your OpenClaw prompts to avoid table formatting for Telegram:
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      systemPrompt: |
+        When formatting responses for Telegram:
+        - Use bullet lists instead of tables
+        - Use simple markdown (bold, italic, code)
+        - Avoid complex formatting structures
+```
+
+**Solution B: Use bullet lists instead**
+
+Transform table data into structured lists:
+
+❌ **Don't use:**
+```markdown
+| Feature | Status |
+|---------|--------|
+| Polling | Active |
+| Webhook | Inactive |
+```
+
+✅ **Use instead:**
+```markdown
+**Connection Status:**
+• Polling: Active ✅
+• Webhook: Inactive ⚠️
+```
+
+**Solution C: Link to external formatted content**
+
+For complex data, send a link instead:
+```markdown
+I've prepared a detailed comparison table for you:
+👉 https://your-domain.com/comparison
+
+Summary in bullet points:
+• Feature A: Available
+• Feature B: Coming soon
+```
+
+**Solution D: Use HTML mode (Advanced)**
+
+OpenClaw can be configured to send Telegram messages in HTML mode instead of Markdown:
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      enabled: true
+      parseMode: "HTML"  # Instead of "Markdown"
+```
+
+Then use HTML tables:
+```html
+<table>
+  <tr><th>Feature</th><th>Status</th></tr>
+  <tr><td>Polling</td><td>Active</td></tr>
+</table>
+```
+
+**Note:** HTML mode has better support for complex formatting but requires HTML-safe escaping of special characters.
+
+### Issue: QR Code Not Rendering in Terminal
+
+**Based on GitHub Issue [#6640](https://github.com/openclaw/openclaw/issues/6640)**
+
+**Symptoms:**
+- During initial setup, OpenClaw displays a QR code for pairing
+- QR code appears as garbled characters or boxes
+- Particularly common on macOS Terminal.app and some Linux terminals
+- Makes initial setup difficult
+
+**Root Cause:**
+
+QR codes are rendered using Unicode block characters. Some terminal emulators don't properly support the required Unicode ranges or have font rendering issues.
+
+**Solutions:**
+
+**Solution A: Use a modern terminal emulator**
+
+Recommended terminals with excellent Unicode support:
+
+- **macOS**: [iTerm2](https://iterm2.com/) or [Kitty](https://sw.kovidgoyal.net/kitty/)
+- **Linux**: [Kitty](https://sw.kovidgoyal.net/kitty/), [Alacritty](https://alacritty.org/), or GNOME Terminal
+- **Windows**: [Windows Terminal](https://aka.ms/terminal) or [WezTerm](https://wezfurlong.org/wezterm/)
+
+**Solution B: Configure font with proper Unicode support**
+
+Install and configure a font with full Unicode block character support:
+
+1. Install [JetBrains Mono](https://www.jetbrains.com/lp/mono/) or [Fira Code](https://github.com/tonsky/FiraCode)
+2. Set as your terminal font in preferences
+3. Restart terminal and try again
+
+**Solution C: Manual configuration without QR code**
+
+Skip QR code pairing entirely by manually configuring:
+
+```bash
+# Instead of scanning QR code, directly edit config
+openclaw config set plugins.entries.telegram.token "YOUR_BOT_TOKEN"
+openclaw config set plugins.entries.telegram.enabled true
+```
+
+**Solution D: Use the web-based setup (if available)**
+
+Some OpenClaw versions offer a web-based configuration UI:
+
+```bash
+openclaw gateway config --web
+```
+
+This opens a browser interface where you can configure Telegram without terminal QR codes.
+
+## Security Best Practices
+
+Protecting your **openclaw telegram bot setup** is crucial since it provides access to Claude AI on your behalf.
+
+### 1. Protect Your Bot Token
+
+- **Never commit tokens to git** - Use environment variables or config files outside version control
+- **Rotate tokens periodically** - Create a new bot if you suspect compromise
+- **Use secret management** - Tools like HashiCorp Vault, AWS Secrets Manager, or encrypted config files
+
+### 2. Use Allowlist for Access Control
+
+Always configure an allowlist in production:
+
+```yaml
+plugins:
+  entries:
+    telegram:
+      dmPolicy: "allowlist-only"
+      allowlist:
+        - 123456789  # Only approved users
+```
+
+### 3. Regularly Review Bot Permissions
+
+Check what your bot can do via BotFather:
+- `/mybots` → Select your bot → Review settings
+- Disable unused features (groups, inline mode, etc.)
+- Limit group permissions if not needed
+
+### 4. Use Webhook Secret Tokens
+
+When using **openclaw telegram webhook config**, always set a secret token:
+
+```yaml
+webhook:
+  secretToken: "use-a-long-random-string-here"
+```
+
+Telegram includes this in the `X-Telegram-Bot-Api-Secret-Token` header, allowing you to verify requests are genuine.
+
+### 5. Monitor Usage and Logs
+
+Regularly review who's using your bot:
+```bash
+openclaw gateway logs | grep "Telegram message from"
+```
+
+Set up alerts for unusual activity patterns.
+
+### 6. Keep OpenClaw Updated
+
+Security fixes are regularly released:
+```bash
+openclaw update
+# or
+npm update -g openclaw
+```
+
+## Related Resources
+
+- **[OpenClaw Beginner's Guide](/blog/guide)** - Complete introduction to OpenClaw setup
+- **[Fix Session Memory Issues](/blog/troubleshooting/fix-session-memory-issues)** - Troubleshooting guide for common problems
+- **[Official Telegram Bot API Documentation](https://core.telegram.org/bots/api)** - Deep dive into Telegram's capabilities
+- **[OpenClaw Plugin Development](https://docs.openclaw.org/plugins)** - Extend OpenClaw with custom features
+- **[GitHub Issues Repository](https://github.com/openclaw/openclaw/issues)** - Report bugs and request features
+
+## Summary
+
+Setting up **openclaw telegram bot setup** provides a powerful, flexible way to interact with Claude AI through one of the world's most popular messaging platforms. Here's what we covered:
+
+**Key Steps:**
+1. ✅ Create bot with BotFather and obtain token
+2. ✅ Configure OpenClaw with basic settings (token, dmPolicy)
+3. ✅ Choose between polling (simple) and webhook (production) modes
+4. ✅ Test your bot and verify pairing workflow
+5. ✅ Troubleshoot common issues using real-world solutions
+
+**Remember:**
+- **Polling mode** is perfect for getting started and local development
+- **Webhook mode** is better for production deployments with lower latency
+- **Allowlist configuration** is essential for security
+- **Keep OpenClaw updated** to avoid known issues like network crash bugs
+- **Avoid markdown tables** in Telegram responses to prevent empty message errors
+
+Whether you're experiencing **openclaw telegram not receiving messages**, configuring **openclaw telegram webhook config**, or troubleshooting **telegram bot polling mode** issues, this guide provides real-world solutions based on actual GitHub issues reported by the community.
+
+Happy chatting with Claude on Telegram! 🤖✨
