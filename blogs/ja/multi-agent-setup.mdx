@@ -1,0 +1,228 @@
+---
+title: OpenClaw マルチエージェント設定ガイド - 複数の AI アシスタントを実行する
+description: OpenClaw で複数の分離された AI エージェントを設定する方法を学びます。独自のワークスペース、パーソナリティ、WhatsApp・Telegram・Discord のチャンネルバインディングを含みます
+slug: /multi-agent-setup
+tags: マルチエージェント, 設定, ルーティング, バインディング, 上級
+publishedAt: 2026-02-14
+status: published
+visibility: public
+featuredImageUrl: /images/features/multi-agent-setup.webp
+---
+
+# OpenClaw マルチエージェント設定ガイド
+
+単一の OpenClaw ゲートウェイから複数の AI アシスタントを実行することは、最も強力な機能の一つです。このガイドでは、独自のパーソナリティ、ワークスペース、チャンネルバインディングを持つ分離されたエージェントの設定方法を説明します。
+
+## マルチエージェントとは？
+
+OpenClaw では、**エージェント** は独自の以下を持つ完全に分離された AI ブレインです：
+
+- **ワークスペース** — ファイル、AGENTS.md、SOUL.md、USER.md、パーソナリティルール
+- **状態ディレクトリ** — 認証プロファイル、モデルレジストリ、エージェント固有の設定
+- **セッションストア** — チャット履歴とルーティング状態
+- **スキル** — ワークスペースの `skills/` フォルダ内のエージェント固有のスキル
+
+これにより、同じサーバー上で完全に独立した AI アシスタントを実行できます — 異なるパーソナリティ、異なる機能、異なるアクセスレベル。
+
+## 一般的なユースケース
+
+- **個人と仕事** — 仕事のメッセージをプロフェッショナルなエージェントに、個人をカジュアルなエージェントにルーティング
+- **ファミリーボット** — ツールが制限された家族グループチャット用の制限付きエージェント
+- **マルチユーザーサーバー** — 各家族メンバーが独自の分離されたアシスタントを持つ
+- **異なるモデル** — 日常タスクには高速な Sonnet、ディープワークには強力な Opus
+
+## クイックスタート：エージェントの追加
+
+新しいエージェントを追加する最も簡単な方法はウィザードを使用することです：
+
+```bash
+openclaw agents add work
+```
+
+これにより作成されます：
+- ワークスペース：`~/.openclaw/workspace-work`
+- エージェントディレクトリ：`~/.openclaw/agents/work/agent`
+- セッションストア：`~/.openclaw/agents/work/sessions`
+
+エージェントを確認：
+
+```bash
+openclaw agents list --bindings
+```
+
+## バインディングの理解
+
+**バインディング** は受信メッセージを正しいエージェントにルーティングします。以下の条件でマッチします：
+
+1. `peer` — 特定の DM またはグループ ID（最も具体的、最初にマッチ）
+2. `guildId` — Discord サーバー
+3. `teamId` — Slack ワークスペース
+4. `accountId` — チャンネルアカウント（例：どの WhatsApp 番号か）
+5. `channel` — チャンネル全体（最も具体的でない）
+
+**ルール：最も具体的なマッチが優先されます。** peer バインディングをチャンネル全体のルールの上に配置してください。
+
+## 設定例
+
+### 例 1：2 つの WhatsApp 番号 → 2 つのエージェント
+
+異なる WhatsApp アカウントを異なるエージェントにルーティング：
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "home",
+        "default": true,
+        "name": "Home",
+        "workspace": "~/.openclaw/workspace-home",
+        "agentDir": "~/.openclaw/agents/home/agent"
+      },
+      {
+        "id": "work",
+        "name": "Work",
+        "workspace": "~/.openclaw/workspace-work",
+        "agentDir": "~/.openclaw/agents/work/agent"
+      }
+    ]
+  },
+  "bindings": [
+    { "agentId": "home", "match": { "channel": "whatsapp", "accountId": "personal" } },
+    { "agentId": "work", "match": { "channel": "whatsapp", "accountId": "biz" } }
+  ],
+  "channels": {
+    "whatsapp": {
+      "accounts": {
+        "personal": {},
+        "biz": {}
+      }
+    }
+  }
+}
+```
+
+### 例 2：WhatsApp デイリー + Telegram ディープワーク
+
+異なるチャンネルを異なるモデル層にルーティング：
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "chat",
+        "name": "Everyday",
+        "workspace": "~/.openclaw/workspace-chat",
+        "model": "anthropic/claude-sonnet-4-5"
+      },
+      {
+        "id": "opus",
+        "name": "Deep Work",
+        "workspace": "~/.openclaw/workspace-opus",
+        "model": "anthropic/claude-opus-4-5"
+      }
+    ]
+  },
+  "bindings": [
+    { "agentId": "chat", "match": { "channel": "whatsapp" } },
+    { "agentId": "opus", "match": { "channel": "telegram" } }
+  ]
+}
+```
+
+### 例 3：1 つの WhatsApp、複数のユーザー
+
+1 つの WhatsApp 番号を共有しながら、異なる DM を異なるエージェントにルーティング：
+
+```json
+{
+  "agents": {
+    "list": [
+      { "id": "alex", "workspace": "~/.openclaw/workspace-alex" },
+      { "id": "mia", "workspace": "~/.openclaw/workspace-mia" }
+    ]
+  },
+  "bindings": [
+    { "agentId": "alex", "match": { "channel": "whatsapp", "peer": { "kind": "dm", "id": "+15551230001" } } },
+    { "agentId": "mia", "match": { "channel": "whatsapp", "peer": { "kind": "dm", "id": "+15551230002" } } }
+  ],
+  "channels": {
+    "whatsapp": {
+      "dmPolicy": "allowlist",
+      "allowFrom": ["+15551230001", "+15551230002"]
+    }
+  }
+}
+```
+
+## 一般的な問題と解決策
+
+### "Session file path must be within sessions directory"
+
+これは**最も一般的なマルチエージェントエラー**です。原因：
+
+1. **バインディングに agentId がない** — すべてのバインディングに正しい `agentId` があることを確認
+2. **パスの衝突** — エージェント間で `agentDir` を再利用しない
+3. **バージョンの不一致** — 最新の OpenClaw バージョンに更新
+
+**修正方法：** バインディングがエージェント ID と正確に一致しているか確認：
+
+```bash
+openclaw agents list --bindings
+```
+
+### エージェントがメッセージを受信しない
+
+1. **バインディングの順序を確認** — より具体的なバインディングを最初に配置
+2. **チャンネルアクセスを確認** — チャンネルの `allowFrom` または `groupPolicy` に送信者が含まれているか確認
+3. **エージェントステータスを確認** — `openclaw status` を実行してすべてのエージェントがアクティブか確認
+
+### 認証プロファイルが機能しない
+
+認証プロファイルは**エージェントごと**です。各エージェントは以下から読み取ります：
+
+```
+~/.openclaw/agents/<agentId>/agent/auth-profiles.json
+```
+
+資格情報を共有するには、`auth-profiles.json` を他のエージェントの `agentDir` にコピーします。
+
+## ベストプラクティス
+
+### 1. ウィザードを使用
+
+手動設定の代わりに常に `openclaw agents add <name>` を使用。ディレクトリを正しく設定します。
+
+### 2. 最初にバインディングをテスト
+
+本番環境に移行する前に、ルーティングを確認：
+
+```bash
+openclaw agents list --bindings
+```
+
+### 3. ワークスペースを分離
+
+各エージェントは独自のワークスペースディレクトリを持つべきです。エージェント間でワークスペースを共有しないでください。
+
+### 4. 具体的なバインディングを使用
+
+最も具体的なバインディング（peer マッチ）をバインディングリストの先頭に配置。
+
+### 5. 信頼できないエージェントをサンドボックス化
+
+信頼できないユーザーとやり取りするエージェントには、サンドボックスモードを有効にしてツールを制限。
+
+## まとめ
+
+マルチエージェント設定により、1 つの OpenClaw ゲートウェイから複数の分離された AI アシスタントを実行できます。重要なポイント：
+
+- **ウィザードを使用** — `openclaw agents add <name>` ですべてを正しく設定
+- **バインディングがメッセージをルーティング** — 最も具体的なマッチが優先
+- **各エージェントは分離** — 独自のワークスペース、認証、セッション
+- **エージェントごとのツール/サンドボックス** — 信頼できないエージェントの機能を制限
+
+---
+
+**プロのヒント：** 2 つのエージェント（個人 + 仕事）から始めて、そこから拡張しましょう。複雑さを増す前にバインディングを徹底的にテストしてください！

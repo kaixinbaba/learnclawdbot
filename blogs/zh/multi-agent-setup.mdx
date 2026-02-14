@@ -1,0 +1,363 @@
+---
+title: OpenClaw 多 Agent 配置指南 - 运行多个 AI 助手
+description: 学习如何在 OpenClaw 中配置多个隔离的 AI Agent，包括独立的工作区、人格设定和 WhatsApp、Telegram、Discord 的渠道绑定
+slug: /multi-agent-setup
+tags: 多Agent, 配置, 路由, 绑定, 高级
+publishedAt: 2026-02-14
+status: published
+visibility: public
+featuredImageUrl: /images/features/multi-agent-setup.webp
+---
+
+# OpenClaw 多 Agent 配置指南
+
+在单个 OpenClaw 网关上运行多个 AI 助手是最强大的功能之一。本指南将引导你设置拥有独立人格、工作区和渠道绑定的隔离 Agent。
+
+## 什么是多 Agent？
+
+在 OpenClaw 中，一个 **Agent** 是一个完全隔离的 AI 大脑，拥有自己的：
+
+- **工作区** — 文件、AGENTS.md、SOUL.md、USER.md、人格规则
+- **状态目录** — 认证配置、模型注册表、Agent 专属配置
+- **会话存储** — 聊天历史和路由状态
+- **技能** — 工作区 `skills/` 目录下的 Agent 专属技能
+
+这意味着你可以在同一台服务器上运行完全独立的 AI 助手 — 不同的人格、不同的能力、不同的访问权限。
+
+## 常见使用场景
+
+- **个人与工作** — 将工作消息路由到专业 Agent，个人消息路由到休闲 Agent
+- **家庭机器人** — 用于家庭群聊的受限 Agent，工具权限有限
+- **多用户服务器** — 每个家庭成员都有自己隔离的助手
+- **不同模型** — 日常任务用快速的 Sonnet，深度工作用强大的 Opus
+
+## 快速开始：添加 Agent
+
+添加新 Agent 最简单的方式是使用向导：
+
+```bash
+openclaw agents add work
+```
+
+这会创建：
+- 工作区：`~/.openclaw/workspace-work`
+- Agent 目录：`~/.openclaw/agents/work/agent`
+- 会话存储：`~/.openclaw/agents/work/sessions`
+
+验证你的 Agent：
+
+```bash
+openclaw agents list --bindings
+```
+
+## 理解绑定（Bindings）
+
+**绑定** 将收到的消息路由到正确的 Agent。它们按以下条件匹配：
+
+1. `peer` — 特定的私聊或群组 ID（最精确，优先匹配）
+2. `guildId` — Discord 服务器
+3. `teamId` — Slack 工作区
+4. `accountId` — 渠道账户（例如哪个 WhatsApp 号码）
+5. `channel` — 整个渠道（最不精确）
+
+**规则：最精确的匹配优先。** 将 peer 绑定放在渠道级规则之上。
+
+## 配置示例
+
+### 示例 1：两个 WhatsApp 号码 → 两个 Agent
+
+将不同的 WhatsApp 账户路由到不同的 Agent：
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "home",
+        "default": true,
+        "name": "Home",
+        "workspace": "~/.openclaw/workspace-home",
+        "agentDir": "~/.openclaw/agents/home/agent"
+      },
+      {
+        "id": "work",
+        "name": "Work",
+        "workspace": "~/.openclaw/workspace-work",
+        "agentDir": "~/.openclaw/agents/work/agent"
+      }
+    ]
+  },
+  "bindings": [
+    { "agentId": "home", "match": { "channel": "whatsapp", "accountId": "personal" } },
+    { "agentId": "work", "match": { "channel": "whatsapp", "accountId": "biz" } }
+  ],
+  "channels": {
+    "whatsapp": {
+      "accounts": {
+        "personal": {},
+        "biz": {}
+      }
+    }
+  }
+}
+```
+
+### 示例 2：WhatsApp 日常 + Telegram 深度工作
+
+将不同渠道路由到不同的模型级别：
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "chat",
+        "name": "Everyday",
+        "workspace": "~/.openclaw/workspace-chat",
+        "model": "anthropic/claude-sonnet-4-5"
+      },
+      {
+        "id": "opus",
+        "name": "Deep Work",
+        "workspace": "~/.openclaw/workspace-opus",
+        "model": "anthropic/claude-opus-4-5"
+      }
+    ]
+  },
+  "bindings": [
+    { "agentId": "chat", "match": { "channel": "whatsapp" } },
+    { "agentId": "opus", "match": { "channel": "telegram" } }
+  ]
+}
+```
+
+### 示例 3：一个 WhatsApp，多个用户
+
+共享一个 WhatsApp 号码，将不同的私聊路由到不同的 Agent：
+
+```json
+{
+  "agents": {
+    "list": [
+      { "id": "alex", "workspace": "~/.openclaw/workspace-alex" },
+      { "id": "mia", "workspace": "~/.openclaw/workspace-mia" }
+    ]
+  },
+  "bindings": [
+    { "agentId": "alex", "match": { "channel": "whatsapp", "peer": { "kind": "dm", "id": "+15551230001" } } },
+    { "agentId": "mia", "match": { "channel": "whatsapp", "peer": { "kind": "dm", "id": "+15551230002" } } }
+  ],
+  "channels": {
+    "whatsapp": {
+      "dmPolicy": "allowlist",
+      "allowFrom": ["+15551230001", "+15551230002"]
+    }
+  }
+}
+```
+
+### 示例 4：带工具限制的家庭机器人
+
+用于家庭群组的专用 Agent，功能受限：
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "family",
+        "name": "Family",
+        "workspace": "~/.openclaw/workspace-family",
+        "identity": { "name": "Family Bot" },
+        "groupChat": {
+          "mentionPatterns": ["@family", "@familybot"]
+        },
+        "sandbox": {
+          "mode": "all",
+          "scope": "agent"
+        },
+        "tools": {
+          "allow": ["exec", "read", "sessions_list", "sessions_history"],
+          "deny": ["write", "edit", "browser", "cron"]
+        }
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "agentId": "family",
+      "match": {
+        "channel": "whatsapp",
+        "peer": { "kind": "group", "id": "120363999999999999@g.us" }
+      }
+    }
+  ]
+}
+```
+
+## Agent 独立沙箱配置
+
+每个 Agent 可以有自己的沙箱设置：
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "personal",
+        "workspace": "~/.openclaw/workspace-personal",
+        "sandbox": {
+          "mode": "off"
+        }
+      },
+      {
+        "id": "untrusted",
+        "workspace": "~/.openclaw/workspace-untrusted",
+        "sandbox": {
+          "mode": "all",
+          "scope": "agent",
+          "docker": {
+            "setupCommand": "apt-get update && apt-get install -y git curl"
+          }
+        },
+        "tools": {
+          "allow": ["read"],
+          "deny": ["exec", "write", "edit"]
+        }
+      }
+    ]
+  }
+}
+```
+
+## 常见问题与解决方案
+
+### "Session file path must be within sessions directory"
+
+这是**最常见的多 Agent 错误**。发生原因：
+
+1. **绑定中缺少 agentId** — 确保每个绑定都有正确的 `agentId`
+2. **路径冲突** — 不要在 Agent 之间复用 `agentDir`
+3. **版本不匹配** — 更新到最新的 OpenClaw 版本
+
+**修复方法：** 检查你的绑定是否与 Agent ID 完全匹配：
+
+```bash
+openclaw agents list --bindings
+```
+
+### Agent 收不到消息
+
+1. **检查绑定顺序** — 更精确的绑定必须放在前面
+2. **验证渠道访问权限** — 确保渠道的 `allowFrom` 或 `groupPolicy` 包含发送者
+3. **检查 Agent 状态** — 运行 `openclaw status` 验证所有 Agent 都处于活动状态
+
+### 认证配置不生效
+
+认证配置是 **Agent 独立的**。每个 Agent 从以下位置读取：
+
+```
+~/.openclaw/agents/<agentId>/agent/auth-profiles.json
+```
+
+要共享凭据，将 `auth-profiles.json` 复制到其他 Agent 的 `agentDir`。
+
+### Discord 绑定不匹配
+
+对于 Discord，在绑定中使用 `guildId`（服务器 ID）：
+
+```json
+{
+  "bindings": [
+    {
+      "agentId": "gaming",
+      "match": {
+        "channel": "discord",
+        "guildId": "123456789012345678"
+      }
+    }
+  ]
+}
+```
+
+## 最佳实践
+
+### 1. 使用向导
+
+始终使用 `openclaw agents add <name>` 而不是手动配置。它会正确设置目录。
+
+### 2. 先测试绑定
+
+上线前，验证路由：
+
+```bash
+openclaw agents list --bindings
+```
+
+### 3. 保持工作区独立
+
+每个 Agent 应该有自己的工作区目录。永远不要在 Agent 之间共享工作区。
+
+### 4. 使用精确绑定
+
+将最精确的绑定（peer 匹配）放在绑定列表的顶部。
+
+### 5. 沙箱化不受信任的 Agent
+
+对于与不受信任用户交互的 Agent，启用沙箱模式并限制工具。
+
+## 目录结构
+
+多 Agent 设置的目录结构如下：
+
+```
+~/.openclaw/
+├── openclaw.json          # 主配置，包含 agents + bindings
+├── workspace-home/        # Home Agent 工作区
+│   ├── AGENTS.md
+│   ├── SOUL.md
+│   └── skills/
+├── workspace-work/        # Work Agent 工作区
+│   ├── AGENTS.md
+│   ├── SOUL.md
+│   └── skills/
+├── agents/
+│   ├── home/
+│   │   ├── agent/         # Home Agent 状态
+│   │   │   └── auth-profiles.json
+│   │   └── sessions/      # Home Agent 会话
+│   └── work/
+│       ├── agent/         # Work Agent 状态
+│       │   └── auth-profiles.json
+│       └── sessions/      # Work Agent 会话
+└── credentials/
+    └── whatsapp/
+        ├── personal/      # WhatsApp 账户 1
+        └── biz/           # WhatsApp 账户 2
+```
+
+## 验证命令
+
+```bash
+# 列出所有 Agent 及其绑定
+openclaw agents list --bindings
+
+# 检查整体状态
+openclaw status
+
+# 查看特定 Agent 的会话
+openclaw sessions list --agent work
+```
+
+## 总结
+
+多 Agent 设置让你能够在一个 OpenClaw 网关上运行多个隔离的 AI 助手。关键要点：
+
+- **使用向导** — `openclaw agents add <name>` 正确设置一切
+- **绑定路由消息** — 最精确的匹配优先
+- **每个 Agent 都是隔离的** — 独立的工作区、认证、会话
+- **Agent 独立的工具/沙箱** — 为不受信任的 Agent 限制功能
+
+---
+
+**专业提示：** 从两个 Agent（个人 + 工作）开始，然后再扩展。在增加更多复杂性之前，彻底测试你的绑定！
