@@ -1,0 +1,455 @@
+---
+title: OpenClaw 性能优化指南 - 解决卡顿与内存泄漏
+description: 全面的 OpenClaw 性能问题排查指南，涵盖 Token 优化、内存管理、会话剪枝策略等核心技术
+slug: /performance-optimization
+tags: 性能, 优化, 故障排查, 内存, tokens
+publishedAt: 2026-02-14
+status: published
+visibility: public
+featuredImageUrl: /images/features/performance_optimization.webp
+---
+
+# OpenClaw 性能优化指南：解决卡顿与内存泄漏
+
+要让 OpenClaw 连续稳定运行数天甚至数周，你需要了解它是如何管理资源的。本指南将介绍常见的性能瓶颈及其解决方案，帮助你的 AI 助手保持快速高效。
+
+## 理解 Token 使用与成本
+
+每次与 AI 模型交互都会消耗 Token，这直接影响性能和成本。OpenClaw 会全面追踪以下方面的 Token 使用：
+
+- 系统提示词（工具、技能、工作区文件）
+- 对话历史
+- 工具调用及结果
+- 附件和转录内容
+- 缓存操作
+
+### 监控 Token 消耗
+
+使用以下命令实时追踪使用情况：
+
+**查看当前会话状态：**
+```
+/status
+```
+显示你的模型、上下文使用量和预估成本。
+
+**启用每次响应的使用量页脚：**
+```
+/usage full
+```
+在每次响应后附加详细的 Token 指标。
+
+**查看成本汇总：**
+```
+/usage cost
+```
+显示会话日志中累计的成本。
+
+### Token 优化策略
+
+**1. 限制工具输出**
+
+大型工具结果（文件读取、网页抓取）会消耗大量 Token。在配置中设置输出限制：
+
+```json
+{
+  "tools": {
+    "read": {
+      "maxChars": 50000
+    }
+  }
+}
+```
+
+**2. 使用会话剪枝**
+
+OpenClaw 可以在发送上下文到模型前自动修剪旧的工具结果。启用 cache-TTL 剪枝：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "5m",
+        "keepLastAssistants": 3
+      }
+    }
+  }
+}
+```
+
+**工作原理：**
+- 仅保留最近 3 条助手消息及其工具结果
+- 修剪或清除较旧的工具输出
+- 仅在缓存 TTL 过期时运行
+- 保护包含图片的工具结果
+
+**3. 利用提示词缓存**
+
+对于 Anthropic 模型，提示词缓存可以大幅降低重复上下文的成本：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-opus-4-5"
+      },
+      "models": {
+        "anthropic/claude-opus-4-5": {
+          "params": {
+            "cacheRetention": "long"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**缓存优化技巧：**
+- 缓存 TTL 通常为 5 分钟（Anthropic）
+- 使用心跳（`every: "55m"`）为 1 小时 TTL 保持缓存热度
+- 缓存读取比输入 Token 便宜 10 倍
+- 在缓存过期前剪枝可减少缓存写入成本
+
+**4. 压缩长会话**
+
+当对话变得太长时，OpenClaw 可以总结旧消息：
+
+```
+/compact 聚焦关键决策和待解决问题
+```
+
+接近上下文限制时会触发自动压缩。配置阈值：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "compaction": {
+        "autoCompact": true,
+        "targetRatio": 0.8,
+        "minMessagesBeforeCompact": 10
+      }
+    }
+  }
+}
+```
+
+## 会话与内存管理
+
+### 会话生命周期最佳实践
+
+**重置过期会话：**
+```
+/reset
+```
+清除上下文，同时保留磁盘上的对话历史。
+
+**全新开始：**
+```
+/new
+```
+创建一个全新的会话。
+
+**检查会话健康状态：**
+```
+/context detail
+```
+显示各文件对上下文窗口的贡献。
+
+### 内存文件优化
+
+OpenClaw 在每次会话启动时加载工作区文件（`AGENTS.md`、`SOUL.md`、`TOOLS.md` 等）。保持它们精简：
+
+**限制引导文件大小：**
+```json
+{
+  "agents": {
+    "defaults": {
+      "bootstrapMaxChars": 20000
+    }
+  }
+}
+```
+
+**最佳实践：**
+- 让 `AGENTS.md` 专注于工作流规则
+- 将详细参考资料存储在单独文件中，按需加载
+- 定期归档旧的 `memory/YYYY-MM-DD.md` 文件
+- 删除 `MEMORY.md` 中过时的内容进行压缩
+
+### 队列与并发
+
+OpenClaw 通过队列通道处理消息以防止竞态条件。监控队列健康：
+
+```bash
+openclaw status
+```
+
+**常见队列问题：**
+
+**卡住的会话：**
+- 症状：消息不处理
+- 诊断：检查日志中的会话状态转换
+- 修复：`/reset` 或重启 gateway
+
+**队列深度过高：**
+- 症状：响应延迟
+- 诊断：并发操作过多
+- 修复：降低心跳频率或批量操作
+
+## 调试性能问题
+
+### 启用详细日志
+
+**提高日志详细程度：**
+```json
+{
+  "logging": {
+    "level": "debug",
+    "consoleLevel": "debug"
+  }
+}
+```
+
+**针对特定子系统：**
+```json
+{
+  "diagnostics": {
+    "flags": ["telegram.http", "queue.*"]
+  }
+}
+```
+
+或通过环境变量：
+```bash
+OPENCLAW_DIAGNOSTICS=telegram.http,queue.* openclaw gateway start
+```
+
+### 实时查看日志
+
+```bash
+openclaw logs --follow
+```
+
+使用 JSON 模式进行解析：
+```bash
+openclaw logs --follow --json | jq 'select(.level == "error")'
+```
+
+### 原始流调试
+
+捕获原始模型响应以诊断推理泄漏或格式问题：
+
+```bash
+openclaw gateway start --raw-stream
+```
+
+日志写入 `~/.openclaw/logs/raw-stream.jsonl`。
+
+### 开发时使用监视模式
+
+快速迭代调试：
+
+```bash
+pnpm gateway:watch --force
+```
+
+文件变更时自动重启。
+
+## 常见性能陷阱
+
+### 1. **不受限制的工具输出**
+
+**问题：** 读取大型日志文件或获取整个网页会膨胀上下文。
+
+**解决方案：**
+```json
+{
+  "tools": {
+    "read": {
+      "maxChars": 10000
+    },
+    "exec": {
+      "outputMaxChars": 5000
+    }
+  }
+}
+```
+
+### 2. **遗忘的心跳**
+
+**问题：** 每分钟检查心跳消耗大量 Token。
+
+**解决方案：** 根据需要调整为 30 分钟到 1 小时：
+```json
+{
+  "agents": {
+    "defaults": {
+      "heartbeat": {
+        "every": "30m"
+      }
+    }
+  }
+}
+```
+
+### 3. **过期的缓存写入**
+
+**问题：** 会话空闲超过缓存 TTL，下次请求时重写完整提示词。
+
+**解决方案：** 启用 cache-TTL 剪枝以重置缓存窗口：
+```json
+{
+  "agents": {
+    "defaults": {
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "5m"
+      }
+    }
+  }
+}
+```
+
+### 4. **工具结果中的图片附件**
+
+**问题：** 图片消耗大量 Token。
+
+**解决方案：**
+- 会话剪枝会跳过包含图片的工具结果
+- 如果上下文填满，手动 `/reset`
+- 在图片堆积前使用 `/compact` 进行总结
+
+### 5. **诊断过载**
+
+**问题：** 以高采样率将所有诊断导出到 OpenTelemetry。
+
+**解决方案：** 使用采样并按日志级别过滤：
+```json
+{
+  "diagnostics": {
+    "otel": {
+      "sampleRate": 0.1,
+      "logs": false
+    }
+  }
+}
+```
+
+## 用于监控的 OpenTelemetry 指标
+
+对于生产部署，将指标导出到 Grafana 或类似平台：
+
+```json
+{
+  "plugins": {
+    "allow": ["diagnostics-otel"],
+    "entries": {
+      "diagnostics-otel": {
+        "enabled": true
+      }
+    }
+  },
+  "diagnostics": {
+    "enabled": true,
+    "otel": {
+      "enabled": true,
+      "endpoint": "http://otel-collector:4318",
+      "serviceName": "openclaw-gateway",
+      "traces": true,
+      "metrics": true,
+      "sampleRate": 0.2
+    }
+  }
+}
+```
+
+**关键指标：**
+- `openclaw.tokens` — 总 Token 消耗
+- `openclaw.cost.usd` — 预估成本
+- `openclaw.queue.depth` — 队列积压
+- `openclaw.session.stuck` — 卡住的会话数
+- `openclaw.webhook.duration_ms` — Webhook 延迟
+
+## 生产环境推荐配置
+
+这是一个平衡成本和性能的配置：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-5"
+      },
+      "models": {
+        "anthropic/claude-sonnet-4-5": {
+          "params": {
+            "cacheRetention": "long"
+          }
+        }
+      },
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "5m",
+        "keepLastAssistants": 3,
+        "softTrimRatio": 0.3
+      },
+      "compaction": {
+        "autoCompact": true,
+        "targetRatio": 0.8,
+        "minMessagesBeforeCompact": 10
+      },
+      "heartbeat": {
+        "every": "30m"
+      },
+      "bootstrapMaxChars": 20000
+    }
+  },
+  "logging": {
+    "level": "info",
+    "consoleLevel": "info",
+    "redactSensitive": "tools"
+  },
+  "tools": {
+    "read": {
+      "maxChars": 50000
+    },
+    "exec": {
+      "outputMaxChars": 10000
+    }
+  }
+}
+```
+
+## 故障排查清单
+
+遇到卡顿或高成本时：
+
+1. **检查 Token 使用：** `/status` 和 `/usage full`
+2. **查看上下文大小：** `/context detail`
+3. **寻找卡住的会话：** `openclaw status`
+4. **查看日志：** `openclaw logs --follow`
+5. **检查队列深度：** 查看指标中的 `openclaw.queue.depth`
+6. **验证缓存行为：** 检查日志中频繁的 `cacheWrite`
+7. **审计工具输出：** 使用 `--raw-stream` 查看实际响应
+8. **测试压缩：** `/compact` 并比较响应时间
+9. **监控成本：** `/usage cost` 发现昂贵的模式
+10. **必要时重置：** `/reset` 处理过期会话
+
+## 更多资源
+
+- **官方文档：** `/opt/homebrew/lib/node_modules/openclaw/docs/`
+- **Token 使用与成本：** [Token Use](/blog/concepts/token-use)
+- **会话剪枝：** [Session Pruning](/blog/concepts/session-pruning)
+- **压缩：** [Compaction](/blog/concepts/compaction)
+- **日志：** [Logging](/blog/logging)
+- **调试：** [Debugging](/blog/debugging)
+
+---
+
+**专业提示：** 定期运行 `openclaw doctor` 以尽早发现配置问题。性能优化是迭代的过程——监控、调优、测试！
