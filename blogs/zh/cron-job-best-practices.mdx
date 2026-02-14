@@ -1,0 +1,307 @@
+---
+title: OpenClaw 定时任务最佳实践 - 避免会话膨胀和内存问题
+description: 学习如何正确配置 OpenClaw 定时任务，防止会话积累，在主会话和隔离执行之间做出最佳选择
+slug: /cron-job-best-practices
+tags: cron, 自动化, 定时任务, 性能, 最佳实践
+publishedAt: 2026-02-14
+status: published
+visibility: public
+featuredImageUrl: /images/features/cron-job-best-practices.webp
+---
+
+# OpenClaw 定时任务最佳实践
+
+定时任务（Cron Jobs）是 OpenClaw 自动化重复任务的核心功能——从每日简报到定期监控。然而，配置不当会导致会话膨胀、内存问题和成本失控。本指南涵盖了设置可靠、高效定时任务的最佳实践。
+
+## 会话积累问题
+
+OpenClaw 定时任务最常见的问题之一是**会话上下文积累**。问题是这样发生的：
+
+1. 你创建了一个每小时运行的隔离定时任务
+2. 每次运行都会向会话添加更多上下文
+3. 经过数天/数周，会话无限增长
+4. 最终，上下文达到限制，任务失败或变得昂贵
+
+这是 OpenClaw 仓库中跟踪的已知问题，隔离的定时会话会无限期地积累上下文。
+
+## 理解定时任务执行模式
+
+OpenClaw 定时任务可以在两种模式下运行，选择正确的模式至关重要：
+
+### 主会话任务
+
+主会话任务将系统事件注入到你的主会话中：
+
+```bash
+openclaw cron add \
+  --name "检查收件箱" \
+  --cron "0 * * * *" \
+  --session main \
+  --system-event "检查收件箱中的紧急邮件" \
+  --wake now
+```
+
+**特点：**
+- 在主会话上下文中运行
+- 可以访问完整的对话历史
+- 与常规交互共享上下文
+- 适合需要对话感知的任务
+
+**适用场景：**
+- 需要了解最近对话的任务
+- 基于先前上下文的跟进提醒
+- 与工作流程自然集成的轻量检查
+
+### 隔离会话任务
+
+隔离任务在专用的 `cron:<jobId>` 会话中运行：
+
+```bash
+openclaw cron add \
+  --name "每日报告" \
+  --cron "0 9 * * *" \
+  --tz "Asia/Shanghai" \
+  --session isolated \
+  --message "生成每日状态报告" \
+  --announce
+```
+
+**特点：**
+- 每次运行都以全新会话开始（无先前上下文延续）
+- 可以使用不同的模型/思考设置
+- 输出直接发送到频道
+- 历史记录不会混乱主会话
+
+**适用场景：**
+- 不需要先前上下文的独立任务
+- 需要不同模型的重度分析
+- 会刷屏主会话历史的频繁任务
+- 需要干净状态执行的任务
+
+## 最佳实践 #1：使用带 Announce 的隔离任务
+
+对于大多数重复自动化，使用带 announce 交付的隔离任务：
+
+```bash
+openclaw cron add \
+  --name "早间简报" \
+  --cron "0 7 * * *" \
+  --tz "Asia/Shanghai" \
+  --session isolated \
+  --message "总结：天气、日历、重要邮件。" \
+  --announce \
+  --channel telegram \
+  --to "123456789"
+```
+
+这确保了：
+- 每次运行都是全新上下文（无积累）
+- 结果直接发送到你的聊天
+- 主会话保持干净
+- 可预测的资源使用
+
+## 最佳实践 #2：一次性任务自动删除
+
+对于提醒和一次性任务，使用 `--at` 配合 `--delete-after-run`：
+
+```bash
+openclaw cron add \
+  --name "会议提醒" \
+  --at "20m" \
+  --session main \
+  --system-event "站会将在 10 分钟后开始！" \
+  --wake now \
+  --delete-after-run
+```
+
+一次性任务（`--at`）默认在成功后删除。只有在需要保留任务记录时才使用 `--keep-after-run`。
+
+## 最佳实践 #3：在 Heartbeat 中批量检查
+
+不要为定期检查创建多个定时任务，而是使用心跳机制：
+
+**HEARTBEAT.md：**
+```markdown
+# 心跳检查清单
+
+- 检查收件箱是否有紧急消息
+- 查看接下来 2 小时的日历事件
+- 检查项目状态
+- 如果安静超过 8 小时，轻量签到
+```
+
+**为什么这样更好：**
+- 一次 agent 轮次处理多个检查
+- 减少 API 调用和成本
+- 上下文感知的优先级
+- 相关任务的自然批处理
+
+## 最佳实践 #4：选择正确的计划类型
+
+OpenClaw 支持三种计划类型：
+
+### 一次性（`--at`）
+
+用于特定的未来时间：
+
+```bash
+# 相对时间
+openclaw cron add --at "2h" --name "..." ...
+
+# 绝对时间（ISO 8601，无时区时为 UTC）
+openclaw cron add --at "2026-02-15T14:00:00Z" --name "..." ...
+```
+
+### 间隔（`--every`）
+
+用于固定间隔：
+
+```bash
+# 每 4 小时
+openclaw cron add --every "4h" --name "..." ...
+```
+
+### Cron 表达式（`--cron`）
+
+用于复杂计划：
+
+```bash
+# 每周一上午 9 点
+openclaw cron add --cron "0 9 * * 1" --tz "Asia/Shanghai" --name "..." ...
+
+# 每个工作日上午 8:30
+openclaw cron add --cron "30 8 * * 1-5" --tz "Asia/Shanghai" --name "..." ...
+```
+
+**重要：** 始终为 cron 表达式指定 `--tz` 以避免时区混淆。
+
+## 最佳实践 #5：模型和思考覆盖
+
+对于重度分析，在隔离任务上覆盖模型：
+
+```bash
+openclaw cron add \
+  --name "每周深度分析" \
+  --cron "0 6 * * 0" \
+  --session isolated \
+  --message "深度分析项目进度、阻塞点和建议。" \
+  --model opus \
+  --thinking high \
+  --announce
+```
+
+**指南：**
+- 使用更便宜的模型（sonnet）处理常规任务
+- 为复杂分析保留昂贵模型（opus）
+- 思考级别：`off`、`minimal`、`low`、`medium`、`high`、`xhigh`
+
+## 最佳实践 #6：正确的交付配置
+
+对于隔离任务，明确配置交付：
+
+```bash
+# 发送到特定频道
+openclaw cron add \
+  --session isolated \
+  --message "..." \
+  --announce \
+  --channel whatsapp \
+  --to "+8613800138000"
+
+# Telegram 支持话题/线程
+openclaw cron add \
+  --session isolated \
+  --message "..." \
+  --announce \
+  --channel telegram \
+  --to "-1001234567890:topic:123"
+
+# 不交付（仅内部）
+openclaw cron add \
+  --session isolated \
+  --message "..." \
+  --no-deliver
+```
+
+**交付模式：**
+- `--announce`：将摘要交付到目标频道（隔离任务默认）
+- `--no-deliver`：保持输出内部，不发送
+
+## 常见问题排查
+
+### 任务不运行
+
+1. **检查 cron 是否启用：**
+   ```bash
+   openclaw cron status
+   ```
+
+2. **验证 Gateway 正在运行：**
+   ```bash
+   openclaw gateway status
+   ```
+
+3. **检查时区设置：**
+   ```bash
+   openclaw cron list --json | jq '.[] | {name, schedule}'
+   ```
+
+### 会话膨胀（遗留任务）
+
+如果你有积累了上下文的旧任务：
+
+1. 列出所有任务：
+   ```bash
+   openclaw cron list
+   ```
+
+2. 删除问题任务：
+   ```bash
+   openclaw cron remove <job-id>
+   ```
+
+3. 用隔离模式重新创建：
+   ```bash
+   openclaw cron add --session isolated ...
+   ```
+
+### 交付失败
+
+如果通知没有到达你的聊天：
+
+1. 检查交付配置：
+   ```bash
+   openclaw cron list --json | jq '.[] | {name, delivery}'
+   ```
+
+2. 验证频道/目标格式：
+   - Telegram：聊天 ID 或 `chat_id:topic:thread_id`
+   - WhatsApp：带国家代码的电话号码
+   - Discord/Slack：`channel:ID` 或 `user:ID`
+
+3. 使用 `--best-effort` 防止交付问题导致任务失败：
+   ```bash
+   openclaw cron edit <job-id> --best-effort
+   ```
+
+## 快速参考：Cron vs Heartbeat
+
+| 用例 | 推荐 | 原因 |
+|------|------|------|
+| 每 30 分钟检查收件箱 | Heartbeat | 与其他检查批量处理 |
+| 每天 9 点准时发送报告 | Cron（隔离） | 需要精确计时 |
+| "20 分钟后提醒我" | Cron（主会话，`--at`） | 精确的一次性提醒 |
+| 每周深度分析 | Cron（隔离） | 不同模型，干净状态 |
+| 后台监控 | Heartbeat | 搭载现有周期 |
+
+## 总结
+
+1. **使用隔离任务** 进行重复自动化以避免会话膨胀
+2. **使用心跳** 批量处理多个定期检查
+3. **始终指定时区** 用于 cron 表达式
+4. **适当覆盖模型** 根据任务复杂度
+5. **明确配置交付** 用于隔离任务
+6. **使用 `--delete-after-run`** 用于一次性提醒
+7. **监控任务健康** 使用 `openclaw cron list` 和 `openclaw cron runs`
+
+遵循这些实践，你的定时任务将可靠运行，不会积累上下文或导致性能问题。

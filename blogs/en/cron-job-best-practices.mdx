@@ -1,0 +1,307 @@
+---
+title: Cron Job Best Practices for OpenClaw - Avoiding Session Bloat & Memory Issues
+description: Learn how to configure OpenClaw cron jobs properly, prevent session accumulation, and choose between main vs isolated execution for optimal performance
+slug: /cron-job-best-practices
+tags: cron, automation, scheduling, performance, best-practices
+publishedAt: 2026-02-14
+status: published
+visibility: public
+featuredImageUrl: /images/features/cron-job-best-practices.webp
+---
+
+# Cron Job Best Practices for OpenClaw
+
+Cron jobs are essential for automating recurring tasks in OpenClaw — from daily briefings to periodic monitoring. However, improper configuration can lead to session bloat, memory issues, and runaway costs. This guide covers the best practices for setting up reliable, efficient cron jobs.
+
+## The Session Accumulation Problem
+
+One of the most common issues with OpenClaw cron jobs is **session context accumulation**. Here's what happens:
+
+1. You create an isolated cron job that runs every hour
+2. Each run adds more context to the session
+3. Over days/weeks, the session grows unbounded
+4. Eventually, context hits the limit and the job fails or becomes expensive
+
+This was a known issue tracked in the OpenClaw repository, where isolated cron sessions would accumulate context indefinitely.
+
+## Understanding Cron Execution Modes
+
+OpenClaw cron jobs can run in two modes, and choosing the right one is critical:
+
+### Main Session Jobs
+
+Main session jobs inject a system event into your primary session:
+
+```bash
+openclaw cron add \
+  --name "Check inbox" \
+  --cron "0 * * * *" \
+  --session main \
+  --system-event "Check inbox for urgent emails" \
+  --wake now
+```
+
+**Characteristics:**
+- Runs in your main session context
+- Has access to full conversation history
+- Shares context with your regular interactions
+- Good for tasks that need conversational awareness
+
+**When to use:**
+- Tasks that benefit from knowing recent conversations
+- Follow-up reminders based on prior context
+- Light checks that integrate naturally with your workflow
+
+### Isolated Session Jobs
+
+Isolated jobs run in a dedicated `cron:<jobId>` session:
+
+```bash
+openclaw cron add \
+  --name "Daily report" \
+  --cron "0 9 * * *" \
+  --tz "America/New_York" \
+  --session isolated \
+  --message "Generate daily status report" \
+  --announce
+```
+
+**Characteristics:**
+- Each run starts with a fresh session (no prior context carry-over)
+- Can use different model/thinking settings
+- Output announced directly to a channel
+- History doesn't clutter main session
+
+**When to use:**
+- Standalone tasks that don't need prior context
+- Heavy analysis with different model requirements
+- Frequent jobs that would spam main session history
+- Tasks requiring clean-slate execution
+
+## Best Practice #1: Use Isolated Jobs with Announce
+
+For most recurring automation, use isolated jobs with announce delivery:
+
+```bash
+openclaw cron add \
+  --name "Morning briefing" \
+  --cron "0 7 * * *" \
+  --tz "America/Los_Angeles" \
+  --session isolated \
+  --message "Summarize: weather, calendar, top emails." \
+  --announce \
+  --channel telegram \
+  --to "123456789"
+```
+
+This ensures:
+- Fresh context each run (no accumulation)
+- Results delivered directly to your chat
+- Main session stays clean
+- Predictable resource usage
+
+## Best Practice #2: One-Shot Jobs Auto-Delete
+
+For reminders and one-time tasks, use `--at` with `--delete-after-run`:
+
+```bash
+openclaw cron add \
+  --name "Meeting reminder" \
+  --at "20m" \
+  --session main \
+  --system-event "Standup meeting starts in 10 minutes!" \
+  --wake now \
+  --delete-after-run
+```
+
+One-shot jobs (`--at`) delete after success by default. Use `--keep-after-run` only if you need to preserve the job record.
+
+## Best Practice #3: Batch Checks in Heartbeat
+
+Instead of creating multiple cron jobs for periodic checks, use the heartbeat mechanism:
+
+**HEARTBEAT.md:**
+```markdown
+# Heartbeat checklist
+
+- Check inbox for urgent messages
+- Review calendar for events in next 2h
+- Check project status
+- Light check-in if quiet for 8+ hours
+```
+
+**Why this is better:**
+- One agent turn handles multiple checks
+- Reduces API calls and costs
+- Context-aware prioritization
+- Natural batching of related tasks
+
+## Best Practice #4: Choose the Right Schedule Type
+
+OpenClaw supports three schedule types:
+
+### One-shot (`--at`)
+
+For specific future times:
+
+```bash
+# Relative time
+openclaw cron add --at "2h" --name "..." ...
+
+# Absolute time (ISO 8601, UTC if no timezone)
+openclaw cron add --at "2026-02-15T14:00:00Z" --name "..." ...
+```
+
+### Interval (`--every`)
+
+For fixed intervals:
+
+```bash
+# Every 4 hours
+openclaw cron add --every "4h" --name "..." ...
+```
+
+### Cron Expression (`--cron`)
+
+For complex schedules:
+
+```bash
+# Every Monday at 9am
+openclaw cron add --cron "0 9 * * 1" --tz "America/New_York" --name "..." ...
+
+# Every weekday at 8:30am
+openclaw cron add --cron "30 8 * * 1-5" --tz "Asia/Tokyo" --name "..." ...
+```
+
+**Important:** Always specify `--tz` for cron expressions to avoid timezone confusion.
+
+## Best Practice #5: Model and Thinking Overrides
+
+For heavy analysis, override the model on isolated jobs:
+
+```bash
+openclaw cron add \
+  --name "Weekly deep analysis" \
+  --cron "0 6 * * 0" \
+  --session isolated \
+  --message "Deep analysis of project progress, blockers, and recommendations." \
+  --model opus \
+  --thinking high \
+  --announce
+```
+
+**Guidelines:**
+- Use cheaper models (sonnet) for routine tasks
+- Reserve expensive models (opus) for complex analysis
+- Thinking levels: `off`, `minimal`, `low`, `medium`, `high`, `xhigh`
+
+## Best Practice #6: Proper Delivery Configuration
+
+For isolated jobs, configure delivery explicitly:
+
+```bash
+# Announce to specific channel
+openclaw cron add \
+  --session isolated \
+  --message "..." \
+  --announce \
+  --channel whatsapp \
+  --to "+15551234567"
+
+# Telegram with topic/thread support
+openclaw cron add \
+  --session isolated \
+  --message "..." \
+  --announce \
+  --channel telegram \
+  --to "-1001234567890:topic:123"
+
+# No delivery (internal only)
+openclaw cron add \
+  --session isolated \
+  --message "..." \
+  --no-deliver
+```
+
+**Delivery modes:**
+- `--announce`: Deliver summary to target channel (default for isolated)
+- `--no-deliver`: Keep output internal, no announcement
+
+## Troubleshooting Common Issues
+
+### Jobs Not Running
+
+1. **Check cron is enabled:**
+   ```bash
+   openclaw cron status
+   ```
+
+2. **Verify Gateway is running:**
+   ```bash
+   openclaw gateway status
+   ```
+
+3. **Check timezone settings:**
+   ```bash
+   openclaw cron list --json | jq '.[] | {name, schedule}'
+   ```
+
+### Session Bloat (Legacy Jobs)
+
+If you have old jobs with accumulated context:
+
+1. List all jobs:
+   ```bash
+   openclaw cron list
+   ```
+
+2. Remove problematic jobs:
+   ```bash
+   openclaw cron remove <job-id>
+   ```
+
+3. Recreate with isolated mode:
+   ```bash
+   openclaw cron add --session isolated ...
+   ```
+
+### Delivery Failures
+
+If announcements aren't reaching your chat:
+
+1. Check delivery configuration:
+   ```bash
+   openclaw cron list --json | jq '.[] | {name, delivery}'
+   ```
+
+2. Verify channel/target format:
+   - Telegram: chat ID or `chat_id:topic:thread_id`
+   - WhatsApp: phone number with country code
+   - Discord/Slack: `channel:ID` or `user:ID`
+
+3. Use `--best-effort` to prevent job failure on delivery issues:
+   ```bash
+   openclaw cron edit <job-id> --best-effort
+   ```
+
+## Quick Reference: Cron vs Heartbeat
+
+| Use Case | Recommended | Why |
+|----------|-------------|-----|
+| Check inbox every 30 min | Heartbeat | Batches with other checks |
+| Daily report at 9am sharp | Cron (isolated) | Exact timing needed |
+| "Remind me in 20 min" | Cron (main, `--at`) | One-shot with precision |
+| Weekly deep analysis | Cron (isolated) | Different model, clean slate |
+| Background monitoring | Heartbeat | Piggybacks on existing cycle |
+
+## Summary
+
+1. **Use isolated jobs** for recurring automation to avoid session bloat
+2. **Use heartbeat** for batching multiple periodic checks
+3. **Always specify timezone** for cron expressions
+4. **Override models** appropriately based on task complexity
+5. **Configure delivery** explicitly for isolated jobs
+6. **Use `--delete-after-run`** for one-shot reminders
+7. **Monitor job health** with `openclaw cron list` and `openclaw cron runs`
+
+With these practices, your cron jobs will run reliably without accumulating context or causing performance issues.
