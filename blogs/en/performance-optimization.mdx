@@ -1,0 +1,455 @@
+---
+title: Performance Optimization for OpenClaw - Fixing Slowdowns & Memory Leaks
+description: A comprehensive guide to identifying and fixing common performance issues in OpenClaw, including token optimization, memory management, and session pruning strategies
+slug: /performance-optimization
+tags: performance, optimization, troubleshooting, memory, tokens
+publishedAt: 2026-02-14
+status: published
+visibility: public
+featuredImageUrl: /images/features/performance_optimization.webp
+---
+
+# Performance Optimization for OpenClaw: Fixing Slowdowns & Memory Leaks
+
+Running OpenClaw smoothly over days or weeks requires understanding how it manages resources. This guide covers common performance bottlenecks and practical solutions to keep your AI assistant fast and efficient.
+
+## Understanding Token Usage & Costs
+
+Every interaction with your AI model consumes tokens, which directly impact both performance and cost. OpenClaw tracks token usage comprehensively across:
+
+- System prompts (tools, skills, workspace files)
+- Conversation history
+- Tool calls and results
+- Attachments and transcripts
+- Cache operations
+
+### Monitor Your Token Consumption
+
+Use these commands to track usage in real-time:
+
+**Check current session status:**
+```
+/status
+```
+This shows your model, context usage, and estimated costs.
+
+**Enable per-response usage footer:**
+```
+/usage full
+```
+Appends detailed token metrics after every response.
+
+**View cost summary:**
+```
+/usage cost
+```
+Shows accumulated costs from session logs.
+
+### Token Optimization Strategies
+
+**1. Trim Tool Outputs**
+
+Large tool results (file reads, web fetches) consume significant tokens. Configure output limits in your tools:
+
+```json
+{
+  "tools": {
+    "read": {
+      "maxChars": 50000
+    }
+  }
+}
+```
+
+**2. Use Session Pruning**
+
+OpenClaw can automatically trim old tool results before sending context to the model. Enable cache-TTL pruning:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "5m",
+        "keepLastAssistants": 3
+      }
+    }
+  }
+}
+```
+
+**How it works:**
+- Keeps only the last 3 assistant messages and their tool results
+- Trims or clears older tool outputs
+- Only runs when cache TTL expires
+- Protects tool results containing images
+
+**3. Leverage Prompt Caching**
+
+For Anthropic models, prompt caching dramatically reduces costs on repeated context:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-opus-4-5"
+      },
+      "models": {
+        "anthropic/claude-opus-4-5": {
+          "params": {
+            "cacheRetention": "long"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Cache optimization tips:**
+- Cache TTL is typically 5 minutes (Anthropic)
+- Use heartbeat (`every: "55m"`) to keep cache warm for 1h TTL
+- Cache reads are 10x cheaper than input tokens
+- Pruning before cache expiry reduces cache write costs
+
+**4. Compact Long Sessions**
+
+When conversations grow too long, OpenClaw can summarize older messages:
+
+```
+/compact Focus on key decisions and open questions
+```
+
+Auto-compaction triggers when approaching context limits. Configure thresholds:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "compaction": {
+        "autoCompact": true,
+        "targetRatio": 0.8,
+        "minMessagesBeforeCompact": 10
+      }
+    }
+  }
+}
+```
+
+## Session & Memory Management
+
+### Session Lifecycle Best Practices
+
+**Reset stale sessions:**
+```
+/reset
+```
+Clears context while preserving conversation history on disk.
+
+**Start fresh:**
+```
+/new
+```
+Creates a new session with a clean slate.
+
+**Check session health:**
+```
+/context detail
+```
+Shows per-file contributions to your context window.
+
+### Memory File Optimization
+
+OpenClaw loads workspace files (`AGENTS.md`, `SOUL.md`, `TOOLS.md`, etc.) on every session start. Keep them lean:
+
+**Limit bootstrap file sizes:**
+```json
+{
+  "agents": {
+    "defaults": {
+      "bootstrapMaxChars": 20000
+    }
+  }
+}
+```
+
+**Best practices:**
+- Keep `AGENTS.md` focused on workflow rules
+- Store detailed references in separate files, loaded on-demand
+- Archive old `memory/YYYY-MM-DD.md` files periodically
+- Compress `MEMORY.md` by removing outdated context
+
+### Queue & Concurrency
+
+OpenClaw processes messages through lanes to prevent race conditions. Monitor queue health:
+
+```bash
+openclaw status
+```
+
+**Common queue issues:**
+
+**Stuck sessions:**
+- Symptom: Messages not processing
+- Diagnosis: Check logs for session state transitions
+- Fix: `/reset` or restart the gateway
+
+**High queue depth:**
+- Symptom: Delayed responses
+- Diagnosis: Too many concurrent operations
+- Fix: Reduce heartbeat frequency or batch operations
+
+## Debugging Performance Issues
+
+### Enable Detailed Logging
+
+**Increase log verbosity:**
+```json
+{
+  "logging": {
+    "level": "debug",
+    "consoleLevel": "debug"
+  }
+}
+```
+
+**Target specific subsystems:**
+```json
+{
+  "diagnostics": {
+    "flags": ["telegram.http", "queue.*"]
+  }
+}
+```
+
+Or via environment:
+```bash
+OPENCLAW_DIAGNOSTICS=telegram.http,queue.* openclaw gateway start
+```
+
+### Tail Logs in Real-Time
+
+```bash
+openclaw logs --follow
+```
+
+Use JSON mode for parsing:
+```bash
+openclaw logs --follow --json | jq 'select(.level == "error")'
+```
+
+### Raw Stream Debugging
+
+Capture raw model responses to diagnose reasoning leakage or formatting issues:
+
+```bash
+openclaw gateway start --raw-stream
+```
+
+Logs are written to `~/.openclaw/logs/raw-stream.jsonl`.
+
+### Use Watch Mode for Development
+
+For fast iteration while debugging:
+
+```bash
+pnpm gateway:watch --force
+```
+
+This auto-restarts on file changes.
+
+## Common Performance Pitfalls
+
+### 1. **Unrestricted Tool Output**
+
+**Problem:** Reading large log files or fetching entire web pages bloats context.
+
+**Solution:**
+```json
+{
+  "tools": {
+    "read": {
+      "maxChars": 10000
+    },
+    "exec": {
+      "outputMaxChars": 5000
+    }
+  }
+}
+```
+
+### 2. **Forgotten Heartbeats**
+
+**Problem:** Heartbeat checking every minute drains tokens.
+
+**Solution:** Adjust to 30m-1h based on your needs:
+```json
+{
+  "agents": {
+    "defaults": {
+      "heartbeat": {
+        "every": "30m"
+      }
+    }
+  }
+}
+```
+
+### 3. **Stale Cache Writes**
+
+**Problem:** Sessions idle past cache TTL, then rewrite full prompt on next request.
+
+**Solution:** Enable cache-TTL pruning to reset the cache window:
+```json
+{
+  "agents": {
+    "defaults": {
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "5m"
+      }
+    }
+  }
+}
+```
+
+### 4. **Image Attachments in Tool Results**
+
+**Problem:** Images consume massive token counts.
+
+**Solution:**
+- Session pruning skips tool results with images
+- Manually `/reset` if context fills up
+- Use `/compact` to summarize before images pile up
+
+### 5. **Diagnostic Overload**
+
+**Problem:** Exporting all diagnostics to OpenTelemetry at high sample rates.
+
+**Solution:** Use sampling and filter by log level:
+```json
+{
+  "diagnostics": {
+    "otel": {
+      "sampleRate": 0.1,
+      "logs": false
+    }
+  }
+}
+```
+
+## OpenTelemetry Metrics for Monitoring
+
+For production deployments, export metrics to Grafana or similar:
+
+```json
+{
+  "plugins": {
+    "allow": ["diagnostics-otel"],
+    "entries": {
+      "diagnostics-otel": {
+        "enabled": true
+      }
+    }
+  },
+  "diagnostics": {
+    "enabled": true,
+    "otel": {
+      "enabled": true,
+      "endpoint": "http://otel-collector:4318",
+      "serviceName": "openclaw-gateway",
+      "traces": true,
+      "metrics": true,
+      "sampleRate": 0.2
+    }
+  }
+}
+```
+
+**Key metrics to track:**
+- `openclaw.tokens` — Total token consumption
+- `openclaw.cost.usd` — Estimated costs
+- `openclaw.queue.depth` — Queue backlog
+- `openclaw.session.stuck` — Stuck session count
+- `openclaw.webhook.duration_ms` — Webhook latency
+
+## Recommended Configuration for Production
+
+Here's a balanced setup for cost and performance:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-5"
+      },
+      "models": {
+        "anthropic/claude-sonnet-4-5": {
+          "params": {
+            "cacheRetention": "long"
+          }
+        }
+      },
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "5m",
+        "keepLastAssistants": 3,
+        "softTrimRatio": 0.3
+      },
+      "compaction": {
+        "autoCompact": true,
+        "targetRatio": 0.8,
+        "minMessagesBeforeCompact": 10
+      },
+      "heartbeat": {
+        "every": "30m"
+      },
+      "bootstrapMaxChars": 20000
+    }
+  },
+  "logging": {
+    "level": "info",
+    "consoleLevel": "info",
+    "redactSensitive": "tools"
+  },
+  "tools": {
+    "read": {
+      "maxChars": 50000
+    },
+    "exec": {
+      "outputMaxChars": 10000
+    }
+  }
+}
+```
+
+## Troubleshooting Checklist
+
+When experiencing slowdowns or high costs:
+
+1. **Check token usage:** `/status` and `/usage full`
+2. **Review context size:** `/context detail`
+3. **Look for stuck sessions:** `openclaw status`
+4. **Tail logs:** `openclaw logs --follow`
+5. **Check queue depth:** Look for `openclaw.queue.depth` in metrics
+6. **Verify cache behavior:** Check for frequent `cacheWrite` in logs
+7. **Audit tool outputs:** Use `--raw-stream` to see actual responses
+8. **Test with compact:** `/compact` and compare response times
+9. **Monitor costs:** `/usage cost` to spot expensive patterns
+10. **Reset if needed:** `/reset` for stale sessions
+
+## Further Resources
+
+- **Official Docs:** `/opt/homebrew/lib/node_modules/openclaw/docs/`
+- **Token Use & Costs:** [Token Use](/concepts/token-use)
+- **Session Pruning:** [Session Pruning](/concepts/session-pruning)
+- **Compaction:** [Compaction](/concepts/compaction)
+- **Logging:** [Logging](/logging)
+- **Debugging:** [Debugging](/debugging)
+
+---
+
+**Pro tip:** Run `openclaw doctor` regularly to catch configuration issues early. Performance optimization is iterative — monitor, tune, and test!
