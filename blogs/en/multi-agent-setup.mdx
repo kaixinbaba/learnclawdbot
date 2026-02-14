@@ -1,0 +1,365 @@
+---
+title: Multi-Agent Setup Guide for OpenClaw - Running Multiple AI Assistants
+description: Learn how to configure multiple isolated AI agents in OpenClaw with separate workspaces, personalities, and channel bindings for WhatsApp, Telegram, and Discord
+slug: /multi-agent-setup
+tags: multi-agent, configuration, routing, bindings, advanced
+publishedAt: 2026-02-14
+status: published
+visibility: public
+featuredImageUrl: /images/features/multi-agent-setup.webp
+---
+
+# Multi-Agent Setup Guide for OpenClaw
+
+Running multiple AI assistants from a single OpenClaw gateway is one of the most powerful features available. This guide walks you through setting up isolated agents with their own personalities, workspaces, and channel bindings.
+
+## What is Multi-Agent?
+
+In OpenClaw, an **agent** is a fully isolated AI brain with its own:
+
+- **Workspace** — Files, AGENTS.md, SOUL.md, USER.md, persona rules
+- **State directory** — Auth profiles, model registry, per-agent config
+- **Session store** — Chat history and routing state
+- **Skills** — Per-agent skills in the workspace's `skills/` folder
+
+This means you can run completely separate AI assistants on the same server — different personalities, different capabilities, different access levels.
+
+## Common Use Cases
+
+- **Personal vs Work** — Route work messages to a professional agent, personal to a casual one
+- **Family Bot** — A restricted agent for family group chats with limited tools
+- **Multi-user Server** — Each family member gets their own isolated assistant
+- **Different Models** — Fast Sonnet for daily tasks, powerful Opus for deep work
+
+## Quick Start: Adding an Agent
+
+The easiest way to add a new agent is using the wizard:
+
+```bash
+openclaw agents add work
+```
+
+This creates:
+- Workspace at `~/.openclaw/workspace-work`
+- Agent directory at `~/.openclaw/agents/work/agent`
+- Session store at `~/.openclaw/agents/work/sessions`
+
+Verify your agents:
+
+```bash
+openclaw agents list --bindings
+```
+
+## Understanding Bindings
+
+**Bindings** route incoming messages to the correct agent. They match on:
+
+1. `peer` — Specific DM or group ID (most specific, wins first)
+2. `guildId` — Discord server
+3. `teamId` — Slack workspace
+4. `accountId` — Channel account (e.g., which WhatsApp number)
+5. `channel` — Entire channel (least specific)
+
+**Rule: Most specific match wins.** Put peer bindings above channel-wide rules.
+
+## Configuration Examples
+
+### Example 1: Two WhatsApp Numbers → Two Agents
+
+Route different WhatsApp accounts to different agents:
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "home",
+        "default": true,
+        "name": "Home",
+        "workspace": "~/.openclaw/workspace-home",
+        "agentDir": "~/.openclaw/agents/home/agent"
+      },
+      {
+        "id": "work",
+        "name": "Work",
+        "workspace": "~/.openclaw/workspace-work",
+        "agentDir": "~/.openclaw/agents/work/agent"
+      }
+    ]
+  },
+  "bindings": [
+    { "agentId": "home", "match": { "channel": "whatsapp", "accountId": "personal" } },
+    { "agentId": "work", "match": { "channel": "whatsapp", "accountId": "biz" } }
+  ],
+  "channels": {
+    "whatsapp": {
+      "accounts": {
+        "personal": {},
+        "biz": {}
+      }
+    }
+  }
+}
+```
+
+### Example 2: WhatsApp Daily + Telegram Deep Work
+
+Route different channels to different model tiers:
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "chat",
+        "name": "Everyday",
+        "workspace": "~/.openclaw/workspace-chat",
+        "model": "anthropic/claude-sonnet-4-5"
+      },
+      {
+        "id": "opus",
+        "name": "Deep Work",
+        "workspace": "~/.openclaw/workspace-opus",
+        "model": "anthropic/claude-opus-4-5"
+      }
+    ]
+  },
+  "bindings": [
+    { "agentId": "chat", "match": { "channel": "whatsapp" } },
+    { "agentId": "opus", "match": { "channel": "telegram" } }
+  ]
+}
+```
+
+### Example 3: One WhatsApp, Multiple People
+
+Route different DMs to different agents while sharing one WhatsApp number:
+
+```json
+{
+  "agents": {
+    "list": [
+      { "id": "alex", "workspace": "~/.openclaw/workspace-alex" },
+      { "id": "mia", "workspace": "~/.openclaw/workspace-mia" }
+    ]
+  },
+  "bindings": [
+    { "agentId": "alex", "match": { "channel": "whatsapp", "peer": { "kind": "dm", "id": "+15551230001" } } },
+    { "agentId": "mia", "match": { "channel": "whatsapp", "peer": { "kind": "dm", "id": "+15551230002" } } }
+  ],
+  "channels": {
+    "whatsapp": {
+      "dmPolicy": "allowlist",
+      "allowFrom": ["+15551230001", "+15551230002"]
+    }
+  }
+}
+```
+
+### Example 4: Family Bot with Restricted Tools
+
+A dedicated agent for family groups with limited capabilities:
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "family",
+        "name": "Family",
+        "workspace": "~/.openclaw/workspace-family",
+        "identity": { "name": "Family Bot" },
+        "groupChat": {
+          "mentionPatterns": ["@family", "@familybot"]
+        },
+        "sandbox": {
+          "mode": "all",
+          "scope": "agent"
+        },
+        "tools": {
+          "allow": ["exec", "read", "sessions_list", "sessions_history"],
+          "deny": ["write", "edit", "browser", "cron"]
+        }
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "agentId": "family",
+      "match": {
+        "channel": "whatsapp",
+        "peer": { "kind": "group", "id": "120363999999999999@g.us" }
+      }
+    }
+  ]
+}
+```
+
+## Per-Agent Sandbox Configuration
+
+Each agent can have its own sandbox settings:
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "personal",
+        "workspace": "~/.openclaw/workspace-personal",
+        "sandbox": {
+          "mode": "off"
+        }
+      },
+      {
+        "id": "untrusted",
+        "workspace": "~/.openclaw/workspace-untrusted",
+        "sandbox": {
+          "mode": "all",
+          "scope": "agent",
+          "docker": {
+            "setupCommand": "apt-get update && apt-get install -y git curl"
+          }
+        },
+        "tools": {
+          "allow": ["read"],
+          "deny": ["exec", "write", "edit"]
+        }
+      }
+    ]
+  }
+}
+```
+
+## Common Issues & Solutions
+
+### "Session file path must be within sessions directory"
+
+This is the **most common multi-agent error**. It happens when:
+
+1. **Missing agentId in bindings** — Ensure every binding has the correct `agentId`
+2. **Path collision** — Never reuse `agentDir` across agents
+3. **Version mismatch** — Update to the latest OpenClaw version
+
+**Fix:** Check your bindings match the agent IDs exactly:
+
+```bash
+openclaw agents list --bindings
+```
+
+### Agent Not Receiving Messages
+
+1. **Check binding order** — More specific bindings must come first
+2. **Verify channel access** — Ensure the channel's `allowFrom` or `groupPolicy` includes the sender
+3. **Check agent status** — Run `openclaw status` to verify all agents are active
+
+### Auth Profiles Not Working
+
+Auth profiles are **per-agent**. Each agent reads from:
+
+```
+~/.openclaw/agents/<agentId>/agent/auth-profiles.json
+```
+
+To share credentials, copy `auth-profiles.json` to the other agent's `agentDir`.
+
+### Discord Bindings Not Matching
+
+For Discord, use `guildId` (server ID) in your bindings:
+
+```json
+{
+  "bindings": [
+    {
+      "agentId": "gaming",
+      "match": {
+        "channel": "discord",
+        "guildId": "123456789012345678"
+      }
+    }
+  ]
+}
+```
+
+## Best Practices
+
+### 1. Use the Wizard
+
+Always use `openclaw agents add <name>` instead of manual config. It sets up directories correctly.
+
+### 2. Test Bindings First
+
+Before going live, verify routing with:
+
+```bash
+openclaw agents list --bindings
+```
+
+### 3. Keep Workspaces Separate
+
+Each agent should have its own workspace directory. Never share workspaces between agents.
+
+### 4. Use Specific Bindings
+
+Put the most specific bindings (peer matches) at the top of your bindings list.
+
+### 5. Sandbox Untrusted Agents
+
+For agents that interact with untrusted users, enable sandbox mode and restrict tools.
+
+## Directory Structure
+
+Here's what a multi-agent setup looks like:
+
+```
+~/.openclaw/
+├── openclaw.json          # Main config with agents + bindings
+├── workspace-home/        # Home agent workspace
+│   ├── AGENTS.md
+│   ├── SOUL.md
+│   └── skills/
+├── workspace-work/        # Work agent workspace
+│   ├── AGENTS.md
+│   ├── SOUL.md
+│   └── skills/
+├── agents/
+│   ├── home/
+│   │   ├── agent/         # Home agent state
+│   │   │   └── auth-profiles.json
+│   │   └── sessions/      # Home agent sessions
+│   └── work/
+│       ├── agent/         # Work agent state
+│       │   └── auth-profiles.json
+│       └── sessions/      # Work agent sessions
+└── credentials/
+    └── whatsapp/
+        ├── personal/      # WhatsApp account 1
+        └── biz/           # WhatsApp account 2
+```
+
+## Verification Commands
+
+```bash
+# List all agents and their bindings
+openclaw agents list --bindings
+
+# Check overall status
+openclaw status
+
+# View agent-specific sessions
+openclaw sessions list --agent work
+```
+
+## Summary
+
+Multi-agent setup lets you run multiple isolated AI assistants from one OpenClaw gateway. Key points:
+
+- **Use the wizard** — `openclaw agents add <name>` sets up everything correctly
+- **Bindings route messages** — Most specific match wins
+- **Each agent is isolated** — Separate workspace, auth, sessions
+- **Per-agent tools/sandbox** — Restrict capabilities for untrusted agents
+
+For more details, see the [official documentation](/blog/concepts/multi-agent).
+
+---
+
+**Pro tip:** Start with two agents (personal + work) and expand from there. Test your bindings thoroughly before adding more complexity!
