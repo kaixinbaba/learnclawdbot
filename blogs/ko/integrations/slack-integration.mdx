@@ -1,0 +1,271 @@
+---
+title: OpenClaw Slack 연동 - 봇, 채널, 엔터프라이즈 설정 완전 가이드
+description: OpenClaw를 Slack에 연결하는 완전 가이드. Socket Mode, HTTP webhooks, Bot Token, DM 정책, 채널 허용 목록, 스레드, 슬래시 명령, 멀티 워크스페이스 설정을 다룹니다.
+slug: /slack-integration
+tags: slack, 연동, 엔터프라이즈, 워크스페이스, 채널, 봇
+publishedAt: 2025-02-15
+status: published
+visibility: public
+featuredImageUrl: /images/features/slack-integration.webp
+---
+
+# OpenClaw Slack 연동: 완전 설정 가이드
+
+AI 어시스턴트를 Slack에 도입하여 채널, DM, 스레드에서 협업하세요. OpenClaw는 Slack의 워크스페이스 모델과 깊이 통합됩니다 — 쉬운 설정을 위한 Socket Mode, 프로덕션용 HTTP webhooks, 엔터프라이즈 환경을 위한 세밀한 접근 제어를 지원합니다.
+
+이 가이드는 Slack 앱 생성부터 채널 권한, 스레드 동작, 슬래시 명령, 멀티 워크스페이스 배포까지 모든 것을 다룹니다.
+
+## 작동 방식
+
+OpenClaw는 Slack API를 통해 두 가지 모드로 연결:
+
+- **Socket Mode**(권장): 실시간 WebSocket 연결, 퍼블릭 URL 불필요
+- **HTTP Mode**: Events API webhooks, 프로덕션 배포용
+
+두 모드 모두 DM, 채널, 스레드, 반응, 파일 업로드, 슬래시 명령 지원.
+
+## 사전 요구 사항
+
+시작하기 전에:
+
+- OpenClaw Gateway 설치 및 실행 중
+- 관리자 권한이 있는 Slack 워크스페이스
+- Slack의 채널과 DM 모델 이해
+
+## 빠른 시작 (Socket Mode)
+
+### 1단계: Slack 앱 생성
+
+1. [api.slack.com/apps](https://api.slack.com/apps) 방문
+2. **Create New App** → **From scratch** 클릭
+3. "OpenClaw"로 이름 지정하고 워크스페이스 선택
+
+### 2단계: Socket Mode 활성화
+
+1. **Settings → Socket Mode**로 이동
+2. **Enable Socket Mode** 켜기
+3. **Basic Information → App-Level Tokens**로 이동
+4. **Generate Token and Scopes** 클릭
+5. scope `connections:write` 추가
+6. **App Token** (`xapp-...`) 복사
+
+### 3단계: OAuth 권한 설정
+
+1. **OAuth & Permissions**로 이동
+2. 이 **Bot Token Scopes** 추가:
+   - `chat:write` — 메시지 전송
+   - `channels:history`, `channels:read` — 채널 읽기
+   - `im:history`, `im:read`, `im:write` — 다이렉트 메시지
+   - `users:read` — 사용자 정보
+   - `reactions:read`, `reactions:write` — 반응
+   - `app_mentions:read` — @멘션
+   - `commands` — 슬래시 명령
+3. **Install to Workspace** 클릭
+4. **Bot User OAuth Token** (`xoxb-...`) 복사
+
+### 4단계: 이벤트 구독
+
+1. **Event Subscriptions**로 이동
+2. **Enable Events** 켜기
+3. **Subscribe to bot events**에 추가:
+   - `message.channels`, `message.groups`, `message.im`, `message.mpim`
+   - `app_mention`
+   - `reaction_added`, `reaction_removed`
+
+### 5단계: OpenClaw 설정
+
+환경 변수로 토큰 설정:
+
+```bash
+export SLACK_APP_TOKEN="xapp-..."
+export SLACK_BOT_TOKEN="xoxb-..."
+```
+
+또는 `~/.openclaw/openclaw.json`에서:
+
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      appToken: "xapp-...",
+      botToken: "xoxb-...",
+    },
+  },
+}
+```
+
+### 6단계: 봇 초대
+
+채널에 OpenClaw 초대:
+
+```
+/invite @OpenClaw
+```
+
+## DM 접근 제어
+
+### 페어링 모드 (기본값, 안전)
+
+알 수 없는 발신자에게 페어링 코드 전송:
+
+```json5
+{
+  channels: {
+    slack: {
+      dm: {
+        policy: "pairing",
+      },
+    },
+  },
+}
+```
+
+**발신자 승인:**
+
+```bash
+openclaw pairing list slack
+openclaw pairing approve slack <CODE>
+```
+
+### 허용 목록 모드
+
+특정 사용자만 DM 가능:
+
+```json5
+{
+  channels: {
+    slack: {
+      dm: {
+        policy: "allowlist",
+        allowFrom: ["U123ABC", "@jane"],
+      },
+    },
+  },
+}
+```
+
+## 채널 설정
+
+### 그룹 정책
+
+봇이 접근할 수 있는 채널 제어:
+
+```json5
+{
+  channels: {
+    slack: {
+      groupPolicy: "allowlist",
+      channels: {
+        "#general": { allow: true, requireMention: true },
+        "#support": { allow: true, requireMention: false },
+      },
+    },
+  },
+}
+```
+
+## 응답 스레딩
+
+봇의 스레드 응답 제어:
+
+```json5
+{
+  channels: {
+    slack: {
+      replyToMode: "off", // "off" | "first" | "all"
+    },
+  },
+}
+```
+
+| 모드 | 동작 |
+|------|------|
+| `off` | 메인 채널에서 응답 (기본값) |
+| `first` | 첫 응답은 스레드, 이후는 채널 |
+| `all` | 모든 응답을 스레드에 |
+
+## 슬래시 명령
+
+```json5
+{
+  channels: {
+    slack: {
+      slashCommand: {
+        enabled: true,
+        name: "openclaw",
+        ephemeral: true,
+      },
+    },
+  },
+}
+```
+
+## 전체 설정 예제
+
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      appToken: "xapp-...",
+      botToken: "xoxb-...",
+      
+      dm: {
+        policy: "pairing",
+        allowFrom: ["U123ABC"],
+      },
+      
+      groupPolicy: "allowlist",
+      channels: {
+        "#general": { allow: true, requireMention: true },
+      },
+      
+      replyToMode: "first",
+      historyLimit: 50,
+      
+      actions: {
+        reactions: true,
+        messages: true,
+      },
+    },
+  },
+}
+```
+
+## CLI 명령어
+
+```bash
+# 상태 확인
+openclaw channels status --probe
+
+# 메시지 전송
+openclaw message send --channel slack --to "user:U123" --message "안녕하세요!"
+
+# 로그 보기
+openclaw channels logs --channel slack
+```
+
+## 문제 해결
+
+### 봇이 응답하지 않음
+
+1. 토큰이 올바른지 확인
+2. Socket Mode가 활성화되어 있는지 확인
+3. 봇이 채널에 초대되었는지 확인
+
+### "missing scope" 오류
+
+**OAuth & Permissions**에서 필요한 스코프를 추가하고 앱을 다시 설치.
+
+## 요약
+
+Slack 연동을 설정했습니다:
+
+- ✅ **Socket Mode** 또는 HTTP webhooks
+- ✅ **DM 정책** 접근 제어용
+- ✅ **채널 허용 목록** 멘션 제한 포함
+- ✅ **스레드** 설정
+- ✅ **슬래시 명령** 지원
+
+AI 어시스턴트가 이제 Slack에서 사용 가능합니다! 💼
