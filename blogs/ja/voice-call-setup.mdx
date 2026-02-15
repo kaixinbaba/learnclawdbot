@@ -57,25 +57,25 @@ openclaw status
 Twilio 設定を `openclaw.json` に追加します：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234", // あなたの Twilio 番号
           toNumber: "+15550005678",   // デフォルト受信者（オプション）
           
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             authToken: "your_auth_token_here",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## ステップ 3：Webhook のセットアップ
@@ -93,22 +93,22 @@ ngrok http 3334
 設定で公開 URL を指定します：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           publicUrl: "https://abc123.ngrok.app/voice/webhook",
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### オプション B：Tailscale Funnel（推奨）
@@ -122,25 +122,25 @@ openclaw voicecall expose --mode funnel
 `openclaw.json` で設定します：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          tailscale: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tailscale: {
             mode: "funnel",
             path: "/voice/webhook",
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### オプション C：VPS + リバースプロキシ
@@ -148,27 +148,27 @@ openclaw voicecall expose --mode funnel
 本番環境では nginx を使用した VPS を使用します：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           publicUrl: "https://voice.example.com/voice/webhook",
           
-          webhookSecurity: \{
+          webhookSecurity: {
             allowedHosts: ["voice.example.com"],
             trustedProxyIPs: ["100.64.0.1"],
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## ステップ 4：音声認識（STT）の設定
@@ -180,23 +180,23 @@ STT は着信音声をテキストに変換します。OpenClaw は自動フォ�
 Deepgram は優れた精度と速度を提供します：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "deepgram", model: "nova-3" \}],
-        providerOptions: \{
-          deepgram: \{
+        models: [{ provider: "deepgram", model: "nova-3" }],
+        providerOptions: {
+          deepgram: {
             detect_language: true,
             punctuate: true,
             smart_format: true,
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 API キーを設定します：
@@ -210,30 +210,30 @@ export DEEPGRAM_API_KEY="dg_xxxxxxxxxxxxxxxx"
 OpenAI 統合を使用する場合：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "openai", model: "gpt-4o-mini-transcribe" \}],
-      \},
-    \},
-  \},
-\}
+        models: [{ provider: "openai", model: "gpt-4o-mini-transcribe" }],
+      },
+    },
+  },
+}
 ```
 
 または高精度モデルを使用：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
-        models: [\{ provider: "openai", model: "gpt-4o-transcribe" \}],
-      \},
-    \},
-  \},
-\}
+{
+  tools: {
+    media: {
+      audio: {
+        models: [{ provider: "openai", model: "gpt-4o-transcribe" }],
+      },
+    },
+  },
+}
 ```
 
 ### オプション C：Groq（高速・低コスト）
@@ -241,16 +241,16 @@ OpenAI 統合を使用する場合：
 Groq は高速な Whisper 推論を提供します：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "groq", model: "whisper-large-v3-turbo" \}],
-      \},
-    \},
-  \},
-\}
+        models: [{ provider: "groq", model: "whisper-large-v3-turbo" }],
+      },
+    },
+  },
+}
 ```
 
 ### オプション D：ローカル Whisper CLI（オフライン）
@@ -258,23 +258,23 @@ Groq は高速な Whisper 推論を提供します：
 プライバシー重視の設定では、ローカル Whisper を使用：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         models: [
-          \{
+          {
             type: "cli",
             command: "whisper",
-            args: ["--model", "base", "\{\{MediaPath\}\}"],
+            args: ["--model", "base", "{{MediaPath}}"],
             timeoutSeconds: 45,
-          \},
+          },
         ],
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### マルチプロバイダーフォールバック
@@ -282,26 +282,26 @@ Groq は高速な Whisper 推論を提供します：
 耐障害性のために複数のプロバイダーを設定：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         maxBytes: 20971520,
         models: [
-          \{ provider: "openai", model: "gpt-4o-mini-transcribe" \},
-          \{ provider: "deepgram", model: "nova-3" \},
-          \{
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+          { provider: "deepgram", model: "nova-3" },
+          {
             type: "cli",
             command: "whisper",
-            args: ["--model", "base", "\{\{MediaPath\}\}"],
+            args: ["--model", "base", "{{MediaPath}}"],
             timeoutSeconds: 45,
-          \},
+          },
         ],
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ## ステップ 5：テキスト読み上げ（TTS）の設定
@@ -313,18 +313,18 @@ TTS は通話中に AI の応答を音声に変換します。Voice Call はコ�
 クリアで自然な音声：
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{
+      openai: {
         model: "gpt-4o-mini-tts",
         voice: "alloy", // 選択肢：alloy, echo, fable, onyx, nova, shimmer
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### オプション B：ElevenLabs（プレミアム音声）
@@ -332,24 +332,24 @@ TTS は通話中に AI の応答を音声に変換します。Voice Call はコ�
 超リアルな音声向け：
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "elevenlabs",
-      elevenlabs: \{
+      elevenlabs: {
         apiKey: "your_elevenlabs_key",
         voiceId: "pMsXgVXv3BLzUgSXRplE",
         modelId: "eleven_multilingual_v2",
-        voiceSettings: \{
+        voiceSettings: {
           stability: 0.5,
           similarityBoost: 0.75,
           speed: 1.0,
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 音声通話のみ TTS をオーバーライド
@@ -357,31 +357,31 @@ TTS は通話中に AI の応答を音声に変換します。Voice Call はコ�
 通話とチャットで異なる音声を使用：
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{ voice: "nova" \},
-    \},
-  \},
+      openai: { voice: "nova" },
+    },
+  },
   
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          tts: \{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tts: {
             provider: "elevenlabs",
-            elevenlabs: \{
+            elevenlabs: {
               voiceId: "pMsXgVXv3BLzUgSXRplE",
               modelId: "eleven_v3",
-            \},
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+            },
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 **重要**：音声通話では Edge TTS は**サポートされていません**（テレフォニーオーディオには PCM フォーマットが必要）。
@@ -391,19 +391,19 @@ TTS は通話中に AI の応答を音声に変換します。Voice Call はコ�
 デフォルトでは、着信通話は無効です。着信を許可するには：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           inboundPolicy: "allowlist",
           allowFrom: ["+15550001234", "+15550005678"],
           inboundGreeting: "こんにちは！AI アシスタントです。何かお手伝いできることはありますか？",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ## ステップ 7：メディアストリーミングを有効にする
@@ -411,20 +411,20 @@ TTS は通話中に AI の応答を音声に変換します。Voice Call はコ�
 リアルタイム音声対話のために、Twilio Media Streams を有効にします：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          streaming: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          streaming: {
             enabled: true,
             streamPath: "/voice/stream",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 完全な設定例
@@ -432,90 +432,90 @@ TTS は通話中に AI の応答を音声に変換します。Voice Call はコ�
 すべてを統合した完全な設定：
 
 ```json5
-\{
+{
   // STT 設定
-  tools: \{
-    media: \{
-      audio: \{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         maxBytes: 20971520,
         models: [
-          \{ provider: "deepgram", model: "nova-3" \},
-          \{ provider: "openai", model: "gpt-4o-mini-transcribe" \},
+          { provider: "deepgram", model: "nova-3" },
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
         ],
-        providerOptions: \{
-          deepgram: \{
+        providerOptions: {
+          deepgram: {
             detect_language: true,
             punctuate: true,
-          \},
-        \},
-      \},
-    \},
-  \},
+          },
+        },
+      },
+    },
+  },
   
   // TTS 設定
-  messages: \{
-    tts: \{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{
+      openai: {
         model: "gpt-4o-mini-tts",
         voice: "alloy",
-      \},
-    \},
-  \},
+      },
+    },
+  },
   
   // Voice Call プラグイン
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234",
           
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxx",
             authToken: "your_auth_token",
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
+          },
           
           publicUrl: "https://voice.example.com/voice/webhook",
           
-          webhookSecurity: \{
+          webhookSecurity: {
             allowedHosts: ["voice.example.com"],
-          \},
+          },
           
-          outbound: \{
+          outbound: {
             defaultMode: "conversation",
-          \},
+          },
           
           inboundPolicy: "allowlist",
           allowFrom: ["+15550001234"],
           inboundGreeting: "こんにちは！何かお手伝いできますか？",
           
-          streaming: \{
+          streaming: {
             enabled: true,
             streamPath: "/voice/stream",
-          \},
+          },
           
           // オプション：通話用 TTS オーバーライド
-          tts: \{
+          tts: {
             provider: "elevenlabs",
-            elevenlabs: \{
+            elevenlabs: {
               voiceId: "pMsXgVXv3BLzUgSXRplE",
               modelId: "eleven_multilingual_v2",
-            \},
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+            },
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 最初の通話をかける

@@ -57,25 +57,25 @@ openclaw status
 Добавьте конфигурацию Twilio в `openclaw.json`:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234", // Ваш номер Twilio
           toNumber: "+15550005678",   // Получатель по умолчанию (необязательно)
           
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             authToken: "your_auth_token_here",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## Шаг 3: Настройка вебхуков
@@ -93,22 +93,22 @@ ngrok http 3334
 Затем укажите публичный URL в конфигурации:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           publicUrl: "https://abc123.ngrok.app/voice/webhook",
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### Вариант B: Tailscale Funnel (Рекомендуется)
@@ -122,25 +122,25 @@ openclaw voicecall expose --mode funnel
 Настройте в `openclaw.json`:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          tailscale: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tailscale: {
             mode: "funnel",
             path: "/voice/webhook",
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### Вариант C: VPS с обратным прокси
@@ -148,27 +148,27 @@ openclaw voicecall expose --mode funnel
 Для продакшена используйте VPS с nginx:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           publicUrl: "https://voice.example.com/voice/webhook",
           
-          webhookSecurity: \{
+          webhookSecurity: {
             allowedHosts: ["voice.example.com"],
             trustedProxyIPs: ["100.64.0.1"],
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## Шаг 4: Настройка распознавания речи (STT)
@@ -180,23 +180,23 @@ STT преобразует входящую речь в текст. OpenClaw п�
 Deepgram предлагает отличную точность и скорость:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "deepgram", model: "nova-3" \}],
-        providerOptions: \{
-          deepgram: \{
+        models: [{ provider: "deepgram", model: "nova-3" }],
+        providerOptions: {
+          deepgram: {
             detect_language: true,
             punctuate: true,
             smart_format: true,
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 Установите API-ключ:
@@ -210,30 +210,30 @@ export DEEPGRAM_API_KEY="dg_xxxxxxxxxxxxxxxx"
 Для интеграции с OpenAI:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "openai", model: "gpt-4o-mini-transcribe" \}],
-      \},
-    \},
-  \},
-\}
+        models: [{ provider: "openai", model: "gpt-4o-mini-transcribe" }],
+      },
+    },
+  },
+}
 ```
 
 Или используйте модель с более высокой точностью:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
-        models: [\{ provider: "openai", model: "gpt-4o-transcribe" \}],
-      \},
-    \},
-  \},
-\}
+{
+  tools: {
+    media: {
+      audio: {
+        models: [{ provider: "openai", model: "gpt-4o-transcribe" }],
+      },
+    },
+  },
+}
 ```
 
 ### Вариант C: Groq (Быстро и доступно)
@@ -241,16 +241,16 @@ export DEEPGRAM_API_KEY="dg_xxxxxxxxxxxxxxxx"
 Groq предлагает быстрый инференс Whisper:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "groq", model: "whisper-large-v3-turbo" \}],
-      \},
-    \},
-  \},
-\}
+        models: [{ provider: "groq", model: "whisper-large-v3-turbo" }],
+      },
+    },
+  },
+}
 ```
 
 ### Вариант D: Локальный Whisper CLI (Офлайн)
@@ -258,23 +258,23 @@ Groq предлагает быстрый инференс Whisper:
 Для конфиденциальности используйте локальный Whisper:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         models: [
-          \{
+          {
             type: "cli",
             command: "whisper",
-            args: ["--model", "base", "\{\{MediaPath\}\}"],
+            args: ["--model", "base", "{{MediaPath}}"],
             timeoutSeconds: 45,
-          \},
+          },
         ],
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### Мультипровайдерное переключение
@@ -282,26 +282,26 @@ Groq предлагает быстрый инференс Whisper:
 Настройте несколько провайдеров для надёжности:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         maxBytes: 20971520,
         models: [
-          \{ provider: "openai", model: "gpt-4o-mini-transcribe" \},
-          \{ provider: "deepgram", model: "nova-3" \},
-          \{
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+          { provider: "deepgram", model: "nova-3" },
+          {
             type: "cli",
             command: "whisper",
-            args: ["--model", "base", "\{\{MediaPath\}\}"],
+            args: ["--model", "base", "{{MediaPath}}"],
             timeoutSeconds: 45,
-          \},
+          },
         ],
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ## Шаг 5: Настройка синтеза речи (TTS)
@@ -313,18 +313,18 @@ TTS преобразует ответы AI в речь во время звон�
 Чистые, естественные голоса:
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{
+      openai: {
         model: "gpt-4o-mini-tts",
         voice: "alloy", // Варианты: alloy, echo, fable, onyx, nova, shimmer
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### Вариант B: ElevenLabs (Премиум голоса)
@@ -332,24 +332,24 @@ TTS преобразует ответы AI в речь во время звон�
 Для сверхреалистичных голосов:
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "elevenlabs",
-      elevenlabs: \{
+      elevenlabs: {
         apiKey: "your_elevenlabs_key",
         voiceId: "pMsXgVXv3BLzUgSXRplE",
         modelId: "eleven_multilingual_v2",
-        voiceSettings: \{
+        voiceSettings: {
           stability: 0.5,
           similarityBoost: 0.75,
           speed: 1.0,
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ### Переопределение TTS только для звонков
@@ -357,31 +357,31 @@ TTS преобразует ответы AI в речь во время звон�
 Используйте разные голоса для звонков и чата:
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{ voice: "nova" \},
-    \},
-  \},
+      openai: { voice: "nova" },
+    },
+  },
   
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          tts: \{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tts: {
             provider: "elevenlabs",
-            elevenlabs: \{
+            elevenlabs: {
               voiceId: "pMsXgVXv3BLzUgSXRplE",
               modelId: "eleven_v3",
-            \},
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+            },
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 **Важно**: Edge TTS **не поддерживается** для голосовых звонков (телефония требует формат PCM).
@@ -391,19 +391,19 @@ TTS преобразует ответы AI в речь во время звон�
 По умолчанию входящие звонки отключены. Чтобы разрешить входящие:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           inboundPolicy: "allowlist",
           allowFrom: ["+15550001234", "+15550005678"],
           inboundGreeting: "Здравствуйте! Я ваш AI-ассистент. Чем могу помочь?",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ## Шаг 7: Включение медиа-стриминга
@@ -411,20 +411,20 @@ TTS преобразует ответы AI в речь во время звон�
 Для взаимодействия в реальном времени включите Twilio Media Streams:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          streaming: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          streaming: {
             enabled: true,
             streamPath: "/voice/stream",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## Полный пример конфигурации
@@ -432,90 +432,90 @@ TTS преобразует ответы AI в речь во время звон�
 Вот полная конфигурация, объединяющая всё вместе:
 
 ```json5
-\{
+{
   // Конфигурация STT
-  tools: \{
-    media: \{
-      audio: \{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         maxBytes: 20971520,
         models: [
-          \{ provider: "deepgram", model: "nova-3" \},
-          \{ provider: "openai", model: "gpt-4o-mini-transcribe" \},
+          { provider: "deepgram", model: "nova-3" },
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
         ],
-        providerOptions: \{
-          deepgram: \{
+        providerOptions: {
+          deepgram: {
             detect_language: true,
             punctuate: true,
-          \},
-        \},
-      \},
-    \},
-  \},
+          },
+        },
+      },
+    },
+  },
   
   // Конфигурация TTS
-  messages: \{
-    tts: \{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{
+      openai: {
         model: "gpt-4o-mini-tts",
         voice: "alloy",
-      \},
-    \},
-  \},
+      },
+    },
+  },
   
   // Плагин Voice Call
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234",
           
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxx",
             authToken: "your_auth_token",
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
+          },
           
           publicUrl: "https://voice.example.com/voice/webhook",
           
-          webhookSecurity: \{
+          webhookSecurity: {
             allowedHosts: ["voice.example.com"],
-          \},
+          },
           
-          outbound: \{
+          outbound: {
             defaultMode: "conversation",
-          \},
+          },
           
           inboundPolicy: "allowlist",
           allowFrom: ["+15550001234"],
           inboundGreeting: "Здравствуйте! Чем могу помочь?",
           
-          streaming: \{
+          streaming: {
             enabled: true,
             streamPath: "/voice/stream",
-          \},
+          },
           
           // Опционально: переопределение TTS для звонков
-          tts: \{
+          tts: {
             provider: "elevenlabs",
-            elevenlabs: \{
+            elevenlabs: {
               voiceId: "pMsXgVXv3BLzUgSXRplE",
               modelId: "eleven_multilingual_v2",
-            \},
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+            },
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## Совершите первый звонок

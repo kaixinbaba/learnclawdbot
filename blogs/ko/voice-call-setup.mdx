@@ -57,25 +57,25 @@ openclaw status
 Twilio 설정을 `openclaw.json`에 추가합니다:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234", // 귀하의 Twilio 번호
           toNumber: "+15550005678",   // 기본 수신자 (선택사항)
           
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             authToken: "your_auth_token_here",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 3단계: 웹훅 설정
@@ -93,22 +93,22 @@ ngrok http 3334
 설정에서 공개 URL을 지정합니다:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           publicUrl: "https://abc123.ngrok.app/voice/webhook",
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 옵션 B: Tailscale Funnel (권장)
@@ -122,25 +122,25 @@ openclaw voicecall expose --mode funnel
 `openclaw.json`에서 설정합니다:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          tailscale: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tailscale: {
             mode: "funnel",
             path: "/voice/webhook",
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 옵션 C: VPS + 리버스 프록시
@@ -148,27 +148,27 @@ openclaw voicecall expose --mode funnel
 프로덕션에서는 nginx를 사용한 VPS를 사용합니다:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           publicUrl: "https://voice.example.com/voice/webhook",
           
-          webhookSecurity: \{
+          webhookSecurity: {
             allowedHosts: ["voice.example.com"],
             trustedProxyIPs: ["100.64.0.1"],
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 4단계: 음성 인식(STT) 설정
@@ -180,23 +180,23 @@ STT는 수신 음성을 텍스트로 변환합니다. OpenClaw는 자동 폴백�
 Deepgram은 뛰어난 정확도와 속도를 제공합니다:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "deepgram", model: "nova-3" \}],
-        providerOptions: \{
-          deepgram: \{
+        models: [{ provider: "deepgram", model: "nova-3" }],
+        providerOptions: {
+          deepgram: {
             detect_language: true,
             punctuate: true,
             smart_format: true,
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 API 키를 설정합니다:
@@ -210,30 +210,30 @@ export DEEPGRAM_API_KEY="dg_xxxxxxxxxxxxxxxx"
 OpenAI 통합 사용:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "openai", model: "gpt-4o-mini-transcribe" \}],
-      \},
-    \},
-  \},
-\}
+        models: [{ provider: "openai", model: "gpt-4o-mini-transcribe" }],
+      },
+    },
+  },
+}
 ```
 
 또는 고정확도 모델 사용:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
-        models: [\{ provider: "openai", model: "gpt-4o-transcribe" \}],
-      \},
-    \},
-  \},
-\}
+{
+  tools: {
+    media: {
+      audio: {
+        models: [{ provider: "openai", model: "gpt-4o-transcribe" }],
+      },
+    },
+  },
+}
 ```
 
 ### 옵션 C: Groq (빠르고 저렴)
@@ -241,16 +241,16 @@ OpenAI 통합 사용:
 Groq은 빠른 Whisper 추론을 제공합니다:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "groq", model: "whisper-large-v3-turbo" \}],
-      \},
-    \},
-  \},
-\}
+        models: [{ provider: "groq", model: "whisper-large-v3-turbo" }],
+      },
+    },
+  },
+}
 ```
 
 ### 옵션 D: 로컬 Whisper CLI (오프라인)
@@ -258,23 +258,23 @@ Groq은 빠른 Whisper 추론을 제공합니다:
 프라이버시 중심 설정에서는 로컬 Whisper 사용:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         models: [
-          \{
+          {
             type: "cli",
             command: "whisper",
-            args: ["--model", "base", "\{\{MediaPath\}\}"],
+            args: ["--model", "base", "{{MediaPath}}"],
             timeoutSeconds: 45,
-          \},
+          },
         ],
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### 다중 제공업체 폴백
@@ -282,26 +282,26 @@ Groq은 빠른 Whisper 추론을 제공합니다:
 복원력을 위해 여러 제공업체 설정:
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         maxBytes: 20971520,
         models: [
-          \{ provider: "openai", model: "gpt-4o-mini-transcribe" \},
-          \{ provider: "deepgram", model: "nova-3" \},
-          \{
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+          { provider: "deepgram", model: "nova-3" },
+          {
             type: "cli",
             command: "whisper",
-            args: ["--model", "base", "\{\{MediaPath\}\}"],
+            args: ["--model", "base", "{{MediaPath}}"],
             timeoutSeconds: 45,
-          \},
+          },
         ],
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ## 5단계: 텍스트 음성 변환(TTS) 설정
@@ -313,18 +313,18 @@ TTS는 통화 중 AI의 응답을 음성으로 변환합니다. Voice Call은 �
 깨끗하고 자연스러운 음성:
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{
+      openai: {
         model: "gpt-4o-mini-tts",
         voice: "alloy", // 옵션: alloy, echo, fable, onyx, nova, shimmer
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### 옵션 B: ElevenLabs (프리미엄 음성)
@@ -332,24 +332,24 @@ TTS는 통화 중 AI의 응답을 음성으로 변환합니다. Voice Call은 �
 초현실적인 음성:
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "elevenlabs",
-      elevenlabs: \{
+      elevenlabs: {
         apiKey: "your_elevenlabs_key",
         voiceId: "pMsXgVXv3BLzUgSXRplE",
         modelId: "eleven_multilingual_v2",
-        voiceSettings: \{
+        voiceSettings: {
           stability: 0.5,
           similarityBoost: 0.75,
           speed: 1.0,
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 음성 통화에만 TTS 오버라이드
@@ -357,31 +357,31 @@ TTS는 통화 중 AI의 응답을 음성으로 변환합니다. Voice Call은 �
 통화와 채팅에 다른 음성 사용:
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{ voice: "nova" \},
-    \},
-  \},
+      openai: { voice: "nova" },
+    },
+  },
   
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          tts: \{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tts: {
             provider: "elevenlabs",
-            elevenlabs: \{
+            elevenlabs: {
               voiceId: "pMsXgVXv3BLzUgSXRplE",
               modelId: "eleven_v3",
-            \},
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+            },
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 **중요**: 음성 통화에서는 Edge TTS가 **지원되지 않습니다** (전화 오디오에는 PCM 형식이 필요).
@@ -391,19 +391,19 @@ TTS는 통화 중 AI의 응답을 음성으로 변환합니다. Voice Call은 �
 기본적으로 수신 전화는 비활성화되어 있습니다. 수신 전화를 허용하려면:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           inboundPolicy: "allowlist",
           allowFrom: ["+15550001234", "+15550005678"],
           inboundGreeting: "안녕하세요! AI 어시스턴트입니다. 무엇을 도와드릴까요?",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 7단계: 미디어 스트리밍 활성화
@@ -411,20 +411,20 @@ TTS는 통화 중 AI의 응답을 음성으로 변환합니다. Voice Call은 �
 실시간 음성 상호작용을 위해 Twilio Media Streams를 활성화합니다:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          streaming: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          streaming: {
             enabled: true,
             streamPath: "/voice/stream",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 전체 설정 예제
@@ -432,90 +432,90 @@ TTS는 통화 중 AI의 응답을 음성으로 변환합니다. Voice Call은 �
 모든 것을 통합한 전체 설정:
 
 ```json5
-\{
+{
   // STT 설정
-  tools: \{
-    media: \{
-      audio: \{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         maxBytes: 20971520,
         models: [
-          \{ provider: "deepgram", model: "nova-3" \},
-          \{ provider: "openai", model: "gpt-4o-mini-transcribe" \},
+          { provider: "deepgram", model: "nova-3" },
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
         ],
-        providerOptions: \{
-          deepgram: \{
+        providerOptions: {
+          deepgram: {
             detect_language: true,
             punctuate: true,
-          \},
-        \},
-      \},
-    \},
-  \},
+          },
+        },
+      },
+    },
+  },
   
   // TTS 설정
-  messages: \{
-    tts: \{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{
+      openai: {
         model: "gpt-4o-mini-tts",
         voice: "alloy",
-      \},
-    \},
-  \},
+      },
+    },
+  },
   
   // Voice Call 플러그인
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234",
           
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxx",
             authToken: "your_auth_token",
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
+          },
           
           publicUrl: "https://voice.example.com/voice/webhook",
           
-          webhookSecurity: \{
+          webhookSecurity: {
             allowedHosts: ["voice.example.com"],
-          \},
+          },
           
-          outbound: \{
+          outbound: {
             defaultMode: "conversation",
-          \},
+          },
           
           inboundPolicy: "allowlist",
           allowFrom: ["+15550001234"],
           inboundGreeting: "안녕하세요! 무엇을 도와드릴까요?",
           
-          streaming: \{
+          streaming: {
             enabled: true,
             streamPath: "/voice/stream",
-          \},
+          },
           
           // 선택사항: 통화용 TTS 오버라이드
-          tts: \{
+          tts: {
             provider: "elevenlabs",
-            elevenlabs: \{
+            elevenlabs: {
               voiceId: "pMsXgVXv3BLzUgSXRplE",
               modelId: "eleven_multilingual_v2",
-            \},
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+            },
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 첫 번째 전화 걸기

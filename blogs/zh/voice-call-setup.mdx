@@ -57,25 +57,25 @@ openclaw status
 将 Twilio 配置添加到你的 `openclaw.json`：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234", // 你的 Twilio 号码
           toNumber: "+15550005678",   // 默认接收方（可选）
           
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             authToken: "your_auth_token_here",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 第三步：设置 Webhooks
@@ -93,22 +93,22 @@ ngrok http 3334
 然后在配置中设置公开 URL：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           publicUrl: "https://abc123.ngrok.app/voice/webhook",
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 选项 B：Tailscale Funnel（推荐）
@@ -122,25 +122,25 @@ openclaw voicecall expose --mode funnel
 在 `openclaw.json` 中配置：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          tailscale: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tailscale: {
             mode: "funnel",
             path: "/voice/webhook",
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 选项 C：VPS + 反向代理
@@ -148,27 +148,27 @@ openclaw voicecall expose --mode funnel
 生产环境使用 VPS 配合 nginx：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           publicUrl: "https://voice.example.com/voice/webhook",
           
-          webhookSecurity: \{
+          webhookSecurity: {
             allowedHosts: ["voice.example.com"],
             trustedProxyIPs: ["100.64.0.1"],
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 第四步：配置语音转文字（STT）
@@ -180,23 +180,23 @@ STT 将来电语音转换为文字。OpenClaw 支持多个服务商，并自动�
 Deepgram 提供出色的准确性和速度：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "deepgram", model: "nova-3" \}],
-        providerOptions: \{
-          deepgram: \{
+        models: [{ provider: "deepgram", model: "nova-3" }],
+        providerOptions: {
+          deepgram: {
             detect_language: true,
             punctuate: true,
             smart_format: true,
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 设置你的 API 密钥：
@@ -210,30 +210,30 @@ export DEEPGRAM_API_KEY="dg_xxxxxxxxxxxxxxxx"
 使用 OpenAI 集成：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "openai", model: "gpt-4o-mini-transcribe" \}],
-      \},
-    \},
-  \},
-\}
+        models: [{ provider: "openai", model: "gpt-4o-mini-transcribe" }],
+      },
+    },
+  },
+}
 ```
 
 或使用更高准确度的模型：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
-        models: [\{ provider: "openai", model: "gpt-4o-transcribe" \}],
-      \},
-    \},
-  \},
-\}
+{
+  tools: {
+    media: {
+      audio: {
+        models: [{ provider: "openai", model: "gpt-4o-transcribe" }],
+      },
+    },
+  },
+}
 ```
 
 ### 选项 C：Groq（快速且实惠）
@@ -241,16 +241,16 @@ export DEEPGRAM_API_KEY="dg_xxxxxxxxxxxxxxxx"
 Groq 提供快速的 Whisper 推理：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
-        models: [\{ provider: "groq", model: "whisper-large-v3-turbo" \}],
-      \},
-    \},
-  \},
-\}
+        models: [{ provider: "groq", model: "whisper-large-v3-turbo" }],
+      },
+    },
+  },
+}
 ```
 
 ### 选项 D：本地 Whisper CLI（离线）
@@ -258,23 +258,23 @@ Groq 提供快速的 Whisper 推理：
 注重隐私的配置，使用本地 Whisper：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         models: [
-          \{
+          {
             type: "cli",
             command: "whisper",
-            args: ["--model", "base", "\{\{MediaPath\}\}"],
+            args: ["--model", "base", "{{MediaPath}}"],
             timeoutSeconds: 45,
-          \},
+          },
         ],
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### 多服务商降级
@@ -282,26 +282,26 @@ Groq 提供快速的 Whisper 推理：
 配置多个服务商以提高可靠性：
 
 ```json5
-\{
-  tools: \{
-    media: \{
-      audio: \{
+{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         maxBytes: 20971520,
         models: [
-          \{ provider: "openai", model: "gpt-4o-mini-transcribe" \},
-          \{ provider: "deepgram", model: "nova-3" \},
-          \{
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+          { provider: "deepgram", model: "nova-3" },
+          {
             type: "cli",
             command: "whisper",
-            args: ["--model", "base", "\{\{MediaPath\}\}"],
+            args: ["--model", "base", "{{MediaPath}}"],
             timeoutSeconds: 45,
-          \},
+          },
         ],
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ## 第五步：配置文字转语音（TTS）
@@ -313,18 +313,18 @@ TTS 在通话中将 AI 的回复转换为语音。Voice Call 使用核心的 `me
 清晰、自然的声音：
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{
+      openai: {
         model: "gpt-4o-mini-tts",
         voice: "alloy", // 选项：alloy, echo, fable, onyx, nova, shimmer
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### 选项 B：ElevenLabs（高级语音）
@@ -332,24 +332,24 @@ TTS 在通话中将 AI 的回复转换为语音。Voice Call 使用核心的 `me
 超逼真的声音：
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "elevenlabs",
-      elevenlabs: \{
+      elevenlabs: {
         apiKey: "your_elevenlabs_key",
         voiceId: "pMsXgVXv3BLzUgSXRplE",
         modelId: "eleven_multilingual_v2",
-        voiceSettings: \{
+        voiceSettings: {
           stability: 0.5,
           similarityBoost: 0.75,
           speed: 1.0,
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 仅为语音通话覆盖 TTS
@@ -357,31 +357,31 @@ TTS 在通话中将 AI 的回复转换为语音。Voice Call 使用核心的 `me
 保持通话和聊天使用不同的声音：
 
 ```json5
-\{
-  messages: \{
-    tts: \{
+{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{ voice: "nova" \},
-    \},
-  \},
+      openai: { voice: "nova" },
+    },
+  },
   
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          tts: \{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tts: {
             provider: "elevenlabs",
-            elevenlabs: \{
+            elevenlabs: {
               voiceId: "pMsXgVXv3BLzUgSXRplE",
               modelId: "eleven_v3",
-            \},
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+            },
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 **重要提示**：语音通话**不支持** Edge TTS（电话音频需要 PCM 格式）。
@@ -391,19 +391,19 @@ TTS 在通话中将 AI 的回复转换为语音。Voice Call 使用核心的 `me
 默认情况下，来电功能是禁用的。要允许接听来电：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
           inboundPolicy: "allowlist",
           allowFrom: ["+15550001234", "+15550005678"],
           inboundGreeting: "你好！我是你的 AI 助手。有什么可以帮你的吗？",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 第七步：启用媒体流
@@ -411,20 +411,20 @@ TTS 在通话中将 AI 的回复转换为语音。Voice Call 使用核心的 `me
 要实现实时语音交互，启用 Twilio Media Streams：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
-        config: \{
-          streaming: \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          streaming: {
             enabled: true,
             streamPath: "/voice/stream",
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 完整配置示例
@@ -432,90 +432,90 @@ TTS 在通话中将 AI 的回复转换为语音。Voice Call 使用核心的 `me
 这是一个整合所有内容的完整配置：
 
 ```json5
-\{
+{
   // STT 配置
-  tools: \{
-    media: \{
-      audio: \{
+  tools: {
+    media: {
+      audio: {
         enabled: true,
         maxBytes: 20971520,
         models: [
-          \{ provider: "deepgram", model: "nova-3" \},
-          \{ provider: "openai", model: "gpt-4o-mini-transcribe" \},
+          { provider: "deepgram", model: "nova-3" },
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
         ],
-        providerOptions: \{
-          deepgram: \{
+        providerOptions: {
+          deepgram: {
             detect_language: true,
             punctuate: true,
-          \},
-        \},
-      \},
-    \},
-  \},
+          },
+        },
+      },
+    },
+  },
   
   // TTS 配置
-  messages: \{
-    tts: \{
+  messages: {
+    tts: {
       auto: "always",
       provider: "openai",
-      openai: \{
+      openai: {
         model: "gpt-4o-mini-tts",
         voice: "alloy",
-      \},
-    \},
-  \},
+      },
+    },
+  },
   
   // Voice Call 插件
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234",
           
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxx",
             authToken: "your_auth_token",
-          \},
+          },
           
-          serve: \{
+          serve: {
             port: 3334,
             path: "/voice/webhook",
-          \},
+          },
           
           publicUrl: "https://voice.example.com/voice/webhook",
           
-          webhookSecurity: \{
+          webhookSecurity: {
             allowedHosts: ["voice.example.com"],
-          \},
+          },
           
-          outbound: \{
+          outbound: {
             defaultMode: "conversation",
-          \},
+          },
           
           inboundPolicy: "allowlist",
           allowFrom: ["+15550001234"],
           inboundGreeting: "你好！有什么可以帮你的吗？",
           
-          streaming: \{
+          streaming: {
             enabled: true,
             streamPath: "/voice/stream",
-          \},
+          },
           
           // 可选：为通话覆盖 TTS
-          tts: \{
+          tts: {
             provider: "elevenlabs",
-            elevenlabs: \{
+            elevenlabs: {
               voiceId: "pMsXgVXv3BLzUgSXRplE",
               modelId: "eleven_multilingual_v2",
-            \},
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+            },
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ## 拨打你的第一个电话
