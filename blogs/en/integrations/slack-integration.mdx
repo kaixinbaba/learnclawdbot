@@ -1,0 +1,599 @@
+---
+title: Slack Integration for OpenClaw - Complete Guide to Bots, Channels & Enterprise Setup
+description: Complete guide to connecting OpenClaw with Slack. Covers Socket Mode, HTTP webhooks, bot tokens, DM policies, channel allowlists, threading, slash commands, and enterprise multi-workspace setup.
+slug: /slack-integration
+tags: slack, integration, enterprise, workspace, channels, bot
+publishedAt: 2025-02-15
+status: published
+visibility: public
+featuredImageUrl: /images/features/slack-integration.webp
+---
+
+# Slack Integration for OpenClaw: Complete Setup Guide
+
+Bring your AI assistant into Slack and collaborate with it across channels, DMs, and threads. OpenClaw integrates deeply with Slack's workspace model — supporting Socket Mode for easy setup, HTTP webhooks for production, and fine-grained access controls for enterprise environments.
+
+This guide covers everything: from creating your Slack app to configuring channel permissions, threading behavior, slash commands, and multi-workspace deployments.
+
+## How It Works
+
+OpenClaw connects to Slack via the Slack API using either:
+
+- **Socket Mode** (recommended): Real-time WebSocket connection, no public URL needed
+- **HTTP Mode**: Events API webhooks for production deployments
+
+Both modes support DMs, channels, threads, reactions, file uploads, and slash commands.
+
+## Prerequisites
+
+Before you begin:
+
+- OpenClaw Gateway installed and running
+- Slack workspace with admin access (to create apps)
+- Understanding of Slack's channel vs DM model
+
+## Quick Start (Socket Mode)
+
+### Step 1: Create a Slack App
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps)
+2. Click **Create New App** → **From scratch**
+3. Name it "OpenClaw" and select your workspace
+
+### Step 2: Enable Socket Mode
+
+1. Go to **Settings → Socket Mode**
+2. Toggle **Enable Socket Mode** on
+3. Go to **Basic Information → App-Level Tokens**
+4. Click **Generate Token and Scopes**
+5. Add scope `connections:write`
+6. Copy the **App Token** (`xapp-...`)
+
+### Step 3: Configure OAuth & Permissions
+
+1. Go to **OAuth & Permissions**
+2. Add these **Bot Token Scopes**:
+   - `chat:write` — send messages
+   - `channels:history`, `channels:read` — read channels
+   - `groups:history`, `groups:read` — read private channels
+   - `im:history`, `im:read`, `im:write` — direct messages
+   - `mpim:history`, `mpim:read`, `mpim:write` — group DMs
+   - `users:read` — user info
+   - `reactions:read`, `reactions:write` — reactions
+   - `app_mentions:read` — @mentions
+   - `commands` — slash commands
+   - `files:read`, `files:write` — file handling
+3. Click **Install to Workspace**
+4. Copy the **Bot User OAuth Token** (`xoxb-...`)
+
+### Step 4: Subscribe to Events
+
+1. Go to **Event Subscriptions**
+2. Toggle **Enable Events** on
+3. Under **Subscribe to bot events**, add:
+   - `message.channels`, `message.groups`, `message.im`, `message.mpim`
+   - `app_mention`
+   - `reaction_added`, `reaction_removed`
+   - `member_joined_channel`, `member_left_channel`
+
+### Step 5: Enable App Home
+
+1. Go to **App Home**
+2. Enable **Messages Tab** (so users can DM the bot)
+
+### Step 6: Configure OpenClaw
+
+Set tokens via environment variables:
+
+```bash
+export SLACK_APP_TOKEN="xapp-..."
+export SLACK_BOT_TOKEN="xoxb-..."
+```
+
+Or in `~/.openclaw/openclaw.json`:
+
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      appToken: "xapp-...",
+      botToken: "xoxb-...",
+    },
+  },
+}
+```
+
+### Step 7: Invite the Bot
+
+Invite OpenClaw to channels:
+
+```
+/invite @OpenClaw
+```
+
+## HTTP Mode (Production)
+
+For server deployments with a public URL, use HTTP webhooks:
+
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      mode: "http",
+      botToken: "xoxb-...",
+      signingSecret: "your-signing-secret",
+      webhookPath: "/slack/events",
+    },
+  },
+}
+```
+
+In your Slack app:
+
+1. **Event Subscriptions** → Set Request URL to `https://your-server.com/slack/events`
+2. **Interactivity & Shortcuts** → Same URL
+3. **Slash Commands** → Same URL
+
+## DM Access Control
+
+### Pairing Mode (Default, Secure)
+
+Unknown DM senders receive a pairing code:
+
+```json5
+{
+  channels: {
+    slack: {
+      dm: {
+        policy: "pairing",
+      },
+    },
+  },
+}
+```
+
+**Approve senders:**
+
+```bash
+openclaw pairing list slack
+openclaw pairing approve slack <CODE>
+```
+
+### Allowlist Mode
+
+Only specific users can DM:
+
+```json5
+{
+  channels: {
+    slack: {
+      dm: {
+        policy: "allowlist",
+        allowFrom: ["U123ABC", "@jane", "jane@company.com"],
+      },
+    },
+  },
+}
+```
+
+Accepts user IDs, @handles, or emails.
+
+### Open Mode
+
+Allow anyone in the workspace to DM:
+
+```json5
+{
+  channels: {
+    slack: {
+      dm: {
+        policy: "open",
+        allowFrom: ["*"],
+      },
+    },
+  },
+}
+```
+
+## Channel Configuration
+
+### Group Policy
+
+Control which channels the bot can access:
+
+```json5
+{
+  channels: {
+    slack: {
+      groupPolicy: "allowlist", // or "open", "disabled"
+      channels: {
+        "#general": { allow: true, requireMention: true },
+        "#support": { allow: true, requireMention: false },
+        "C123ABC": { allow: true },
+      },
+    },
+  },
+}
+```
+
+### Per-Channel Options
+
+```json5
+{
+  channels: {
+    slack: {
+      channels: {
+        "#engineering": {
+          allow: true,
+          requireMention: true,       // Only respond when @mentioned
+          users: ["U123", "U456"],    // User allowlist for this channel
+          skills: ["search", "docs"], // Limit available skills
+          systemPrompt: "Keep answers technical and concise.",
+          allowBots: false,           // Ignore bot messages (default)
+        },
+      },
+    },
+  },
+}
+```
+
+## Reply Threading
+
+Control how the bot threads replies:
+
+```json5
+{
+  channels: {
+    slack: {
+      replyToMode: "off", // "off" | "first" | "all"
+    },
+  },
+}
+```
+
+| Mode | Behavior |
+|------|----------|
+| `off` | Reply in main channel (default) |
+| `first` | First reply threads, subsequent in channel |
+| `all` | All replies go to thread |
+
+### Per-Chat-Type Threading
+
+```json5
+{
+  channels: {
+    slack: {
+      replyToMode: "off",
+      replyToModeByChatType: {
+        direct: "all",    // Thread all DMs
+        group: "first",   // Thread first MPIM reply
+        channel: "off",   // Keep channels in main
+      },
+    },
+  },
+}
+```
+
+## Slash Commands
+
+### Built-in Command
+
+Configure a `/openclaw` slash command:
+
+```json5
+{
+  channels: {
+    slack: {
+      slashCommand: {
+        enabled: true,
+        name: "openclaw",
+        ephemeral: true, // Only visible to the user
+      },
+    },
+  },
+}
+```
+
+In your Slack app, create a slash command pointing to your webhook URL.
+
+### Native Commands
+
+Enable OpenClaw's built-in commands as Slack slash commands:
+
+```json5
+{
+  channels: {
+    slack: {
+      commands: {
+        native: true,
+      },
+    },
+  },
+}
+```
+
+## User Token (Optional)
+
+For enhanced read access, add a user token:
+
+```json5
+{
+  channels: {
+    slack: {
+      botToken: "xoxb-...",
+      appToken: "xapp-...",
+      userToken: "xoxp-...",
+      userTokenReadOnly: true, // Default: only use for reads
+    },
+  },
+}
+```
+
+User tokens enable:
+- Search across workspace
+- Access to more conversation history
+- Enhanced member info
+
+**Security note:** User tokens have the installing user's permissions. Keep `userTokenReadOnly: true` unless you need writes.
+
+## History Context
+
+Control how much channel history the bot sees:
+
+```json5
+{
+  channels: {
+    slack: {
+      historyLimit: 50, // Recent messages for context
+    },
+  },
+}
+```
+
+## Reactions & Actions
+
+### Auto-Reactions
+
+Use global ack reactions:
+
+```json5
+{
+  messages: {
+    ackReaction: "👀",
+    ackReactionScope: "group-mentions",
+    removeAckAfterReply: true,
+  },
+}
+```
+
+### Tool Actions
+
+Gate what the bot can do:
+
+```json5
+{
+  channels: {
+    slack: {
+      actions: {
+        reactions: true,  // React to messages
+        messages: true,   // Read/send/edit/delete
+        pins: true,       // Pin/unpin
+        memberInfo: true, // Get user info
+        emojiList: true,  // List custom emoji
+      },
+    },
+  },
+}
+```
+
+## Multi-Workspace Setup
+
+Run multiple Slack workspaces:
+
+```json5
+{
+  channels: {
+    slack: {
+      accounts: {
+        main: {
+          appToken: "xapp-main-...",
+          botToken: "xoxb-main-...",
+        },
+        enterprise: {
+          appToken: "xapp-ent-...",
+          botToken: "xoxb-ent-...",
+          mode: "http",
+          webhookPath: "/slack/enterprise",
+        },
+      },
+    },
+  },
+}
+```
+
+## App Manifest
+
+Use this manifest to quickly create a properly configured Slack app:
+
+```json
+{
+  "display_information": {
+    "name": "OpenClaw",
+    "description": "AI assistant for Slack"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "OpenClaw",
+      "always_online": false
+    },
+    "app_home": {
+      "messages_tab_enabled": true,
+      "messages_tab_read_only_enabled": false
+    },
+    "slash_commands": [
+      {
+        "command": "/openclaw",
+        "description": "Send a message to OpenClaw",
+        "should_escape": false
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "chat:write",
+        "channels:history", "channels:read",
+        "groups:history", "groups:read",
+        "im:history", "im:read", "im:write",
+        "mpim:history", "mpim:read", "mpim:write",
+        "users:read",
+        "app_mentions:read",
+        "reactions:read", "reactions:write",
+        "pins:read", "pins:write",
+        "emoji:read",
+        "commands",
+        "files:read", "files:write"
+      ]
+    }
+  },
+  "settings": {
+    "socket_mode_enabled": true,
+    "event_subscriptions": {
+      "bot_events": [
+        "app_mention",
+        "message.channels", "message.groups",
+        "message.im", "message.mpim",
+        "reaction_added", "reaction_removed"
+      ]
+    }
+  }
+}
+```
+
+## Complete Configuration Example
+
+```json5
+{
+  channels: {
+    slack: {
+      enabled: true,
+      appToken: "xapp-...",
+      botToken: "xoxb-...",
+      
+      // DM settings
+      dm: {
+        policy: "pairing",
+        allowFrom: ["U123ABC"],
+      },
+      
+      // Channel settings
+      groupPolicy: "allowlist",
+      channels: {
+        "#general": { allow: true, requireMention: true },
+        "#support": { allow: true, requireMention: false },
+      },
+      
+      // Threading
+      replyToMode: "first",
+      replyToModeByChatType: {
+        direct: "all",
+      },
+      
+      // History
+      historyLimit: 50,
+      
+      // Actions
+      actions: {
+        reactions: true,
+        messages: true,
+        pins: true,
+      },
+      
+      // Limits
+      textChunkLimit: 4000,
+      mediaMaxMb: 20,
+    },
+  },
+}
+```
+
+## CLI Commands
+
+```bash
+# Check status
+openclaw channels status --probe
+
+# Send a message
+openclaw message send --channel slack --to "user:U123" --message "Hello!"
+openclaw message send --channel slack --to "channel:C123" --message "Hello team!"
+
+# View logs
+openclaw channels logs --channel slack
+
+# Resolve names to IDs
+openclaw channels resolve --channel slack "#general" "@jane"
+```
+
+## Troubleshooting
+
+### Bot not responding
+
+1. Check tokens are correct (`SLACK_APP_TOKEN`, `SLACK_BOT_TOKEN`)
+2. Verify Socket Mode is enabled in Slack app settings
+3. Ensure bot is invited to the channel
+4. Check `groupPolicy` allows the channel
+
+### "Missing scope" errors
+
+Add the required scope in **OAuth & Permissions** and reinstall the app.
+
+### Messages not received
+
+1. Check **Event Subscriptions** has the right events
+2. For HTTP mode, verify webhook URL is reachable
+3. Check `dm.policy` and `dm.allowFrom` for DMs
+
+### Bot responds to itself
+
+Set `allowBots: false` (default) to ignore bot messages:
+
+```json5
+{
+  channels: {
+    slack: {
+      channels: {
+        "#general": { allowBots: false },
+      },
+    },
+  },
+}
+```
+
+## Security Best Practices
+
+- Use **pairing mode** for DMs in public workspaces
+- Set **channel allowlists** to limit bot access
+- Keep **userTokenReadOnly: true** unless you need writes
+- Use **requireMention: true** in busy channels
+- Review **actions** gates to limit bot capabilities
+
+## Next Steps
+
+- Configure [multi-agent routing](/blog/multi-agent-setup) per channel
+- Set up [cron jobs](/blog/cron-job-best-practices) for Slack notifications
+- Add [voice calls](/blog/voice-call-setup) for phone integration
+
+## Summary
+
+You've configured Slack integration with:
+
+- ✅ **Socket Mode** or HTTP webhooks
+- ✅ **DM policies** for access control
+- ✅ **Channel allowlists** with mention gating
+- ✅ **Threading** configuration
+- ✅ **Slash commands** support
+- ✅ **Multi-workspace** setup
+
+Your AI assistant is now available in Slack! 💼
