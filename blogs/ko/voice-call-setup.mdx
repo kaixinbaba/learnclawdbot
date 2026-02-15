@@ -1,0 +1,585 @@
+---
+title: OpenClaw 음성 통화 설정 - Twilio, STT 및 TTS 완전 가이드
+description: Twilio 통합, Deepgram/Whisper 음성 인식(STT), OpenAI/ElevenLabs 텍스트 음성 변환(TTS)을 포함한 OpenClaw 음성 통화 설정 완전 가이드.
+slug: /voice-call-setup
+tags: 음성통화, twilio, tts, stt, deepgram, elevenlabs, openai, 전화
+publishedAt: 2025-02-15
+status: published
+visibility: public
+featuredImageUrl: /images/features/voice-call-setup.webp
+---
+
+# OpenClaw 음성 통화 설정: Twilio, STT 및 TTS 완전 가이드
+
+AI 어시스턴트가 전화를 걸고 받을 수 있게 하고 싶으신가요? OpenClaw의 Voice Call 플러그인은 Twilio를 통해 실제 음성 대화를 가능하게 하며, 전문급 음성 인식(STT)과 텍스트 음성 변환(TTS) 통합을 제공합니다.
+
+이 가이드에서는 플러그인 설치부터 Twilio 웹훅 설정, STT 제공업체(Deepgram, OpenAI Whisper, Groq), TTS 음성(OpenAI, ElevenLabs) 설정까지 전체 과정을 안내합니다.
+
+## 사전 요구 사항
+
+시작하기 전에 다음을 준비하세요:
+
+- OpenClaw Gateway 실행 중 (v1.0+)
+- 전화번호가 있는 Twilio 계정
+- 선택한 STT/TTS 제공업체의 API 키
+- 공개적으로 접근 가능한 웹훅 URL (ngrok, Tailscale 또는 VPS를 통해)
+
+## 1단계: Voice Call 플러그인 설치
+
+Voice Call 플러그인은 Gateway 프로세스 내에서 실행됩니다. OpenClaw CLI로 설치합니다:
+
+```bash
+openclaw plugins install @openclaw/voice-call
+```
+
+설치 후 Gateway를 재시작합니다:
+
+```bash
+openclaw gateway restart
+```
+
+플러그인이 로드되었는지 확인합니다:
+
+```bash
+openclaw status
+```
+
+활성 플러그인에 `voice-call`이 표시되어야 합니다.
+
+## 2단계: Twilio 설정
+
+먼저 [Twilio 콘솔](https://console.twilio.com)에서 인증 정보를 가져옵니다:
+
+- **Account SID**: 대시보드에서 확인
+- **Auth Token**: 대시보드에서 확인
+- **전화번호**: 음성 기능이 있는 Twilio 번호
+
+Twilio 설정을 `openclaw.json`에 추가합니다:
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        enabled: true,
+        config: {
+          provider: "twilio",
+          fromNumber: "+15550001234", // 귀하의 Twilio 번호
+          toNumber: "+15550005678",   // 기본 수신자 (선택사항)
+          
+          twilio: {
+            accountSid: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            authToken: "your_auth_token_here",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+## 3단계: 웹훅 설정
+
+Twilio가 통화 이벤트를 전달하려면 OpenClaw 인스턴스에 접근할 수 있어야 합니다. 세 가지 옵션이 있습니다:
+
+### 옵션 A: ngrok (개발용)
+
+로컬 개발에는 ngrok을 사용합니다:
+
+```bash
+ngrok http 3334
+```
+
+설정에서 공개 URL을 지정합니다:
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          publicUrl: "https://abc123.ngrok.app/voice/webhook",
+          
+          serve: {
+            port: 3334,
+            path: "/voice/webhook",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+### 옵션 B: Tailscale Funnel (권장)
+
+Tailscale Funnel은 안정적이고 안전한 엔드포인트를 제공합니다:
+
+```bash
+openclaw voicecall expose --mode funnel
+```
+
+`openclaw.json`에서 설정합니다:
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tailscale: {
+            mode: "funnel",
+            path: "/voice/webhook",
+          },
+          
+          serve: {
+            port: 3334,
+            path: "/voice/webhook",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+### 옵션 C: VPS + 리버스 프록시
+
+프로덕션에서는 nginx를 사용한 VPS를 사용합니다:
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          publicUrl: "https://voice.example.com/voice/webhook",
+          
+          webhookSecurity: {
+            allowedHosts: ["voice.example.com"],
+            trustedProxyIPs: ["100.64.0.1"],
+          },
+          
+          serve: {
+            port: 3334,
+            path: "/voice/webhook",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+## 4단계: 음성 인식(STT) 설정
+
+STT는 수신 음성을 텍스트로 변환합니다. OpenClaw는 자동 폴백으로 여러 제공업체를 지원합니다.
+
+### 옵션 A: Deepgram (권장)
+
+Deepgram은 뛰어난 정확도와 속도를 제공합니다:
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [{ provider: "deepgram", model: "nova-3" }],
+        providerOptions: {
+          deepgram: {
+            detect_language: true,
+            punctuate: true,
+            smart_format: true,
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+API 키를 설정합니다:
+
+```bash
+export DEEPGRAM_API_KEY="dg_xxxxxxxxxxxxxxxx"
+```
+
+### 옵션 B: OpenAI Whisper
+
+OpenAI 통합 사용:
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [{ provider: "openai", model: "gpt-4o-mini-transcribe" }],
+      },
+    },
+  },
+}
+```
+
+또는 고정확도 모델 사용:
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        models: [{ provider: "openai", model: "gpt-4o-transcribe" }],
+      },
+    },
+  },
+}
+```
+
+### 옵션 C: Groq (빠르고 저렴)
+
+Groq은 빠른 Whisper 추론을 제공합니다:
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [{ provider: "groq", model: "whisper-large-v3-turbo" }],
+      },
+    },
+  },
+}
+```
+
+### 옵션 D: 로컬 Whisper CLI (오프라인)
+
+프라이버시 중심 설정에서는 로컬 Whisper 사용:
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [
+          {
+            type: "cli",
+            command: "whisper",
+            args: ["--model", "base", "{{MediaPath}}"],
+            timeoutSeconds: 45,
+          },
+        ],
+      },
+    },
+  },
+}
+```
+
+### 다중 제공업체 폴백
+
+복원력을 위해 여러 제공업체 설정:
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        maxBytes: 20971520,
+        models: [
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+          { provider: "deepgram", model: "nova-3" },
+          {
+            type: "cli",
+            command: "whisper",
+            args: ["--model", "base", "{{MediaPath}}"],
+            timeoutSeconds: 45,
+          },
+        ],
+      },
+    },
+  },
+}
+```
+
+## 5단계: 텍스트 음성 변환(TTS) 설정
+
+TTS는 통화 중 AI의 응답을 음성으로 변환합니다. Voice Call은 코어 `messages.tts` 설정을 사용하며, 선택적으로 오버라이드할 수 있습니다.
+
+### 옵션 A: OpenAI TTS
+
+깨끗하고 자연스러운 음성:
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "openai",
+      openai: {
+        model: "gpt-4o-mini-tts",
+        voice: "alloy", // 옵션: alloy, echo, fable, onyx, nova, shimmer
+      },
+    },
+  },
+}
+```
+
+### 옵션 B: ElevenLabs (프리미엄 음성)
+
+초현실적인 음성:
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "elevenlabs",
+      elevenlabs: {
+        apiKey: "your_elevenlabs_key",
+        voiceId: "pMsXgVXv3BLzUgSXRplE",
+        modelId: "eleven_multilingual_v2",
+        voiceSettings: {
+          stability: 0.5,
+          similarityBoost: 0.75,
+          speed: 1.0,
+        },
+      },
+    },
+  },
+}
+```
+
+### 음성 통화에만 TTS 오버라이드
+
+통화와 채팅에 다른 음성 사용:
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "openai",
+      openai: { voice: "nova" },
+    },
+  },
+  
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tts: {
+            provider: "elevenlabs",
+            elevenlabs: {
+              voiceId: "pMsXgVXv3BLzUgSXRplE",
+              modelId: "eleven_v3",
+            },
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+**중요**: 음성 통화에서는 Edge TTS가 **지원되지 않습니다** (전화 오디오에는 PCM 형식이 필요).
+
+## 6단계: 수신 전화 활성화
+
+기본적으로 수신 전화는 비활성화되어 있습니다. 수신 전화를 허용하려면:
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          inboundPolicy: "allowlist",
+          allowFrom: ["+15550001234", "+15550005678"],
+          inboundGreeting: "안녕하세요! AI 어시스턴트입니다. 무엇을 도와드릴까요?",
+        },
+      },
+    },
+  },
+}
+```
+
+## 7단계: 미디어 스트리밍 활성화
+
+실시간 음성 상호작용을 위해 Twilio Media Streams를 활성화합니다:
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          streaming: {
+            enabled: true,
+            streamPath: "/voice/stream",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+## 전체 설정 예제
+
+모든 것을 통합한 전체 설정:
+
+```json5
+{
+  // STT 설정
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        maxBytes: 20971520,
+        models: [
+          { provider: "deepgram", model: "nova-3" },
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+        ],
+        providerOptions: {
+          deepgram: {
+            detect_language: true,
+            punctuate: true,
+          },
+        },
+      },
+    },
+  },
+  
+  // TTS 설정
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "openai",
+      openai: {
+        model: "gpt-4o-mini-tts",
+        voice: "alloy",
+      },
+    },
+  },
+  
+  // Voice Call 플러그인
+  plugins: {
+    entries: {
+      "voice-call": {
+        enabled: true,
+        config: {
+          provider: "twilio",
+          fromNumber: "+15550001234",
+          
+          twilio: {
+            accountSid: "ACxxxxxxxx",
+            authToken: "your_auth_token",
+          },
+          
+          serve: {
+            port: 3334,
+            path: "/voice/webhook",
+          },
+          
+          publicUrl: "https://voice.example.com/voice/webhook",
+          
+          webhookSecurity: {
+            allowedHosts: ["voice.example.com"],
+          },
+          
+          outbound: {
+            defaultMode: "conversation",
+          },
+          
+          inboundPolicy: "allowlist",
+          allowFrom: ["+15550001234"],
+          inboundGreeting: "안녕하세요! 무엇을 도와드릴까요?",
+          
+          streaming: {
+            enabled: true,
+            streamPath: "/voice/stream",
+          },
+          
+          // 선택사항: 통화용 TTS 오버라이드
+          tts: {
+            provider: "elevenlabs",
+            elevenlabs: {
+              voiceId: "pMsXgVXv3BLzUgSXRplE",
+              modelId: "eleven_multilingual_v2",
+            },
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+## 첫 번째 전화 걸기
+
+CLI로 설정을 테스트합니다:
+
+```bash
+# 발신 전화
+openclaw voicecall call --to "+15555550123" --message "안녕하세요! OpenClaw에서 테스트 전화입니다."
+
+# 통화 상태 확인
+openclaw voicecall status --call-id <call-id>
+
+# 실시간 통화 모니터링
+openclaw voicecall tail
+```
+
+또는 대화에서 에이전트 도구 사용:
+
+```
+사용자: 김철수에게 전화해서 내일 회의 리마인드해줘.
+Agent: [voice_call 도구로 전화 시작]
+```
+
+## 문제 해결
+
+### 웹훅이 이벤트를 받지 못함
+
+1. `publicUrl`이 인터넷에서 접근 가능한지 확인
+2. Twilio 서명 검증이 통과하는지 확인
+3. ngrok의 경우 URL이 정확히 일치하는지 확인 (후행 슬래시 주의)
+
+### 오디오 품질이 좋지 않음
+
+1. OpenAI 또는 ElevenLabs를 사용 중인지 확인 (Edge TTS가 아님)
+2. TTS 제공업체까지의 네트워크 지연 확인
+3. 실시간 상호작용을 위해 미디어 스트리밍 활성화
+
+### STT가 작동하지 않음
+
+1. 제공업체 API 키가 올바르게 설정되었는지 확인
+2. `tools.media.audio.enabled: true` 확인
+3. 폴백 체인 시도: Deepgram → OpenAI → Groq → 로컬 Whisper
+
+### 통화가 즉시 끊김
+
+1. Twilio 콘솔에서 오류 로그 확인
+2. 웹훅이 유효한 TwiML을 반환하는지 확인
+3. Twilio 번호에 음성 기능이 있는지 확인
+
+## 다음 단계
+
+- 컨텍스트 유지를 위한 [다중 턴 대화](/blog/multi-agent-setup) 설정
+- cron 작업으로 [예약 통화](/blog/cron-job-best-practices) 설정
+- 대체 제공업체 탐색: Telnyx, Plivo
+
+## 요약
+
+OpenClaw에서 음성 통화를 설정했습니다:
+
+- ✅ **Twilio**로 전화 인프라
+- ✅ **STT**는 Deepgram, OpenAI Whisper 또는 Groq 경유
+- ✅ **TTS**는 OpenAI 또는 ElevenLabs 경유
+- ✅ **웹훅**으로 실시간 통화 처리
+- ✅ **수신 정책**으로 전화 수신
+
+AI 어시스턴트가 이제 전화로 대화할 수 있습니다! 🎉

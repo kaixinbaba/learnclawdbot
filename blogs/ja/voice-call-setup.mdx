@@ -1,0 +1,585 @@
+---
+title: OpenClaw 音声通話設定 - Twilio、STT、TTS 完全ガイド
+description: OpenClaw での Twilio 音声通話、Deepgram/Whisper による音声認識 (STT)、OpenAI/ElevenLabs によるテキスト読み上げ (TTS) の完全設定ガイド。
+slug: /voice-call-setup
+tags: 音声通話, twilio, tts, stt, deepgram, elevenlabs, openai, テレフォニー
+publishedAt: 2025-02-15
+status: published
+visibility: public
+featuredImageUrl: /images/features/voice-call-setup.webp
+---
+
+# OpenClaw 音声通話設定：Twilio、STT、TTS 完全ガイド
+
+AI アシスタントに電話をかけたり受けたりさせたいですか？OpenClaw の Voice Call プラグインは、Twilio を通じて実際の音声会話を可能にし、プロフェッショナルグレードの音声認識 (STT) とテキスト読み上げ (TTS) を統合しています。
+
+このガイドでは、プラグインのインストールから Twilio Webhook の設定、STT プロバイダー（Deepgram、OpenAI Whisper、Groq）、TTS 音声（OpenAI、ElevenLabs）まで、完全なセットアップを説明します。
+
+## 前提条件
+
+始める前に、以下を準備してください：
+
+- OpenClaw Gateway が稼働中（v1.0+）
+- 電話番号を持つ Twilio アカウント
+- 選択した STT/TTS プロバイダーの API キー
+- 公開アクセス可能な Webhook URL（ngrok、Tailscale、または VPS 経由）
+
+## ステップ 1：Voice Call プラグインのインストール
+
+Voice Call プラグインは Gateway プロセス内で動作します。OpenClaw CLI でインストールします：
+
+```bash
+openclaw plugins install @openclaw/voice-call
+```
+
+インストール後、Gateway を再起動します：
+
+```bash
+openclaw gateway restart
+```
+
+プラグインがロードされたことを確認します：
+
+```bash
+openclaw status
+```
+
+アクティブなプラグインに `voice-call` が表示されるはずです。
+
+## ステップ 2：Twilio の設定
+
+まず、[Twilio コンソール](https://console.twilio.com)から認証情報を取得します：
+
+- **Account SID**：ダッシュボードで確認
+- **Auth Token**：ダッシュボードで確認
+- **電話番号**：音声機能を持つ Twilio 番号
+
+Twilio 設定を `openclaw.json` に追加します：
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        enabled: true,
+        config: {
+          provider: "twilio",
+          fromNumber: "+15550001234", // あなたの Twilio 番号
+          toNumber: "+15550005678",   // デフォルト受信者（オプション）
+          
+          twilio: {
+            accountSid: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            authToken: "your_auth_token_here",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+## ステップ 3：Webhook のセットアップ
+
+Twilio が通話イベントを配信するには、OpenClaw インスタンスに到達できる必要があります。3 つのオプションがあります：
+
+### オプション A：ngrok（開発環境）
+
+ローカル開発には ngrok を使用します：
+
+```bash
+ngrok http 3334
+```
+
+設定で公開 URL を指定します：
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          publicUrl: "https://abc123.ngrok.app/voice/webhook",
+          
+          serve: {
+            port: 3334,
+            path: "/voice/webhook",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+### オプション B：Tailscale Funnel（推奨）
+
+Tailscale Funnel は安定したセキュアなエンドポイントを提供します：
+
+```bash
+openclaw voicecall expose --mode funnel
+```
+
+`openclaw.json` で設定します：
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tailscale: {
+            mode: "funnel",
+            path: "/voice/webhook",
+          },
+          
+          serve: {
+            port: 3334,
+            path: "/voice/webhook",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+### オプション C：VPS + リバースプロキシ
+
+本番環境では nginx を使用した VPS を使用します：
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          publicUrl: "https://voice.example.com/voice/webhook",
+          
+          webhookSecurity: {
+            allowedHosts: ["voice.example.com"],
+            trustedProxyIPs: ["100.64.0.1"],
+          },
+          
+          serve: {
+            port: 3334,
+            path: "/voice/webhook",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+## ステップ 4：音声認識（STT）の設定
+
+STT は着信音声をテキストに変換します。OpenClaw は自動フォールバック付きで複数のプロバイダーをサポートしています。
+
+### オプション A：Deepgram（推奨）
+
+Deepgram は優れた精度と速度を提供します：
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [{ provider: "deepgram", model: "nova-3" }],
+        providerOptions: {
+          deepgram: {
+            detect_language: true,
+            punctuate: true,
+            smart_format: true,
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+API キーを設定します：
+
+```bash
+export DEEPGRAM_API_KEY="dg_xxxxxxxxxxxxxxxx"
+```
+
+### オプション B：OpenAI Whisper
+
+OpenAI 統合を使用する場合：
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [{ provider: "openai", model: "gpt-4o-mini-transcribe" }],
+      },
+    },
+  },
+}
+```
+
+または高精度モデルを使用：
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        models: [{ provider: "openai", model: "gpt-4o-transcribe" }],
+      },
+    },
+  },
+}
+```
+
+### オプション C：Groq（高速・低コスト）
+
+Groq は高速な Whisper 推論を提供します：
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [{ provider: "groq", model: "whisper-large-v3-turbo" }],
+      },
+    },
+  },
+}
+```
+
+### オプション D：ローカル Whisper CLI（オフライン）
+
+プライバシー重視の設定では、ローカル Whisper を使用：
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        models: [
+          {
+            type: "cli",
+            command: "whisper",
+            args: ["--model", "base", "{{MediaPath}}"],
+            timeoutSeconds: 45,
+          },
+        ],
+      },
+    },
+  },
+}
+```
+
+### マルチプロバイダーフォールバック
+
+耐障害性のために複数のプロバイダーを設定：
+
+```json5
+{
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        maxBytes: 20971520,
+        models: [
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+          { provider: "deepgram", model: "nova-3" },
+          {
+            type: "cli",
+            command: "whisper",
+            args: ["--model", "base", "{{MediaPath}}"],
+            timeoutSeconds: 45,
+          },
+        ],
+      },
+    },
+  },
+}
+```
+
+## ステップ 5：テキスト読み上げ（TTS）の設定
+
+TTS は通話中に AI の応答を音声に変換します。Voice Call はコアの `messages.tts` 設定を使用し、オプションでオーバーライドできます。
+
+### オプション A：OpenAI TTS
+
+クリアで自然な音声：
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "openai",
+      openai: {
+        model: "gpt-4o-mini-tts",
+        voice: "alloy", // 選択肢：alloy, echo, fable, onyx, nova, shimmer
+      },
+    },
+  },
+}
+```
+
+### オプション B：ElevenLabs（プレミアム音声）
+
+超リアルな音声向け：
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "elevenlabs",
+      elevenlabs: {
+        apiKey: "your_elevenlabs_key",
+        voiceId: "pMsXgVXv3BLzUgSXRplE",
+        modelId: "eleven_multilingual_v2",
+        voiceSettings: {
+          stability: 0.5,
+          similarityBoost: 0.75,
+          speed: 1.0,
+        },
+      },
+    },
+  },
+}
+```
+
+### 音声通話のみ TTS をオーバーライド
+
+通話とチャットで異なる音声を使用：
+
+```json5
+{
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "openai",
+      openai: { voice: "nova" },
+    },
+  },
+  
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          tts: {
+            provider: "elevenlabs",
+            elevenlabs: {
+              voiceId: "pMsXgVXv3BLzUgSXRplE",
+              modelId: "eleven_v3",
+            },
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+**重要**：音声通話では Edge TTS は**サポートされていません**（テレフォニーオーディオには PCM フォーマットが必要）。
+
+## ステップ 6：着信通話を有効にする
+
+デフォルトでは、着信通話は無効です。着信を許可するには：
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          inboundPolicy: "allowlist",
+          allowFrom: ["+15550001234", "+15550005678"],
+          inboundGreeting: "こんにちは！AI アシスタントです。何かお手伝いできることはありますか？",
+        },
+      },
+    },
+  },
+}
+```
+
+## ステップ 7：メディアストリーミングを有効にする
+
+リアルタイム音声対話のために、Twilio Media Streams を有効にします：
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          streaming: {
+            enabled: true,
+            streamPath: "/voice/stream",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+## 完全な設定例
+
+すべてを統合した完全な設定：
+
+```json5
+{
+  // STT 設定
+  tools: {
+    media: {
+      audio: {
+        enabled: true,
+        maxBytes: 20971520,
+        models: [
+          { provider: "deepgram", model: "nova-3" },
+          { provider: "openai", model: "gpt-4o-mini-transcribe" },
+        ],
+        providerOptions: {
+          deepgram: {
+            detect_language: true,
+            punctuate: true,
+          },
+        },
+      },
+    },
+  },
+  
+  // TTS 設定
+  messages: {
+    tts: {
+      auto: "always",
+      provider: "openai",
+      openai: {
+        model: "gpt-4o-mini-tts",
+        voice: "alloy",
+      },
+    },
+  },
+  
+  // Voice Call プラグイン
+  plugins: {
+    entries: {
+      "voice-call": {
+        enabled: true,
+        config: {
+          provider: "twilio",
+          fromNumber: "+15550001234",
+          
+          twilio: {
+            accountSid: "ACxxxxxxxx",
+            authToken: "your_auth_token",
+          },
+          
+          serve: {
+            port: 3334,
+            path: "/voice/webhook",
+          },
+          
+          publicUrl: "https://voice.example.com/voice/webhook",
+          
+          webhookSecurity: {
+            allowedHosts: ["voice.example.com"],
+          },
+          
+          outbound: {
+            defaultMode: "conversation",
+          },
+          
+          inboundPolicy: "allowlist",
+          allowFrom: ["+15550001234"],
+          inboundGreeting: "こんにちは！何かお手伝いできますか？",
+          
+          streaming: {
+            enabled: true,
+            streamPath: "/voice/stream",
+          },
+          
+          // オプション：通話用 TTS オーバーライド
+          tts: {
+            provider: "elevenlabs",
+            elevenlabs: {
+              voiceId: "pMsXgVXv3BLzUgSXRplE",
+              modelId: "eleven_multilingual_v2",
+            },
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+## 最初の通話をかける
+
+CLI で設定をテストします：
+
+```bash
+# 発信通話
+openclaw voicecall call --to "+15555550123" --message "こんにちは！OpenClaw からのテストです。"
+
+# 通話状態を確認
+openclaw voicecall status --call-id <call-id>
+
+# ライブ通話を監視
+openclaw voicecall tail
+```
+
+または会話でエージェントツールを使用：
+
+```
+あなた：田中さんに電話して、明日の会議をリマインドして。
+Agent：[voice_call ツールで通話を開始]
+```
+
+## トラブルシューティング
+
+### Webhook がイベントを受信しない
+
+1. `publicUrl` がインターネットからアクセス可能か確認
+2. Twilio 署名検証が通過しているか確認
+3. ngrok の場合、URL が完全に一致していることを確認（末尾スラッシュに注意）
+
+### 音声品質が悪い
+
+1. OpenAI または ElevenLabs を使用していることを確認（Edge TTS ではなく）
+2. TTS プロバイダーへのネットワーク遅延を確認
+3. リアルタイム対話のためにメディアストリーミングを有効に
+
+### STT が動作しない
+
+1. プロバイダー API キーが正しく設定されているか確認
+2. `tools.media.audio.enabled: true` を確認
+3. フォールバックチェーンを試す：Deepgram → OpenAI → Groq → ローカル Whisper
+
+### 通話がすぐに切断される
+
+1. Twilio コンソールでエラーログを確認
+2. Webhook が有効な TwiML を返していることを確認
+3. Twilio 番号に音声機能があることを確認
+
+## 次のステップ
+
+- コンテキスト保持のための[マルチターン会話](/blog/multi-agent-setup)を設定
+- cron ジョブで[スケジュール通話](/blog/cron-job-best-practices)を設定
+- 代替プロバイダーを探索：Telnyx、Plivo
+
+## まとめ
+
+OpenClaw で音声通話を設定しました：
+
+- ✅ **Twilio** でテレフォニーインフラ
+- ✅ **STT** は Deepgram、OpenAI Whisper、または Groq 経由
+- ✅ **TTS** は OpenAI または ElevenLabs 経由
+- ✅ **Webhooks** でリアルタイム通話処理
+- ✅ **着信ポリシー** で通話受信
+
+AI アシスタントが電話で話せるようになりました！🎉
