@@ -1,0 +1,386 @@
+---
+title: "Feishu/Lark를 OpenClaw AI 봇과 통합하는 방법"
+description: "OpenClaw AI 어시스턴트를 Feishu(중국) 및 Lark(국제) 엔터프라이즈 메시징 플랫폼에 연결하는 완전한 가이드. 중국 엔터프라이즈 협업을 위한 설정, 구성 및 고급 기능을 알아보세요."
+slug: /feishu-lark-integration
+tags: Feishu, Lark, Enterprise, Integration, Chinese Market, WebSocket, AI Bot
+publishedAt: 2026-02-16
+status: published
+visibility: public
+featuredImageUrl: /images/features/feishu-lark-integration.webp
+---
+
+# Feishu/Lark를 OpenClaw AI 봇과 통합하는 방법
+
+Feishu(飞书)와 Lark는 중국 및 글로벌 기업에서 팀 협업을 위해 널리 사용되는 엔터프라이즈 메시징 플랫폼입니다. 이 가이드는 WebSocket 기반 이벤트 구독을 사용하여 OpenClaw AI 어시스턴트를 Feishu/Lark에 연결하고 기업 채팅 환경에서 원활한 AI 상호작용을 활성화하는 방법을 보여줍니다.
+
+## Feishu와 Lark의 차이점은?
+
+- **Feishu(飞书)**: 중국 기업을 위한 중국 버전. 플랫폼: `https://open.feishu.cn`
+- **Lark**: 전 세계적으로 사용되는 국제 버전. 플랫폼: `https://open.larksuite.com`
+
+둘 다 동일한 API 아키텍처를 사용하지만 OpenClaw에서 올바른 도메인을 구성해야 합니다.
+
+---
+
+## 전제 조건
+
+시작하기 전에 다음을 확인하세요:
+
+- OpenClaw가 설치되어 실행 중
+- 엔터프라이즈 앱을 생성할 수 있는 관리자 권한이 있는 Feishu/Lark 계정
+- 터미널/명령줄에 대한 기본적인 지식
+
+---
+
+## 1단계: Feishu 플러그인 설치
+
+먼저 OpenClaw 공식 Feishu 플러그인을 설치합니다:
+
+```bash
+openclaw plugins install @openclaw/feishu
+```
+
+git 저장소에서 실행하는 경우:
+
+```bash
+openclaw plugins install ./extensions/feishu
+```
+
+---
+
+## 2단계: Feishu/Lark 앱 생성
+
+### 1. 개발자 플랫폼 열기
+
+지역에 따라 적절한 플랫폼을 방문하세요:
+
+- **Feishu(중국)**: [https://open.feishu.cn/app](https://open.feishu.cn/app)
+- **Lark(국제)**: [https://open.larksuite.com/app](https://open.larksuite.com/app)
+
+계정으로 로그인합니다.
+
+### 2. 엔터프라이즈 앱 생성
+
+1. **엔터프라이즈 앱 생성** 클릭
+2. 앱 이름 및 설명 입력
+3. 앱 아이콘 선택
+
+### 3. 자격 증명 복사
+
+**자격 증명 및 기본 정보**에서 다음을 복사합니다:
+
+- **App ID**(형식: `cli_xxx`)
+- **App Secret**
+
+⚠️ **중요**: App Secret을 비공개로 유지하고 버전 관리에 커밋하지 마세요.
+
+### 4. 권한 구성
+
+**권한** 페이지에서 **일괄 가져오기**를 클릭하고 다음 JSON을 붙여넣습니다:
+
+```json
+\{
+  "scopes": \{
+    "tenant": [
+      "aily:file:read",
+      "aily:file:write",
+      "application:application.app_message_stats.overview:readonly",
+      "application:application:self_manage",
+      "application:bot.menu:write",
+      "contact:user.employee_id:readonly",
+      "corehr:file:download",
+      "event:ip_list",
+      "im:chat.access_event.bot_p2p_chat:read",
+      "im:chat.members:bot_access",
+      "im:message",
+      "im:message.group_at_msg:readonly",
+      "im:message.p2p_msg:readonly",
+      "im:message:readonly",
+      "im:message:send_as_bot",
+      "im:resource"
+    ],
+    "user": [
+      "aily:file:read",
+      "aily:file:write",
+      "im:chat.access_event.bot_p2p_chat:read"
+    ]
+  \}
+\}
+```
+
+이렇게 하면 봇이 메시지를 보내고 받고, 파일에 액세스하고, 봇 기능을 관리하는 데 필요한 모든 권한이 부여됩니다.
+
+### 5. 봇 기능 활성화
+
+**앱 기능** > **봇**에서:
+
+1. 봇 기능 활성화
+2. 봇 이름 설정
+
+### 6. 이벤트 구독 구성
+
+⚠️ **중요**: 이벤트 구독을 설정하기 전에 다음을 확인하세요:
+
+1. OpenClaw에 Feishu 채널을 추가했는지(3단계 참조)
+2. OpenClaw 게이트웨이가 실행 중인지(`openclaw gateway status`)
+
+**이벤트 구독**에서:
+
+1. **긴 연결을 사용하여 이벤트 수신**(WebSocket 모드) 선택
+2. 이벤트 추가: `im.message.receive_v1`
+
+⚠️ 게이트웨이가 실행되지 않으면 WebSocket 연결 설정이 실패합니다.
+
+### 7. 앱 게시
+
+1. **버전 관리 및 릴리스**에서 버전 생성
+2. 검토를 위해 제출하고 게시
+3. 관리자 승인 대기(엔터프라이즈 앱은 일반적으로 자동 승인)
+
+---
+
+## 3단계: OpenClaw 구성
+
+### 방법 1: 대화형 설정(권장)
+
+채널 설정 마법사 실행:
+
+```bash
+openclaw channels add
+```
+
+**Feishu**를 선택하고 메시지가 표시되면 App ID와 App Secret을 입력합니다.
+
+### 방법 2: 수동 구성
+
+`~/.openclaw/openclaw.json` 편집:
+
+```json5
+\{
+  channels: \{
+    feishu: \{
+      enabled: true,
+      dmPolicy: "pairing",
+      accounts: \{
+        main: \{
+          appId: "cli_xxx",
+          appSecret: "xxx",
+          botName: "My AI Assistant",
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+### Lark(국제) 사용 시
+
+Feishu 대신 Lark를 사용하는 경우 `domain` 설정을 추가합니다:
+
+```json5
+\{
+  channels: \{
+    feishu: \{
+      domain: "lark",
+      accounts: \{
+        main: \{
+          appId: "cli_xxx",
+          appSecret: "xxx",
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+---
+
+## 4단계: 시작 및 테스트
+
+### 1. 게이트웨이 시작
+
+```bash
+openclaw gateway
+```
+
+게이트웨이 상태 확인:
+
+```bash
+openclaw gateway status
+```
+
+### 2. 테스트 메시지 보내기
+
+Feishu/Lark에서 봇을 찾아 메시지를 보냅니다.
+
+### 3. 페어링 승인
+
+기본적으로 봇은 보안을 위해 페어링 모드를 사용합니다. 새 사용자가 봇에 메시지를 보내면 페어링 코드를 받습니다.
+
+페어링 승인:
+
+```bash
+openclaw pairing list feishu
+openclaw pairing approve feishu <코드>
+```
+
+승인 후 봇과 정상적으로 대화할 수 있습니다.
+
+---
+
+## 고급 기능
+
+### 그룹 채팅 구성
+
+**기본 동작**: 그룹 채팅에서 봇은 응답하려면 @멘션이 필요합니다.
+
+특정 그룹에서 @멘션 없이 봇이 응답하도록 허용하려면:
+
+```json5
+\{
+  channels: \{
+    feishu: \{
+      groups: \{
+        oc_xxx: \{ requireMention: false \},
+      \},
+    \},
+  \},
+\}
+```
+
+**그룹 ID 가져오기**: @멘션과 함께 그룹에서 메시지를 보낸 다음 로그를 확인합니다:
+
+```bash
+openclaw logs --follow
+```
+
+`chat_id`(형식: `oc_xxx`)를 찾습니다.
+
+### 액세스 제어 정책
+
+**DM 정책**(`dmPolicy`):
+
+- `"pairing"`(기본값): 새 사용자는 관리자 승인 필요
+- `"allowlist"`: 특정 사용자만 채팅 가능
+- `"open"`: 모든 사용자 허용(allowFrom에 `"*"` 필요)
+- `"disabled"`: DM 비활성화
+
+**그룹 정책**(`groupPolicy`):
+
+- `"open"`(기본값): 그룹의 모든 사용자 허용
+- `"allowlist"`: `groupAllowFrom`의 특정 사용자만
+- `"disabled"`: 그룹 메시지 비활성화
+
+허용 목록 구성 예:
+
+```json5
+\{
+  channels: \{
+    feishu: \{
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["ou_xxx", "ou_yyy"],
+    \},
+  \},
+\}
+```
+
+### 다중 계정
+
+여러 Feishu/Lark 봇을 관리할 수 있습니다:
+
+```json5
+\{
+  channels: \{
+    feishu: \{
+      accounts: \{
+        main: \{
+          appId: "cli_xxx",
+          appSecret: "xxx",
+          botName: "기본 봇",
+        \},
+        backup: \{
+          appId: "cli_yyy",
+          appSecret: "yyy",
+          botName: "백업 봇",
+          enabled: false,
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+---
+
+## 문제 해결
+
+### 그룹에서 봇이 응답하지 않음
+
+1. 봇이 그룹에 추가되었는지 확인
+2. 봇을 @멘션했는지 확인(기본 동작)
+3. `groupPolicy`가 `"disabled"`로 설정되지 않았는지 확인
+4. 로그 확인: `openclaw logs --follow`
+
+### 봇이 메시지를 수신하지 않음
+
+1. 앱이 게시되고 승인되었는지 확인
+2. 이벤트 구독에 `im.message.receive_v1`이 포함되어 있는지 확인
+3. **긴 연결**(WebSocket)이 활성화되어 있는지 확인
+4. 모든 권한이 부여되었는지 확인
+5. 게이트웨이가 실행 중인지 확인: `openclaw gateway status`
+6. 로그 확인: `openclaw logs --follow`
+
+### App Secret 유출
+
+1. Feishu/Lark 오픈 플랫폼에서 App Secret 재설정
+2. OpenClaw 구성에서 App Secret 업데이트
+3. 게이트웨이 재시작: `openclaw gateway restart`
+
+### 메시지 전송 실패
+
+1. 앱에 `im:message:send_as_bot` 권한이 있는지 확인
+2. 앱이 게시되었는지 확인
+3. 자세한 오류 메시지는 로그 확인
+
+---
+
+## 일반 명령어
+
+| 명령어    | 설명             |
+| --------- | ---------------- |
+| `/status` | 봇 상태 표시     |
+| `/reset`  | 세션 재설정      |
+| `/model`  | 모델 표시/전환   |
+
+---
+
+## 지원되는 메시지 유형
+
+**수신**:
+- ✅ 텍스트
+- ✅ 이미지
+- ✅ 파일
+- ✅ 오디오
+- ✅ 비디오
+- ✅ 스티커
+
+**전송**:
+- ✅ 텍스트
+- ✅ 이미지
+- ✅ 파일
+- ✅ 오디오
+- ⚠️ 서식 있는 텍스트(부분 지원)
+
+---
+
+## 요약
+
+OpenClaw를 Feishu/Lark와 성공적으로 통합했습니다! 이 설정을 통해 팀은 중국 기반 Feishu 또는 국제 Lark 버전을 사용하든 엔터프라이즈 메시징 플랫폼에서 AI와 직접 상호작용할 수 있습니다.
+
+**주요 사항**:
+- Feishu와 Lark는 동일한 API를 사용하며 도메인만 다름
+- WebSocket 모드는 공개 웹훅 URL이 필요 없음
+- 페어링 모드는 엔터프라이즈 사용을 위한 안전한 액세스 제어 제공
+- DM 및 그룹 채팅 모두 유연한 정책으로 완전히 지원
+
+자세한 구성 옵션은 [공식 OpenClaw 문서](https://docs.openclaw.ai)를 확인하세요.
