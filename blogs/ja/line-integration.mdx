@@ -1,0 +1,465 @@
+---
+title: "LINEメッセージングをAIチャットボットに統合する方法"
+description: "OpenClaw AIエージェントをLINE Messaging APIに接続するステップバイステップガイド。Webhook設定、認証、リッチメッセージサポートで、LINEユーザー向けのインテリジェントなチャット自動化を実現します。"
+slug: "line-integration"
+tags: ["LINE", "統合", "メッセージング", "チャットボット", "AI"]
+publishedAt: "2026-02-16"
+status: "published"
+visibility: "public"
+featuredImageUrl: "/images/features/line-integration.webp"
+---
+
+# LINEメッセージングをAIチャットボットに統合する方法
+
+LINEはアジアで最も人気のあるメッセージングプラットフォームの1つで、日本、台湾、タイ、インドネシアで月間2億人以上のアクティブユーザーを抱えています。AIチャットボットをLINEと統合することで、この膨大なオーディエンスにインテリジェントで自動化された会話でリーチできます。
+
+このガイドでは、OpenClaw AIエージェントをLINE Messaging APIに接続し、チャットボットがダイレクトメッセージ、グループチャット、メディア共有、リッチインタラクティブメッセージを処理できるようにする方法を学びます。
+
+## 得られるもの
+
+この統合を完了すると、AIアシスタントは以下のことができるようになります:
+
+- **LINEユーザーにリアルタイムで応答**し、インテリジェントな会話を実現
+- **グループチャット**とダイレクトメッセージをシームレスに処理
+- 画像、動画、位置情報を含む**メディアを共有**
+- LINEのFlex MessageとテンプレートフォーマットでÙ**リッチメッセージを送信**
+- より良いユーザーエクスペリエンスのために**クイックリプライを提供**
+- 単一のOpenClawインスタンスから**複数のLINEアカウントをサポート**
+
+## 前提条件
+
+始める前に、以下を確認してください:
+
+1. **OpenClawがインストールされ実行中** - まだOpenClawをインストールしていない場合は、[インストールガイド](/docs/getting-started)に従ってください。
+2. **LINE Developersアカウント** - [LINE Developers Console](https://developers.line.biz/console/)でサインアップしてください。
+3. **HTTPSエンドポイント** - LINE WebhookにはHTTPSが必要です。リバースプロキシ(nginx、Caddy)またはトンネルサービス(ngrok、Cloudflare Tunnel)を使用してください。
+4. **Gatewayアクセス** - OpenClaw gatewayがインターネットからアクセス可能であることを確認してください。
+
+## ステップ1: LINEプラグインをインストール
+
+OpenClawはメッセージングチャネル用のプラグインアーキテクチャを使用します。LINEプラグインをインストールします:
+
+```bash
+openclaw plugins install @openclaw/line
+```
+
+gitリポジトリからOpenClawを実行している場合は、ローカルバージョンをインストールできます:
+
+```bash
+openclaw plugins install ./extensions/line
+```
+
+## ステップ2: LINE Messaging APIチャネルを作成
+
+1. **LINE Developers Consoleにログイン**  
+   [https://developers.line.biz/console/](https://developers.line.biz/console/)にアクセスし、LINEアカウントでサインインします。
+
+2. **Providerを作成**  
+   まだProviderがない場合は作成してください。Providerは会社やサービスを表します。
+
+3. **Messaging APIチャネルを追加**  
+   - **新しいチャネルを作成**をクリック
+   - チャネルタイプとして**Messaging API**を選択
+   - 必要な情報を入力:
+     - チャネル名(例: "私のAIアシスタント")
+     - チャネル説明
+     - カテゴリとサブカテゴリ
+     - メールアドレス
+   - 利用規約に同意し、**作成**をクリック
+
+4. **認証情報を取得**  
+   チャネルを作成したら、**基本設定**と**Messaging API**タブに移動して以下を見つけます:
+   - **Channel access token** - 「発行」をクリックして長期トークンを生成
+   - **Channel secret** - 基本設定タブで確認
+
+   これらの認証情報は安全に保管してください - OpenClaw設定に必要です。
+
+5. **Webhookを有効化**  
+   **Messaging API**タブで:
+   - **Webhookを使用**をオンに切り替え
+   - Webhook URLを設定(次のステップで設定します)
+   - AIがすべてのやり取りを処理できるようにしたい場合は、**応答メッセージ**と**あいさつメッセージ**を無効にします
+
+## ステップ3: Webhook URLを設定
+
+LINEは受信メッセージをOpenClaw gatewayに送信する必要があります。デフォルトのWebhookパスは:
+
+```
+https://your-gateway-domain.com/line/webhook
+```
+
+`your-gateway-domain.com`を実際のgatewayドメインまたはIPアドレスに置き換えてください。
+
+**重要:** LINEはHTTPSを必要とします。ローカルでテストしている場合は、トンネルサービスを使用してください:
+
+```bash
+# ngrokを使用
+ngrok http 3100
+
+# Cloudflare Tunnelを使用
+cloudflared tunnel --url http://localhost:3100
+```
+
+HTTPSエンドポイントでLINE Developers ConsoleのWebhook URLを更新してください。
+
+## ステップ4: OpenClawを設定
+
+OpenClaw設定ファイル(通常は `~/.openclaw/config.json5` またはワークスペース内の `config.json5`)にLINEチャネル設定を追加します:
+
+### 最小設定
+
+```json5
+\{
+  channels: \{
+    line: \{
+      enabled: true,
+      channelAccessToken: "YOUR_CHANNEL_ACCESS_TOKEN",
+      channelSecret: "YOUR_CHANNEL_SECRET",
+      dmPolicy: "pairing",
+    \},
+  \},
+\}
+```
+
+### 環境変数の使用
+
+セキュリティ向上のため、環境変数を使用します:
+
+```bash
+export LINE_CHANNEL_ACCESS_TOKEN="your_channel_access_token_here"
+export LINE_CHANNEL_SECRET="your_channel_secret_here"
+```
+
+次に、設定でそれらを参照します:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      enabled: true,
+      // TokenとsecretはEnv変数から読み取られます
+      dmPolicy: "pairing",
+    \},
+  \},
+\}
+```
+
+### トークンファイルの使用
+
+本番デプロイの場合、認証情報をファイルに保存します:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      enabled: true,
+      tokenFile: "/secure/path/line-token.txt",
+      secretFile: "/secure/path/line-secret.txt",
+      dmPolicy: "pairing",
+    \},
+  \},
+\}
+```
+
+### 複数のLINEアカウント
+
+1つのOpenClawインスタンスから複数のLINEチャネルを管理できます:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      accounts: \{
+        marketing: \{
+          channelAccessToken: "MARKETING_TOKEN",
+          channelSecret: "MARKETING_SECRET",
+          webhookPath: "/line/marketing",
+        \},
+        support: \{
+          channelAccessToken: "SUPPORT_TOKEN",
+          channelSecret: "SUPPORT_SECRET",
+          webhookPath: "/line/support",
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+LINEコンソールのWebhook URLをカスタムパスに合わせて更新するのを忘れないでください!
+
+## ステップ5: アクセス制御を設定
+
+LINE統合は、ボットと対話できるユーザーを制御するための複数のアクセスポリシーをサポートしています:
+
+### ペアリングモード(推奨)
+
+これはデフォルトで最も安全なオプションです。新しいユーザーはチャットする前に承認される必要があります:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      dmPolicy: "pairing",
+    \},
+  \},
+\}
+```
+
+新しいユーザーがボットにメッセージを送ると、ペアリングコードを受け取ります。以下のコマンドで承認します:
+
+```bash
+# 保留中のペアリングリクエストをリスト
+openclaw pairing list line
+
+# ユーザーを承認
+openclaw pairing approve line <CODE>
+```
+
+### 許可リストモード
+
+指定されたLINEユーザーIDのみがボットと対話できます:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      dmPolicy: "allowlist",
+      allowFrom: [
+        "U1234567890abcdef1234567890abcdef",
+        "Uabcdef1234567890abcdef1234567890",
+      ],
+    \},
+  \},
+\}
+```
+
+### オープンモード
+
+誰でもボットにメッセージを送信できます(慎重に使用してください):
+
+```json5
+\{
+  channels: \{
+    line: \{
+      dmPolicy: "open",
+    \},
+  \},
+\}
+```
+
+### グループチャットポリシー
+
+LINEグループチャットのアクセスを個別に設定します:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      groupPolicy: "allowlist",
+      groupAllowFrom: [
+        "U1234567890abcdef1234567890abcdef", // ボットをグループに追加できるユーザー
+      ],
+      groups: \{
+        "C1234567890abcdef1234567890abcdef": \{
+          // グループごとのオーバーライド
+          allowFrom: ["Uabcdef1234567890abcdef1234567890"],
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+**注:** LINE IDは大文字小文字を区別し、以下のパターンに従います:
+- ユーザーID: `U` + 32文字の16進数
+- グループID: `C` + 32文字の16進数
+- ルームID: `R` + 32文字の16進数
+
+## ステップ6: 再起動とテスト
+
+設定を適用するためにOpenClaw gatewayを再起動します:
+
+```bash
+openclaw gateway restart
+```
+
+統合をテストします:
+
+1. **ボットを友達に追加** - LINE Developers ConsoleでQRコードをスキャンするか、LINE IDで検索
+2. **テストメッセージを送信** - ボットに「こんにちは」または任意のメッセージを入力
+3. **応答を確認** - ペアリングが有効な場合、最初にペアリングコードを受け取ります
+
+Webhook イベントのgatewayログを監視します:
+
+```bash
+openclaw gateway logs -f
+```
+
+受信したLINE Webhookイベントと送信された応答が表示されるはずです。
+
+## 高度な機能
+
+### Flex Cardsでリッチメッセージ
+
+LINEはFlex Messagesと呼ばれる強力なリッチメッセージをサポートしています。`channelData`を使用してインタラクティブカードを送信します:
+
+```json5
+\{
+  text: "注文ステータスはこちら",
+  channelData: \{
+    line: \{
+      flexMessage: \{
+        altText: "注文ステータスカード",
+        contents: \{
+          type: "bubble",
+          body: \{
+            type: "box",
+            layout: "vertical",
+            contents: [
+              \{
+                type: "text",
+                text: "注文 #12345",
+                weight: "bold",
+                size: "xl",
+              \},
+              \{
+                type: "text",
+                text: "ステータス: 発送済み",
+                color: "#00B900",
+              \},
+            ],
+          \},
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+### クイックリプライ
+
+より良いUXのためにクイックリプライボタンを提供します:
+
+```json5
+\{
+  text: "何をしたいですか?",
+  channelData: \{
+    line: \{
+      quickReplies: ["ステータス確認", "サポートに連絡", "履歴を表示"],
+    \},
+  \},
+\}
+```
+
+### 位置情報共有
+
+位置情報を送信します:
+
+```json5
+\{
+  text: "当社のオフィスの場所はこちら",
+  channelData: \{
+    line: \{
+      location: \{
+        title: "OpenClaw本社",
+        address: "テックシティ AI通り123番地",
+        latitude: 35.681236,
+        longitude: 139.767125,
+      \},
+    \},
+  \},
+\}
+```
+
+### メディア処理
+
+LINEプラグインはメディアのアップロードとダウンロードを自動的に処理します。サイズ制限を設定します:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      mediaMaxMb: 20, // デフォルトは10 MB
+    \},
+  \},
+\}
+```
+
+## トラブルシューティング
+
+### Webhook検証が失敗する
+
+**問題:** LINEコンソールに「Webhook検証が失敗しました」と表示される
+
+**解決策:**
+- Webhook URLがHTTPS(HTTPではなく)を使用していることを確認
+- 設定の`channelSecret`がLINEコンソールと完全に一致していることを確認
+- Gatewayがインターネットからアクセス可能であることを確認
+- エンドポイントを手動でテスト: `curl https://your-gateway/line/webhook`
+
+### 受信メッセージがない
+
+**問題:** ボットがLINEユーザーからのメッセージを受信しない
+
+**解決策:**
+- Webhookパスが設定の`channels.line.webhookPath`と一致していることを確認
+- Webhook POSTリクエストのgatewayログを確認: `openclaw gateway logs -f`
+- LINE Developers ConsoleでWebhook URLが有効になっていることを確認
+- LINEコンソールで自動応答が無効になっていることを確認(Webhook配信に干渉します)
+
+### メディアダウンロードエラー
+
+**問題:** 画像や動画のダウンロードに失敗する
+
+**解決策:**
+- ファイルが10 MBを超える場合は`channels.line.mediaMaxMb`を増やす
+- 一時ディレクトリへのgatewayの書き込み権限を確認
+- LINE Channel access tokenにメディアダウンロード権限があることを確認
+
+### メッセージが送信されない
+
+**問題:** ボットはメッセージを受信するが返信を送信できない
+
+**解決策:**
+- `channelAccessToken`が有効で期限切れでないことを確認
+- LINEコンソールでトークンに「SEND_MESSAGE」権限があることを確認
+- API エラーレスポンスのgatewayログを確認
+- ユーザーがボットをブロックしていないことを確認
+
+### ペアリング承認が機能しない
+
+**問題:** ペアリングリクエストを承認できない
+
+**解決策:**
+- `openclaw pairing list line`を実行して保留中のリクエストを確認
+- ペアリングコードが正しいことを確認(大文字小文字を区別)
+- 設定で`dmPolicy`が`"pairing"`に設定されていることを確認
+- 承認後にgatewayを再起動: `openclaw gateway restart`
+
+## まとめ
+
+おめでとうございます! OpenClaw AIチャットボットとLINE Messagingの統合に成功しました。ボットは現在以下のことができます:
+
+✅ LINEメッセージを受信して応答  
+✅ グループチャットとダイレクトメッセージを処理  
+✅ Flex Messagesでリッチなインタラクティブコンテンツを送信  
+✅ メディア、位置情報、クイックリプライを共有  
+✅ ペアリング、許可リスト、またはオープンポリシーでアクセスを制御  
+✅ 1つのgatewayから複数のLINEアカウントを管理  
+
+### 次のステップ
+
+- **応答をカスタマイズ** - エージェントのパーソナリティと動作を設定
+- **カスタムコマンドを追加** - `/card`やその他のツールでLINE専用コマンドを作成
+- **使用状況を監視** - LINE インタラクション用の分析とロギングを設定
+- **統合を探索** - LINEを Discord、Slack、WhatsAppなどの他のチャネルと接続
+
+### 役立つリソース
+
+- [LINE Messaging APIドキュメント](https://developers.line.biz/en/docs/messaging-api/)
+- [OpenClawチャネルドキュメント](/docs/channels)
+- [Flex Messageシミュレーター](https://developers.line.biz/flex-simulator/)
+- [LINE Developers Console](https://developers.line.biz/console/)
+
+楽しいチャットを! 🤖💚

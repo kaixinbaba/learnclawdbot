@@ -1,0 +1,465 @@
+---
+title: "How to Integrate LINE Messaging with Your AI Chatbot"
+description: "Step-by-step guide to connect OpenClaw AI agents with LINE Messaging API. Enable intelligent chat automation for your LINE users with webhook setup, authentication, and rich message support."
+slug: "line-integration"
+tags: ["LINE", "Integration", "Messaging", "Chatbot", "AI"]
+publishedAt: "2026-02-16"
+status: "published"
+visibility: "public"
+featuredImageUrl: "/images/features/line-integration.webp"
+---
+
+# How to Integrate LINE Messaging with Your AI Chatbot
+
+LINE is one of the most popular messaging platforms in Asia, with over 200 million monthly active users across Japan, Taiwan, Thailand, and Indonesia. Integrating your AI chatbot with LINE allows you to reach this massive audience with intelligent, automated conversations.
+
+In this guide, you'll learn how to connect OpenClaw AI agents to LINE Messaging API, enabling your chatbot to handle direct messages, group chats, media sharing, and rich interactive messages.
+
+## What You'll Get
+
+After completing this integration, your AI assistant will be able to:
+
+- **Respond to LINE users** in real-time with intelligent conversations
+- **Handle group chats** and direct messages seamlessly
+- **Share media** including images, videos, and locations
+- **Send rich messages** using LINE's Flex Message and template formats
+- **Provide quick replies** for better user experience
+- **Support multiple LINE accounts** from a single OpenClaw instance
+
+## Prerequisites
+
+Before starting, make sure you have:
+
+1. **OpenClaw installed and running** - If you haven't installed OpenClaw yet, follow the [installation guide](/docs/getting-started).
+2. **A LINE Developers account** - Sign up at [LINE Developers Console](https://developers.line.biz/console/).
+3. **HTTPS endpoint** - LINE webhooks require HTTPS. Use a reverse proxy (nginx, Caddy) or a tunnel service (ngrok, Cloudflare Tunnel).
+4. **Gateway access** - Ensure your OpenClaw gateway is accessible from the internet.
+
+## Step 1: Install the LINE Plugin
+
+OpenClaw uses a plugin architecture for messaging channels. Install the LINE plugin:
+
+```bash
+openclaw plugins install @openclaw/line
+```
+
+If you're running OpenClaw from a git repository, you can install the local version:
+
+```bash
+openclaw plugins install ./extensions/line
+```
+
+## Step 2: Create a LINE Messaging API Channel
+
+1. **Log in to LINE Developers Console**  
+   Visit [https://developers.line.biz/console/](https://developers.line.biz/console/) and sign in with your LINE account.
+
+2. **Create a Provider**  
+   If you don't have a Provider yet, create one. A Provider represents your company or service.
+
+3. **Add a Messaging API Channel**  
+   - Click **Create a new channel**
+   - Select **Messaging API** as the channel type
+   - Fill in the required information:
+     - Channel name (e.g., "My AI Assistant")
+     - Channel description
+     - Category and subcategory
+     - Email address
+   - Agree to the terms and click **Create**
+
+4. **Get Your Credentials**  
+   After creating the channel, navigate to the **Basic settings** and **Messaging API** tabs to find:
+   - **Channel access token** - Click "Issue" to generate a long-lived token
+   - **Channel secret** - Found in the Basic settings tab
+
+   Keep these credentials secure - you'll need them for OpenClaw configuration.
+
+5. **Enable Webhooks**  
+   In the **Messaging API** tab:
+   - Toggle **Use webhook** to ON
+   - Set the webhook URL (we'll configure this in the next step)
+   - Disable **Auto-reply messages** and **Greeting messages** if you want your AI to handle all interactions
+
+## Step 3: Configure Your Webhook URL
+
+LINE needs to send incoming messages to your OpenClaw gateway. The default webhook path is:
+
+```
+https://your-gateway-domain.com/line/webhook
+```
+
+Replace `your-gateway-domain.com` with your actual gateway domain or IP address.
+
+**Important:** LINE requires HTTPS. If you're testing locally, use a tunnel service:
+
+```bash
+# Using ngrok
+ngrok http 3100
+
+# Using Cloudflare Tunnel
+cloudflared tunnel --url http://localhost:3100
+```
+
+Update the webhook URL in the LINE Developers Console with your HTTPS endpoint.
+
+## Step 4: Configure OpenClaw
+
+Add the LINE channel configuration to your OpenClaw config file (usually `~/.openclaw/config.json5` or `config.json5` in your workspace):
+
+### Minimal Configuration
+
+```json5
+\{
+  channels: \{
+    line: \{
+      enabled: true,
+      channelAccessToken: "YOUR_CHANNEL_ACCESS_TOKEN",
+      channelSecret: "YOUR_CHANNEL_SECRET",
+      dmPolicy: "pairing",
+    \},
+  \},
+\}
+```
+
+### Using Environment Variables
+
+For better security, use environment variables:
+
+```bash
+export LINE_CHANNEL_ACCESS_TOKEN="your_channel_access_token_here"
+export LINE_CHANNEL_SECRET="your_channel_secret_here"
+```
+
+Then reference them in your config:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      enabled: true,
+      // Token and secret will be read from env vars
+      dmPolicy: "pairing",
+    \},
+  \},
+\}
+```
+
+### Using Token Files
+
+For production deployments, store credentials in files:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      enabled: true,
+      tokenFile: "/secure/path/line-token.txt",
+      secretFile: "/secure/path/line-secret.txt",
+      dmPolicy: "pairing",
+    \},
+  \},
+\}
+```
+
+### Multiple LINE Accounts
+
+You can manage multiple LINE channels from one OpenClaw instance:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      accounts: \{
+        marketing: \{
+          channelAccessToken: "MARKETING_TOKEN",
+          channelSecret: "MARKETING_SECRET",
+          webhookPath: "/line/marketing",
+        \},
+        support: \{
+          channelAccessToken: "SUPPORT_TOKEN",
+          channelSecret: "SUPPORT_SECRET",
+          webhookPath: "/line/support",
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+Don't forget to update webhook URLs in LINE console to match your custom paths!
+
+## Step 5: Configure Access Control
+
+LINE integration supports multiple access policies to control who can interact with your bot:
+
+### Pairing Mode (Recommended)
+
+This is the default and most secure option. New users must be approved before they can chat:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      dmPolicy: "pairing",
+    \},
+  \},
+\}
+```
+
+When a new user messages your bot, they'll receive a pairing code. Approve them using:
+
+```bash
+# List pending pairing requests
+openclaw pairing list line
+
+# Approve a user
+openclaw pairing approve line <CODE>
+```
+
+### Allowlist Mode
+
+Only specified LINE user IDs can interact with your bot:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      dmPolicy: "allowlist",
+      allowFrom: [
+        "U1234567890abcdef1234567890abcdef",
+        "Uabcdef1234567890abcdef1234567890",
+      ],
+    \},
+  \},
+\}
+```
+
+### Open Mode
+
+Anyone can message your bot (use with caution):
+
+```json5
+\{
+  channels: \{
+    line: \{
+      dmPolicy: "open",
+    \},
+  \},
+\}
+```
+
+### Group Chat Policies
+
+Configure access for LINE group chats separately:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      groupPolicy: "allowlist",
+      groupAllowFrom: [
+        "U1234567890abcdef1234567890abcdef", // User who can add bot to groups
+      \],
+      groups: \{
+        "C1234567890abcdef1234567890abcdef": \{
+          // Per-group overrides
+          allowFrom: ["Uabcdef1234567890abcdef1234567890"],
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+**Note:** LINE IDs are case-sensitive and follow these patterns:
+- User ID: `U` + 32 hex characters
+- Group ID: `C` + 32 hex characters
+- Room ID: `R` + 32 hex characters
+
+## Step 6: Restart and Test
+
+Restart your OpenClaw gateway to apply the configuration:
+
+```bash
+openclaw gateway restart
+```
+
+Now test the integration:
+
+1. **Add your bot as a friend** - Scan the QR code or search by LINE ID in the LINE Developers Console
+2. **Send a test message** - Type "Hello" or any message to your bot
+3. **Check the response** - If pairing is enabled, you'll receive a pairing code first
+
+Monitor the gateway logs for webhook events:
+
+```bash
+openclaw gateway logs -f
+```
+
+You should see incoming LINE webhook events and outgoing responses.
+
+## Advanced Features
+
+### Rich Messages with Flex Cards
+
+LINE supports powerful rich messages called Flex Messages. Send interactive cards using `channelData`:
+
+```json5
+\{
+  text: "Here's your order status",
+  channelData: \{
+    line: \{
+      flexMessage: \{
+        altText: "Order status card",
+        contents: \{
+          type: "bubble",
+          body: \{
+            type: "box",
+            layout: "vertical",
+            contents: [
+              \{
+                type: "text",
+                text: "Order #12345",
+                weight: "bold",
+                size: "xl",
+              \},
+              \{
+                type: "text",
+                text: "Status: Shipped",
+                color: "#00B900",
+              \},
+            ],
+          \},
+        \},
+      \},
+    \},
+  \},
+\}
+```
+
+### Quick Replies
+
+Provide quick reply buttons for better UX:
+
+```json5
+\{
+  text: "What would you like to do?",
+  channelData: \{
+    line: \{
+      quickReplies: ["Check Status", "Contact Support", "View History"],
+    \},
+  \},
+\}
+```
+
+### Location Sharing
+
+Send location information:
+
+```json5
+\{
+  text: "Here's our office location",
+  channelData: \{
+    line: \{
+      location: \{
+        title: "OpenClaw HQ",
+        address: "123 AI Street, Tech City",
+        latitude: 35.681236,
+        longitude: 139.767125,
+      \},
+    \},
+  \},
+\}
+```
+
+### Media Handling
+
+The LINE plugin automatically handles media uploads and downloads. Configure the size limit:
+
+```json5
+\{
+  channels: \{
+    line: \{
+      mediaMaxMb: 20, // Default is 10 MB
+    \},
+  \},
+\}
+```
+
+## Troubleshooting
+
+### Webhook Verification Fails
+
+**Problem:** LINE console shows "Webhook verification failed"
+
+**Solutions:**
+- Ensure your webhook URL uses HTTPS (not HTTP)
+- Verify the `channelSecret` in your config matches the LINE console exactly
+- Check that your gateway is accessible from the internet
+- Test the endpoint manually: `curl https://your-gateway/line/webhook`
+
+### No Inbound Messages
+
+**Problem:** Bot doesn't receive messages from LINE users
+
+**Solutions:**
+- Confirm the webhook path matches `channels.line.webhookPath` in your config
+- Check gateway logs for webhook POST requests: `openclaw gateway logs -f`
+- Verify webhook URL is enabled in LINE Developers Console
+- Ensure auto-reply is disabled in LINE console (it interferes with webhook delivery)
+
+### Media Download Errors
+
+**Problem:** Images or videos fail to download
+
+**Solutions:**
+- Increase `channels.line.mediaMaxMb` if files exceed 10 MB
+- Check gateway permissions for writing to temp directories
+- Verify your LINE channel access token has media download permissions
+
+### Messages Not Sending
+
+**Problem:** Bot receives messages but can't send replies
+
+**Solutions:**
+- Verify `channelAccessToken` is valid and not expired
+- Check the token has "SEND_MESSAGE" permission in LINE console
+- Review gateway logs for API error responses
+- Ensure the user hasn't blocked your bot
+
+### Pairing Approval Not Working
+
+**Problem:** Cannot approve pairing requests
+
+**Solutions:**
+- Run `openclaw pairing list line` to see pending requests
+- Verify the pairing code is correct (case-sensitive)
+- Check that `dmPolicy` is set to `"pairing"` in config
+- Restart gateway after approving: `openclaw gateway restart`
+
+## Summary
+
+Congratulations! You've successfully integrated LINE Messaging with your OpenClaw AI chatbot. Your bot can now:
+
+✅ Receive and respond to LINE messages  
+✅ Handle group chats and direct messages  
+✅ Send rich interactive content with Flex Messages  
+✅ Share media, locations, and quick replies  
+✅ Control access with pairing, allowlist, or open policies  
+✅ Manage multiple LINE accounts from one gateway  
+
+### Next Steps
+
+- **Customize responses** - Configure your agent's personality and behavior
+- **Add custom commands** - Create LINE-specific commands with `/card` and other tools
+- **Monitor usage** - Set up analytics and logging for LINE interactions
+- **Explore integrations** - Connect LINE with other channels like Discord, Slack, or WhatsApp
+
+### Useful Resources
+
+- [LINE Messaging API Documentation](https://developers.line.biz/en/docs/messaging-api/)
+- [OpenClaw Channel Documentation](/docs/channels)
+- [Flex Message Simulator](https://developers.line.biz/flex-simulator/)
+- [LINE Developers Console](https://developers.line.biz/console/)
+
+Happy chatting! 🤖💚
