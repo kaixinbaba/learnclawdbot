@@ -30,20 +30,27 @@ export async function generateMetadata({
   });
 }
 
-const SERVER_POST_PAGE_SIZE = 48;
+const SERVER_POST_PAGE_SIZE = 12;
 
 export default async function Page({ params }: { params: Params }) {
   const { locale } = await params;
   const t = await getTranslations("Blogs");
 
-  const { posts: localPosts } = await blogCms.getLocalList(locale);
-
-  const initialServerPostsResult = await listPublishedPostsAction({
-    pageIndex: 0,
-    pageSize: SERVER_POST_PAGE_SIZE,
-    postType: "blog",
-    locale: locale,
-  });
+  // Parallel data fetching
+  const [
+    { posts: localPosts },
+    initialServerPostsResult,
+    tagsResult
+  ] = await Promise.all([
+    blogCms.getLocalList(locale),
+    listPublishedPostsAction({
+      pageIndex: 0,
+      pageSize: SERVER_POST_PAGE_SIZE,
+      postType: "blog",
+      locale: locale,
+    }),
+    listTagsAction({ postType: "blog" })
+  ]);
 
   const initialServerPosts =
     initialServerPostsResult.success && initialServerPostsResult.data?.posts
@@ -61,7 +68,6 @@ export default async function Page({ params }: { params: Params }) {
     );
   }
 
-  const tagsResult = await listTagsAction({ postType: "blog" });
   let serverTags: Tag[] = [];
   if (tagsResult.success && tagsResult.data?.tags) {
     serverTags = tagsResult.data.tags;
