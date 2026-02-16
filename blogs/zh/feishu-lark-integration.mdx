@@ -79,8 +79,8 @@ openclaw plugins install ./extensions/feishu
 在**权限管理**页面，点击**批量导入**并粘贴以下 JSON：
 
 ```json
-\{
-  "scopes": \{
+{
+  "scopes": {
     "tenant": [
       "aily:file:read",
       "aily:file:write",
@@ -104,8 +104,8 @@ openclaw plugins install ./extensions/feishu
       "aily:file:write",
       "im:chat.access_event.bot_p2p_chat:read"
     ]
-  \}
-\}
+  }
+}
 ```
 
 这将授予机器人发送/接收消息、访问文件和管理机器人功能所需的所有权限。
@@ -156,21 +156,21 @@ openclaw channels add
 编辑 `~/.openclaw/openclaw.json`：
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       enabled: true,
       dmPolicy: "pairing",
-      accounts: \{
-        main: \{
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
           botName: "我的 AI 助手",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 对于 Lark（国际版）
@@ -178,19 +178,19 @@ openclaw channels add
 如果您使用 Lark 而非飞书，请添加 `domain` 设置：
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       domain: "lark",
-      accounts: \{
-        main: \{
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ---
@@ -237,15 +237,15 @@ openclaw pairing approve feishu <配对码>
 要允许机器人在特定群组中无需 @提及即可响应：
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
-      groups: \{
-        oc_xxx: \{ requireMention: false \},
-      \},
-    \},
-  \},
-\}
+{
+  channels: {
+    feishu: {
+      groups: {
+        oc_xxx: { requireMention: false },
+      },
+    },
+  },
+}
 ```
 
 **获取群组 ID**：在群组中发送带 @提及的消息，然后查看日志：
@@ -274,14 +274,14 @@ openclaw logs --follow
 白名单配置示例：
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       groupPolicy: "allowlist",
       groupAllowFrom: ["ou_xxx", "ou_yyy"],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 多账号管理
@@ -289,25 +289,25 @@ openclaw logs --follow
 您可以管理多个飞书/Lark 机器人：
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
-      accounts: \{
-        main: \{
+{
+  channels: {
+    feishu: {
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
           botName: "主机器人",
-        \},
-        backup: \{
+        },
+        backup: {
           appId: "cli_yyy",
           appSecret: "yyy",
           botName: "备用机器人",
           enabled: false,
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ---

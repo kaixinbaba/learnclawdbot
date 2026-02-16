@@ -109,16 +109,16 @@ OpenClaw 구성 파일(일반적으로 `~/.openclaw/config.json5` 또는 작업 
 ### 최소 구성
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       channelAccessToken: "YOUR_CHANNEL_ACCESS_TOKEN",
       channelSecret: "YOUR_CHANNEL_SECRET",
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 환경 변수 사용
@@ -133,15 +133,15 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 그런 다음 구성에서 참조하세요:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       // Token과 secret은 환경 변수에서 읽습니다
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 토큰 파일 사용
@@ -149,16 +149,16 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 프로덕션 배포의 경우 자격 증명을 파일에 저장하세요:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       tokenFile: "/secure/path/line-token.txt",
       secretFile: "/secure/path/line-secret.txt",
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 여러 LINE 계정
@@ -166,24 +166,24 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 하나의 OpenClaw 인스턴스에서 여러 LINE 채널을 관리할 수 있습니다:
 
 ```json5
-\{
-  channels: \{
-    line: \{
-      accounts: \{
-        marketing: \{
+{
+  channels: {
+    line: {
+      accounts: {
+        marketing: {
           channelAccessToken: "MARKETING_TOKEN",
           channelSecret: "MARKETING_SECRET",
           webhookPath: "/line/marketing",
-        \},
-        support: \{
+        },
+        support: {
           channelAccessToken: "SUPPORT_TOKEN",
           channelSecret: "SUPPORT_SECRET",
           webhookPath: "/line/support",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 사용자 지정 경로와 일치하도록 LINE 콘솔의 웹훅 URL을 업데이트하는 것을 잊지 마세요!
@@ -197,13 +197,13 @@ LINE 통합은 봇과 상호작용할 수 있는 사용자를 제어하기 위�
 이것은 기본값이며 가장 안전한 옵션입니다. 새 사용자는 채팅하기 전에 승인되어야 합니다:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 새 사용자가 봇에 메시지를 보내면 페어링 코드를 받게 됩니다. 다음 명령으로 승인하세요:
@@ -221,17 +221,17 @@ openclaw pairing approve line <CODE>
 지정된 LINE 사용자 ID만 봇과 상호작용할 수 있습니다:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "allowlist",
       allowFrom: [
         "U1234567890abcdef1234567890abcdef",
         "Uabcdef1234567890abcdef1234567890",
       ],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 개방 모드
@@ -239,13 +239,13 @@ openclaw pairing approve line <CODE>
 누구나 봇에 메시지를 보낼 수 있습니다 (주의해서 사용):
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "open",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 그룹 채팅 정책
@@ -253,22 +253,22 @@ openclaw pairing approve line <CODE>
 LINE 그룹 채팅에 대한 액세스를 별도로 구성하세요:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       groupPolicy: "allowlist",
       groupAllowFrom: [
         "U1234567890abcdef1234567890abcdef", // 봇을 그룹에 추가할 수 있는 사용자
       ],
-      groups: \{
-        "C1234567890abcdef1234567890abcdef": \{
+      groups: {
+        "C1234567890abcdef1234567890abcdef": {
           // 그룹별 재정의
           allowFrom: ["Uabcdef1234567890abcdef1234567890"],
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 **참고:** LINE ID는 대소문자를 구분하며 다음 패턴을 따릅니다:
@@ -305,36 +305,36 @@ openclaw gateway logs -f
 LINE은 Flex Messages라는 강력한 리치 메시지를 지원합니다. `channelData`를 사용하여 대화형 카드를 보내세요:
 
 ```json5
-\{
+{
   text: "주문 상태입니다",
-  channelData: \{
-    line: \{
-      flexMessage: \{
+  channelData: {
+    line: {
+      flexMessage: {
         altText: "주문 상태 카드",
-        contents: \{
+        contents: {
           type: "bubble",
-          body: \{
+          body: {
             type: "box",
             layout: "vertical",
             contents: [
-              \{
+              {
                 type: "text",
                 text: "주문 #12345",
                 weight: "bold",
                 size: "xl",
-              \},
-              \{
+              },
+              {
                 type: "text",
                 text: "상태: 배송됨",
                 color: "#00B900",
-              \},
+              },
             ],
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 빠른 답장
@@ -342,14 +342,14 @@ LINE은 Flex Messages라는 강력한 리치 메시지를 지원합니다. `chan
 더 나은 UX를 위해 빠른 답장 버튼을 제공하세요:
 
 ```json5
-\{
+{
   text: "무엇을 하시겠습니까?",
-  channelData: \{
-    line: \{
+  channelData: {
+    line: {
       quickReplies: ["상태 확인", "지원 문의", "기록 보기"],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 위치 공유
@@ -357,19 +357,19 @@ LINE은 Flex Messages라는 강력한 리치 메시지를 지원합니다. `chan
 위치 정보를 전송하세요:
 
 ```json5
-\{
+{
   text: "저희 사무실 위치입니다",
-  channelData: \{
-    line: \{
-      location: \{
+  channelData: {
+    line: {
+      location: {
         title: "OpenClaw 본사",
         address: "테크 시티 AI 거리 123번지",
         latitude: 35.681236,
         longitude: 139.767125,
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### 미디어 처리
@@ -377,13 +377,13 @@ LINE은 Flex Messages라는 강력한 리치 메시지를 지원합니다. `chan
 LINE 플러그인은 미디어 업로드 및 다운로드를 자동으로 처리합니다. 크기 제한을 구성하세요:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       mediaMaxMb: 20, // 기본값은 10 MB
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ## 문제 해결

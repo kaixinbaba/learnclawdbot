@@ -109,16 +109,16 @@ Add the LINE channel configuration to your OpenClaw config file (usually `~/.ope
 ### Minimal Configuration
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       channelAccessToken: "YOUR_CHANNEL_ACCESS_TOKEN",
       channelSecret: "YOUR_CHANNEL_SECRET",
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Using Environment Variables
@@ -133,15 +133,15 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 Then reference them in your config:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       // Token and secret will be read from env vars
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Using Token Files
@@ -149,16 +149,16 @@ Then reference them in your config:
 For production deployments, store credentials in files:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       tokenFile: "/secure/path/line-token.txt",
       secretFile: "/secure/path/line-secret.txt",
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Multiple LINE Accounts
@@ -166,24 +166,24 @@ For production deployments, store credentials in files:
 You can manage multiple LINE channels from one OpenClaw instance:
 
 ```json5
-\{
-  channels: \{
-    line: \{
-      accounts: \{
-        marketing: \{
+{
+  channels: {
+    line: {
+      accounts: {
+        marketing: {
           channelAccessToken: "MARKETING_TOKEN",
           channelSecret: "MARKETING_SECRET",
           webhookPath: "/line/marketing",
-        \},
-        support: \{
+        },
+        support: {
           channelAccessToken: "SUPPORT_TOKEN",
           channelSecret: "SUPPORT_SECRET",
           webhookPath: "/line/support",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 Don't forget to update webhook URLs in LINE console to match your custom paths!
@@ -197,13 +197,13 @@ LINE integration supports multiple access policies to control who can interact w
 This is the default and most secure option. New users must be approved before they can chat:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 When a new user messages your bot, they'll receive a pairing code. Approve them using:
@@ -221,17 +221,17 @@ openclaw pairing approve line <CODE>
 Only specified LINE user IDs can interact with your bot:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "allowlist",
       allowFrom: [
         "U1234567890abcdef1234567890abcdef",
         "Uabcdef1234567890abcdef1234567890",
       ],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Open Mode
@@ -239,13 +239,13 @@ Only specified LINE user IDs can interact with your bot:
 Anyone can message your bot (use with caution):
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "open",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Group Chat Policies
@@ -253,22 +253,22 @@ Anyone can message your bot (use with caution):
 Configure access for LINE group chats separately:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       groupPolicy: "allowlist",
       groupAllowFrom: [
         "U1234567890abcdef1234567890abcdef", // User who can add bot to groups
       \],
-      groups: \{
-        "C1234567890abcdef1234567890abcdef": \{
+      groups: {
+        "C1234567890abcdef1234567890abcdef": {
           // Per-group overrides
           allowFrom: ["Uabcdef1234567890abcdef1234567890"],
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 **Note:** LINE IDs are case-sensitive and follow these patterns:
@@ -305,36 +305,36 @@ You should see incoming LINE webhook events and outgoing responses.
 LINE supports powerful rich messages called Flex Messages. Send interactive cards using `channelData`:
 
 ```json5
-\{
+{
   text: "Here's your order status",
-  channelData: \{
-    line: \{
-      flexMessage: \{
+  channelData: {
+    line: {
+      flexMessage: {
         altText: "Order status card",
-        contents: \{
+        contents: {
           type: "bubble",
-          body: \{
+          body: {
             type: "box",
             layout: "vertical",
             contents: [
-              \{
+              {
                 type: "text",
                 text: "Order #12345",
                 weight: "bold",
                 size: "xl",
-              \},
-              \{
+              },
+              {
                 type: "text",
                 text: "Status: Shipped",
                 color: "#00B900",
-              \},
+              },
             ],
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### Quick Replies
@@ -342,14 +342,14 @@ LINE supports powerful rich messages called Flex Messages. Send interactive card
 Provide quick reply buttons for better UX:
 
 ```json5
-\{
+{
   text: "What would you like to do?",
-  channelData: \{
-    line: \{
+  channelData: {
+    line: {
       quickReplies: ["Check Status", "Contact Support", "View History"],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Location Sharing
@@ -357,19 +357,19 @@ Provide quick reply buttons for better UX:
 Send location information:
 
 ```json5
-\{
+{
   text: "Here's our office location",
-  channelData: \{
-    line: \{
-      location: \{
+  channelData: {
+    line: {
+      location: {
         title: "OpenClaw HQ",
         address: "123 AI Street, Tech City",
         latitude: 35.681236,
         longitude: 139.767125,
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### Media Handling
@@ -377,13 +377,13 @@ Send location information:
 The LINE plugin automatically handles media uploads and downloads. Configure the size limit:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       mediaMaxMb: 20, // Default is 10 MB
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ## Troubleshooting

@@ -79,8 +79,8 @@ openclaw plugins install ./extensions/feishu
 **권한** 페이지에서 **일괄 가져오기**를 클릭하고 다음 JSON을 붙여넣습니다:
 
 ```json
-\{
-  "scopes": \{
+{
+  "scopes": {
     "tenant": [
       "aily:file:read",
       "aily:file:write",
@@ -104,8 +104,8 @@ openclaw plugins install ./extensions/feishu
       "aily:file:write",
       "im:chat.access_event.bot_p2p_chat:read"
     ]
-  \}
-\}
+  }
+}
 ```
 
 이렇게 하면 봇이 메시지를 보내고 받고, 파일에 액세스하고, 봇 기능을 관리하는 데 필요한 모든 권한이 부여됩니다.
@@ -156,21 +156,21 @@ openclaw channels add
 `~/.openclaw/openclaw.json` 편집:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       enabled: true,
       dmPolicy: "pairing",
-      accounts: \{
-        main: \{
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
           botName: "My AI Assistant",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ### Lark(국제) 사용 시
@@ -178,19 +178,19 @@ openclaw channels add
 Feishu 대신 Lark를 사용하는 경우 `domain` 설정을 추가합니다:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       domain: "lark",
-      accounts: \{
-        main: \{
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ---
@@ -237,15 +237,15 @@ openclaw pairing approve feishu <코드>
 특정 그룹에서 @멘션 없이 봇이 응답하도록 허용하려면:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
-      groups: \{
-        oc_xxx: \{ requireMention: false \},
-      \},
-    \},
-  \},
-\}
+{
+  channels: {
+    feishu: {
+      groups: {
+        oc_xxx: { requireMention: false },
+      },
+    },
+  },
+}
 ```
 
 **그룹 ID 가져오기**: @멘션과 함께 그룹에서 메시지를 보낸 다음 로그를 확인합니다:
@@ -274,14 +274,14 @@ openclaw logs --follow
 허용 목록 구성 예:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       groupPolicy: "allowlist",
       groupAllowFrom: ["ou_xxx", "ou_yyy"],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 다중 계정
@@ -289,25 +289,25 @@ openclaw logs --follow
 여러 Feishu/Lark 봇을 관리할 수 있습니다:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
-      accounts: \{
-        main: \{
+{
+  channels: {
+    feishu: {
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
           botName: "기본 봇",
-        \},
-        backup: \{
+        },
+        backup: {
           appId: "cli_yyy",
           appSecret: "yyy",
           botName: "백업 봇",
           enabled: false,
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ---

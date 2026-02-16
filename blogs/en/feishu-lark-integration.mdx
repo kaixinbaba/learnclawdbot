@@ -79,8 +79,8 @@ From **Credentials & Basic Info**, copy:
 On the **Permissions** page, click **Batch import** and paste this JSON:
 
 ```json
-\{
-  "scopes": \{
+{
+  "scopes": {
     "tenant": [
       "aily:file:read",
       "aily:file:write",
@@ -104,8 +104,8 @@ On the **Permissions** page, click **Batch import** and paste this JSON:
       "aily:file:write",
       "im:chat.access_event.bot_p2p_chat:read"
     ]
-  \}
-\}
+  }
+}
 ```
 
 This grants the bot all necessary permissions to send/receive messages, access files, and manage bot capabilities.
@@ -156,21 +156,21 @@ Choose **Feishu** and enter your App ID and App Secret when prompted.
 Edit `~/.openclaw/openclaw.json`:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       enabled: true,
       dmPolicy: "pairing",
-      accounts: \{
-        main: \{
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
           botName: "My AI Assistant",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ### For Lark (International)
@@ -178,19 +178,19 @@ Edit `~/.openclaw/openclaw.json`:
 If you're using Lark instead of Feishu, add the `domain` setting:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       domain: "lark",
-      accounts: \{
-        main: \{
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ---
@@ -237,15 +237,15 @@ After approval, you can chat normally with the bot.
 To allow the bot to respond without @mention in a specific group:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
-      groups: \{
-        oc_xxx: \{ requireMention: false \},
-      \},
-    \},
-  \},
-\}
+{
+  channels: {
+    feishu: {
+      groups: {
+        oc_xxx: { requireMention: false },
+      },
+    },
+  },
+}
 ```
 
 **Get the group ID**: Send a message in the group with @mention, then check the logs:
@@ -274,14 +274,14 @@ Look for the `chat_id` (format: `oc_xxx`).
 Example allowlist configuration:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       groupPolicy: "allowlist",
       groupAllowFrom: ["ou_xxx", "ou_yyy"],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Multiple Accounts
@@ -289,25 +289,25 @@ Example allowlist configuration:
 You can manage multiple Feishu/Lark bots:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
-      accounts: \{
-        main: \{
+{
+  channels: {
+    feishu: {
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
           botName: "Primary Bot",
-        \},
-        backup: \{
+        },
+        backup: {
           appId: "cli_yyy",
           appSecret: "yyy",
           botName: "Backup Bot",
           enabled: false,
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ---
