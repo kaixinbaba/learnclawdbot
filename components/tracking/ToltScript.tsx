@@ -10,7 +10,7 @@ const ToltScript = () => {
       {TOLT_ID && process.env.NODE_ENV === "production" ? (
         <Script
           id="tolt-script"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `
           var toltScript = document.createElement('script');
