@@ -79,8 +79,8 @@ openclaw plugins install ./extensions/feishu
 На странице **Разрешения** нажмите **Массовый импорт** и вставьте этот JSON:
 
 ```json
-\{
-  "scopes": \{
+{
+  "scopes": {
     "tenant": [
       "aily:file:read",
       "aily:file:write",
@@ -104,8 +104,8 @@ openclaw plugins install ./extensions/feishu
       "aily:file:write",
       "im:chat.access_event.bot_p2p_chat:read"
     ]
-  \}
-\}
+  }
+}
 ```
 
 Это предоставит боту все необходимые разрешения для отправки/получения сообщений, доступа к файлам и управления функциями бота.
@@ -156,21 +156,21 @@ openclaw channels add
 Отредактируйте `~/.openclaw/openclaw.json`:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       enabled: true,
       dmPolicy: "pairing",
-      accounts: \{
-        main: \{
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
           botName: "Мой AI-ассистент",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ### Для Lark (международная версия)
@@ -178,19 +178,19 @@ openclaw channels add
 Если вы используете Lark вместо Feishu, добавьте настройку `domain`:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       domain: "lark",
-      accounts: \{
-        main: \{
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ---
@@ -237,15 +237,15 @@ openclaw pairing approve feishu <КОД>
 Чтобы разрешить боту отвечать без @упоминания в определённой группе:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
-      groups: \{
-        oc_xxx: \{ requireMention: false \},
-      \},
-    \},
-  \},
-\}
+{
+  channels: {
+    feishu: {
+      groups: {
+        oc_xxx: { requireMention: false },
+      },
+    },
+  },
+}
 ```
 
 **Получить ID группы**: Отправьте сообщение в группе с @упоминанием, затем проверьте логи:
@@ -274,14 +274,14 @@ openclaw logs --follow
 Пример конфигурации списка разрешённых:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
+{
+  channels: {
+    feishu: {
       groupPolicy: "allowlist",
       groupAllowFrom: ["ou_xxx", "ou_yyy"],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Несколько учётных записей
@@ -289,25 +289,25 @@ openclaw logs --follow
 Вы можете управлять несколькими ботами Feishu/Lark:
 
 ```json5
-\{
-  channels: \{
-    feishu: \{
-      accounts: \{
-        main: \{
+{
+  channels: {
+    feishu: {
+      accounts: {
+        main: {
           appId: "cli_xxx",
           appSecret: "xxx",
           botName: "Основной бот",
-        \},
-        backup: \{
+        },
+        backup: {
           appId: "cli_yyy",
           appSecret: "yyy",
           botName: "Резервный бот",
           enabled: false,
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 ---

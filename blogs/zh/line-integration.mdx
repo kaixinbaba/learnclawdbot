@@ -109,16 +109,16 @@ cloudflared tunnel --url http://localhost:3100
 ### 最小配置
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       channelAccessToken: "YOUR_CHANNEL_ACCESS_TOKEN",
       channelSecret: "YOUR_CHANNEL_SECRET",
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 使用环境变量
@@ -133,15 +133,15 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 然后在配置中引用它们:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       // Token 和 secret 将从环境变量读取
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 使用令牌文件
@@ -149,16 +149,16 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 对于生产部署,将凭证存储在文件中:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       tokenFile: "/secure/path/line-token.txt",
       secretFile: "/secure/path/line-secret.txt",
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 多个 LINE 账号
@@ -166,24 +166,24 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 您可以从一个 OpenClaw 实例管理多个 LINE 频道:
 
 ```json5
-\{
-  channels: \{
-    line: \{
-      accounts: \{
-        marketing: \{
+{
+  channels: {
+    line: {
+      accounts: {
+        marketing: {
           channelAccessToken: "MARKETING_TOKEN",
           channelSecret: "MARKETING_SECRET",
           webhookPath: "/line/marketing",
-        \},
-        support: \{
+        },
+        support: {
           channelAccessToken: "SUPPORT_TOKEN",
           channelSecret: "SUPPORT_SECRET",
           webhookPath: "/line/support",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 不要忘记更新 LINE 控制台中的 webhook URL 以匹配您的自定义路径!
@@ -197,13 +197,13 @@ LINE 集成支持多种访问策略来控制谁可以与您的机器人交互:
 这是默认且最安全的选项。新用户必须获得批准才能聊天:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 当新用户给您的机器人发消息时,他们将收到配对代码。使用以下命令批准他们:
@@ -221,17 +221,17 @@ openclaw pairing approve line <CODE>
 只有指定的 LINE 用户 ID 可以与您的机器人交互:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "allowlist",
       allowFrom: [
         "U1234567890abcdef1234567890abcdef",
         "Uabcdef1234567890abcdef1234567890",
       ],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 开放模式
@@ -239,13 +239,13 @@ openclaw pairing approve line <CODE>
 任何人都可以给您的机器人发消息(谨慎使用):
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "open",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 群聊策略
@@ -253,22 +253,22 @@ openclaw pairing approve line <CODE>
 单独配置 LINE 群聊的访问权限:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       groupPolicy: "allowlist",
       groupAllowFrom: [
         "U1234567890abcdef1234567890abcdef", // 可以将机器人添加到群组的用户
       ],
-      groups: \{
-        "C1234567890abcdef1234567890abcdef": \{
+      groups: {
+        "C1234567890abcdef1234567890abcdef": {
           // 每个群组的覆盖设置
           allowFrom: ["Uabcdef1234567890abcdef1234567890"],
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 **注意:** LINE ID 区分大小写,并遵循以下模式:
@@ -305,36 +305,36 @@ openclaw gateway logs -f
 LINE 支持称为 Flex Messages 的强大富消息。使用 `channelData` 发送交互式卡片:
 
 ```json5
-\{
+{
   text: "这是您的订单状态",
-  channelData: \{
-    line: \{
-      flexMessage: \{
+  channelData: {
+    line: {
+      flexMessage: {
         altText: "订单状态卡片",
-        contents: \{
+        contents: {
           type: "bubble",
-          body: \{
+          body: {
             type: "box",
             layout: "vertical",
             contents: [
-              \{
+              {
                 type: "text",
                 text: "订单 #12345",
                 weight: "bold",
                 size: "xl",
-              \},
-              \{
+              },
+              {
                 type: "text",
                 text: "状态: 已发货",
                 color: "#00B900",
-              \},
+              },
             ],
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### 快速回复
@@ -342,14 +342,14 @@ LINE 支持称为 Flex Messages 的强大富消息。使用 `channelData` 发送
 提供快速回复按钮以改善用户体验:
 
 ```json5
-\{
+{
   text: "您想做什么?",
-  channelData: \{
-    line: \{
+  channelData: {
+    line: {
       quickReplies: ["查看状态", "联系支持", "查看历史"],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### 位置分享
@@ -357,19 +357,19 @@ LINE 支持称为 Flex Messages 的强大富消息。使用 `channelData` 发送
 发送位置信息:
 
 ```json5
-\{
+{
   text: "这是我们的办公室位置",
-  channelData: \{
-    line: \{
-      location: \{
+  channelData: {
+    line: {
+      location: {
         title: "OpenClaw 总部",
         address: "科技城 AI 街 123 号",
         latitude: 35.681236,
         longitude: 139.767125,
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### 媒体处理
@@ -377,13 +377,13 @@ LINE 支持称为 Flex Messages 的强大富消息。使用 `channelData` 发送
 LINE 插件自动处理媒体上传和下载。配置大小限制:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       mediaMaxMb: 20, // 默认为 10 MB
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ## 故障排除

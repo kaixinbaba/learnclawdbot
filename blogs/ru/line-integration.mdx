@@ -109,16 +109,16 @@ cloudflared tunnel --url http://localhost:3100
 ### Минимальная конфигурация
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       channelAccessToken: "YOUR_CHANNEL_ACCESS_TOKEN",
       channelSecret: "YOUR_CHANNEL_SECRET",
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Использование переменных окружения
@@ -133,15 +133,15 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 Затем ссылайтесь на них в вашей конфигурации:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       // Token и secret будут прочитаны из переменных окружения
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Использование файлов токенов
@@ -149,16 +149,16 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 Для продакшн-развертываний храните учетные данные в файлах:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       enabled: true,
       tokenFile: "/secure/path/line-token.txt",
       secretFile: "/secure/path/line-secret.txt",
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Несколько аккаунтов LINE
@@ -166,24 +166,24 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 Вы можете управлять несколькими каналами LINE из одного экземпляра OpenClaw:
 
 ```json5
-\{
-  channels: \{
-    line: \{
-      accounts: \{
-        marketing: \{
+{
+  channels: {
+    line: {
+      accounts: {
+        marketing: {
           channelAccessToken: "MARKETING_TOKEN",
           channelSecret: "MARKETING_SECRET",
           webhookPath: "/line/marketing",
-        \},
-        support: \{
+        },
+        support: {
           channelAccessToken: "SUPPORT_TOKEN",
           channelSecret: "SUPPORT_SECRET",
           webhookPath: "/line/support",
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 Не забудьте обновить URL вебхуков в консоли LINE в соответствии с вашими пользовательскими путями!
@@ -197,13 +197,13 @@ export LINE_CHANNEL_SECRET="your_channel_secret_here"
 Это значение по умолчанию и наиболее безопасный вариант. Новые пользователи должны быть одобрены, прежде чем они смогут общаться:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "pairing",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 Когда новый пользователь отправит сообщение вашему боту, он получит код сопряжения. Одобрите их, используя:
@@ -221,17 +221,17 @@ openclaw pairing approve line <CODE>
 Только указанные ID пользователей LINE могут взаимодействовать с вашим ботом:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "allowlist",
       allowFrom: [
         "U1234567890abcdef1234567890abcdef",
         "Uabcdef1234567890abcdef1234567890",
       ],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Открытый режим
@@ -239,13 +239,13 @@ openclaw pairing approve line <CODE>
 Любой может отправить сообщение вашему боту (используйте с осторожностью):
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       dmPolicy: "open",
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Политики групповых чатов
@@ -253,22 +253,22 @@ openclaw pairing approve line <CODE>
 Настройте доступ для групповых чатов LINE отдельно:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       groupPolicy: "allowlist",
       groupAllowFrom: [
         "U1234567890abcdef1234567890abcdef", // Пользователь, который может добавлять бота в группы
       ],
-      groups: \{
-        "C1234567890abcdef1234567890abcdef": \{
+      groups: {
+        "C1234567890abcdef1234567890abcdef": {
           // Переопределения для конкретной группы
           allowFrom: ["Uabcdef1234567890abcdef1234567890"],
-        \},
-      \},
-    \},
-  \},
-\}
+        },
+      },
+    },
+  },
+}
 ```
 
 **Примечание:** ID LINE чувствительны к регистру и следуют этим шаблонам:
@@ -305,36 +305,36 @@ openclaw gateway logs -f
 LINE поддерживает мощные расширенные сообщения, называемые Flex Messages. Отправляйте интерактивные карточки, используя `channelData`:
 
 ```json5
-\{
+{
   text: "Вот статус вашего заказа",
-  channelData: \{
-    line: \{
-      flexMessage: \{
+  channelData: {
+    line: {
+      flexMessage: {
         altText: "Карточка статуса заказа",
-        contents: \{
+        contents: {
           type: "bubble",
-          body: \{
+          body: {
             type: "box",
             layout: "vertical",
             contents: [
-              \{
+              {
                 type: "text",
                 text: "Заказ #12345",
                 weight: "bold",
                 size: "xl",
-              \},
-              \{
+              },
+              {
                 type: "text",
                 text: "Статус: Отправлено",
                 color: "#00B900",
-              \},
+              },
             ],
-          \},
-        \},
-      \},
-    \},
-  \},
-\}
+          },
+        },
+      },
+    },
+  },
+}
 ```
 
 ### Быстрые ответы
@@ -342,14 +342,14 @@ LINE поддерживает мощные расширенные сообщен
 Предоставьте кнопки быстрых ответов для лучшего UX:
 
 ```json5
-\{
+{
   text: "Что бы вы хотели сделать?",
-  channelData: \{
-    line: \{
+  channelData: {
+    line: {
       quickReplies: ["Проверить статус", "Связаться с поддержкой", "Посмотреть историю"],
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ### Обмен местоположением
@@ -357,19 +357,19 @@ LINE поддерживает мощные расширенные сообщен
 Отправьте информацию о местоположении:
 
 ```json5
-\{
+{
   text: "Вот местоположение нашего офиса",
-  channelData: \{
-    line: \{
-      location: \{
+  channelData: {
+    line: {
+      location: {
         title: "Штаб-квартира OpenClaw",
         address: "улица AI 123, Технологический город",
         latitude: 35.681236,
         longitude: 139.767125,
-      \},
-    \},
-  \},
-\}
+      },
+    },
+  },
+}
 ```
 
 ### Обработка медиафайлов
@@ -377,13 +377,13 @@ LINE поддерживает мощные расширенные сообщен
 Плагин LINE автоматически обрабатывает загрузку и скачивание медиафайлов. Настройте ограничение размера:
 
 ```json5
-\{
-  channels: \{
-    line: \{
+{
+  channels: {
+    line: {
       mediaMaxMb: 20, // По умолчанию 10 МБ
-    \},
-  \},
-\}
+    },
+  },
+}
 ```
 
 ## Устранение неполадок
