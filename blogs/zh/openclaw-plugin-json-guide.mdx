@@ -1,0 +1,307 @@
+---
+title: "openclaw.plugin.json 完全指南：插件清单配置详解"
+description: "掌握 OpenClaw 插件的 openclaw.plugin.json 清单文件配置。学习必需字段、JSON Schema 配置、验证规则和最佳实践，附带完整示例。"
+slug: /openclaw-plugin-json-guide
+tags: OpenClaw, 插件, 配置, JSON, 开发
+publishedAt: 2026-02-17
+status: published
+visibility: public
+featuredImageUrl: /images/features/plugin-manifest.webp
+---
+
+# openclaw.plugin.json 完全指南：插件清单配置详解
+
+每个 OpenClaw 插件都**必须**在根目录包含 `openclaw.plugin.json` 清单文件。这个文件告诉 OpenClaw 如何在不执行任何代码的情况下验证插件配置——这对安全性和可靠性至关重要。
+
+无论你是在开发插件还是排查验证错误，这篇指南涵盖了你需要知道的一切。
+
+## 快速开始：最小清单
+
+这是最简单的有效清单：
+
+```json
+{
+  "id": "my-plugin",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
+```
+
+就这么简单——只需两个必需字段。但你可以做的远不止这些。
+
+## 必需字段
+
+### `id`（字符串）
+
+插件的规范标识符。在所有已安装的插件中必须唯一。
+
+```json
+{
+  "id": "voice-call"
+}
+```
+
+**规则：**
+- 使用小写字母和连字符（如 `my-plugin`，而不是 `MyPlugin`）
+- 不能与核心工具名称冲突
+- 用于配置引用，如 `plugins.entries.voice-call`
+
+### `configSchema`（对象）
+
+定义插件接受哪些配置的 JSON Schema。OpenClaw 在启动时根据此 schema 验证插件配置——在运行任何插件代码之前。
+
+```json
+{
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "description": "服务的 API 密钥"
+      },
+      "timeout": {
+        "type": "number",
+        "default": 30
+      }
+    },
+    "required": ["apiKey"]
+  }
+}
+```
+
+**为什么这很重要：**
+- 在启动时立即捕获配置错误
+- 为缺失/无效字段提供清晰的错误消息
+- 支持未来工具的配置 UI 生成
+
+## 可选字段
+
+### `name`（字符串）
+
+插件的人类可读显示名称。
+
+```json
+{
+  "name": "Voice Call"
+}
+```
+
+### `description`（字符串）
+
+插件功能的简短描述。
+
+```json
+{
+  "description": "通过 Twilio/Telnyx/Plivo 进行呼出和呼入语音通话"
+}
+```
+
+### `version`（字符串）
+
+插件版本（仅供参考）。
+
+```json
+{
+  "version": "1.2.0"
+}
+```
+
+### `kind`（字符串）
+
+插件类别。例如：`"memory"` 表示记忆插件。
+
+```json
+{
+  "kind": "memory"
+}
+```
+
+### `channels`（数组）
+
+此插件注册的频道 ID。如果你的插件添加消息频道，这是必需的。
+
+```json
+{
+  "channels": ["matrix", "slack"]
+}
+```
+
+**重要：** 配置中未在此声明的 `channels.*` 键会导致**错误**。
+
+### `providers`（数组）
+
+此插件注册的提供商 ID（用于模型提供商）。
+
+```json
+{
+  "providers": ["my-llm-provider"]
+}
+```
+
+### `skills`（数组）
+
+要加载的技能目录，相对于插件根目录。
+
+```json
+{
+  "skills": ["skills/voice", "skills/transcribe"]
+}
+```
+
+### `uiHints`（对象）
+
+配置 UI 渲染提示——标签、占位符和敏感字段标记。
+
+```json
+{
+  "uiHints": {
+    "apiKey": {
+      "label": "API 密钥",
+      "placeholder": "sk-...",
+      "sensitive": true
+    }
+  }
+}
+```
+
+## 完整示例：语音通话插件
+
+这是来自 Voice Call 插件的真实清单：
+
+```json
+{
+  "id": "voice-call",
+  "name": "Voice Call",
+  "description": "通过 Twilio/Telnyx/Plivo 进行呼出和呼入通话",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "provider": {
+        "type": "string",
+        "enum": ["twilio", "telnyx", "plivo", "mock"],
+        "description": "要使用的语音提供商"
+      },
+      "fromNumber": {
+        "type": "string",
+        "description": "主叫号码"
+      },
+      "toNumber": {
+        "type": "string",
+        "description": "默认目标号码"
+      },
+      "twilio": {
+        "type": "object",
+        "properties": {
+          "accountSid": { "type": "string" },
+          "authToken": { "type": "string" }
+        }
+      }
+    },
+    "required": ["provider"]
+  },
+  "uiHints": {
+    "twilio.authToken": {
+      "sensitive": true
+    }
+  }
+}
+```
+
+## 常见错误及解决方法
+
+### "Plugin manifest not found"
+
+**原因：** 插件根目录缺少 `openclaw.plugin.json`。
+
+**解决：** 创建至少包含 `id` 和 `configSchema` 的清单文件。
+
+### "Invalid configSchema"
+
+**原因：** schema 不是有效的 JSON Schema。
+
+**解决：** 在 [jsonschema.dev](https://jsonschema.dev) 验证你的 schema，或使用 JSON Schema 检查工具。
+
+### "Unknown channel: xxx"
+
+**原因：** 配置引用了未被任何插件声明的频道 ID。
+
+**解决：** 将频道 ID 添加到清单的 `channels` 数组中。
+
+### "Plugin ID conflicts with core tool"
+
+**原因：** 你的插件 ID 与内置工具名称冲突。
+
+**解决：** 重命名你的插件 ID 为唯一值。
+
+## 验证行为
+
+OpenClaw 在以下时机验证清单：
+
+1. **配置读写** — 每次配置更改都会运行 schema 验证
+2. **Gateway 启动** — 加载并验证所有插件清单
+3. **Doctor 命令** — `openclaw doctor` 报告插件错误
+
+如果插件清单有问题，整个验证都会失败——所以务必正确配置！
+
+## 最佳实践
+
+1. **始终使用 `additionalProperties: false`** — 捕获配置键的拼写错误
+2. **标记敏感字段** — 对密钥使用 `uiHints.*.sensitive: true`
+3. **提供默认值** — 对可选字段使用 schema 中的 `default`
+4. **编写描述** — 帮助用户理解每个配置选项
+5. **使用 Doctor 测试** — 更改后运行 `openclaw doctor`
+
+## 使用插件配置
+
+清单设置完成后，用户在 `openclaw.json` 中配置你的插件：
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        enabled: true,
+        config: {
+          provider: "twilio",
+          fromNumber: "+15550001234",
+          twilio: {
+            accountSid: "ACxxxxxxxx",
+            authToken: "..."
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+OpenClaw 会自动根据你的 `configSchema` 验证此配置。
+
+## 总结
+
+`openclaw.plugin.json` 清单是你的插件与 OpenClaw 之间的契约：
+
+| 字段 | 必需 | 用途 |
+|------|------|------|
+| `id` | ✅ | 唯一插件标识符 |
+| `configSchema` | ✅ | 用于验证的 JSON Schema |
+| `name` | ❌ | 显示名称 |
+| `description` | ❌ | 简短描述 |
+| `channels` | ❌ | 注册的频道 ID |
+| `providers` | ❌ | 注册的提供商 ID |
+| `skills` | ❌ | 要加载的技能目录 |
+| `uiHints` | ❌ | UI 渲染提示 |
+
+正确配置清单，OpenClaw 会处理剩余的一切——验证配置、及早发现错误、保持插件安全。
+
+## 相关资源
+
+- [插件系统概述](/docs/plugins) — 完整的插件开发指南
+- [插件 Agent 工具](/docs/plugin-agent-tools) — 为插件添加工具
+- [语音通话插件](/docs/voice-call-plugin) — 真实插件示例
