@@ -1,0 +1,331 @@
+---
+title: "OpenClaw 環境変数完全ガイド：設定リファレンス"
+description: "OpenClaw 環境変数をマスターしましょう。Gateway 設定、モデル認証、デプロイ設定を網羅。OPENCLAW_GATEWAY_TOKEN、APIキー、バインド設定、プラットフォーム固有の設定を解説。"
+slug: /openclaw-environment-variables
+tags: OpenClaw, 環境変数, 設定, デプロイ, Gateway
+publishedAt: 2026-02-17
+status: published
+visibility: public
+featuredImageUrl: /images/features/env-vars-guide.webp
+---
+
+# OpenClaw 環境変数完全ガイド：設定リファレンス
+
+環境変数は OpenClaw デプロイの基盤です。ローカル、VPS、Docker のいずれで実行する場合でも、これらの変数を理解することはセキュリティ、接続性、適切な認証に不可欠です。
+
+このガイドでは、実際の例とトラブルシューティングのヒントを含め、知っておくべきすべての環境変数を解説します。
+
+## クイックリファレンス
+
+| 変数 | 必須 | 用途 |
+|------|------|------|
+| `OPENCLAW_GATEWAY_TOKEN` | リモート時 | Gateway 認証トークン |
+| `OPENCLAW_GATEWAY_PORT` | いいえ | Gateway ポート（デフォルト: 18789）|
+| `OPENCLAW_GATEWAY_BIND` | いいえ | ネットワークバインド（lan/tailnet）|
+| `ANTHROPIC_API_KEY` | はい* | Anthropic モデルアクセス |
+| `OPENAI_API_KEY` | はい* | OpenAI モデルアクセス |
+| `BRAVE_API_KEY` | いいえ | Web 検索機能 |
+| `GEMINI_API_KEY` | いいえ | Google Gemini モデル |
+
+*少なくとも1つのモデル API キーが必要です。
+
+## Gateway 変数
+
+### OPENCLAW_GATEWAY_TOKEN
+
+最も重要なセキュリティ変数。Gateway が非ループバックアドレスにバインドする場合に必要です。
+
+```bash
+# 安全なトークンを生成
+export OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
+```
+
+**必要な場合：**
+- Docker デプロイ
+- VPS/クラウドホスティング
+- localhost 以外のアクセス
+
+**セキュリティ上の注意：**
+- 管理者シークレットとして扱う
+- バージョン管理にコミットしない
+- 本番環境では定期的にローテーション
+
+### OPENCLAW_GATEWAY_PORT
+
+デフォルトの Gateway ポート（18789）を上書きします。
+
+```bash
+export OPENCLAW_GATEWAY_PORT=3000
+```
+
+**一般的なシナリオ：**
+- 他のサービスとのポート競合
+- プラットフォーム要件（例：Fly.io ヘルスチェック）
+- リバースプロキシ設定
+
+### OPENCLAW_GATEWAY_BIND
+
+Gateway がリッスンするネットワークインターフェースを制御します。
+
+```bash
+# すべての LAN インターフェースでリッスン
+export OPENCLAW_GATEWAY_BIND=lan
+
+# Tailscale インターフェースのみでリッスン
+export OPENCLAW_GATEWAY_BIND=tailnet
+```
+
+**オプション：**
+- `localhost`（デフォルト）— ループバックのみ
+- `lan` — すべてのネットワークインターフェース
+- `tailnet` — Tailscale インターフェースのみ
+
+**セキュリティ警告：** `OPENCLAW_GATEWAY_TOKEN` なしで `lan` を使用するのは危険です！
+
+## モデル API キー
+
+### ANTHROPIC_API_KEY
+
+Claude モデルのプライマリキー。
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-api03-..."
+```
+
+**設定方法：**
+1. シェルでエクスポート
+2. `~/.openclaw/.env` に追加
+3. `openclaw onboard` ウィザードを使用
+
+**確認：**
+
+```bash
+openclaw models status
+openclaw doctor
+```
+
+### OPENAI_API_KEY
+
+OpenAI モデル（GPT-4 など）用。
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+### GEMINI_API_KEY
+
+Google Gemini モデルと画像生成用。
+
+```bash
+export GEMINI_API_KEY="AIza..."
+```
+
+## ツール固有の変数
+
+### BRAVE_API_KEY
+
+Web 検索機能を有効にします。
+
+```bash
+export BRAVE_API_KEY="BSA..."
+```
+
+**注意：** 「Data for AI」ではなく「Data for Search」プランを使用してください。
+
+## プラットフォーム固有の設定
+
+### Docker / Docker Compose
+
+`.env` ファイルを作成：
+
+```bash
+OPENCLAW_GATEWAY_TOKEN=your-secure-token
+OPENCLAW_GATEWAY_BIND=lan
+OPENCLAW_GATEWAY_PORT=18789
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+`docker-compose.yml` で参照：
+
+```yaml
+services:
+  openclaw:
+    image: openclaw/gateway
+    env_file:
+      - .env
+    ports:
+      - "18789:18789"
+```
+
+### Fly.io
+
+CLI でシークレットを設定：
+
+```bash
+fly secrets set OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
+fly secrets set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**重要：** `internal_port` を `OPENCLAW_GATEWAY_PORT` と一致させてください：
+
+```toml
+[[services]]
+  internal_port = 3000
+```
+
+```bash
+fly secrets set OPENCLAW_GATEWAY_PORT=3000
+```
+
+### Hetzner / GCP / 汎用 VPS
+
+サーバー上に `~/.openclaw/.env` を作成：
+
+```bash
+OPENCLAW_GATEWAY_TOKEN=change-me-now
+OPENCLAW_GATEWAY_BIND=lan
+OPENCLAW_GATEWAY_PORT=18789
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+その後 Gateway を再起動：
+
+```bash
+openclaw gateway restart
+```
+
+### systemd / launchd
+
+デーモン永続化のため、キーを `~/.openclaw/.env` に配置：
+
+```bash
+cat >> ~/.openclaw/.env << 'EOF'
+ANTHROPIC_API_KEY=sk-ant-...
+BRAVE_API_KEY=BSA...
+EOF
+```
+
+Gateway は起動時にこのファイルを自動的に読み込みます。
+
+## ~/.openclaw/.env ファイル
+
+永続的な環境変数の推奨場所：
+
+```bash
+# ~/.openclaw/.env
+ANTHROPIC_API_KEY=sk-ant-api03-xxx
+OPENAI_API_KEY=sk-xxx
+BRAVE_API_KEY=BSA-xxx
+OPENCLAW_GATEWAY_TOKEN=your-secure-token
+```
+
+**このファイルを使う理由：**
+- シェル再起動後も有効
+- systemd/launchd デーモンと連携
+- シークレットをシェル履歴から除外
+- 単一の信頼できる情報源
+
+## 高度な変数
+
+### Exec ツール設定
+
+```bash
+# デフォルトのバックグラウンドタイムアウト（ミリ秒）
+PI_BASH_YIELD_MS=10000
+
+# 最大出力バッファ（文字数）
+PI_BASH_MAX_OUTPUT_CHARS=100000
+
+# 完了したセッションの TTL（ミリ秒、1分〜3時間）
+PI_BASH_JOB_TTL_MS=1800000
+```
+
+### Canvas ホスト
+
+```bash
+# canvas ホストを無効化
+OPENCLAW_SKIP_CANVAS_HOST=1
+```
+
+## トラブルシューティング
+
+### "No credentials found"
+
+**原因：** API キーが設定されていないか、Gateway が読み取れない。
+
+**解決：**
+1. 変数がエクスポートされているか確認：`echo $ANTHROPIC_API_KEY`
+2. デーモンを使用している場合、`~/.openclaw/.env` に追加
+3. Gateway を再起動：`openclaw gateway restart`
+4. 確認：`openclaw models status`
+
+### リモート Gateway で "Connection refused"
+
+**原因：** Gateway が localhost のみにバインドされている。
+
+**解決：**
+```bash
+export OPENCLAW_GATEWAY_BIND=lan
+export OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
+openclaw gateway restart
+```
+
+### "Unauthorized" エラー
+
+**原因：** クライアントと Gateway 間でトークンが一致しない。
+
+**解決：**
+1. Gateway ホストでトークンを確認：`echo $OPENCLAW_GATEWAY_TOKEN`
+2. クライアントから接続する際に同じトークンを使用
+3. 空白や引用符の問題がないことを確認
+
+### ポートがすでに使用中
+
+**原因：** 別のプロセスがポート 18789 を使用中。
+
+**解決：**
+```bash
+# プロセスを検索
+lsof -i :18789
+
+# 別のポートを使用
+export OPENCLAW_GATEWAY_PORT=3001
+openclaw gateway restart
+```
+
+## ベストプラクティス
+
+1. **シークレットをコミットしない** — `.env` ファイルを使用し `.gitignore` に追加
+2. **安全なトークン生成を使用** — `openssl rand -hex 32` または同等のもの
+3. **`~/.openclaw/.env` を優先** — 再起動やデーモンで動作
+4. **定期的にトークンをローテーション** — 特に本番環境で
+5. **`openclaw doctor` を使用** — 設定の問題を早期発見
+6. **可能な場合は tailnet にバインド** — `lan` より安全
+
+## 環境変数の優先順位
+
+OpenClaw は次の順序で変数を読み取ります（後のものが優先）：
+
+1. システム環境
+2. `~/.openclaw/.env` ファイル
+3. 設定ファイル（`~/.openclaw/openclaw.json`）
+
+## まとめ
+
+環境変数は OpenClaw のセキュリティ、接続性、モデルアクセスを制御します：
+
+| カテゴリ | 主要な変数 |
+|----------|------------|
+| **セキュリティ** | `OPENCLAW_GATEWAY_TOKEN` |
+| **ネットワーク** | `OPENCLAW_GATEWAY_BIND`, `OPENCLAW_GATEWAY_PORT` |
+| **モデル** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` |
+| **ツール** | `BRAVE_API_KEY` |
+
+これらを正しく設定すれば、OpenClaw のデプロイは安全で機能的になります。
+
+## 関連リソース
+
+- [Gateway 設定](/docs/gateway) — 完全な Gateway 設定ガイド
+- [Docker デプロイ](/docs/docker) — コンテナ化されたデプロイ
+- [VPS セットアップ](/docs/vps) — クラウドサーバーデプロイ
+- [認証](/docs/authentication) — モデル認証の詳細

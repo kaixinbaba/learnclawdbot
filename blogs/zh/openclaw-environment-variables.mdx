@@ -1,0 +1,331 @@
+---
+title: "OpenClaw 环境变量完全指南：配置参考手册"
+description: "掌握 OpenClaw 环境变量，包括 Gateway 设置、模型认证和部署配置。涵盖 OPENCLAW_GATEWAY_TOKEN、API 密钥、绑定设置和各平台配置。"
+slug: /openclaw-environment-variables
+tags: OpenClaw, 环境变量, 配置, 部署, Gateway
+publishedAt: 2026-02-17
+status: published
+visibility: public
+featuredImageUrl: /images/features/env-vars-guide.webp
+---
+
+# OpenClaw 环境变量完全指南：配置参考手册
+
+环境变量是 OpenClaw 部署的基础。无论你是在本地运行、VPS 还是 Docker 中，理解这些变量对于安全性、连接性和正确认证至关重要。
+
+本指南涵盖了你需要了解的每个环境变量，包含真实示例和故障排除技巧。
+
+## 快速参考表
+
+| 变量 | 是否必需 | 用途 |
+|------|----------|------|
+| `OPENCLAW_GATEWAY_TOKEN` | 远程访问时必需 | Gateway 认证令牌 |
+| `OPENCLAW_GATEWAY_PORT` | 否 | Gateway 端口（默认: 18789）|
+| `OPENCLAW_GATEWAY_BIND` | 否 | 网络绑定（lan/tailnet）|
+| `ANTHROPIC_API_KEY` | 是* | Anthropic 模型访问 |
+| `OPENAI_API_KEY` | 是* | OpenAI 模型访问 |
+| `BRAVE_API_KEY` | 否 | 网络搜索功能 |
+| `GEMINI_API_KEY` | 否 | Google Gemini 模型 |
+
+*至少需要一个模型 API 密钥。
+
+## Gateway 变量
+
+### OPENCLAW_GATEWAY_TOKEN
+
+最关键的安全变量。当 Gateway 绑定到非回环地址时必需。
+
+```bash
+# 生成安全令牌
+export OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
+```
+
+**何时需要：**
+- Docker 部署
+- VPS/云托管
+- 任何非 localhost 访问
+
+**安全注意事项：**
+- 视为管理员密钥
+- 切勿提交到版本控制
+- 在生产环境中定期轮换
+
+### OPENCLAW_GATEWAY_PORT
+
+覆盖默认 Gateway 端口（18789）。
+
+```bash
+export OPENCLAW_GATEWAY_PORT=3000
+```
+
+**常见场景：**
+- 与其他服务端口冲突
+- 平台要求（如 Fly.io 健康检查）
+- 反向代理设置
+
+### OPENCLAW_GATEWAY_BIND
+
+控制 Gateway 监听的网络接口。
+
+```bash
+# 监听所有 LAN 接口
+export OPENCLAW_GATEWAY_BIND=lan
+
+# 仅监听 Tailscale 接口
+export OPENCLAW_GATEWAY_BIND=tailnet
+```
+
+**选项：**
+- `localhost`（默认）— 仅回环
+- `lan` — 所有网络接口
+- `tailnet` — 仅 Tailscale 接口
+
+**安全警告：** 使用 `lan` 而不设置 `OPENCLAW_GATEWAY_TOKEN` 是危险的！
+
+## 模型 API 密钥
+
+### ANTHROPIC_API_KEY
+
+Claude 模型的主要密钥。
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-api03-..."
+```
+
+**设置方式：**
+1. 在 shell 中导出
+2. 添加到 `~/.openclaw/.env`
+3. 使用 `openclaw onboard` 向导
+
+**验证：**
+
+```bash
+openclaw models status
+openclaw doctor
+```
+
+### OPENAI_API_KEY
+
+用于 OpenAI 模型（GPT-4 等）。
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+### GEMINI_API_KEY
+
+用于 Google Gemini 模型和图片生成。
+
+```bash
+export GEMINI_API_KEY="AIza..."
+```
+
+## 工具专用变量
+
+### BRAVE_API_KEY
+
+启用网络搜索功能。
+
+```bash
+export BRAVE_API_KEY="BSA..."
+```
+
+**注意：** 使用 "Data for Search" 计划，而不是 "Data for AI"。
+
+## 平台特定配置
+
+### Docker / Docker Compose
+
+创建 `.env` 文件：
+
+```bash
+OPENCLAW_GATEWAY_TOKEN=your-secure-token
+OPENCLAW_GATEWAY_BIND=lan
+OPENCLAW_GATEWAY_PORT=18789
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+在 `docker-compose.yml` 中引用：
+
+```yaml
+services:
+  openclaw:
+    image: openclaw/gateway
+    env_file:
+      - .env
+    ports:
+      - "18789:18789"
+```
+
+### Fly.io
+
+通过 CLI 设置密钥：
+
+```bash
+fly secrets set OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
+fly secrets set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**重要：** 确保 `internal_port` 与 `OPENCLAW_GATEWAY_PORT` 匹配：
+
+```toml
+[[services]]
+  internal_port = 3000
+```
+
+```bash
+fly secrets set OPENCLAW_GATEWAY_PORT=3000
+```
+
+### Hetzner / GCP / 通用 VPS
+
+在服务器上创建 `~/.openclaw/.env`：
+
+```bash
+OPENCLAW_GATEWAY_TOKEN=change-me-now
+OPENCLAW_GATEWAY_BIND=lan
+OPENCLAW_GATEWAY_PORT=18789
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+然后重启 Gateway：
+
+```bash
+openclaw gateway restart
+```
+
+### systemd / launchd
+
+对于守护进程持久化，将密钥放入 `~/.openclaw/.env`：
+
+```bash
+cat >> ~/.openclaw/.env << 'EOF'
+ANTHROPIC_API_KEY=sk-ant-...
+BRAVE_API_KEY=BSA...
+EOF
+```
+
+Gateway 在启动时会自动读取此文件。
+
+## ~/.openclaw/.env 文件
+
+这是持久化环境变量的推荐位置：
+
+```bash
+# ~/.openclaw/.env
+ANTHROPIC_API_KEY=sk-ant-api03-xxx
+OPENAI_API_KEY=sk-xxx
+BRAVE_API_KEY=BSA-xxx
+OPENCLAW_GATEWAY_TOKEN=your-secure-token
+```
+
+**为什么使用此文件：**
+- Shell 重启后仍然有效
+- 与 systemd/launchd 守护进程配合使用
+- 避免密钥出现在 shell 历史中
+- 单一事实来源
+
+## 高级变量
+
+### Exec 工具配置
+
+```bash
+# 默认后台超时（毫秒）
+PI_BASH_YIELD_MS=10000
+
+# 最大输出缓冲区（字符）
+PI_BASH_MAX_OUTPUT_CHARS=100000
+
+# 已完成会话的 TTL（毫秒，1分钟-3小时）
+PI_BASH_JOB_TTL_MS=1800000
+```
+
+### Canvas 主机
+
+```bash
+# 禁用 canvas 主机
+OPENCLAW_SKIP_CANVAS_HOST=1
+```
+
+## 故障排除
+
+### "No credentials found"
+
+**原因：** API 密钥未设置或 Gateway 无法读取。
+
+**解决：**
+1. 检查变量是否已导出：`echo $ANTHROPIC_API_KEY`
+2. 如果使用守护进程，添加到 `~/.openclaw/.env`
+3. 重启 Gateway：`openclaw gateway restart`
+4. 验证：`openclaw models status`
+
+### 远程 Gateway "Connection refused"
+
+**原因：** Gateway 仅绑定到 localhost。
+
+**解决：**
+```bash
+export OPENCLAW_GATEWAY_BIND=lan
+export OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
+openclaw gateway restart
+```
+
+### "Unauthorized" 错误
+
+**原因：** 客户端和 Gateway 之间令牌不匹配。
+
+**解决：**
+1. 检查 Gateway 主机上的令牌：`echo $OPENCLAW_GATEWAY_TOKEN`
+2. 从客户端连接时使用相同的令牌
+3. 确保没有空格或引号问题
+
+### 端口已被占用
+
+**原因：** 另一个进程正在使用端口 18789。
+
+**解决：**
+```bash
+# 查找进程
+lsof -i :18789
+
+# 使用不同的端口
+export OPENCLAW_GATEWAY_PORT=3001
+openclaw gateway restart
+```
+
+## 最佳实践
+
+1. **切勿提交密钥** — 使用 `.env` 文件并添加到 `.gitignore`
+2. **使用安全令牌生成** — `openssl rand -hex 32` 或等效方法
+3. **优先使用 `~/.openclaw/.env`** — 跨重启和守护进程工作
+4. **定期轮换令牌** — 尤其是在生产环境中
+5. **使用 `openclaw doctor`** — 及早发现配置问题
+6. **尽可能绑定到 tailnet** — 比 `lan` 更安全
+
+## 环境变量优先级
+
+OpenClaw 按以下顺序读取变量（后者覆盖前者）：
+
+1. 系统环境
+2. `~/.openclaw/.env` 文件
+3. 配置文件（`~/.openclaw/openclaw.json`）
+
+## 总结
+
+环境变量控制 OpenClaw 的安全性、连接性和模型访问：
+
+| 类别 | 关键变量 |
+|------|----------|
+| **安全** | `OPENCLAW_GATEWAY_TOKEN` |
+| **网络** | `OPENCLAW_GATEWAY_BIND`, `OPENCLAW_GATEWAY_PORT` |
+| **模型** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` |
+| **工具** | `BRAVE_API_KEY` |
+
+正确配置这些变量，你的 OpenClaw 部署将安全且功能完整。
+
+## 相关资源
+
+- [Gateway 配置](/docs/gateway) — 完整 Gateway 设置指南
+- [Docker 部署](/docs/docker) — 容器化部署
+- [VPS 设置](/docs/vps) — 云服务器部署
+- [认证](/docs/authentication) — 模型认证深度解析
