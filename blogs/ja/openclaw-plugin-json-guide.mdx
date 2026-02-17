@@ -20,14 +20,14 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 最もシンプルな有効なマニフェストは以下の通りです：
 
 ```json
-\{
+{
   "id": "my-plugin",
-  "configSchema": \{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{\}
-  \}
-\}
+    "properties": {}
+  }
+}
 ```
 
 これだけです—必須フィールドは2つだけ。しかし、できることはもっとたくさんあります。
@@ -39,9 +39,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 プラグインの正規識別子。インストールされているすべてのプラグイン間で一意である必要があります。
 
 ```json
-\{
+{
   "id": "voice-call"
-\}
+}
 ```
 
 **ルール：**
@@ -54,23 +54,23 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 プラグインが受け入れる設定を定義する JSON Schema。OpenClaw は起動時にこのスキーマに対してプラグイン設定を検証します—プラグインコードを実行する前に。
 
 ```json
-\{
-  "configSchema": \{
+{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{
-      "apiKey": \{
+    "properties": {
+      "apiKey": {
         "type": "string",
         "description": "サービスの API キー"
-      \},
-      "timeout": \{
+      },
+      "timeout": {
         "type": "number",
         "default": 30
-      \}
-    \},
+      }
+    },
     "required": ["apiKey"]
-  \}
-\}
+  }
+}
 ```
 
 **これが重要な理由：**
@@ -85,9 +85,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 人間が読めるプラグインの表示名。
 
 ```json
-\{
+{
   "name": "Voice Call"
-\}
+}
 ```
 
 ### `description`（文字列）
@@ -95,9 +95,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 プラグインが何をするかの簡単な説明。
 
 ```json
-\{
+{
   "description": "Twilio/Telnyx/Plivo 経由の発信・着信音声通話"
-\}
+}
 ```
 
 ### `version`（文字列）
@@ -105,9 +105,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 プラグインバージョン（情報提供のみ）。
 
 ```json
-\{
+{
   "version": "1.2.0"
-\}
+}
 ```
 
 ### `kind`（文字列）
@@ -115,9 +115,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 プラグインカテゴリ。例：メモリプラグインの場合は `"memory"`。
 
 ```json
-\{
+{
   "kind": "memory"
-\}
+}
 ```
 
 ### `channels`（配列）
@@ -125,9 +125,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 このプラグインが登録するチャンネル ID。プラグインがメッセージングチャンネルを追加する場合は必須です。
 
 ```json
-\{
+{
   "channels": ["matrix", "slack"]
-\}
+}
 ```
 
 **重要：** ここで宣言されていない設定内の `channels.*` キーは**エラー**になります。
@@ -137,9 +137,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 このプラグインが登録するプロバイダー ID（モデルプロバイダー用）。
 
 ```json
-\{
+{
   "providers": ["my-llm-provider"]
-\}
+}
 ```
 
 ### `skills`（配列）
@@ -147,9 +147,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 読み込むスキルディレクトリ（プラグインルートからの相対パス）。
 
 ```json
-\{
+{
   "skills": ["skills/voice", "skills/transcribe"]
-\}
+}
 ```
 
 ### `uiHints`（オブジェクト）
@@ -157,15 +157,15 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 設定 UI レンダリングのヒント—ラベル、プレースホルダー、機密フィールドマーカー。
 
 ```json
-\{
-  "uiHints": \{
-    "apiKey": \{
+{
+  "uiHints": {
+    "apiKey": {
       "label": "API キー",
       "placeholder": "sk-...",
       "sensitive": true
-    \}
-  \}
-\}
+    }
+  }
+}
 ```
 
 ## 完全な例：Voice Call プラグイン
@@ -173,44 +173,44 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 Voice Call プラグインの実際のマニフェストです：
 
 ```json
-\{
+{
   "id": "voice-call",
   "name": "Voice Call",
   "description": "Twilio/Telnyx/Plivo 経由の発着信通話",
   "version": "1.0.0",
-  "configSchema": \{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{
-      "provider": \{
+    "properties": {
+      "provider": {
         "type": "string",
         "enum": ["twilio", "telnyx", "plivo", "mock"],
         "description": "使用する音声プロバイダー"
-      \},
-      "fromNumber": \{
+      },
+      "fromNumber": {
         "type": "string",
         "description": "発信者番号"
-      \},
-      "toNumber": \{
+      },
+      "toNumber": {
         "type": "string",
         "description": "デフォルトの宛先番号"
-      \},
-      "twilio": \{
+      },
+      "twilio": {
         "type": "object",
-        "properties": \{
-          "accountSid": \{ "type": "string" \},
-          "authToken": \{ "type": "string" \}
-        \}
-      \}
-    \},
+        "properties": {
+          "accountSid": { "type": "string" },
+          "authToken": { "type": "string" }
+        }
+      }
+    },
     "required": ["provider"]
-  \},
-  "uiHints": \{
-    "twilio.authToken": \{
+  },
+  "uiHints": {
+    "twilio.authToken": {
       "sensitive": true
-    \}
-  \}
-\}
+    }
+  }
+}
 ```
 
 ## よくあるエラーと解決方法
@@ -262,23 +262,23 @@ OpenClaw は以下のタイミングでマニフェストを検証します：
 マニフェストを設定したら、ユーザーは `openclaw.json` でプラグインを設定します：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234",
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxx",
             authToken: "..."
-          \}
-        \}
-      \}
-    \}
-  \}
-\}
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 OpenClaw は `configSchema` に対してこの設定を自動的に検証します。

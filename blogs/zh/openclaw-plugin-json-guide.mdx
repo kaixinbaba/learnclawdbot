@@ -20,14 +20,14 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 这是最简单的有效清单：
 
 ```json
-\{
+{
   "id": "my-plugin",
-  "configSchema": \{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{\}
-  \}
-\}
+    "properties": {}
+  }
+}
 ```
 
 就这么简单——只需两个必需字段。但你可以做的远不止这些。
@@ -39,9 +39,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 插件的规范标识符。在所有已安装的插件中必须唯一。
 
 ```json
-\{
+{
   "id": "voice-call"
-\}
+}
 ```
 
 **规则：**
@@ -54,23 +54,23 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 定义插件接受哪些配置的 JSON Schema。OpenClaw 在启动时根据此 schema 验证插件配置——在运行任何插件代码之前。
 
 ```json
-\{
-  "configSchema": \{
+{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{
-      "apiKey": \{
+    "properties": {
+      "apiKey": {
         "type": "string",
         "description": "服务的 API 密钥"
-      \},
-      "timeout": \{
+      },
+      "timeout": {
         "type": "number",
         "default": 30
-      \}
-    \},
+      }
+    },
     "required": ["apiKey"]
-  \}
-\}
+  }
+}
 ```
 
 **为什么这很重要：**
@@ -85,9 +85,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 插件的人类可读显示名称。
 
 ```json
-\{
+{
   "name": "Voice Call"
-\}
+}
 ```
 
 ### `description`（字符串）
@@ -95,9 +95,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 插件功能的简短描述。
 
 ```json
-\{
+{
   "description": "通过 Twilio/Telnyx/Plivo 进行呼出和呼入语音通话"
-\}
+}
 ```
 
 ### `version`（字符串）
@@ -105,9 +105,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 插件版本（仅供参考）。
 
 ```json
-\{
+{
   "version": "1.2.0"
-\}
+}
 ```
 
 ### `kind`（字符串）
@@ -115,9 +115,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 插件类别。例如：`"memory"` 表示记忆插件。
 
 ```json
-\{
+{
   "kind": "memory"
-\}
+}
 ```
 
 ### `channels`（数组）
@@ -125,9 +125,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 此插件注册的频道 ID。如果你的插件添加消息频道，这是必需的。
 
 ```json
-\{
+{
   "channels": ["matrix", "slack"]
-\}
+}
 ```
 
 **重要：** 配置中未在此声明的 `channels.*` 键会导致**错误**。
@@ -137,9 +137,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 此插件注册的提供商 ID（用于模型提供商）。
 
 ```json
-\{
+{
   "providers": ["my-llm-provider"]
-\}
+}
 ```
 
 ### `skills`（数组）
@@ -147,9 +147,9 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 要加载的技能目录，相对于插件根目录。
 
 ```json
-\{
+{
   "skills": ["skills/voice", "skills/transcribe"]
-\}
+}
 ```
 
 ### `uiHints`（对象）
@@ -157,15 +157,15 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 配置 UI 渲染提示——标签、占位符和敏感字段标记。
 
 ```json
-\{
-  "uiHints": \{
-    "apiKey": \{
+{
+  "uiHints": {
+    "apiKey": {
       "label": "API 密钥",
       "placeholder": "sk-...",
       "sensitive": true
-    \}
-  \}
-\}
+    }
+  }
+}
 ```
 
 ## 完整示例：语音通话插件
@@ -173,44 +173,44 @@ featuredImageUrl: /images/features/plugin-manifest.webp
 这是来自 Voice Call 插件的真实清单：
 
 ```json
-\{
+{
   "id": "voice-call",
   "name": "Voice Call",
   "description": "通过 Twilio/Telnyx/Plivo 进行呼出和呼入通话",
   "version": "1.0.0",
-  "configSchema": \{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{
-      "provider": \{
+    "properties": {
+      "provider": {
         "type": "string",
         "enum": ["twilio", "telnyx", "plivo", "mock"],
         "description": "要使用的语音提供商"
-      \},
-      "fromNumber": \{
+      },
+      "fromNumber": {
         "type": "string",
         "description": "主叫号码"
-      \},
-      "toNumber": \{
+      },
+      "toNumber": {
         "type": "string",
         "description": "默认目标号码"
-      \},
-      "twilio": \{
+      },
+      "twilio": {
         "type": "object",
-        "properties": \{
-          "accountSid": \{ "type": "string" \},
-          "authToken": \{ "type": "string" \}
-        \}
-      \}
-    \},
+        "properties": {
+          "accountSid": { "type": "string" },
+          "authToken": { "type": "string" }
+        }
+      }
+    },
     "required": ["provider"]
-  \},
-  "uiHints": \{
-    "twilio.authToken": \{
+  },
+  "uiHints": {
+    "twilio.authToken": {
       "sensitive": true
-    \}
-  \}
-\}
+    }
+  }
+}
 ```
 
 ## 常见错误及解决方法
@@ -262,23 +262,23 @@ OpenClaw 在以下时机验证清单：
 清单设置完成后，用户在 `openclaw.json` 中配置你的插件：
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234",
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxx",
             authToken: "..."
-          \}
-        \}
-      \}
-    \}
-  \}
-\}
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 OpenClaw 会自动根据你的 `configSchema` 验证此配置。

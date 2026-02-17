@@ -20,14 +20,14 @@ If you're building a plugin or troubleshooting validation errors, this guide cov
 Here's the simplest valid manifest:
 
 ```json
-\{
+{
   "id": "my-plugin",
-  "configSchema": \{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{\}
-  \}
-\}
+    "properties": {}
+  }
+}
 ```
 
 That's it—two required fields. But there's much more you can do.
@@ -39,9 +39,9 @@ That's it—two required fields. But there's much more you can do.
 The canonical plugin identifier. Must be unique across all installed plugins.
 
 ```json
-\{
+{
   "id": "voice-call"
-\}
+}
 ```
 
 **Rules:**
@@ -54,23 +54,23 @@ The canonical plugin identifier. Must be unique across all installed plugins.
 A JSON Schema that defines what configuration your plugin accepts. OpenClaw validates plugin config against this schema at startup—before running any plugin code.
 
 ```json
-\{
-  "configSchema": \{
+{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{
-      "apiKey": \{
+    "properties": {
+      "apiKey": {
         "type": "string",
         "description": "API key for the service"
-      \},
-      "timeout": \{
+      },
+      "timeout": {
         "type": "number",
         "default": 30
-      \}
-    \},
+      }
+    },
     "required": ["apiKey"]
-  \}
-\}
+  }
+}
 ```
 
 **Why this matters:**
@@ -85,9 +85,9 @@ A JSON Schema that defines what configuration your plugin accepts. OpenClaw vali
 Human-readable display name for your plugin.
 
 ```json
-\{
+{
   "name": "Voice Call"
-\}
+}
 ```
 
 ### `description` (string)
@@ -95,9 +95,9 @@ Human-readable display name for your plugin.
 Short summary of what the plugin does.
 
 ```json
-\{
+{
   "description": "Outbound and inbound voice calls via Twilio/Telnyx/Plivo"
-\}
+}
 ```
 
 ### `version` (string)
@@ -105,9 +105,9 @@ Short summary of what the plugin does.
 Plugin version (informational only).
 
 ```json
-\{
+{
   "version": "1.2.0"
-\}
+}
 ```
 
 ### `kind` (string)
@@ -115,9 +115,9 @@ Plugin version (informational only).
 Plugin category. Example: `"memory"` for memory plugins.
 
 ```json
-\{
+{
   "kind": "memory"
-\}
+}
 ```
 
 ### `channels` (array)
@@ -125,9 +125,9 @@ Plugin category. Example: `"memory"` for memory plugins.
 Channel IDs this plugin registers. Required if your plugin adds a messaging channel.
 
 ```json
-\{
+{
   "channels": ["matrix", "slack"]
-\}
+}
 ```
 
 **Important:** Unknown `channels.*` keys in config are **errors** unless declared here.
@@ -137,9 +137,9 @@ Channel IDs this plugin registers. Required if your plugin adds a messaging chan
 Provider IDs this plugin registers (for model providers).
 
 ```json
-\{
+{
   "providers": ["my-llm-provider"]
-\}
+}
 ```
 
 ### `skills` (array)
@@ -147,9 +147,9 @@ Provider IDs this plugin registers (for model providers).
 Skill directories to load, relative to the plugin root.
 
 ```json
-\{
+{
   "skills": ["skills/voice", "skills/transcribe"]
-\}
+}
 ```
 
 ### `uiHints` (object)
@@ -157,15 +157,15 @@ Skill directories to load, relative to the plugin root.
 Hints for config UI rendering—labels, placeholders, and sensitive field markers.
 
 ```json
-\{
-  "uiHints": \{
-    "apiKey": \{
+{
+  "uiHints": {
+    "apiKey": {
       "label": "API Key",
       "placeholder": "sk-...",
       "sensitive": true
-    \}
-  \}
-\}
+    }
+  }
+}
 ```
 
 ## Complete Example: Voice Call Plugin
@@ -173,44 +173,44 @@ Hints for config UI rendering—labels, placeholders, and sensitive field marker
 Here's a real-world manifest from the Voice Call plugin:
 
 ```json
-\{
+{
   "id": "voice-call",
   "name": "Voice Call",
   "description": "Outbound + inbound calls via Twilio/Telnyx/Plivo",
   "version": "1.0.0",
-  "configSchema": \{
+  "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": \{
-      "provider": \{
+    "properties": {
+      "provider": {
         "type": "string",
         "enum": ["twilio", "telnyx", "plivo", "mock"],
         "description": "Voice provider to use"
-      \},
-      "fromNumber": \{
+      },
+      "fromNumber": {
         "type": "string",
         "description": "Caller ID phone number"
-      \},
-      "toNumber": \{
+      },
+      "toNumber": {
         "type": "string",
         "description": "Default destination number"
-      \},
-      "twilio": \{
+      },
+      "twilio": {
         "type": "object",
-        "properties": \{
-          "accountSid": \{ "type": "string" \},
-          "authToken": \{ "type": "string" \}
-        \}
-      \}
-    \},
+        "properties": {
+          "accountSid": { "type": "string" },
+          "authToken": { "type": "string" }
+        }
+      }
+    },
     "required": ["provider"]
-  \},
-  "uiHints": \{
-    "twilio.authToken": \{
+  },
+  "uiHints": {
+    "twilio.authToken": {
       "sensitive": true
-    \}
-  \}
-\}
+    }
+  }
+}
 ```
 
 ## Common Errors and Fixes
@@ -262,23 +262,23 @@ If a plugin has a broken manifest, validation fails entirely—so get it right!
 Once your manifest is set up, users configure your plugin in their `openclaw.json`:
 
 ```json5
-\{
-  plugins: \{
-    entries: \{
-      "voice-call": \{
+{
+  plugins: {
+    entries: {
+      "voice-call": {
         enabled: true,
-        config: \{
+        config: {
           provider: "twilio",
           fromNumber: "+15550001234",
-          twilio: \{
+          twilio: {
             accountSid: "ACxxxxxxxx",
             authToken: "..."
-          \}
-        \}
-      \}
-    \}
-  \}
-\}
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 OpenClaw validates this config against your `configSchema` automatically.
