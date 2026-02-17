@@ -125,10 +125,23 @@ export function PostList({
     setHasMore(initialPosts.length < initialTotal);
   }, [initialPosts, initialTotal]);
 
+  // Get selected tag name for local filtering
+  const selectedTag = serverTags.find((t) => t.id === selectedTagId);
+  const selectedTagName = selectedTag?.name?.toLowerCase();
+  const isLocalTag = selectedTagId?.startsWith("local-");
+
   const handleTagSelect = async (tagId: string | null) => {
     if (tagId === selectedTagId) return;
 
     setSelectedTagId(tagId);
+
+    // For local tags (id starts with "local-"), only filter locally, don't call server
+    if (tagId?.startsWith("local-")) {
+      setPosts([]);
+      setHasMore(false);
+      return;
+    }
+
     setIsLoading(true);
 
     const result = await listPublishedPostsAction({
@@ -153,6 +166,20 @@ export function PostList({
     setIsLoading(false);
   };
 
+  // Filter local posts by selected tag
+  const filteredLocalPosts = localPosts.filter((post) => {
+    if (!post || !post.slug) return false;
+    if (!selectedTagId) return true; // No filter, show all
+    if (!selectedTagName) return true;
+
+    // Check if post has the selected tag
+    const postTags = post.tags
+      ?.split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean) || [];
+    return postTags.includes(selectedTagName);
+  });
+
   return (
     <>
       {showTagSelector && serverTags.length > 0 && (
@@ -170,18 +197,15 @@ export function PostList({
       ) : (
         <>
           <div className={gridClass}>
-            {(!showTagSelector || selectedTagId === null) &&
-              localPosts
-                .filter((post) => post && post.slug)
-                .map((post, index) => (
-                  <PostCard
-                    key={`local-${post.slug}`}
-                    post={post}
-                    baseUrl={baseUrl}
-                    showCover={showCover}
-                    priority={index < 3}
-                  />
-                ))}
+            {filteredLocalPosts.map((post, index) => (
+              <PostCard
+                key={`local-${post.slug}`}
+                post={post}
+                baseUrl={baseUrl}
+                showCover={showCover}
+                priority={index < 3}
+              />
+            ))}
 
             {posts
               .filter((post) => post && post.slug)
@@ -206,9 +230,11 @@ export function PostList({
             </div>
           )}
 
-          {!hasMore && posts.length >= 0 && (
+          {!hasMore && (
             <p className="text-center text-gray-500 py-8 text-sm">
-              {posts.length === 0 ? emptyMessage : "You've reached the end."}
+              {filteredLocalPosts.length === 0 && posts.length === 0
+                ? emptyMessage
+                : "You've reached the end."}
             </p>
           )}
         </>
