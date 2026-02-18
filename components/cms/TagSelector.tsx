@@ -14,34 +14,19 @@ export function TagSelector({
   selectedTagId,
   onSelectTag,
 }: TagSelectorProps) {
+  // Temporarily disabled: only show "All" button
+  // TODO: Re-enable tag filtering after fixing Preview environment issues
   return (
     <div className="flex flex-wrap gap-2 justify-center mb-6">
       <button
         onClick={() => onSelectTag(null)}
         className={cn(
           "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-          selectedTagId === null
-            ? "bg-primary text-primary-foreground"
-            : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+          "bg-primary text-primary-foreground"
         )}
       >
         All
       </button>
-
-      {tags.map((tag) => (
-        <button
-          key={tag.id}
-          onClick={() => onSelectTag(tag.id)}
-          className={cn(
-            "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-            selectedTagId === tag.id
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-          )}
-        >
-          {tag.name}
-        </button>
-      ))}
     </div>
   );
 }

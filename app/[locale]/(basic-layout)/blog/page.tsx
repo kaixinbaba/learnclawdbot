@@ -73,6 +73,32 @@ export default async function Page({ params }: { params: Params }) {
     serverTags = tagsResult.data.tags;
   }
 
+  // Extract unique tags from local MDX posts
+  const localTagNames = [
+    ...new Set(
+      localPosts.flatMap((post) =>
+        post.tags
+          ? post.tags.split(",").map((t) => t.trim()).filter(Boolean)
+          : []
+      )
+    ),
+  ];
+
+  // Create Tag objects for local tags (using name as id for local tags)
+  const localTags: Tag[] = localTagNames
+    .filter((name) => !serverTags.some((st) => st.name.toLowerCase() === name.toLowerCase()))
+    .map((name) => ({
+      id: `local-${name.toLowerCase().replace(/\s+/g, "-")}`,
+      name,
+      postType: "blog" as const,
+      createdAt: new Date(),
+    }));
+
+  // Merge server tags with local tags
+  const allTags = [...serverTags, ...localTags].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+
   const noPostsFound =
     localPosts.length === 0 && initialServerPosts.length === 0;
 
@@ -98,7 +124,7 @@ export default async function Page({ params }: { params: Params }) {
           localPosts={localPosts}
           initialPosts={initialServerPosts}
           initialTotal={totalServerPosts}
-          serverTags={serverTags}
+          serverTags={allTags}
           locale={locale}
           pageSize={SERVER_POST_PAGE_SIZE}
           showTagSelector={true}
