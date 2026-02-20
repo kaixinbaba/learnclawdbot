@@ -30,9 +30,18 @@ export async function GET() {
     const postsCount = await sql`SELECT COUNT(*) as count FROM posts`;
     results.postsCount = postsCount[0]?.count;
     
-    // 5. Try to get one blog
+    // 5. Get table columns
+    const columns = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'posts' AND table_schema = 'learnclawdbot'
+      ORDER BY ordinal_position
+    `;
+    results.columns = columns.map((c: any) => c.column_name);
+    
+    // 6. Try to get one blog
     const oneBlog = await sql`
-      SELECT id, slug, locale, post_type 
+      SELECT id, slug, language, post_type 
       FROM posts 
       WHERE post_type = 'blog' 
       LIMIT 1
