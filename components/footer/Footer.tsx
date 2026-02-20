@@ -226,6 +226,15 @@ export default async function Footer() {
               >
                 Schedule
               </Link>
+              <Link
+                href="https://magic.ly/kaixinbaba1002"
+                title="Magic.ly Profile"
+                prefetch={false}
+                target="_blank"
+                className="text-gray-400 hover:text-white text-sm"
+              >
+                Magic
+              </Link>
             </div>
           </div>
         </div>
