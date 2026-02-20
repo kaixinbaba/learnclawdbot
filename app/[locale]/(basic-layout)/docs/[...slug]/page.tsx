@@ -151,8 +151,9 @@ export default async function DocPage({ params }: { params: Params }) {
   );
 }
 
-// Enable ISR: revalidate every 7 days (604800 seconds)
-export const revalidate = 604800;
+// Temporarily use force-dynamic to bypass Next.js 16 static analysis issues
+// TODO: Restore ISR after resolving DYNAMIC_SERVER_USAGE errors
+export const dynamic = 'force-dynamic';
 
 export async function generateStaticParams() {
   // Return empty array to use ISR (on-demand generation)
