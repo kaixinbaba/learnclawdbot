@@ -120,17 +120,21 @@ export default async function DocPage({ params }: { params: Params }) {
             </div>
           )}
           <article className="prose prose-gray dark:prose-invert max-w-none">
-            <MDXRemote
-              source={doc.content}
-              components={MDXComponents}
-              options={{
-                parseFrontmatter: false,
-                mdxOptions: {
-                  remarkPlugins: [remarkGfm],
-                  rehypePlugins: [[rehypeDocsLinks, { locale }]],
-                },
-              }}
-            />
+            {doc.content ? (
+              <MDXRemote
+                source={doc.content}
+                components={MDXComponents}
+                options={{
+                  parseFrontmatter: false,
+                  mdxOptions: {
+                    remarkPlugins: [remarkGfm],
+                    rehypePlugins: [[rehypeDocsLinks, { locale }]],
+                  },
+                }}
+              />
+            ) : (
+              <p className="text-muted-foreground">No content available.</p>
+            )}
           </article>
 
           <div className="mt-16 pt-8 border-t">
