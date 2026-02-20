@@ -98,6 +98,9 @@ export default async function DocsIndexPage({
   );
 }
 
+// Enable ISR: revalidate every 7 days
+export const revalidate = 604800;
+
 export async function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
 }

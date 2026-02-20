@@ -98,6 +98,24 @@ export const POST_CONFIGS: Record<PostType, PostConfig> = {
       edit: (id: string) => `/dashboard/glossary/${id}`,
     },
   },
+  doc: {
+    postType: "doc",
+    schema: basePostSchema,
+    actionSchema: postActionSchema,
+    imagePath: "/", // Docs don't need images
+    enableTags: false,
+    viewCount: {
+      enabled: false,
+      mode: 'all',
+      showInUI: false,
+    },
+    showCoverInList: false,
+    routes: {
+      list: "/dashboard/docs",
+      create: "/dashboard/docs/new",
+      edit: (id: string) => `/dashboard/docs/${id}`,
+    },
+  },
 };
 
 // Helper function to get config by content type

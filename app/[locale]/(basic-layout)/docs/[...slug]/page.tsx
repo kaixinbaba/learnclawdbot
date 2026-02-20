@@ -147,15 +147,10 @@ export default async function DocPage({ params }: { params: Params }) {
   );
 }
 
+// Enable ISR: revalidate every 7 days (604800 seconds)
+export const revalidate = 604800;
+
 export async function generateStaticParams() {
-  const allParams: { locale: string; slug: string[] }[] = [];
-
-  for (const loc of LOCALES) {
-    const slugs = await listDocSlugs(loc);
-    for (const s of slugs) {
-      allParams.push({ locale: loc, slug: s.split("/") });
-    }
-  }
-
-  return allParams;
+  // Return empty array to use ISR (on-demand generation)
+  return [];
 }
