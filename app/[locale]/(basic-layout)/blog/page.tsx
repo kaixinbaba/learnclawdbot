@@ -38,11 +38,9 @@ export default async function Page({ params }: { params: Params }) {
 
   // Parallel data fetching
   const [
-    { posts: localPosts },
     initialServerPostsResult,
     tagsResult
   ] = await Promise.all([
-    blogCms.getLocalList(locale),
     listPublishedPostsAction({
       pageIndex: 0,
       pageSize: SERVER_POST_PAGE_SIZE,
@@ -68,39 +66,11 @@ export default async function Page({ params }: { params: Params }) {
     );
   }
 
-  let serverTags: Tag[] = [];
-  if (tagsResult.success && tagsResult.data?.tags) {
-    serverTags = tagsResult.data.tags;
-  }
+  const allTags: Tag[] = tagsResult.success && tagsResult.data?.tags 
+    ? tagsResult.data.tags.sort((a, b) => a.name.localeCompare(b.name))
+    : [];
 
-  // Extract unique tags from local MDX posts
-  const localTagNames = [
-    ...new Set(
-      localPosts.flatMap((post) =>
-        post.tags
-          ? post.tags.split(",").map((t) => t.trim()).filter(Boolean)
-          : []
-      )
-    ),
-  ];
-
-  // Create Tag objects for local tags (using name as id for local tags)
-  const localTags: Tag[] = localTagNames
-    .filter((name) => !serverTags.some((st) => st.name.toLowerCase() === name.toLowerCase()))
-    .map((name) => ({
-      id: `local-${name.toLowerCase().replace(/\s+/g, "-")}`,
-      name,
-      postType: "blog" as const,
-      createdAt: new Date(),
-    }));
-
-  // Merge server tags with local tags
-  const allTags = [...serverTags, ...localTags].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-
-  const noPostsFound =
-    localPosts.length === 0 && initialServerPosts.length === 0;
+  const noPostsFound = initialServerPosts.length === 0;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -121,7 +91,7 @@ export default async function Page({ params }: { params: Params }) {
         <PostList
           postType="blog"
           baseUrl="/blog"
-          localPosts={localPosts}
+          localPosts={[]}
           initialPosts={initialServerPosts}
           initialTotal={totalServerPosts}
           serverTags={allTags}

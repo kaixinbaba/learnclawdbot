@@ -68,7 +68,6 @@ export const POST_CONFIGS: Record<PostType, PostConfig> = {
     actionSchema: postActionSchema,
     imagePath: BLOGS_IMAGE_PATH,
     enableTags: true,
-    localDirectory: 'blogs',
     viewCount: {
       enabled: false, // Set to true to enable view count tracking
       mode: 'all',

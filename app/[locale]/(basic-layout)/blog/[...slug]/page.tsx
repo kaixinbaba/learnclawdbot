@@ -20,6 +20,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 export const dynamicParams = true;
+export const revalidate = 604800; // 7 days ISR
 
 type Params = Promise<{
   locale: string;
@@ -324,46 +325,7 @@ const BlogPostCard = ({ post }: { post: PostBase }) => (
 );
 
 export async function generateStaticParams() {
-  const allParams: { locale: string; slug: string[] }[] = [];
-
-  for (const locale of LOCALES) {
-    const { posts: localPosts } = await blogCms.getLocalList(locale);
-    localPosts
-      .filter((post) => post.slug && post.status !== "draft")
-      .forEach((post) => {
-        const slugPart = post.slug.replace(/^\//, "").replace(/^blogs\//, "");
-        if (slugPart) {
-          allParams.push({ locale, slug: slugPart.split('/') });
-        }
-      });
-  }
-
-  for (const locale of LOCALES) {
-    const serverResult = await listPublishedPostsAction({
-      locale: locale,
-      pageSize: 1000,
-      postType: "blog",
-    });
-    if (serverResult.success && serverResult.data?.posts) {
-      serverResult.data.posts.forEach((post) => {
-        const slugPart = post.slug?.replace(/^\//, "").replace(/^blogs\//, "");
-        if (slugPart) {
-          allParams.push({ locale, slug: slugPart.split('/') });
-        }
-      });
-    }
-  }
-
-  // Deduplicate - careful with array comparison in Map/Set key
-  // simpler to stringify key
-  const uniqueParamsMap = new Map<string, { locale: string; slug: string[] }>();
-  
-  allParams.forEach(p => {
-    const key = `${p.locale}-${p.slug.join('/')}`;
-    uniqueParamsMap.set(key, p);
-  });
-
-  const uniqueParams = Array.from(uniqueParamsMap.values());
-  
-  return uniqueParams;
+  // Return empty array to enable full ISR mode
+  // Pages will be generated on-demand and cached for 7 days
+  return [];
 }
