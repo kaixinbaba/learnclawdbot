@@ -75,6 +75,7 @@ export function createDatabaseConfig(config: DBConfig) {
       // See: https://www.postgresql.org/docs/current/runtime-config-client.html
       connection: {
         statement_timeout: 30000,
+        search_path: 'learnclawdbot',
       },
     },
     neon: {
