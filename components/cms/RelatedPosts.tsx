@@ -1,4 +1,4 @@
-import { getRelatedPostsAction } from "@/actions/posts/posts";
+import { getRelatedPostsForISR } from "@/actions/posts/posts-isr";
 import { PostType } from "@/lib/db/schema";
 import { PostBase, PublicPost } from "@/types/cms";
 import dayjs from "dayjs";
@@ -37,7 +37,7 @@ export async function RelatedPosts({
   title = "Related Posts",
   CardComponent,
 }: RelatedPostsProps): Promise<ReactElement | null> {
-  const relatedResult = await getRelatedPostsAction({
+  const relatedResult = await getRelatedPostsForISR({
     postId,
     postType,
     locale,

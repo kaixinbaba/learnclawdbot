@@ -1,4 +1,4 @@
-import { getPostMetadataAction, getPublishedPostBySlugAction, listPublishedPostsAction } from '@/actions/posts/posts';
+import { getPostMetadataForISR, getPublishedPostBySlugForISR, listPublishedPostsForISR } from '@/actions/posts/posts-isr';
 import { POST_CONFIGS } from '@/components/cms/post-config';
 import { DEFAULT_LOCALE } from '@/i18n/routing';
 import { PostType } from '@/lib/db/schema';
@@ -94,8 +94,8 @@ export function createCmsModule(postType: PostType) {
     slug: string,
     locale: string = DEFAULT_LOCALE
   ): Promise<GetBySlugResult> {
-    // Fetch from server only
-    const serverResult = await getPublishedPostBySlugAction({ slug, locale, postType });
+    // Fetch from server only (using ISR-safe version without session access)
+    const serverResult = await getPublishedPostBySlugForISR({ slug, locale, postType });
 
     if (serverResult.success && serverResult.data?.post) {
       return {
@@ -151,7 +151,7 @@ export function createCmsModule(postType: PostType) {
       visibility?: 'public' | 'logged_in' | 'subscribers' | null;
     } = {}
   ): Promise<GetPublishedListResult> {
-    const result = await listPublishedPostsAction({
+    const result = await listPublishedPostsForISR({
       postType,
       locale,
       pageIndex: options.pageIndex ?? 0,
@@ -179,7 +179,7 @@ export function createCmsModule(postType: PostType) {
     locale: string = DEFAULT_LOCALE
   ): Promise<GetMetadataResult> {
     // Fetch from server only
-    const serverResult = await getPostMetadataAction({ slug, locale, postType });
+    const serverResult = await getPostMetadataForISR({ slug, locale, postType });
 
     if (serverResult.success && serverResult.data?.metadata) {
       return {

@@ -630,6 +630,80 @@ export async function getPublishedPostBySlugAction({
   }
 }
 
+/**
+ * ISR-safe version: No session/cookies access, safe for static generation.
+ * For non-public posts, returns metadata without content and sets requiresAuth flag.
+ */
+export async function getPublishedPostBySlugForISR({
+  slug,
+  postType = 'blog',
+  locale = 'en',
+}: GetPublishedPostBySlugParams): Promise<GetPublishedPostBySlugResult> {
+  if (!slug) {
+    return actionResponse.badRequest('Slug is required.')
+  }
+
+  try {
+    const conditions = [
+      eq(postsSchema.slug, slug),
+      eq(postsSchema.language, locale),
+      eq(postsSchema.status, 'published'),
+      eq(postsSchema.postType, postType)
+    ]
+
+    const postData = await db
+      .select()
+      .from(postsSchema)
+      .where(and(...conditions))
+      .limit(1)
+
+    if (!postData || postData.length === 0) {
+      return actionResponse.notFound('Post not found.')
+    }
+    const post = postData[0]
+
+    const tagsData = await db
+      .select({ name: tagsSchema.name })
+      .from(postTagsSchema)
+      .innerJoin(tagsSchema, eq(postTagsSchema.tagId, tagsSchema.id))
+      .where(eq(postTagsSchema.postId, post.id))
+
+    const tagNames = tagsData.map((t) => t.name).join(', ') || null
+
+    // For ISR: if post requires auth, return metadata only (no content)
+    // Client component will handle auth check and content fetch
+    let finalContent = post.content ?? ''
+    let restrictionCustomCode: string | undefined = undefined
+
+    if (post.visibility === 'logged_in') {
+      finalContent = ''
+      restrictionCustomCode = 'unauthorized'
+    } else if (post.visibility === 'subscribers') {
+      finalContent = ''
+      restrictionCustomCode = 'notSubscriber'
+    }
+
+    const postResultData: PublicPostWithContent = {
+      ...post,
+      content: finalContent,
+      tags: tagNames,
+    }
+
+    if (restrictionCustomCode) {
+      return actionResponse.success({ post: postResultData }, restrictionCustomCode)
+    }
+
+    return actionResponse.success({ post: postResultData })
+  } catch (error) {
+    console.error(
+      `Get Published Post By Slug For ISR Failed for slug ${slug}, locale ${locale}:`,
+      error
+    )
+    const errorMessage = getErrorMessage(error)
+    return actionResponse.error(errorMessage)
+  }
+}
+
 // --- TODO: [custom] check user subscription or custom logic ---
 async function checkUserSubscription(userId: string): Promise<boolean> {
   if (!userId) {

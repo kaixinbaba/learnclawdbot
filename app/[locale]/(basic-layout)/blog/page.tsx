@@ -1,4 +1,4 @@
-import { listPublishedPostsAction } from "@/actions/posts/posts";
+import { listPublishedPostsForISR } from "@/actions/posts/posts-isr";
 import { listTagsAction } from "@/actions/posts/tags";
 import { POST_CONFIGS } from "@/components/cms/post-config";
 import { PostList } from "@/components/cms/PostList";
@@ -34,14 +34,14 @@ const SERVER_POST_PAGE_SIZE = 12;
 
 export default async function Page({ params }: { params: Params }) {
   const { locale } = await params;
-  const t = await getTranslations("Blogs");
+  const t = await getTranslations({ locale, namespace: "Blogs" });
 
   // Parallel data fetching
   const [
     initialServerPostsResult,
     tagsResult
   ] = await Promise.all([
-    listPublishedPostsAction({
+    listPublishedPostsForISR({
       pageIndex: 0,
       pageSize: SERVER_POST_PAGE_SIZE,
       postType: "blog",

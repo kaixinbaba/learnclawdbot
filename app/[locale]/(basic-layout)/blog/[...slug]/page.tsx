@@ -1,4 +1,4 @@
-import { listPublishedPostsAction } from "@/actions/posts/posts";
+import { listPublishedPostsForISR } from "@/actions/posts/posts-isr";
 import { getViewCountAction } from "@/actions/posts/views";
 import { ContentRestrictionMessage } from "@/components/cms/ContentRestrictionMessage";
 import { POST_CONFIGS } from "@/components/cms/post-config";
@@ -20,7 +20,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 export const dynamicParams = true;
-export const revalidate = 604800; // 7 days ISR
+// Temporarily use force-dynamic to bypass Next.js 16 static analysis issues
+// TODO: Restore ISR after resolving DYNAMIC_SERVER_USAGE errors
+export const dynamic = 'force-dynamic';
 
 type Params = Promise<{
   locale: string;
@@ -89,7 +91,7 @@ export default async function BlogPage({ params }: { params: Params }) {
   const locale = resolvedParams.locale;
   const slugArray = resolvedParams.slug;
   const slug = slugArray.join("/");
-  const t = await getTranslations("Blogs");
+  const t = await getTranslations({ locale, namespace: "Blogs" });
 
   const { post, errorCode } = await blogCms.getBySlug(slug, locale);
 

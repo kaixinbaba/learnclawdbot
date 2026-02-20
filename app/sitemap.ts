@@ -1,4 +1,4 @@
-import { listPublishedPostsAction } from '@/actions/posts/posts'
+import { listPublishedPostsForISR } from '@/actions/posts/posts-isr'
 import { siteConfig } from '@/config/site'
 import { DEFAULT_LOCALE, LOCALES, UI_LOCALES } from '@/i18n/routing'
 import { blogCms } from '@/lib/cms'
@@ -62,7 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   for (const locale of UI_LOCALES) {
-    const serverResult = await listPublishedPostsAction({
+    const serverResult = await listPublishedPostsForISR({
       locale: locale,
       pageSize: 1000,
       visibility: "public",
@@ -102,7 +102,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Add glossary entries
   for (const locale of UI_LOCALES) {
-    const serverResult = await listPublishedPostsAction({
+    const serverResult = await listPublishedPostsForISR({
       locale: locale,
       pageSize: 1000,
       visibility: "public",

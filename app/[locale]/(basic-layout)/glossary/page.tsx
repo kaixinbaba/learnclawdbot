@@ -1,4 +1,4 @@
-import { listPublishedPostsAction } from "@/actions/posts/posts";
+import { listPublishedPostsForISR } from "@/actions/posts/posts-isr";
 import { listTagsAction } from "@/actions/posts/tags";
 import { POST_CONFIGS } from "@/components/cms/post-config";
 import { PostList } from "@/components/cms/PostList";
@@ -33,10 +33,10 @@ const SERVER_POST_PAGE_SIZE = 48;
 
 export default async function Page({ params }: { params: Params }) {
   const { locale } = await params;
-  const t = await getTranslations("Glossary");
+  const t = await getTranslations({ locale, namespace: "Glossary" });
 
   // Only fetch from server (database), no local file system access
-  const initialServerPostsResult = await listPublishedPostsAction({
+  const initialServerPostsResult = await listPublishedPostsForISR({
     pageIndex: 0,
     pageSize: SERVER_POST_PAGE_SIZE,
     postType: "glossary",
