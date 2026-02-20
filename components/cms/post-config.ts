@@ -68,7 +68,6 @@ export const POST_CONFIGS: Record<PostType, PostConfig> = {
     actionSchema: postActionSchema,
     imagePath: BLOGS_IMAGE_PATH,
     enableTags: true,
-    localDirectory: 'blogs',
     viewCount: {
       enabled: false, // Set to true to enable view count tracking
       mode: 'all',
@@ -97,6 +96,24 @@ export const POST_CONFIGS: Record<PostType, PostConfig> = {
       list: "/dashboard/glossary",
       create: "/dashboard/glossary/new",
       edit: (id: string) => `/dashboard/glossary/${id}`,
+    },
+  },
+  doc: {
+    postType: "doc",
+    schema: basePostSchema,
+    actionSchema: postActionSchema,
+    imagePath: "/", // Docs don't need images
+    enableTags: false,
+    viewCount: {
+      enabled: false,
+      mode: 'all',
+      showInUI: false,
+    },
+    showCoverInList: false,
+    routes: {
+      list: "/dashboard/docs",
+      create: "/dashboard/docs/new",
+      edit: (id: string) => `/dashboard/docs/${id}`,
     },
   },
 };

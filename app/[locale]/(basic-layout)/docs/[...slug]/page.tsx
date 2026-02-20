@@ -120,17 +120,21 @@ export default async function DocPage({ params }: { params: Params }) {
             </div>
           )}
           <article className="prose prose-gray dark:prose-invert max-w-none">
-            <MDXRemote
-              source={doc.content}
-              components={MDXComponents}
-              options={{
-                parseFrontmatter: false,
-                mdxOptions: {
-                  remarkPlugins: [remarkGfm],
-                  rehypePlugins: [[rehypeDocsLinks, { locale }]],
-                },
-              }}
-            />
+            {doc.content ? (
+              <MDXRemote
+                source={doc.content}
+                components={MDXComponents}
+                options={{
+                  parseFrontmatter: false,
+                  mdxOptions: {
+                    remarkPlugins: [remarkGfm],
+                    rehypePlugins: [[rehypeDocsLinks, { locale }]],
+                  },
+                }}
+              />
+            ) : (
+              <p className="text-muted-foreground">No content available.</p>
+            )}
           </article>
 
           <div className="mt-16 pt-8 border-t">
@@ -147,15 +151,11 @@ export default async function DocPage({ params }: { params: Params }) {
   );
 }
 
+// Temporarily use force-dynamic to bypass Next.js 16 static analysis issues
+// TODO: Restore ISR after resolving DYNAMIC_SERVER_USAGE errors
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
-  const allParams: { locale: string; slug: string[] }[] = [];
-
-  for (const loc of LOCALES) {
-    const slugs = await listDocSlugs(loc);
-    for (const s of slugs) {
-      allParams.push({ locale: loc, slug: s.split("/") });
-    }
-  }
-
-  return allParams;
+  // Return empty array to use ISR (on-demand generation)
+  return [];
 }

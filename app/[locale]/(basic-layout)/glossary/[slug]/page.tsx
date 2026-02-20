@@ -1,4 +1,4 @@
-import { listPublishedPostsAction } from "@/actions/posts/posts";
+import { listPublishedPostsForISR } from "@/actions/posts/posts-isr";
 import { getViewCountAction } from "@/actions/posts/views";
 import { ContentRestrictionMessage } from "@/components/cms/ContentRestrictionMessage";
 import { POST_CONFIGS } from "@/components/cms/post-config";
@@ -81,7 +81,7 @@ export async function generateMetadata({
 
 export default async function GlossaryPage({ params }: { params: Params }) {
   const { slug, locale } = await params;
-  const t = await getTranslations("Glossary");
+  const t = await getTranslations({ locale, namespace: "Glossary" });
 
   const { post, errorCode } = await glossaryCms.getBySlug(slug, locale);
 
@@ -320,7 +320,7 @@ export async function generateStaticParams() {
   const allParams: { locale: string; slug: string }[] = [];
 
   for (const locale of LOCALES) {
-    const serverResult = await listPublishedPostsAction({
+    const serverResult = await listPublishedPostsForISR({
       locale: locale,
       pageSize: 1000,
       postType: "glossary",

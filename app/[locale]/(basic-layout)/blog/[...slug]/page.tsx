@@ -1,4 +1,4 @@
-import { listPublishedPostsAction } from "@/actions/posts/posts";
+import { listPublishedPostsForISR } from "@/actions/posts/posts-isr";
 import { getViewCountAction } from "@/actions/posts/views";
 import { ContentRestrictionMessage } from "@/components/cms/ContentRestrictionMessage";
 import { POST_CONFIGS } from "@/components/cms/post-config";
@@ -20,6 +20,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 export const dynamicParams = true;
+// Temporarily use force-dynamic to bypass Next.js 16 static analysis issues
+// TODO: Restore ISR after resolving DYNAMIC_SERVER_USAGE errors
+export const dynamic = 'force-dynamic';
 
 type Params = Promise<{
   locale: string;
@@ -88,7 +91,7 @@ export default async function BlogPage({ params }: { params: Params }) {
   const locale = resolvedParams.locale;
   const slugArray = resolvedParams.slug;
   const slug = slugArray.join("/");
-  const t = await getTranslations("Blogs");
+  const t = await getTranslations({ locale, namespace: "Blogs" });
 
   const { post, errorCode } = await blogCms.getBySlug(slug, locale);
 
@@ -324,46 +327,7 @@ const BlogPostCard = ({ post }: { post: PostBase }) => (
 );
 
 export async function generateStaticParams() {
-  const allParams: { locale: string; slug: string[] }[] = [];
-
-  for (const locale of LOCALES) {
-    const { posts: localPosts } = await blogCms.getLocalList(locale);
-    localPosts
-      .filter((post) => post.slug && post.status !== "draft")
-      .forEach((post) => {
-        const slugPart = post.slug.replace(/^\//, "").replace(/^blogs\//, "");
-        if (slugPart) {
-          allParams.push({ locale, slug: slugPart.split('/') });
-        }
-      });
-  }
-
-  for (const locale of LOCALES) {
-    const serverResult = await listPublishedPostsAction({
-      locale: locale,
-      pageSize: 1000,
-      postType: "blog",
-    });
-    if (serverResult.success && serverResult.data?.posts) {
-      serverResult.data.posts.forEach((post) => {
-        const slugPart = post.slug?.replace(/^\//, "").replace(/^blogs\//, "");
-        if (slugPart) {
-          allParams.push({ locale, slug: slugPart.split('/') });
-        }
-      });
-    }
-  }
-
-  // Deduplicate - careful with array comparison in Map/Set key
-  // simpler to stringify key
-  const uniqueParamsMap = new Map<string, { locale: string; slug: string[] }>();
-  
-  allParams.forEach(p => {
-    const key = `${p.locale}-${p.slug.join('/')}`;
-    uniqueParamsMap.set(key, p);
-  });
-
-  const uniqueParams = Array.from(uniqueParamsMap.values());
-  
-  return uniqueParams;
+  // Return empty array to enable full ISR mode
+  // Pages will be generated on-demand and cached for 7 days
+  return [];
 }

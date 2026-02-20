@@ -1,9 +1,7 @@
-import fs from "fs/promises";
-import path from "path";
-import matter from "gray-matter";
+import { db } from "./db";
+import { posts } from "./db/schema";
+import { eq, and, asc, desc } from "drizzle-orm";
 import { LOCALES } from "@/i18n/routing";
-
-const DOCS_DIR = path.join(process.cwd(), "docs");
 
 export interface DocMeta {
   title: string;
@@ -21,47 +19,39 @@ export interface DocContent {
 
 /**
  * Get MDX content for a doc page by slug and locale.
- * Falls back to "en" if the requested locale file doesn't exist.
+ * Falls back to "en" if the requested locale doesn't exist.
  */
 export async function getDocBySlug(
   slug: string,
   locale: string
 ): Promise<DocContent | null> {
-  // Try locale-specific file first, then fallback to en
+  // Try locale-specific first, then fallback to en
   const locales = locale === "en" ? ["en"] : [locale, "en"];
 
   for (const loc of locales) {
-    // Try slug.mdx directly
-    const directPath = path.join(DOCS_DIR, loc, `${slug}.mdx`);
-    // Try slug/index.mdx
-    const indexPath = path.join(DOCS_DIR, loc, slug, "index.mdx");
+    const [post] = await db
+      .select()
+      .from(posts)
+      .where(
+        and(
+          eq(posts.slug, slug),
+          eq(posts.language, loc),
+          eq(posts.postType, "doc"),
+          eq(posts.status, "published")
+        )
+      )
+      .limit(1);
 
-    for (const filePath of [directPath, indexPath]) {
-      try {
-        const raw = await fs.readFile(filePath, "utf-8");
-        const { content, data } = matter(raw);
-
-        // Extract title from first h1 in content, or from frontmatter
-        let title = data.title || "";
-        if (!title) {
-          const h1Match = content.match(/^#\s+(.+)$/m);
-          if (h1Match) {
-            title = h1Match[1].replace(/[*_`]/g, "").trim();
-          }
-        }
-        if (!title) {
-          title = slug.split("/").pop() || "Untitled";
-        }
-
-        return {
-          content,
-          frontmatter: data,
-          title,
-          slug,
-        };
-      } catch {
-        // File doesn't exist, try next
-      }
+    if (post) {
+      return {
+        content: post.content || "",
+        frontmatter: {
+          title: post.title,
+          summary: post.description,
+        },
+        title: post.title,
+        slug: post.slug,
+      };
     }
   }
 
@@ -73,186 +63,98 @@ export async function getDocBySlug(
  * Used to generate accurate hreflang tags (only for locales with real content).
  */
 export async function getAvailableLocalesForDoc(slug: string): Promise<string[]> {
-  const available: string[] = [];
-  
-  for (const locale of LOCALES) {
-    const directPath = path.join(DOCS_DIR, locale, `${slug}.mdx`);
-    const indexPath = path.join(DOCS_DIR, locale, slug, "index.mdx");
-    
-    try {
-      await fs.access(directPath);
-      available.push(locale);
-      continue;
-    } catch {}
-    
-    try {
-      await fs.access(indexPath);
-      available.push(locale);
-    } catch {}
-  }
-  
-  return available;
+  const availablePosts = await db
+    .select({ language: posts.language })
+    .from(posts)
+    .where(
+      and(
+        eq(posts.slug, slug),
+        eq(posts.postType, "doc"),
+        eq(posts.status, "published")
+      )
+    );
+
+  return availablePosts.map((p) => p.language).filter((lang) => LOCALES.includes(lang as any));
 }
 
 /**
  * List all doc slugs for a given locale (for generateStaticParams).
  */
 export async function listDocSlugs(locale: string): Promise<string[]> {
-  const slugs: string[] = [];
-  const localeDir = path.join(DOCS_DIR, locale);
+  const docPosts = await db
+    .select({ slug: posts.slug })
+    .from(posts)
+    .where(
+      and(
+        eq(posts.language, locale),
+        eq(posts.postType, "doc"),
+        eq(posts.status, "published")
+      )
+    );
 
-  try {
-    await collectSlugs(localeDir, "", slugs);
-  } catch {
-    // Locale dir doesn't exist
-  }
-
-  return slugs;
-}
-
-async function collectSlugs(
-  dir: string,
-  prefix: string,
-  slugs: string[]
-): Promise<void> {
-  let entries;
-  try {
-    entries = await fs.readdir(dir, { withFileTypes: true });
-  } catch {
-    return;
-  }
-
-  for (const entry of entries) {
-    // Skip hidden files, assets, layouts, config files
-    if (
-      entry.name.startsWith("_") ||
-      entry.name.startsWith(".") ||
-      entry.name === "assets" ||
-      entry.name === "images" ||
-      entry.name === "CNAME" ||
-      entry.name === "docs.json"
-    ) {
-      continue;
-    }
-
-    if (entry.isDirectory()) {
-      const subPrefix = prefix ? `${prefix}/${entry.name}` : entry.name;
-      await collectSlugs(path.join(dir, entry.name), subPrefix, slugs);
-    } else if (entry.name.endsWith(".mdx")) {
-      const name = entry.name.replace(/\.mdx$/, "");
-      if (name === "index") {
-        if (prefix) slugs.push(prefix);
-      } else {
-        slugs.push(prefix ? `${prefix}/${name}` : name);
-      }
-    }
-  }
+  return docPosts.map((p) => p.slug);
 }
 
 /**
- * Build a simple sidebar structure from the docs directory.
+ * Build a simple sidebar structure from the database.
+ * Groups docs by top-level category (first part of slug before /).
  */
 export async function getDocSidebar(
   locale: string
 ): Promise<SidebarSection[]> {
-  const localeDir = path.join(DOCS_DIR, locale);
-  const sections: SidebarSection[] = [];
+  const docPosts = await db
+    .select()
+    .from(posts)
+    .where(
+      and(
+        eq(posts.language, locale),
+        eq(posts.postType, "doc"),
+        eq(posts.status, "published")
+      )
+    )
+    .orderBy(desc(posts.isPinned), asc(posts.slug));
 
-  try {
-    const entries = await fs.readdir(localeDir, { withFileTypes: true });
-
-    // Top-level .mdx files
-    const topFiles: SidebarItem[] = [];
-    const dirs: { name: string; path: string }[] = [];
-
-    for (const entry of entries) {
-      if (
-        entry.name.startsWith("_") ||
-        entry.name.startsWith(".") ||
-        entry.name === "assets" ||
-        entry.name === "images" ||
-        entry.name === "CNAME" ||
-        entry.name === "docs.json"
-      ) {
-        continue;
-      }
-
-      if (entry.isDirectory()) {
-        dirs.push({ name: entry.name, path: path.join(localeDir, entry.name) });
-      } else if (entry.name.endsWith(".mdx") && entry.name !== "index.mdx") {
-        const slug = entry.name.replace(/\.mdx$/, "");
-        const title = await getDocTitle(path.join(localeDir, entry.name), slug);
-        topFiles.push({ title, slug });
-      }
+  // Group by top-level category
+  const sections: Map<string, SidebarItem[]> = new Map();
+  
+  for (const post of docPosts) {
+    const parts = post.slug.split("/");
+    const category = parts.length > 1 ? parts[0] : "General";
+    
+    const item: SidebarItem = {
+      title: post.title,
+      slug: post.slug,
+    };
+    
+    if (!sections.has(category)) {
+      sections.set(category, []);
     }
-
-    if (topFiles.length > 0) {
-      sections.push({ title: "General", items: topFiles.sort((a, b) => a.title.localeCompare(b.title)) });
-    }
-
-    // Subdirectories
-    for (const dir of dirs.sort((a, b) => a.name.localeCompare(b.name))) {
-      const items: SidebarItem[] = [];
-      const subEntries = await fs.readdir(dir.path, { withFileTypes: true });
-
-      for (const sub of subEntries) {
-        if (sub.isFile() && sub.name.endsWith(".mdx")) {
-          const name = sub.name.replace(/\.mdx$/, "");
-          const slug =
-            name === "index"
-              ? dir.name
-              : `${dir.name}/${name}`;
-          const title = await getDocTitle(path.join(dir.path, sub.name), name);
-          items.push({ title, slug });
-        } else if (sub.isDirectory()) {
-          // Handle nested dirs (e.g., gateway/security/)
-          try {
-            const nestedEntries = await fs.readdir(path.join(dir.path, sub.name), { withFileTypes: true });
-            for (const nested of nestedEntries) {
-              if (nested.isFile() && nested.name.endsWith(".mdx")) {
-                const nName = nested.name.replace(/\.mdx$/, "");
-                const slug =
-                  nName === "index"
-                    ? `${dir.name}/${sub.name}`
-                    : `${dir.name}/${sub.name}/${nName}`;
-                const title = await getDocTitle(
-                  path.join(dir.path, sub.name, nested.name),
-                  nName
-                );
-                items.push({ title, slug });
-              }
-            }
-          } catch {
-            // skip
-          }
-        }
-      }
-
-      if (items.length > 0) {
-        const sectionTitle = dir.name
-          .replace(/-/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-        sections.push({ title: sectionTitle, items: items.sort((a, b) => a.title.localeCompare(b.title)) });
-      }
-    }
-  } catch {
-    // locale dir doesn't exist
+    sections.get(category)!.push(item);
   }
 
-  return sections;
-}
+  // Convert to sidebar sections
+  const result: SidebarSection[] = [];
+  
+  // Sort sections by name, but put "General" first
+  const sortedCategories = Array.from(sections.keys()).sort((a, b) => {
+    if (a === "General") return -1;
+    if (b === "General") return 1;
+    return a.localeCompare(b);
+  });
 
-async function getDocTitle(filePath: string, fallback: string): Promise<string> {
-  try {
-    const raw = await fs.readFile(filePath, "utf-8");
-    const { content, data } = matter(raw);
-    if (data.title) return data.title;
-    const h1Match = content.match(/^#\s+(.+)$/m);
-    if (h1Match) return h1Match[1].replace(/[*_`]/g, "").trim();
-  } catch {
-    // ignore
+  for (const category of sortedCategories) {
+    const items = sections.get(category)!;
+    const title = category
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    
+    result.push({
+      title,
+      items: items.sort((a, b) => a.title.localeCompare(b.title)),
+    });
   }
-  return fallback.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  return result;
 }
 
 export interface SidebarItem {

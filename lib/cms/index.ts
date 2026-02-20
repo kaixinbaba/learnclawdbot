@@ -1,4 +1,4 @@
-import { getPostMetadataAction, getPublishedPostBySlugAction, listPublishedPostsAction } from '@/actions/posts/posts';
+import { getPostMetadataForISR, getPublishedPostBySlugForISR, listPublishedPostsForISR } from '@/actions/posts/posts-isr';
 import { POST_CONFIGS } from '@/components/cms/post-config';
 import { DEFAULT_LOCALE } from '@/i18n/routing';
 import { PostType } from '@/lib/db/schema';
@@ -88,53 +88,14 @@ export function createCmsModule(postType: PostType) {
 
   /**
    * Get a single post by slug
-   * If localDirectory is configured, checks local files first, then falls back to server
+   * Fetches from database only
    */
   async function getBySlug(
     slug: string,
     locale: string = DEFAULT_LOCALE
   ): Promise<GetBySlugResult> {
-    // Try local filesystem first if localDirectory is configured
-    // Try local filesystem first if localDirectory is configured
-    if (localDirectory) {
-      const postsDirectory = path.join(process.cwd(), localDirectory, locale);
-      if (fs.existsSync(postsDirectory)) {
-        // We need to access the helper function. Since it is hoisted within the scope, we can call it.
-        // However, typescript might complain if not careful, but runtime is fine.
-        // To be safe and clean, I will just implement the same logic or use the helper if I am sure.
-        // Let's assume hoisting works.
-        const allFilePaths = await getAllFilesRecursively(postsDirectory);
-        
-        for (const fullPath of allFilePaths) {
-          try {
-            const fileContents = await fs.promises.readFile(fullPath, 'utf8');
-            const { data, content } = matter(fileContents);
-
-            const localSlug = (data.slug || '').replace(/^\//, '').replace(/\/$/, '');
-            const targetSlug = slug.replace(/^\//, '').replace(/\/$/, '');
-            
-            // Also matching by filename if slug is not defined in frontmatter is a common fallback, 
-            // but here we stick to the existing logic which relies on data.slug mostly?
-            // Existing logic: const localSlug = (data.slug || '')... 
-            // If data.slug is empty, it's empty string. 
-            // NOTE: Existing logic didn't use filename as fallback for slug.
-
-            if (localSlug === targetSlug && data.status !== 'draft') {
-              return {
-                post: mapLocalFileToPostBase(data, content, locale),
-                error: undefined,
-                errorCode: undefined,
-              };
-            }
-          } catch (error) {
-            console.error(`Error processing local file ${fullPath}:`, error);
-          }
-        }
-      }
-    }
-
-    // Fall back to server
-    const serverResult = await getPublishedPostBySlugAction({ slug, locale, postType });
+    // Fetch from server only (using ISR-safe version without session access)
+    const serverResult = await getPublishedPostBySlugForISR({ slug, locale, postType });
 
     if (serverResult.success && serverResult.data?.post) {
       return {
@@ -172,58 +133,10 @@ export function createCmsModule(postType: PostType) {
 
   /**
    * Get all posts from local directory (if configured)
-   * Returns empty array if no localDirectory is set
+   * Returns empty array - local files have been migrated to database
    */
   async function getLocalList(locale: string = DEFAULT_LOCALE): Promise<GetListResult> {
-    if (!localDirectory) {
-      return { posts: [] };
-    }
-
-    const postsDirectory = path.join(process.cwd(), localDirectory, locale);
-
-    if (!fs.existsSync(postsDirectory)) {
-      return { posts: [] };
-    }
-
-    const allFilePaths = await getAllFilesRecursively(postsDirectory);
-    console.log('DEBUG: Local MDX Files:', allFilePaths);
-    // Reverse to process likely newer files first, though we sort by date later
-    const reversedPaths = allFilePaths.reverse();
-
-    let allPosts: PostBase[] = [];
-
-    // Read files in batches
-    for (let i = 0; i < reversedPaths.length; i += POSTS_BATCH_SIZE) {
-      const batchPaths = reversedPaths.slice(i, i + POSTS_BATCH_SIZE);
-
-      const batchPosts: (PostBase | null)[] = await Promise.all(
-        batchPaths.map(async (fullPath) => {
-          try {
-            const fileContents = await fs.promises.readFile(fullPath, 'utf8');
-            const { data, content } = matter(fileContents);
-            return mapLocalFileToPostBase(data, content, locale);
-          } catch (error) {
-           console.error(`Error processing local file ${fullPath}:`, error);
-           return null;
-          }
-        })
-      );
-
-      allPosts.push(...(batchPosts.filter((post): post is PostBase => post !== null)));
-    }
-
-    // Filter out non-published articles
-    allPosts = allPosts.filter(post => post.status === 'published');
-
-    // Sort posts by isPinned and publishedAt
-    allPosts = allPosts.sort((a, b) => {
-      if (a.isPinned !== b.isPinned) {
-        return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0);
-      }
-      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-    });
-
-    return { posts: allPosts };
+    return { posts: [] };
   }
 
   /**
@@ -238,7 +151,7 @@ export function createCmsModule(postType: PostType) {
       visibility?: 'public' | 'logged_in' | 'subscribers' | null;
     } = {}
   ): Promise<GetPublishedListResult> {
-    const result = await listPublishedPostsAction({
+    const result = await listPublishedPostsForISR({
       postType,
       locale,
       pageIndex: options.pageIndex ?? 0,
@@ -265,40 +178,8 @@ export function createCmsModule(postType: PostType) {
     slug: string,
     locale: string = DEFAULT_LOCALE
   ): Promise<GetMetadataResult> {
-    // Try local filesystem first if localDirectory is configured
-    // Try local filesystem first if localDirectory is configured
-    if (localDirectory) {
-      const postsDirectory = path.join(process.cwd(), localDirectory, locale);
-      if (fs.existsSync(postsDirectory)) {
-        const allFilePaths = await getAllFilesRecursively(postsDirectory);
-        
-        for (const fullPath of allFilePaths) {
-          try {
-            const fileContents = await fs.promises.readFile(fullPath, 'utf8');
-            const { data } = matter(fileContents);
-
-            const localSlug = (data.slug || '').replace(/^\//, '').replace(/\/$/, '');
-            const targetSlug = slug.replace(/^\//, '').replace(/\/$/, '');
-
-            if (localSlug === targetSlug && data.status !== 'draft') {
-              return {
-                metadata: {
-                  title: data.title,
-                  description: data.description || null,
-                  featuredImageUrl: data.featuredImageUrl || null,
-                  visibility: data.visibility || 'public',
-                },
-              };
-            }
-          } catch (error) {
-            console.error(`Error processing local file ${fullPath}:`, error);
-          }
-        }
-      }
-    }
-
-    // Fall back to server
-    const serverResult = await getPostMetadataAction({ slug, locale, postType });
+    // Fetch from server only
+    const serverResult = await getPostMetadataForISR({ slug, locale, postType });
 
     if (serverResult.success && serverResult.data?.metadata) {
       return {

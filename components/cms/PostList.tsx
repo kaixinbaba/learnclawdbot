@@ -1,6 +1,6 @@
 "use client";
 
-import { listPublishedPostsAction } from "@/actions/posts/posts";
+import { listPublishedPostsForISR } from "@/actions/posts/posts-isr";
 import { PostType } from "@/lib/db/schema";
 import { PostBase, PublicPost, Tag } from "@/types/cms";
 import dayjs from "dayjs";
@@ -79,7 +79,7 @@ export function PostList({
     if (isLoading || !hasMore) return;
 
     setIsLoading(true);
-    const result = await listPublishedPostsAction({
+    const result = await listPublishedPostsForISR({
       pageIndex: pageIndex,
       pageSize: pageSize,
       tagId: showTagSelector ? selectedTagId : undefined,
@@ -144,7 +144,7 @@ export function PostList({
 
     setIsLoading(true);
 
-    const result = await listPublishedPostsAction({
+    const result = await listPublishedPostsForISR({
       pageIndex: 0,
       pageSize: pageSize,
       tagId: tagId,

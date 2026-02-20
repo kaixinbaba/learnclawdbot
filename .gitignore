@@ -140,3 +140,5 @@ playwright-report/
 playwright/.cache/
 test-results/
 E2E_TEST_REPORT.md
+.vercel
+.env*.local
