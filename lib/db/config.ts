@@ -72,10 +72,10 @@ export function createDatabaseConfig(config: DBConfig) {
       ssl: 'require' as const,
       application_name: 'drizzle-supabase',
       // PostgreSQL connection parameters
-      // See: https://www.postgresql.org/docs/current/runtime-config-client.html
+      // Note: search_path is set via DATABASE_URL options parameter:
+      // ?options=--search_path%3Dlearnclawdbot
       connection: {
         statement_timeout: 30000,
-        search_path: 'learnclawdbot',
       },
     },
     neon: {
