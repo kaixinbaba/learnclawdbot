@@ -1,19 +1,8 @@
 import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
 import { LanguageDetectionAlert } from "@/components/LanguageDetectionAlert";
-import ConsentBanner from "@/components/shared/CookieConsent/ConsentBanner";
-import ConsentGate from "@/components/shared/CookieConsent/ConsentGate";
-import CrispChat from "@/components/support/CrispChat";
+import DeferredCrispChat from "@/components/support/DeferredCrispChat";
 import { TailwindIndicator } from "@/components/TailwindIndicator";
-import AhrefsAnalytics from "@/components/tracking/AhrefsAnalytics";
-import GoogleAdsense from "@/components/tracking/GoogleAdsense";
-import GoogleAnalytics from "@/components/tracking/GoogleAnalytics";
-import MicrosoftClarity from "@/components/tracking/MicrosoftClarity";
-import PlausibleAnalytics from "@/components/tracking/PlausibleAnalytics";
-import PostHogPageView from "@/components/tracking/PostHogPageView";
-import PostHogProvider from "@/components/tracking/PostHogProvider";
-import RybbitScript from "@/components/tracking/RybbitScript";
-import ToltScript from "@/components/tracking/ToltScript";
-import UmamiScript from "@/components/tracking/UmamiScript";
+import DeferredAnalytics from "@/components/tracking/DeferredAnalytics";
 import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/config/site";
 import { DEFAULT_LOCALE, Locale, routing } from "@/i18n/routing";
@@ -21,7 +10,6 @@ import { constructMetadata } from "@/lib/metadata";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import "@/styles/loading.css";
-import { Analytics } from "@vercel/analytics/react";
 import { Metadata, Viewport } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import {
@@ -68,8 +56,6 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const COOKIE_CONSENT_ENABLED =
-    process.env.NEXT_PUBLIC_COOKIE_CONSENT_ENABLED === "true";
 
   // Ensure that the incoming `locale` is valid
   if (!hasLocale(routing.locales, locale)) {
@@ -83,13 +69,9 @@ export default async function LocaleLayout({
   return (
     <html lang={locale || DEFAULT_LOCALE} suppressHydrationWarning>
       <head>
+        {/* DNS prefetch for analytics - still useful for when they load */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
-        <link rel="preconnect" href="https://scripts.clarity.ms" />
-        <link rel="dns-prefetch" href="https://static.cloudflareinsights.com" />
-        <link rel="preconnect" href="https://static.cloudflareinsights.com" />
-        <ToltScript />
       </head>
       <body
         className={cn(
@@ -103,55 +85,17 @@ export default async function LocaleLayout({
             defaultTheme="dark"
             forcedTheme="dark"
           >
-            <PostHogProvider>
-              {messages.LanguageDetection && <LanguageDetectionAlert />}
-
-              {children}
-            </PostHogProvider>
+            {messages.LanguageDetection && <LanguageDetectionAlert />}
+            {children}
           </ThemeProvider>
         </NextIntlClientProvider>
         <GoogleOneTap />
-        <CrispChat />
+        <DeferredCrispChat />
         <Toaster richColors />
         <TailwindIndicator />
-        <>
-          {COOKIE_CONSENT_ENABLED ? (
-            <>
-              {process.env.NODE_ENV === "development" ? null : (
-                <>
-                  {process.env.VERCEL_ENV ? <Analytics /> : <></>}
-                  <PlausibleAnalytics />
-                  <RybbitScript />
-                  <UmamiScript />
-                  <AhrefsAnalytics />
-                  <ConsentGate>
-                    <GoogleAnalytics />
-                    <GoogleAdsense />
-                    <MicrosoftClarity />
-                    <PostHogPageView />
-                  </ConsentGate>
-                </>
-              )}
-              <ConsentBanner />
-            </>
-          ) : (
-            <>
-              {process.env.NODE_ENV === "development" ? null : (
-                <>
-                  {process.env.VERCEL_ENV ? <Analytics /> : <></>}
-                  <PlausibleAnalytics />
-                  <GoogleAnalytics />
-                  <GoogleAdsense />
-                  <MicrosoftClarity />
-                  <AhrefsAnalytics />
-                  <RybbitScript />
-                  <UmamiScript />
-                  <PostHogPageView />
-                </>
-              )}
-            </>
-          )}
-        </>
+        
+        {/* Analytics - 延迟加载，不阻塞首屏 */}
+        {process.env.NODE_ENV !== "development" && <DeferredAnalytics />}
       </body>
     </html>
   );

@@ -1,5 +1,5 @@
 import Hero from "@/components/home/Hero";
-import TimelineClient from "@/app/[locale]/(basic-layout)/openclaw-development-timeline/TimelineClient";
+import DeferredTimeline from "@/components/home/DeferredTimeline";
 import { BG1 } from "@/components/shared/BGs";
 import { getMessages } from "next-intl/server";
 
@@ -35,7 +35,8 @@ export default async function HomeComponent({ locale }: { locale: string }) {
         </div>
       </div>
 
-      <TimelineClient locale={locale} />
+      {/* Timeline - 延迟加载，不阻塞首屏 */}
+      <DeferredTimeline locale={locale} />
     </div>
   );
 }
