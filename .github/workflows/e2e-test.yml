@@ -12,7 +12,12 @@ jobs:
     name: E2E Testing
     timeout-minutes: 30
     runs-on: ubuntu-latest
-    
+    env:
+      NODE_ENV: production
+      CI: true
+      BETTER_AUTH_SECRET: ci-test-secret-not-for-production
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,6 +39,12 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Check CI database config
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning::DATABASE_URL secret is not set. Build will run in fallback mode and DB-backed pages may have reduced coverage."
+          fi
+
       - name: Create .env.local
         run: |
           echo "# E2E Test Environment" > .env.local
@@ -42,15 +53,9 @@ jobs:
 
       - name: Build application
         run: pnpm run build
-        env:
-          NODE_ENV: production
-          BETTER_AUTH_SECRET: ci-test-secret-not-for-production
 
       - name: Run E2E tests
         run: pnpm exec playwright test
-        env:
-          CI: true
-          BETTER_AUTH_SECRET: ci-test-secret-not-for-production
 
       - name: Upload test results
         if: always()
