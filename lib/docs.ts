@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db, isDatabaseEnabled } from "./db";
 import { posts } from "./db/schema";
 import { eq, and, asc, desc } from "drizzle-orm";
 import { LOCALES } from "@/i18n/routing";
@@ -25,6 +25,10 @@ export async function getDocBySlug(
   slug: string,
   locale: string
 ): Promise<DocContent | null> {
+  if (!isDatabaseEnabled) {
+    return null;
+  }
+
   // Try locale-specific first, then fallback to en
   const locales = locale === "en" ? ["en"] : [locale, "en"];
 
@@ -63,6 +67,10 @@ export async function getDocBySlug(
  * Used to generate accurate hreflang tags (only for locales with real content).
  */
 export async function getAvailableLocalesForDoc(slug: string): Promise<string[]> {
+  if (!isDatabaseEnabled) {
+    return [];
+  }
+
   const availablePosts = await db
     .select({ language: posts.language })
     .from(posts)
@@ -81,6 +89,10 @@ export async function getAvailableLocalesForDoc(slug: string): Promise<string[]>
  * List all doc slugs for a given locale (for generateStaticParams).
  */
 export async function listDocSlugs(locale: string): Promise<string[]> {
+  if (!isDatabaseEnabled) {
+    return [];
+  }
+
   const docPosts = await db
     .select({ slug: posts.slug })
     .from(posts)
@@ -102,6 +114,10 @@ export async function listDocSlugs(locale: string): Promise<string[]> {
 export async function getDocSidebar(
   locale: string
 ): Promise<SidebarSection[]> {
+  if (!isDatabaseEnabled) {
+    return [];
+  }
+
   const docPosts = await db
     .select()
     .from(posts)
