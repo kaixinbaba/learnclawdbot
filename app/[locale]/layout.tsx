@@ -3,6 +3,7 @@ import { LanguageDetectionAlert } from "@/components/LanguageDetectionAlert";
 import DeferredCrispChat from "@/components/support/DeferredCrispChat";
 import { TailwindIndicator } from "@/components/TailwindIndicator";
 import DeferredAnalytics from "@/components/tracking/DeferredAnalytics";
+import GoogleAdsense from "@/components/tracking/GoogleAdsense";
 import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/config/site";
 import { DEFAULT_LOCALE, Locale, routing } from "@/i18n/routing";
@@ -96,6 +97,9 @@ export default async function LocaleLayout({
         
         {/* Analytics - 延迟加载，不阻塞首屏 */}
         {process.env.NODE_ENV !== "development" && <DeferredAnalytics />}
+
+        {/* AdSense */}
+        {process.env.NODE_ENV !== "development" && <GoogleAdsense />}
       </body>
     </html>
   );
