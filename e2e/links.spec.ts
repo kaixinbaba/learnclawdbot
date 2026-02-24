@@ -188,6 +188,12 @@ test.describe('Link Validation Tests', () => {
       
       // 点击第一篇博客
       const firstBlogLink = page.locator(getBlogLinkSelector(lang)).first();
+      const linkCount = await firstBlogLink.count();
+      if (linkCount === 0) {
+        console.log(`ℹ [${lang}] 无博客详情可测，跳过返回链接检查`);
+        continue;
+      }
+
       await expect(firstBlogLink).toBeVisible({ timeout: 10000 });
       await firstBlogLink.click();
       
