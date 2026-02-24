@@ -1,6 +1,7 @@
 "use client";
 
 import { listPublishedPostsForISR } from "@/actions/posts/posts-isr";
+import type { Locale } from "@/i18n/routing";
 import { PostType } from "@/lib/db/schema";
 import { PostBase, PublicPost, Tag } from "@/types/cms";
 import dayjs from "dayjs";
@@ -185,6 +186,7 @@ export function PostList({
       {showTagSelector && serverTags.length > 0 && (
         <TagSelector
           tags={serverTags}
+          locale={locale as Locale}
           selectedTagId={selectedTagId}
           onSelectTag={handleTagSelect}
         />
