@@ -51,6 +51,28 @@ npx tsx scripts/check-links.ts
 
 **用途：** 发布前跑一遍，避免上线后出现 404 链接。
 
+## Blog Tags（分类与验证）
+
+### blog-tag-taxonomy.ts
+
+把 blog 的 slug → 分类(tag)规则沉淀为正式脚本，支持**检查模式**和**落库模式**。
+
+```bash
+# 检查（默认，不写库）
+npx tsx scripts/blog-tag-taxonomy.ts
+
+# 严格检查：若存在未映射 slug 则返回非 0（适合 CI）
+npx tsx scripts/blog-tag-taxonomy.ts --strict
+
+# 落库：补齐 blog tags 并建立 post_tags 关联（幂等）
+npx tsx scripts/blog-tag-taxonomy.ts --apply
+```
+
+**用途：**
+- 把临时 `_tmp_*` 阶段的分类规则固化为可复用脚本
+- 回归检查 tags 数据完整性（是否有未映射 slug、是否有无标签文章）
+- 作为 tag 过滤功能的最小可复现数据验证入口
+
 ## 部署相关
 
 ### sync-env-to-github.mjs / clear-env-from-github.mjs
