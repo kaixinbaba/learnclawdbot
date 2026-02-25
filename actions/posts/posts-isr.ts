@@ -12,6 +12,8 @@ import { posts as postsSchema, postTags as postTagsSchema, PostType, tags as tag
 import { getErrorMessage } from '@/lib/error-utils'
 import { PublicPost, PublicPostWithContent } from '@/types/cms'
 import { and, count, desc, eq, getTableColumns, inArray, sql } from 'drizzle-orm'
+import { redis } from '@/lib/upstash'
+import { LOWER_CASE_SITE_NAME } from '@/lib/upstash/redis-keys'
 
 // ============ Types ============
 
@@ -60,6 +62,68 @@ interface ListPublishedPostsResult {
   success: boolean
   data?: { posts: PublicPost[]; count: number }
   error?: string
+}
+
+// ============ Cache Helpers ============
+
+const TAG_POST_IDS_CACHE_TTL_SECONDS = 60 * 60 * 24 // 24h
+
+function getTagPostIdsCacheKey({
+  tagId,
+  postType,
+  locale,
+}: {
+  tagId: string
+  postType: PostType
+  locale: string
+}) {
+  return `${LOWER_CASE_SITE_NAME}:cache:tag-post-ids:${postType}:${locale}:${tagId}`
+}
+
+async function getCachedTagPostIds({
+  tagId,
+  postType,
+  locale,
+}: {
+  tagId: string
+  postType: PostType
+  locale: string
+}): Promise<string[] | null> {
+  if (!redis) return null
+
+  try {
+    const key = getTagPostIdsCacheKey({ tagId, postType, locale })
+    const cached = await redis.get<string[]>(key)
+
+    if (!cached) return null
+    if (!Array.isArray(cached)) return null
+    if (!cached.every((id) => typeof id === 'string')) return null
+
+    return cached
+  } catch {
+    return null
+  }
+}
+
+async function setCachedTagPostIds({
+  tagId,
+  postType,
+  locale,
+  postIds,
+}: {
+  tagId: string
+  postType: PostType
+  locale: string
+  postIds: string[]
+}): Promise<void> {
+  if (!redis) return
+
+  try {
+    const key = getTagPostIdsCacheKey({ tagId, postType, locale })
+    await redis.set(key, postIds, { ex: TAG_POST_IDS_CACHE_TTL_SECONDS })
+  } catch {
+    // best-effort cache; ignore cache write failures
+  }
 }
 
 // ============ ISR-Safe Actions ============
@@ -224,14 +288,32 @@ export async function listPublishedPostsForISR({
       conditions.push(eq(postsSchema.visibility, visibility))
     }
 
-    // If tagId provided, get post IDs with that tag first
+    // If tagId provided, get post IDs with that tag first (cached)
     let postIdsWithTag: string[] | null = null
     if (tagId) {
-      const taggedPosts = await db
-        .select({ postId: postTagsSchema.postId })
-        .from(postTagsSchema)
-        .where(eq(postTagsSchema.tagId, tagId))
-      postIdsWithTag = taggedPosts.map((t) => t.postId)
+      const cachedPostIds = await getCachedTagPostIds({
+        tagId,
+        postType,
+        locale,
+      })
+
+      if (cachedPostIds) {
+        postIdsWithTag = cachedPostIds
+      } else {
+        const taggedPosts = await db
+          .select({ postId: postTagsSchema.postId })
+          .from(postTagsSchema)
+          .where(eq(postTagsSchema.tagId, tagId))
+
+        postIdsWithTag = taggedPosts.map((t) => t.postId)
+
+        await setCachedTagPostIds({
+          tagId,
+          postType,
+          locale,
+          postIds: postIdsWithTag,
+        })
+      }
 
       if (postIdsWithTag.length === 0) {
         return actionResponse.success({ posts: [], count: 0 })

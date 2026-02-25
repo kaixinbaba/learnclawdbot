@@ -9,6 +9,9 @@ import { defineConfig, devices } from '@playwright/test';
  * - Image loading
  * - Link validation
  */
+const E2E_PORT = Number(process.env.E2E_PORT || 3000);
+const E2E_BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${E2E_PORT}`;
+
 export default defineConfig({
   testDir: './e2e',
   
@@ -40,7 +43,7 @@ export default defineConfig({
   // Shared settings for all the projects below
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: 'http://localhost:3000',
+    baseURL: E2E_BASE_URL,
     
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -59,8 +62,8 @@ export default defineConfig({
 
   // Run your local dev server before starting the tests
   webServer: {
-    command: 'pnpm run build && pnpm run start',
-    url: 'http://localhost:3000',
+    command: `pnpm run build && PORT=${E2E_PORT} pnpm run start`,
+    url: E2E_BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
