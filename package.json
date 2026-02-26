@@ -26,6 +26,7 @@
     "cms:seed:c01": "tsx scripts/seed-c01-user-case-nix-openclaw.ts",
     "cms:seed:c02": "tsx scripts/seed-c02-user-case-padel-booking.ts",
     "cms:seed:c03": "tsx scripts/seed-c03-user-case-snag.ts",
+    "cms:seed:c04": "tsx scripts/seed-c04-user-case-bambu-cli.ts",
     "cms:migrate:featured-webp": "tsx scripts/migrate-blog-featured-images-to-webp.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
