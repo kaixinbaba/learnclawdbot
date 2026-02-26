@@ -10,7 +10,7 @@ const AUTHOR_EMAIL = "452914639@qq.com";
 const POST_TYPE = "blog";
 const SLUG = "c01-nix-openclaw-declarative-deployment";
 const FEATURED_IMAGE_URL =
-  "/images/blog/c01-nix-openclaw-declarative-deployment.svg";
+  "/images/blog/c01-nix-openclaw-declarative-deployment.webp";
 
 const TAG_NAMES = [
   "User Cases",

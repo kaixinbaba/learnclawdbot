@@ -9,7 +9,7 @@ loadEnv({ path: ".env.local" });
 const AUTHOR_EMAIL = "452914639@qq.com";
 const POST_TYPE = "blog";
 const SLUG = "c03-snag-screenshot-to-markdown";
-const FEATURED_IMAGE_URL = "/images/blog/c03-snag-screenshot-to-markdown.svg";
+const FEATURED_IMAGE_URL = "/images/blog/c03-snag-screenshot-to-markdown.webp";
 
 const TAG_NAMES = ["User Cases", "Automation & Workflows"] as const;
 

@@ -396,9 +396,11 @@ revalidatePath(`/${locale}/blog/${slug}`);
 1. Choose appropriate post type (`blog` or `glossary`)
 2. Set correct visibility for content access control
 3. Use translations for all user-facing text
-4. Optimize featured images before upload
+4. Optimize featured images before upload (`.webp`, recommended `1200x630`, target <200KB)
 5. Use descriptive slugs for SEO
 6. Add appropriate tags for categorization
 7. Set publish date for scheduled content
 8. Use isPinned for featured/sticky posts
+
+> Blog featured-image policy: 所有博客头图必须使用 webp，禁止提交 raw/png/svg 作为最终头图。
 
