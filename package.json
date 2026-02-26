@@ -23,6 +23,7 @@
     "db:export-pricing": "tsx lib/db/seed/export.ts",
     "blog-tags:check": "tsx scripts/blog-tag-taxonomy.ts --strict",
     "blog-tags:apply": "tsx scripts/blog-tag-taxonomy.ts --apply",
+    "cms:seed:c01": "tsx scripts/seed-c01-user-case-nix-openclaw.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"

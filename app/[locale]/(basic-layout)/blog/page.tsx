@@ -3,7 +3,6 @@ import { listTagsAction } from "@/actions/posts/tags";
 import { POST_CONFIGS } from "@/components/cms/post-config";
 import { PostList } from "@/components/cms/PostList";
 import { Locale } from "@/i18n/routing";
-import { blogCms } from "@/lib/cms";
 import { constructMetadata } from "@/lib/metadata";
 import { Tag } from "@/types/cms";
 import { TextSearch } from "lucide-react";
@@ -11,6 +10,7 @@ import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 type Params = Promise<{ locale: string }>;
+type SearchParams = Promise<{ tag?: string | string[] }>;
 
 type MetadataProps = {
   params: Params;
@@ -32,23 +32,63 @@ export async function generateMetadata({
 
 const SERVER_POST_PAGE_SIZE = 12;
 
-export default async function Page({ params }: { params: Params }) {
-  const { locale } = await params;
+function normalizeTagQuery(tagValue?: string | string[]): string | null {
+  if (!tagValue) return null;
+  const raw = Array.isArray(tagValue) ? tagValue[0] : tagValue;
+  if (!raw) return null;
+  return raw.trim().toLowerCase();
+}
+
+function toTagSlug(tagName: string): string {
+  return tagName
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function resolveTagByQuery(query: string | null, tags: Tag[]): Tag | null {
+  if (!query) return null;
+
+  return (
+    tags.find((tag) => tag.id.toLowerCase() === query) ||
+    tags.find((tag) => tag.name.toLowerCase() === query) ||
+    tags.find((tag) => toTagSlug(tag.name) === query) ||
+    null
+  );
+}
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
+  const [{ locale }, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const t = await getTranslations({ locale, namespace: "Blogs" });
 
-  // Parallel data fetching
-  const [
-    initialServerPostsResult,
-    tagsResult
-  ] = await Promise.all([
-    listPublishedPostsForISR({
-      pageIndex: 0,
-      pageSize: SERVER_POST_PAGE_SIZE,
-      postType: "blog",
-      locale: locale,
-    }),
-    listTagsAction({ postType: "blog" })
-  ]);
+  const tagsResult = await listTagsAction({ postType: "blog" });
+
+  const allTags: Tag[] =
+    tagsResult.success && tagsResult.data?.tags
+      ? tagsResult.data.tags.sort((a, b) => a.name.localeCompare(b.name))
+      : [];
+
+  const normalizedTagQuery = normalizeTagQuery(resolvedSearchParams.tag);
+  const selectedTag = resolveTagByQuery(normalizedTagQuery, allTags);
+
+  const initialServerPostsResult = await listPublishedPostsForISR({
+    pageIndex: 0,
+    pageSize: SERVER_POST_PAGE_SIZE,
+    postType: "blog",
+    locale: locale,
+    tagId: selectedTag?.id ?? null,
+  });
 
   const initialServerPosts =
     initialServerPostsResult.success && initialServerPostsResult.data?.posts
@@ -65,10 +105,6 @@ export default async function Page({ params }: { params: Params }) {
       initialServerPostsResult.error
     );
   }
-
-  const allTags: Tag[] = tagsResult.success && tagsResult.data?.tags 
-    ? tagsResult.data.tags.sort((a, b) => a.name.localeCompare(b.name))
-    : [];
 
   const noPostsFound = initialServerPosts.length === 0;
 
@@ -94,6 +130,7 @@ export default async function Page({ params }: { params: Params }) {
           localPosts={[]}
           initialPosts={initialServerPosts}
           initialTotal={totalServerPosts}
+          initialSelectedTagId={selectedTag?.id ?? null}
           serverTags={allTags}
           locale={locale}
           pageSize={SERVER_POST_PAGE_SIZE}

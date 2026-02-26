@@ -73,6 +73,25 @@ npx tsx scripts/blog-tag-taxonomy.ts --apply
 - 回归检查 tags 数据完整性（是否有未映射 slug、是否有无标签文章）
 - 作为 tag 过滤功能的最小可复现数据验证入口
 
+## CMS 内容写入
+
+### seed-c01-user-case-nix-openclaw.ts
+
+写入 C01 用户案例（nix-openclaw 声明式部署）到 CMS 数据库（`posts` / `tags` / `post_tags`），包含 5 语言内容与标签关联，支持幂等重复执行。
+
+```bash
+# 推荐（package script）
+pnpm cms:seed:c01
+
+# 或直接执行
+npx tsx scripts/seed-c01-user-case-nix-openclaw.ts
+```
+
+**用途：**
+- 通过数据库方式发布用户案例（非 mdx 静态文件）
+- 自动补齐标签并关联文章
+- 同步更新指定 slug 的 5 语言内容
+
 ## 部署相关
 
 ### sync-env-to-github.mjs / clear-env-from-github.mjs
