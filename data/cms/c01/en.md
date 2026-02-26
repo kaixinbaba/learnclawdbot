@@ -7,8 +7,6 @@ description: "How a small ops team standardized OpenClaw deployment with nix-ope
 
 ## Case Profile
 
-- **Case ID:** C01
-- **Priority:** P1
 - **Category:** Deployment / Infrastructure
 - **Audience:** Engineering teams maintaining long-running OpenClaw instances
 - **Sources:**

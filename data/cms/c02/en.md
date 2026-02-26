@@ -7,8 +7,6 @@ description: "How an automation-first player used padel-cli and OpenClaw plugin 
 
 ## Case Profile
 
-- **Case ID:** C02
-- **Priority:** P1
 - **Category:** Automation / Plugin Workflow
 - **Audience:** Users who repeatedly check and reserve Padel courts via Playtomic
 - **Sources:**
