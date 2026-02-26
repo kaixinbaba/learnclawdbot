@@ -38,6 +38,9 @@ Use this skill when publishing **user cases** to learnclawdbot via **CMS databas
 - Re-run behavior:
   - first run: inserted
   - second run: updated
+- **Hard gate (mandatory):** Do **not** consider the task complete unless `pnpm cms:seed:{case}` has been executed in this run and output has been captured in the delivery notes.
+- **Hard gate (mandatory):** Verify DB write result after seeding (slug + 5 locales + featured_image_url + tags) via SQL/query output; screenshots/page-only checks are not enough.
+- **Hard gate (mandatory):** If seed is not executed, status must be reported as `NOT_DONE` (not “done”).
 
 ### 4) Tags & filtering
 - Include tag `User Cases`.
@@ -65,6 +68,7 @@ Use this skill when publishing **user cases** to learnclawdbot via **CMS databas
   - blog list tag prefilter
   - locale-specific title/description
   - featured image URL + file size
+- **Release gate (mandatory):** No PR/release status until seed logs + DB verification output are included.
 
 ### 8) Delivery
 - clean commits
