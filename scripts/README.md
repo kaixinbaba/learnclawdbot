@@ -92,6 +92,23 @@ npx tsx scripts/seed-c01-user-case-nix-openclaw.ts
 - 自动补齐标签并关联文章
 - 同步更新指定 slug 的 5 语言内容
 
+### seed-c02-user-case-padel-booking.ts
+
+写入 C02 用户案例（padel-cli 订场自动化）到 CMS 数据库（`posts` / `tags` / `post_tags`），包含 5 语言内容与标签关联，支持幂等重复执行。
+
+```bash
+# 推荐（package script）
+pnpm cms:seed:c02
+
+# 或直接执行
+npx tsx scripts/seed-c02-user-case-padel-booking.ts
+```
+
+**用途：**
+- 以 CMS 流程发布 C02（不走 mdx 静态文件）
+- 自动确保标签存在并关联
+- 同步更新 C02 slug 的 5 语言内容
+
 ## 部署相关
 
 ### sync-env-to-github.mjs / clear-env-from-github.mjs
