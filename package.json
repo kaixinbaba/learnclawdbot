@@ -24,6 +24,7 @@
     "blog-tags:check": "tsx scripts/blog-tag-taxonomy.ts --strict",
     "blog-tags:apply": "tsx scripts/blog-tag-taxonomy.ts --apply",
     "cms:seed:c01": "tsx scripts/seed-c01-user-case-nix-openclaw.ts",
+    "cms:seed:c02": "tsx scripts/seed-c02-user-case-padel-booking.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"

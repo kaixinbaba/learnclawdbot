@@ -55,6 +55,12 @@ const TAG_LABELS: TagI18nMap = {
     ko: "배포 및 인프라",
     ru: "Развертывание и инфраструктура",
   },
+  "Automation & Workflows": {
+    zh: "自动化与工作流",
+    ja: "自動化とワークフロー",
+    ko: "자동화 및 워크플로",
+    ru: "Автоматизация и рабочие процессы",
+  },
 };
 
 const ALL_LABELS: Partial<Record<Locale, string>> = {
