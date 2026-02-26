@@ -143,6 +143,23 @@ npx tsx scripts/seed-c04-user-case-bambu-cli.ts
 - 自动确保标签存在并关联
 - 同步更新 C04 slug 的 5 语言内容
 
+### seed-c05-user-case-linear-cli.ts
+
+写入 C05 用户案例（linear-cli + OpenClaw 的 Linear 议题到 PR 工作流）到 CMS 数据库（`posts` / `tags` / `post_tags`），包含 5 语言内容与标签关联，支持幂等重复执行。
+
+```bash
+# 推荐（package script）
+pnpm cms:seed:c05
+
+# 或直接执行
+npx tsx scripts/seed-c05-user-case-linear-cli.ts
+```
+
+**用途：**
+- 以 CMS 流程发布 C05（不走 mdx 静态文件）
+- 自动确保标签存在并关联
+- 同步更新 C05 slug 的 5 语言内容
+
 ### migrate-blog-featured-images-to-webp.ts
 
 批量把 CMS 中 blog 文章的头图引用从 legacy `.svg/.png` 迁移到 `.webp`（按已确认映射表更新）。
