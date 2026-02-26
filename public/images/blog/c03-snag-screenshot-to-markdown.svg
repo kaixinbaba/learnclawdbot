@@ -61,7 +61,7 @@
 
     <rect x="24" y="298" width="268" height="110" rx="14" fill="url(#accent)" opacity="0.95"/>
     <text x="40" y="338" fill="#0B1020" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800">C03 User Case</text>
-    <text x="40" y="364" fill="#111827" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600">Automation & Workflows</text>
+    <text x="40" y="364" fill="#111827" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600">Automation &amp; Workflows</text>
     <text x="40" y="386" fill="#111827" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600">User Cases</text>
   </g>
 
