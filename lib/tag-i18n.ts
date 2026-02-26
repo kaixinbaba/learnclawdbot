@@ -43,6 +43,18 @@ const TAG_LABELS: TagI18nMap = {
     ko: "안정성 및 성능",
     ru: "Надёжность и производительность",
   },
+  "User Cases": {
+    zh: "用户案例",
+    ja: "ユーザー事例",
+    ko: "사용자 사례",
+    ru: "Пользовательские кейсы",
+  },
+  "Deployment & Infrastructure": {
+    zh: "部署与基础设施",
+    ja: "デプロイとインフラ",
+    ko: "배포 및 인프라",
+    ru: "Развертывание и инфраструктура",
+  },
 };
 
 const ALL_LABELS: Partial<Record<Locale, string>> = {

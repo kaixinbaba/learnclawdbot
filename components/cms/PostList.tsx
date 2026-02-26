@@ -38,6 +38,7 @@ interface PostListProps {
   initialTotal: number;
   serverTags?: Tag[];
   pageSize: number;
+  initialSelectedTagId?: string | null;
   showTagSelector?: boolean;
   showCover?: boolean;
   gridClassName?: string;
@@ -53,6 +54,7 @@ export function PostList({
   serverTags = [],
   locale,
   pageSize,
+  initialSelectedTagId = null,
   showTagSelector = false,
   showCover = true,
   gridClassName,
@@ -64,7 +66,9 @@ export function PostList({
     initialPosts.length < initialTotal
   );
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(
+    initialSelectedTagId
+  );
   const { ref, inView } = useInView({
     threshold: 0,
     triggerOnce: false,
@@ -124,12 +128,12 @@ export function PostList({
     setPosts(initialPosts);
     setPageIndex(1);
     setHasMore(initialPosts.length < initialTotal);
-  }, [initialPosts, initialTotal]);
+    setSelectedTagId(initialSelectedTagId);
+  }, [initialPosts, initialTotal, initialSelectedTagId]);
 
   // Get selected tag name for local filtering
   const selectedTag = serverTags.find((t) => t.id === selectedTagId);
   const selectedTagName = selectedTag?.name?.toLowerCase();
-  const isLocalTag = selectedTagId?.startsWith("local-");
 
   const handleTagSelect = async (tagId: string | null) => {
     if (tagId === selectedTagId) return;

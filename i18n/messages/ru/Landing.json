@@ -7,8 +7,8 @@
     },
     "title": "Learn OpenClaw",
     "description": "Learn OpenClaw is a beginner-friendly, third-party guide to help you understand and use OpenClaw effectively. We provide easy-to-follow tutorials, tips, and resources for getting started with this powerful AI agent tool (formerly Clawbot and Moltbot).",
-    "getStarted": "Start Learning",
-    "getStartedLink": "/blog/guide",
+    "getStarted": "User Cases",
+    "getStartedLink": "/blog?tag=user-cases",
     "viewDocs": "Read Blog",
     "viewDocsLink": "/blog",
     "timeline": "Development Timeline"

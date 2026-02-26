@@ -7,8 +7,8 @@
     },
     "title": "OpenClaw 배우기",
     "description": "Learn OpenClaw는 OpenClaw를 이해하고 효과적으로 사용하기 위한 초보자 친화적인 서드파티 가이드입니다. 이 강력한 AI 에이전트 도구(구 Clawbot / Moltbot)를 시작하기 위한 쉬운 튜토리얼, 팁, 리소스를 제공합니다.",
-    "getStarted": "학습 시작",
-    "getStartedLink": "/blog/guide",
+    "getStarted": "User Cases",
+    "getStartedLink": "/blog?tag=user-cases",
     "viewDocs": "블로그 읽기",
     "viewDocsLink": "/blog",
     "timeline": "개발 타임라인"
