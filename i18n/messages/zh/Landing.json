@@ -7,7 +7,7 @@
     },
     "title": "学习 OpenClaw",
     "description": "Learn OpenClaw 是一个新手友好的第三方指南，帮助您理解和有效使用 OpenClaw。我们提供易于跟随的教程、技巧和资源，帮助您开始使用这个强大的 AI 代理工具（原名 Clawbot / Moltbot）。",
-    "getStarted": "User Cases",
+    "getStarted": "用户案例",
     "getStartedLink": "/blog?tag=user-cases",
     "viewDocs": "阅读博客",
     "viewDocsLink": "/blog",
