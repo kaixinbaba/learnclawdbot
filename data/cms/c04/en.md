@@ -7,8 +7,6 @@ description: "How users can run a repeatable BambuLab control workflow with bamb
 
 ## Case Profile
 
-- **Case ID:** C04
-- **Priority:** P1
 - **Category:** Automation / Hardware Workflow
 - **Audience:** Users who want command-based control for BambuLab printer operations
 - **Sources:**

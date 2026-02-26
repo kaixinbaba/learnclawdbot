@@ -7,8 +7,6 @@ description: "How users can use SNAG + OpenClaw workflows to capture screen regi
 
 ## Case Profile
 
-- **Case ID:** C03
-- **Priority:** P1
 - **Category:** Automation / Developer Workflow
 - **Audience:** Users who frequently move code/UI snippets from screen into AI chats
 - **Sources:**

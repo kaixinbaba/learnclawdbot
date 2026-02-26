@@ -30,6 +30,7 @@ Use this skill when publishing **user cases** to learnclawdbot via **CMS databas
   - `title`
   - `description`
 - Maintain consistent section structure across locales.
+- **Content style rule (mandatory):** In user-case body, do **not** include explicit `Case ID` / `Priority` fields (and localized variants like `案例编号/优先级`, `ケースID/優先度`, `사례 ID/우선순위`, `ID кейса/Приоритет`).
 
 ### 3) Seed script (idempotent upsert)
 - Add `scripts/seed-{case}.ts`
