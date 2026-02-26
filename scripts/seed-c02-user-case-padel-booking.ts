@@ -10,7 +10,7 @@ const AUTHOR_EMAIL = "452914639@qq.com";
 const POST_TYPE = "blog";
 const SLUG = "c02-padel-cli-booking-automation";
 const FEATURED_IMAGE_URL =
-  "/images/blog/c02-padel-cli-booking-automation.svg";
+  "/images/blog/c02-padel-cli-booking-automation.webp";
 
 const TAG_NAMES = [
   "User Cases",

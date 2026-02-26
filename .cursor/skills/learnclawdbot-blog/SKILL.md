@@ -51,9 +51,11 @@ Use this skill when publishing **user cases** to learnclawdbot via **CMS databas
 
 ### 6) Featured image
 - Generate **new** image (no reuse).
-- Filename should be slug-aligned: `/public/images/blog/{slug}.svg|png|jpg`
+- Filename must be slug-aligned: `/public/images/blog/{slug}.webp`
+- **Mandatory rule**: 所有博客头图必须使用 webp，禁止提交 raw/png/svg 作为最终头图。
 - Must be directly accessible by URL.
 - Keep size as small as practical (target < 200KB).
+- Target canvas should be `1200x630` (crop/pad proportionally when source ratio differs).
 
 ### 7) Validation gate
 - `pnpm cms:seed:{case}` run twice (verify updated on second run)
