@@ -1,5 +1,5 @@
 ---
-title: "C03 ユーザー事例：SNAG で画面断片を OpenClaw 向け Markdown に変換する"
+title: "SNAG で画面断片を OpenClaw 向け Markdown に変換する"
 description: "SNAG + OpenClaw ワークフローで、画面の一部を markdown 化し、LLM へのコンテキスト投入を高速化する方法。"
 ---
 

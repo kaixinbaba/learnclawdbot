@@ -1,5 +1,5 @@
 ---
-title: "C05 User Case: Managing Linear Issues End-to-End with linear-cli + OpenClaw"
+title: "Managing Linear Issues End-to-End with linear-cli + OpenClaw"
 description: "A source-backed workflow for handling Linear issues from terminal execution to PR handoff, coordinated with OpenClaw."
 ---
 

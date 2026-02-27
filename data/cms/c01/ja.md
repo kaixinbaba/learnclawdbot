@@ -1,5 +1,5 @@
 ---
-title: "C01 ユーザー事例：nix-openclaw による OpenClaw の宣言的デプロイ"
+title: "nix-openclaw による OpenClaw の宣言的デプロイ"
 description: "小規模運用チームが nix-openclaw と Home Manager を使い、macOS / Linux で OpenClaw を再現可能かつロールバック可能にした導入事例。"
 ---
 

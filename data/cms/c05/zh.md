@@ -1,5 +1,5 @@
 ---
-title: "C05 用户案例：用 linear-cli + OpenClaw 串起 Linear 议题到 PR 流程"
+title: "用 linear-cli + OpenClaw 串起 Linear 议题到 PR 流程"
 description: "基于公开资料，构建从终端执行 Linear 议题操作到 PR 衔接的可复用工作流，并与 OpenClaw 协同。"
 ---
 

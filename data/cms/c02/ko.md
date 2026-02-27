@@ -1,5 +1,5 @@
 ---
-title: "C02 사용자 사례: padel-cli + OpenClaw로 코트 예약 자동화"
+title: "padel-cli + OpenClaw로 코트 예약 자동화"
 description: "코트를 자주 예약하는 사용자가 padel-cli와 OpenClaw 플러그인 흐름으로 수동 확인을 줄이고 예약 운영을 표준화한 사례입니다."
 ---
 

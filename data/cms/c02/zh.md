@@ -1,5 +1,5 @@
 ---
-title: "C02 用户案例：用 padel-cli + OpenClaw 自动化 Padel 球场订场流程"
+title: "用 padel-cli + OpenClaw 自动化 Padel 球场订场流程"
 description: "一个高频订场用户如何通过 padel-cli 与 OpenClaw 插件流，减少手工刷 Padel 场地并将订场流程标准化。"
 ---
 

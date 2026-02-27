@@ -1,5 +1,5 @@
 ---
-title: "C04 사용자 사례: bambu-cli + OpenClaw로 BambuLab 3D 프린터 운영 표준화"
+title: "bambu-cli + OpenClaw로 BambuLab 3D 프린터 운영 표준화"
 description: "공개 문서를 근거로 bambu-cli와 OpenClaw를 결합해 재현 가능한 BambuLab 제어 워크플로를 구축하는 방법."
 ---
 

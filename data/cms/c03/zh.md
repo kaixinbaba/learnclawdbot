@@ -1,5 +1,5 @@
 ---
-title: "C03 用户案例：用 SNAG 把屏幕片段快速转成可投喂 OpenClaw 的 Markdown"
+title: "用 SNAG 把屏幕片段快速转成可投喂 OpenClaw 的 Markdown"
 description: "通过 SNAG + OpenClaw 工作流，把屏幕区域快速转换为 markdown，上下文交付更快、更稳定。"
 ---
 

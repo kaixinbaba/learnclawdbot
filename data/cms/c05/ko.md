@@ -1,5 +1,5 @@
 ---
-title: "C05 사용자 사례: linear-cli + OpenClaw로 Linear 이슈에서 PR까지 연결하기"
+title: "linear-cli + OpenClaw로 Linear 이슈에서 PR까지 연결하기"
 description: "공개 문서를 근거로, 터미널 기반 Linear 이슈 처리부터 PR 연계까지 재사용 가능한 흐름을 만들고 OpenClaw와 함께 운영한다."
 ---
 

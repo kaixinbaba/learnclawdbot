@@ -1,5 +1,5 @@
 ---
-title: "C04 User Case: Operating BambuLab Printers with bambu-cli + OpenClaw"
+title: "Operating BambuLab Printers with bambu-cli + OpenClaw"
 description: "How users can run a repeatable BambuLab control workflow with bambu-cli and OpenClaw, based on documented commands and networking requirements."
 ---
 

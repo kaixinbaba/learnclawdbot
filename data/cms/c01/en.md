@@ -1,5 +1,5 @@
 ---
-title: "C01 User Case: Declarative OpenClaw Deployment with nix-openclaw"
+title: "Declarative OpenClaw Deployment with nix-openclaw"
 description: "How a small ops team standardized OpenClaw deployment with nix-openclaw, Home Manager, and reproducible configuration across macOS and Linux."
 ---
 
