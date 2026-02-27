@@ -1,5 +1,5 @@
 ---
-title: "C03 User Case: Turning Screen Snippets into LLM-Ready Markdown with SNAG"
+title: "Turning Screen Snippets into LLM-Ready Markdown with SNAG"
 description: "How users can use SNAG + OpenClaw workflows to capture screen regions and convert them into markdown for faster AI context handoff."
 ---
 

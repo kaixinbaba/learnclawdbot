@@ -1,5 +1,5 @@
 ---
-title: "C02 ユーザー事例：padel-cli + OpenClaw でコート予約を自動化"
+title: "padel-cli + OpenClaw でコート予約を自動化"
 description: "高頻度でコート予約するユーザーが、padel-cli と OpenClaw のプラグイン導線で手動確認を減らし、予約運用を標準化した事例。"
 ---
 

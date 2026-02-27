@@ -1,5 +1,5 @@
 ---
-title: "Кейс C04: управление BambuLab через bambu-cli + OpenClaw"
+title: "управление BambuLab через bambu-cli + OpenClaw"
 description: "Как построить воспроизводимый сценарий управления BambuLab с bambu-cli и OpenClaw на основе проверяемых публичных источников."
 ---
 

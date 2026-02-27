@@ -1,5 +1,5 @@
 ---
-title: "C03 사용자 사례: SNAG로 화면 조각을 OpenClaw용 Markdown으로 변환하기"
+title: "SNAG로 화면 조각을 OpenClaw용 Markdown으로 변환하기"
 description: "SNAG + OpenClaw 워크플로우로 화면 영역을 markdown으로 변환해 LLM 컨텍스트 전달 속도를 높이는 방법."
 ---
 

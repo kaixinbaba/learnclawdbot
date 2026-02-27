@@ -1,5 +1,5 @@
 ---
-title: "C01: пользовательский кейс декларативного развёртывания OpenClaw через nix-openclaw"
+title: "декларативного развёртывания OpenClaw через nix-openclaw"
 description: "Как небольшая ops-команда стандартизировала развёртывание OpenClaw с помощью nix-openclaw и Home Manager на macOS и Linux."
 ---
 

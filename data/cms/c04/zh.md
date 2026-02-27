@@ -1,5 +1,5 @@
 ---
-title: "C04 用户案例：用 bambu-cli + OpenClaw 管理 BambuLab 3D 打印流程"
+title: "用 bambu-cli + OpenClaw 管理 BambuLab 3D 打印流程"
 description: "基于公开文档，使用 bambu-cli 与 OpenClaw 建立可复用的 BambuLab 打印控制工作流。"
 ---
 

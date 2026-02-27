@@ -1,5 +1,5 @@
 ---
-title: "C02 User Case: Automating Padel Court Booking with padel-cli + OpenClaw"
+title: "Automating Padel Court Booking with padel-cli + OpenClaw"
 description: "How an automation-first player used padel-cli and OpenClaw plugin flow to reduce manual court checking and standardize booking operations."
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: "C01 사용자 사례: nix-openclaw 기반 OpenClaw 선언형 배포"
+title: "nix-openclaw 기반 OpenClaw 선언형 배포"
 description: "소규모 운영팀이 nix-openclaw와 Home Manager를 활용해 macOS / Linux 환경에서 OpenClaw를 재현 가능하고 롤백 가능한 방식으로 표준화한 사례입니다."
 ---
 

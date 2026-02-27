@@ -1,5 +1,5 @@
 ---
-title: "C05 ユーザーケース：linear-cli + OpenClaw で Linear の課題運用を PR までつなぐ"
+title: "linear-cli + OpenClaw で Linear の課題運用を PR までつなぐ"
 description: "公開ドキュメントを根拠に、ターミナルでの Linear 課題操作から PR 連携までを再現可能な形で構成し、OpenClaw と連携する。"
 ---
 

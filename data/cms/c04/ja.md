@@ -1,5 +1,5 @@
 ---
-title: "C04 ユーザー事例：bambu-cli + OpenClaw で BambuLab 3Dプリント運用を標準化"
+title: "bambu-cli + OpenClaw で BambuLab 3Dプリント運用を標準化"
 description: "公開ドキュメントに基づき、bambu-cli と OpenClaw で再現可能な BambuLab 制御ワークフローを構築する方法。"
 ---
 

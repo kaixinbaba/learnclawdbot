@@ -1,5 +1,5 @@
 ---
-title: "C01 用户案例：使用 nix-openclaw 实现 OpenClaw 声明式部署"
+title: "使用 nix-openclaw 实现 OpenClaw 声明式部署"
 description: "一个小型运维团队如何通过 nix-openclaw 与 Home Manager，在 macOS / Linux 上实现可复现、可回滚的 OpenClaw 部署。"
 ---
 
