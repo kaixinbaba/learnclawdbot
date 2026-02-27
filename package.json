@@ -28,6 +28,7 @@
     "cms:seed:c03": "tsx scripts/seed-c03-user-case-snag.ts",
     "cms:seed:c04": "tsx scripts/seed-c04-user-case-bambu-cli.ts",
     "cms:seed:c05": "tsx scripts/seed-c05-user-case-linear-cli.ts",
+    "cms:seed:c06": "tsx scripts/seed-c06-user-case-multi-agent-orchestration.ts",
     "cms:migrate:featured-webp": "tsx scripts/migrate-blog-featured-images-to-webp.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
