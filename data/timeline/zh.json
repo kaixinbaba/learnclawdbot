@@ -275,5 +275,58 @@
     ],
     "category": "security",
     "impact": "high"
+  },
+  {
+    "id": "v2026-2-15",
+    "type": "major",
+    "date": "2026-02-15",
+    "version": "v2026.2.15",
+    "title": "Discord 组件 v2 与嵌套子代理",
+    "description": "重大发布：Discord 交互组件、嵌套子代理和全面的安全加固。",
+    "highlights": [
+      "Discord 组件 v2（按钮、选择器、模态框）",
+      "嵌套子代理，支持可配置深度 (maxSpawnDepth)",
+      "按渠道的确认反应覆盖",
+      "带认证令牌的 Cron webhook 交付",
+      "15+ 安全修复，包括沙箱和 XSS 补丁"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-17",
+    "type": "major",
+    "date": "2026-02-18",
+    "version": "v2026.2.17",
+    "title": "1M 上下文与 iOS 分享扩展",
+    "description": "功能发布：1M 上下文测试版支持、iOS 分享扩展和主要平台集成。",
+    "highlights": [
+      "Anthropic 1M 上下文测试版 (context1m: true)",
+      "Anthropic Sonnet 4.6 支持",
+      "iOS 分享扩展支持 URL/文本/图片",
+      "iOS 后台监听与语音指令提示",
+      "Slack 原生流式传输、Telegram 内联按钮",
+      "记忆搜索 FTS 后备与查询扩展"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-26",
+    "type": "milestone",
+    "date": "2026-02-27",
+    "version": "v2026.2.26",
+    "title": "外部 Secrets 管理与 ACP 线程代理",
+    "description": "重大里程碑：完整的 secrets 管理工作流、ACP 线程绑定代理和 Android node 支持。",
+    "highlights": [
+      "外部 Secrets 管理（审计、配置、应用、加载）",
+      "ACP/线程绑定代理作为一级运行时",
+      "Agents CLI 绑定用于路由管理",
+      "Android node 支持 (device.status, device.info)",
+      "iOS notifications.list 支持",
+      "Codex WebSocket 传输（SSE 后备）"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]

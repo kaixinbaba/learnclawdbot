@@ -275,5 +275,58 @@
     ],
     "category": "security",
     "impact": "high"
+  },
+  {
+    "id": "v2026-2-15",
+    "type": "major",
+    "date": "2026-02-15",
+    "version": "v2026.2.15",
+    "title": "Discord Components v2 & Nested Subagents",
+    "description": "Major release featuring Discord interactive components, nested subagents, and extensive security hardening.",
+    "highlights": [
+      "Discord Components v2 (buttons, selects, modals)",
+      "Nested subagents with configurable depth (maxSpawnDepth)",
+      "Per-channel ack reaction overrides",
+      "Cron webhook delivery with auth tokens",
+      "15+ security fixes including sandbox and XSS patches"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-17",
+    "type": "major",
+    "date": "2026-02-18",
+    "version": "v2026.2.17",
+    "title": "1M Context & iOS Share Extension",
+    "description": "Feature release with 1M context beta support, iOS Share extension, and major platform integrations.",
+    "highlights": [
+      "Anthropic 1M context beta (context1m: true)",
+      "Anthropic Sonnet 4.6 support",
+      "iOS Share extension for URL/text/image",
+      "iOS Background Listening & Voice Directive Hint",
+      "Slack native streaming, Telegram inline buttons",
+      "Memory search FTS fallback with query expansion"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-26",
+    "type": "milestone",
+    "date": "2026-02-27",
+    "version": "v2026.2.26",
+    "title": "External Secrets & ACP Thread Agents",
+    "description": "Major milestone with full secrets management workflow, ACP thread-bound agents, and Android node support.",
+    "highlights": [
+      "External Secrets Management (audit, configure, apply, reload)",
+      "ACP/Thread-bound agents as first-class runtimes",
+      "Agents CLI bindings for route management",
+      "Android node support (device.status, device.info)",
+      "iOS notifications.list support",
+      "Codex WebSocket transport (SSE fallback)"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]

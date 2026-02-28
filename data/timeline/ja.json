@@ -275,5 +275,58 @@
     ],
     "category": "security",
     "impact": "high"
+  },
+  {
+    "id": "v2026-2-15",
+    "type": "major",
+    "date": "2026-02-15",
+    "version": "v2026.2.15",
+    "title": "Discord コンポーネント v2 とネストされたサブエージェント",
+    "description": "Discord インタラクティブコンポーネント、ネストされたサブエージェント、広範なセキュリティ強化を特徴とする大型リリース。",
+    "highlights": [
+      "Discord コンポーネント v2（ボタン、セレクター、モーダル）",
+      "設定可能な深さを持つネストされたサブエージェント (maxSpawnDepth)",
+      "チャンネル別の ack リアクションオーバーライド",
+      "認証トークン付き Cron webhook 配信",
+      "15 以上のセキュリティ修正（サンドボックスと XSS パッチを含む）"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-17",
+    "type": "major",
+    "date": "2026-02-18",
+    "version": "v2026.2.17",
+    "title": "1M コンテキストと iOS 共有拡張",
+    "description": "1M コンテキスト ベータ サポート、iOS 共有拡張、主要なプラットフォーム統合を備えた機能リリース。",
+    "highlights": [
+      "Anthropic 1M コンテキスト ベータ (context1m: true)",
+      "Anthropic Sonnet 4.6 サポート",
+      "URL/テキスト/画像用の iOS 共有拡張",
+      "iOS バックグラウンドリスニングと音声指令ヒント",
+      "Slack ネイティブストリーミング、Telegram インラインボタン",
+      "メモリ検索 FTS フォールバックとクエリ拡張"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-26",
+    "type": "milestone",
+    "date": "2026-02-27",
+    "version": "v2026.2.26",
+    "title": "外部 Secrets 管理と ACP スレッドエージェント",
+    "description": "完全な secrets 管理工作流、ACP スレッドバウンドエージェント、Android ノードサポートを備えた大型マイルストーン。",
+    "highlights": [
+      "外部 Secrets 管理（監査、設定、適用、リロード）",
+      "ACP/スレッドバウンドエージェントを第一次クラスランタイムに",
+      "ルート管理用の Agents CLI バインディング",
+      "Android ノードサポート (device.status, device.info)",
+      "iOS notifications.list サポート",
+      "Codex WebSocket トランスポート（SSE フォールバック）"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]

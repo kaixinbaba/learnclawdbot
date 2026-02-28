@@ -275,5 +275,58 @@
     ],
     "category": "security",
     "impact": "high"
+  },
+  {
+    "id": "v2026-2-15",
+    "type": "major",
+    "date": "2026-02-15",
+    "version": "v2026.2.15",
+    "title": "Discord Components v2 и вложенные субагенты",
+    "description": "Крупный релиз с интерактивными компонентами Discord, вложенными субагентами и комплексным укреплением безопасности.",
+    "highlights": [
+      "Discord Components v2 (кнопки, селекторы, модальные окна)",
+      "Вложенные субагенты с настраиваемой глубиной (maxSpawnDepth)",
+      "Переопределение реакций подтверждения по каналам",
+      "Cron webhook-доставка с токенами авторизации",
+      "15+ исправлений безопасности, включая патчи для песочницы и XSS"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-17",
+    "type": "major",
+    "date": "2026-02-18",
+    "version": "v2026.2.17",
+    "title": "1M контекст и iOS Share Extension",
+    "description": "Релиз с поддержкой бета-версии 1M контекста, расширением iOS Share и основными интеграциями платформ.",
+    "highlights": [
+      "Anthropic 1M контекст бета (context1m: true)",
+      "Поддержка Anthropic Sonnet 4.6",
+      "iOS Share extension для URL/текста/изображений",
+      "iOS фоновое прослушивание и подсказки голосовых директив",
+      "Slack нативная потоковая передача, Telegram inline-кнопки",
+      "FTS-откат и расширение запросов в поиске памяти"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-26",
+    "type": "milestone",
+    "date": "2026-02-27",
+    "version": "v2026.2.26",
+    "title": "External Secrets Management и ACP Thread Agents",
+    "description": "Крупная веха с полным рабочим процессом управления секретами, ACP thread-bound агентами и поддержкой Android-узлов.",
+    "highlights": [
+      "External Secrets Management (аудит, конфигурация, применение, перезагрузка)",
+      "ACP/thread-bound агенты как полноценные среды выполнения",
+      "CLI-привязки Agents для управления маршрутизацией",
+      "Поддержка Android-узлов (device.status, device.info)",
+      "Поддержка iOS notifications.list",
+      "Codex WebSocket транспорт (SSE-откат)"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]

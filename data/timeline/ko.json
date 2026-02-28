@@ -275,5 +275,58 @@
     ],
     "category": "security",
     "impact": "high"
+  },
+  {
+    "id": "v2026-2-15",
+    "type": "major",
+    "date": "2026-02-15",
+    "version": "v2026.2.15",
+    "title": "Discord 컴포넌트 v2 및 중첩된 서브에이전트",
+    "description": "Discord 대화형 컴포넌트, 중첩된 서브에이전트, 광범위한 보안 강화를 특징으로 하는 주요 릴리스.",
+    "highlights": [
+      "Discord 컴포넌트 v2 (버튼, 선택기, 모달)",
+      "구성 가능한 깊이를 가진 중첩된 서브에이전트 (maxSpawnDepth)",
+      "채널별 ack 반응 재정의",
+      "인증 토큰이 있는 Cron webhook 전달",
+      "15개 이상의 보안 수정 (샌드박스 및 XSS 패치 포함)"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-17",
+    "type": "major",
+    "date": "2026-02-18",
+    "version": "v2026.2.17",
+    "title": "1M 컨텍스트 및 iOS 공유 확장",
+    "description": "1M 컨텍스트 베타 지원, iOS 공유 확장, 주요 플랫폼 통합을 갖춘 기능 릴리스.",
+    "highlights": [
+      "Anthropic 1M 컨텍스트 베타 (context1m: true)",
+      "Anthropic Sonnet 4.6 지원",
+      "URL/텍스트/이미지용 iOS 공유 확장",
+      "iOS 백그라운드 청취 및 음성 지침 힌트",
+      "Slack 네이티브 스트리밍, Telegram 인라인 버튼",
+      "메모리 검색 FTS 폴백 및 쿼리 확장"
+    ],
+    "category": "feature",
+    "impact": "high"
+  },
+  {
+    "id": "v2026-2-26",
+    "type": "milestone",
+    "date": "2026-02-27",
+    "version": "v2026.2.26",
+    "title": "외부 Secrets 관리 및 ACP 스레드 에이전트",
+    "description": "완전한 secrets管理工作 흐름, ACP 스레드 바운드 에이전트, Android 노드 지원을 갖춘 주요 마일스톤.",
+    "highlights": [
+      "외부 Secrets 관리 (감사, 구성, 적용,.reload)",
+      "ACP/스레드 바운드 에이전트를 1급 런타임으로",
+      "라우트 관리를 위한 Agents CLI 바인딩",
+      "Android 노드 지원 (device.status, device.info)",
+      "iOS notifications.list 지원",
+      "Codex WebSocket 전송 (SSE 폴백)"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]
