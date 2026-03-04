@@ -1,0 +1,61 @@
+---
+title: Clawdia Voice Bridge
+description: Connect OpenClaw to your phone via voice for hands-free AI assistance
+lastUpdated: "2026-03-04"
+---
+
+# Clawdia Voice Bridge
+
+Clawdia Voice Bridge enables you to interact with OpenClaw through voice calls, bringing AI assistance to your phone without needing to type.
+
+## What Is Clawdia?
+
+Clawdia is a voice bridge that connects telephone calls to your OpenClaw Gateway. When you call your configured number, your voice is transcribed, sent to OpenClaw for processing, and the response is spoken back to you.
+
+## How It Works
+
+The architecture follows three simple steps:
+
+1. **Bridge Receives**: The bridge accepts incoming calls via /ask endpoint
+2. **Forward to Gateway**: Voice input is forwarded to OpenClaw Gateway via WebSocket
+3. **Voice Response**: The text response is converted to speech and played back
+
+## Use Cases
+
+- **Hands-free Assistance**: Get AI help while driving or cooking
+- **Mobile-first Users**: Prefer voice interaction over text
+- **Accessibility**: Voice interface for users who can't type
+
+## Quick Start
+
+```bash
+# Install dependencies
+npm install && npm start
+
+# Configure your voice provider (Vapi, etc.)
+# Set environment variables
+
+# Expose to public internet
+tailscale funnel 3847
+```
+
+## API Reference
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /ask | POST | Send voice query to OpenClaw |
+
+## Configuration
+
+Key environment variables:
+- OPENCLAW_WS_URL - Your Gateway WebSocket URL
+- VAPI_API_KEY - Voice provider API key
+
+## Official Resources
+
+- [Clawdia Bridge GitHub](https://github.com/alejandroOPI/clawdia-bridge)
+- [OpenClaw Showcase](https://docs.openclaw.ai/start/showcase)
+
+## Tags
+
+voice-assistant bridge websocket telephony

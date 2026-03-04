@@ -1,0 +1,61 @@
+---
+title: Clawdia 音声ブリッジ
+description: 音声通話を介してOpenClawを電話に接続し、ハンズフリーAIアシスタントを実現
+lastUpdated: "2026-03-04"
+---
+
+# Clawdia 音声ブリッジ
+
+Clawdia 音声ブリッジを使用すると、音声通話を介してOpenClawと対話でき、AIアシスタントの помощьを電話で受け取れます。
+
+## Clawdia とは？
+
+Clawdiaは、電話通話をOpenClaw Gatewayに接続する音声ブリッジです。設定した電話番号に電話をかけると、音声が文字起こしされ、OpenClawに送信されて処理され、応答が音声で再生されます。
+
+## 仕組み
+
+アーキテクチャは3つの簡単なステップに従います：
+
+1. **ブリッジが受信**: ブリッジは/askエンドポイントで着信を受け入れ
+2. **Gatewayに転送**: 音声入力はWebSocket経由でOpenClaw Gatewayに転送
+3. **音声応答**: テキスト応答が音声に変換され再生
+
+## 使用例
+
+- **ハンズフリーアシスタント**: 運転中や料理中にAIの助けを受ける
+- **モバイルファーストユーザー**: テキストより音声対話を好む
+- **アクセシビリティ**: 入力できないユーザーのための音声インターフェース
+
+## クイックスタート
+
+```bash
+# 依存関係をインストール
+npm install && npm start
+
+# 音声プロバイダを設定（Vapiなど）
+# 環境変数を設定
+
+# 公募インターネットに公開
+tailscale funnel 3847
+```
+
+## APIリファレンス
+
+| エンドポイント | メソッド | 説明 |
+|---------------|----------|------|
+| /ask | POST | OpenClawに音声クエリを送信 |
+
+## 設定
+
+主要な環境変数：
+- OPENCLAW_WS_URL - お使いのGateway WebSocket URL
+- VAPI_API_KEY - 音声プロバイダーAPIキー
+
+## 公式リソース
+
+- [Clawdia Bridge GitHub](https://github.com/alejandroOPI/clawdia-bridge)
+- [OpenClaw ショーケース](https://docs.openclaw.ai/start/showcase)
+
+## タグ
+
+voice-assistant bridge websocket telephony

@@ -1,0 +1,61 @@
+---
+title: Clawdia 음성 브릿지
+description: 음성 통화를 통해 OpenClaw을 전화에 연결하여 핸즈프리 AI 어시스턴스 제공
+lastUpdated: "2026-03-04"
+---
+
+# Clawdia 음성 브릿지
+
+Clawdia 음성 브릿지를 사용하면 음성 통화를 통해 OpenClaw과 상호작용할 수 있어 타이핑 없이도 전화에서 AI 어시스턴스의 도움을 받을 수 있습니다.
+
+## Clawdia란?
+
+Clawdia는 전화 통화를 OpenClaw Gateway에 연결하는 음성 브릿지입니다. 설정된 번호로 전화하면 음성이 텍스트로 변환되어 OpenClaw으로 전송되어 처리된 후 음성으로 응답합니다.
+
+## 작동 방식
+
+아키텍처는 세 가지 간단한 단계를 따릅니다:
+
+1. **브릿지 수신**: 브릿지가 /ask 엔드포인트를 통해 수신 전화受け入れ
+2. **Gateway로 전달**: 음성 입력은 WebSocket을 통해 OpenClaw Gateway로 전달
+3. **음성 응답**: 텍스트 응답이 음성으로 변환되어 재생
+
+## 사용 사례
+
+- **핸즈프리 어시스턴트**: 운전 중이나 요리 중 AI 도움 받기
+- **모바일 우선 사용자**: 텍스트보다 음성 상호작용 선호
+- **접근성**: 입력할 수 없는 사용자를 위한 음성 인터페이스
+
+## 빠른 시작
+
+```bash
+# 종속성 설치
+npm install && npm start
+
+# 음성 공급자 구성 (Vapi 등)
+# 환경 변수 설정
+
+# 공용 인터넷에 노출
+tailscale funnel 3847
+```
+
+## API 참조
+
+| 엔드포인트 | 메서드 | 설명 |
+|------------|--------|------|
+| /ask | POST | OpenClaw에 음성 쿼리 전송 |
+
+## 구성
+
+주요 환경 변수:
+- OPENCLAW_WS_URL - Gateway WebSocket URL
+- VAPI_API_KEY - 음성 공급자 API 키
+
+## 공식 리소스
+
+- [Clawdia Bridge GitHub](https://github.com/alejandroOPI/clawdia-bridge)
+- [OpenClaw 쇼케이스](https://docs.openclaw.ai/start/showcase)
+
+## 태그
+
+voice-assistant bridge websocket telephony

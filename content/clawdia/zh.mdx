@@ -1,0 +1,61 @@
+---
+title: Clawdia 语音桥接
+description: 通过语音电话将 OpenClaw 连接到您的手机，实现免提 AI 助手
+lastUpdated: "2026-03-04"
+---
+
+# Clawdia 语音桥接
+
+Clawdia 语音桥接让您可以通过语音电话与 OpenClaw 交互，无需打字即可获得 AI 助手帮助。
+
+## 什么是 Clawdia？
+
+Clawdia 是一个语音桥接工具，将电话呼叫连接到您的 OpenClaw Gateway。当您拨打配置好的号码时，您的声音会被转录、发送到 OpenClaw 进行处理，然后语音播报回复内容。
+
+## 工作原理
+
+架构遵循三个简单步骤：
+
+1. **桥接接收**：桥接服务通过 /ask 端点接收来电
+2. **转发到 Gateway**：语音输入通过 WebSocket 转发到 OpenClaw Gateway
+3. **语音回复**：文本回复被转换为语音并播放
+
+## 使用场景
+
+- **免提助手**：开车或做饭时获取 AI 帮助
+- **移动端优先用户**：更喜欢语音交互而非文字
+- **无障碍访问**：为无法打字的用户提供语音界面
+
+## 快速开始
+
+```bash
+# 安装依赖
+npm install && npm start
+
+# 配置您的语音提供商（Vapi 等）
+# 设置环境变量
+
+# 暴露到公网
+tailscale funnel 3847
+```
+
+## API 参考
+
+| 端点 | 方法 | 描述 |
+|------|------|------|
+| /ask | POST | 发送语音查询到 OpenClaw |
+
+## 配置
+
+关键环境变量：
+- OPENCLAW_WS_URL - 您的 Gateway WebSocket URL
+- VAPI_API_KEY - 语音提供商 API 密钥
+
+## 官方资源
+
+- [Clawdia Bridge GitHub](https://github.com/alejandroOPI/clawdia-bridge)
+- [OpenClaw 展示案例](https://docs.openclaw.ai/start/showcase)
+
+## 标签
+
+voice-assistant bridge websocket telephony
