@@ -1,0 +1,32 @@
+{
+  "title": "문의하기",
+  "description": "OpenClaw에 대해 궁금한 점이 있으신가요? 언제든지 도움을 드리겠습니다. 이메일 또는 문의 양식을 통해 연락해 주세요.",
+  "form": {
+    "name": "이름",
+    "namePlaceholder": "이름을 입력하세요",
+    "email": "이메일",
+    "emailPlaceholder": "your@email.com",
+    "subject": "제목",
+    "subjectPlaceholder": "무엇을 도와드릴까요?",
+    "message": "메시지",
+    "messagePlaceholder": "여기에 메시지를 입력하세요...",
+    "submit": "메시지 보내기",
+    "sending": "전송 중...",
+    "success": "메시지가 성공적으로 전송되었습니다!",
+    "error": "메시지 전송에 실패했습니다. 나중에 다시 시도해 주세요.",
+    "validation": {
+      "nameMin": "이름은 2자 이상이어야 합니다.",
+      "emailInvalid": "유효한 이메일 주소를 입력하세요.",
+      "subjectMin": "제목은 5자 이상이어야 합니다.",
+      "messageMin": "메시지는 10자 이상이어야 합니다."
+    }
+  },
+  "info": {
+    "title": "연락처",
+    "description": "여러분의 의견을 기다립니다. 기능, 튜토리얼 또는 다른 어떤 질문이든 저희 팀이 기꺼이 답변해 드리겠습니다.",
+    "email": "이메일 문의",
+    "support": "support@learnclawdbot.org",
+    "hours": "응답 시간",
+    "responseTime": "보통 24~48시간 내에 답변드립니다."
+  }
+}

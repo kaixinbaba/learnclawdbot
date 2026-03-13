@@ -270,10 +270,11 @@
     ]
   },
   "Footer": {
-    "Copyright": "Copyright © {year} {name} All rights reserved.",
-    "About": "About",
-    "PrivacyPolicy": "Privacy Policy",
-    "TermsOfService": "Terms of Service",
+    "Copyright": "© {year} {name}. Все права защищены.",
+    "About": "О нас",
+    "Contact": "Связаться с нами",
+    "PrivacyPolicy": "Политика конфиденциальности",
+    "TermsOfService": "Условия использования",
     "Newsletter": {
       "title": "Subscribe to our newsletter",
       "description": "Stay up to date with our latest news.",

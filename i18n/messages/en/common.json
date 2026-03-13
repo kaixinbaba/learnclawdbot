@@ -266,12 +266,17 @@
       {
         "name": "About",
         "href": "/about"
+      },
+      {
+        "name": "Contact",
+        "href": "/contact"
       }
     ]
   },
   "Footer": {
     "Copyright": "Copyright © {year} {name} All rights reserved.",
     "About": "About",
+    "Contact": "Contact Us",
     "PrivacyPolicy": "Privacy Policy",
     "TermsOfService": "Terms of Service",
     "Newsletter": {

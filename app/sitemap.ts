@@ -17,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/what-is-moltbot',
     '/what-is-clawdbot',
     '/about',
+    '/contact',
   ]
 
   // Non-localized pages

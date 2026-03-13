@@ -201,6 +201,14 @@ export default async function Footer() {
               >
                 {tFooter("About")}
               </I18nLink>
+              <I18nLink
+                href="/contact"
+                title={tFooter("Contact")}
+                prefetch={false}
+                className="text-gray-400 hover:text-white text-sm"
+              >
+                {tFooter("Contact")}
+              </I18nLink>
               <Link
                 href="/privacy-policy"
                 title={tFooter("PrivacyPolicy")}
@@ -216,24 +224,6 @@ export default async function Footer() {
                 className="text-gray-400 hover:text-white text-sm"
               >
                 {tFooter("TermsOfService")}
-              </Link>
-              <Link
-                href="https://cal.com/kaixinbaba"
-                title="Schedule a Call"
-                prefetch={false}
-                target="_blank"
-                className="text-gray-400 hover:text-white text-sm"
-              >
-                Schedule
-              </Link>
-              <Link
-                href="https://magic.ly/kaixinbaba1002"
-                title="Magic.ly Profile"
-                prefetch={false}
-                target="_blank"
-                className="text-gray-400 hover:text-white text-sm"
-              >
-                Magic
               </Link>
             </div>
           </div>

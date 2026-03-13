@@ -1,0 +1,32 @@
+{
+  "title": "联系我们",
+  "description": "有关于 OpenClaw 的问题？我们随时为您提供帮助。通过电子邮件或联系表单与我们取得联系。",
+  "form": {
+    "name": "姓名",
+    "namePlaceholder": "您的姓名",
+    "email": "电子邮箱",
+    "emailPlaceholder": "your@email.com",
+    "subject": "主题",
+    "subjectPlaceholder": "我们能为您做什么？",
+    "message": "消息",
+    "messagePlaceholder": "请在此处输入您的消息...",
+    "submit": "发送消息",
+    "sending": "发送中...",
+    "success": "您的消息已成功发送！",
+    "error": "消息发送失败，请稍后重试。",
+    "validation": {
+      "nameMin": "姓名至少需要 2 个字符。",
+      "emailInvalid": "请输入有效的电子邮箱地址。",
+      "subjectMin": "主题至少需要 5 个字符。",
+      "messageMin": "消息至少需要 10 个字符。"
+    }
+  },
+  "info": {
+    "title": "联系方式",
+    "description": "我们很乐意听取您的意见。无论您有关于功能、教程还是其他任何问题，我们的团队随时准备回答您的所有问题。",
+    "email": "发送邮件至",
+    "support": "support@learnclawdbot.org",
+    "hours": "响应时间",
+    "responseTime": "我们通常在 24-48 小时内回复。"
+  }
+}

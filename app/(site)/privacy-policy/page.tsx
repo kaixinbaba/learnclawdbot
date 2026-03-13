@@ -31,19 +31,77 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="mb-3 text-xl font-semibold">Data Collection</h2>
               <p className="mb-3">
-                This website does not collect personal data.
+                This website minimizes the collection of personal data. We do not
+                require user registration for most features.
               </p>
               <p className="mb-3">
-                We do not require user registration, do not use cookies for tracking,
-                and do not collect any personally identifiable information.
+                If you subscribe to our newsletter or contact us via our form, we
+                collect your email address and any other information you provide
+                voluntarily to respond to your request.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="mb-3 text-xl font-semibold">Cookies and Advertising</h2>
+              <p className="mb-3">
+                This website uses cookies to enhance your experience and to serve
+                relevant advertisements.
+              </p>
+              <h3 className="mb-2 font-medium">Google AdSense</h3>
+              <p className="mb-3">
+                Third-party vendors, including Google, use cookies to serve ads based
+                on a user's prior visits to your website or other websites.
+              </p>
+              <p className="mb-3">
+                Google's use of advertising cookies enables it and its partners to
+                serve ads to your users based on their visit to your sites and/or
+                other sites on the Internet.
+              </p>
+              <p className="mb-3">
+                Users may opt out of personalized advertising by visiting{" "}
+                <a
+                  href="https://www.google.com/settings/ads"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Ads Settings
+                </a>
+                . Alternatively, you can opt out of a third-party vendor's use of
+                cookies for personalized advertising by visiting{" "}
+                <a
+                  href="https://www.aboutads.info"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  www.aboutads.info
+                </a>
+                .
               </p>
             </section>
 
             <section>
               <h2 className="mb-3 text-xl font-semibold">Third-Party Services</h2>
               <p className="mb-3">
-                This website may use basic analytics services to understand general
-                traffic patterns. These services collect anonymous, aggregated data only.
+                This website uses basic analytics services (such as Google Analytics
+                or Plausible) to understand general traffic patterns. These services
+                collect anonymous, aggregated data only.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="mb-3 text-xl font-semibold">GDPR and CCPA Compliance</h2>
+              <p className="mb-3">
+                We respect your privacy rights. If you are a resident of the European
+                Economic Area (EEA) or California, you have certain data protection
+                rights.
+              </p>
+              <p className="mb-3">
+                Even though we do not collect personal identifiable information
+                directly from most users, our third-party partners (like Google
+                Analytics and AdSense) may collect data as described in their
+                respective policies.
               </p>
             </section>
 
@@ -58,7 +116,8 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="mb-3 text-xl font-semibold">Changes to This Policy</h2>
               <p className="mb-3">
-                If this changes in the future, this page will be updated accordingly.
+                We may update our Privacy Policy from time to time. We will notify
+                you of any changes by posting the new Privacy Policy on this page.
               </p>
             </section>
 
@@ -66,7 +125,9 @@ export default function PrivacyPolicyPage() {
               <h2 className="mb-3 text-xl font-semibold">Contact</h2>
               <p className="mb-3">
                 If you have any questions about this Privacy Policy, please visit our
-                About page for more information.
+                <Link href="/contact" className="text-primary hover:underline mx-1">Contact Page</Link>
+                or our <Link href="/about" className="text-primary hover:underline mx-1">About Page</Link>
+                for more information.
               </p>
             </section>
           </div>

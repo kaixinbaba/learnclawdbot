@@ -272,6 +272,7 @@
   "Footer": {
     "Copyright": "Copyright © {year} {name} All rights reserved.",
     "About": "사이트 소개",
+    "Contact": "문의하기",
     "PrivacyPolicy": "개인정보 처리방침",
     "TermsOfService": "이용약관",
     "Newsletter": {

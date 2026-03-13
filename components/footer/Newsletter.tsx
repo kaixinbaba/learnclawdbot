@@ -81,7 +81,7 @@ export function Newsletter() {
               "bg-primary px-4 py-2 rounded-r-lg hover:bg-primary/90",
               subscribeStatus === "loading"
             )}
-            aria-label="Subscribe to newsletter"
+            aria-label={t("title")}
           >
             <Send className="w-3.5 h-3.5 text-white" />
           </button>

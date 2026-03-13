@@ -272,6 +272,7 @@
   "Footer": {
     "Copyright": "著作権所有 © {year} {name} 全著作権保有。",
     "About": "サイトについて",
+    "Contact": "お問い合わせ",
     "PrivacyPolicy": "プライバシーポリシー",
     "TermsOfService": "利用規約",
     "Newsletter": {
