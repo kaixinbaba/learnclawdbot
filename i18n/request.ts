@@ -32,6 +32,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
       R2Files: (await import(`./messages/${locale}/Dashboard/Admin/R2Files.json`)).default,
       Prices: (await import(`./messages/${locale}/Dashboard/Admin/Prices.json`)).default,
 
+      // Contact
+      Contact: (await import(`./messages/${locale}/Contact.json`)).default,
+
       // common
       ...common
     }
