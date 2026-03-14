@@ -1,5 +1,6 @@
 import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
 import { LanguageDetectionAlert } from "@/components/LanguageDetectionAlert";
+import { JsonLd } from "@/components/seo/JsonLd";
 import DeferredCrispChat from "@/components/support/DeferredCrispChat";
 import { TailwindIndicator } from "@/components/TailwindIndicator";
 import DeferredAnalytics from "@/components/tracking/DeferredAnalytics";
@@ -67,12 +68,28 @@ export default async function LocaleLayout({
   // Explicitly pass locale to sure we get messages for the current locale
   const messages = await getMessages({ locale });
 
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${siteConfig.url}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/blog?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <html lang={locale || DEFAULT_LOCALE} suppressHydrationWarning>
       <head>
         {/* DNS prefetch for analytics - still useful for when they load */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
+        <JsonLd data={websiteSchema} />
       </head>
       <body
         className={cn(

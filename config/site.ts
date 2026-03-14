@@ -28,6 +28,6 @@ export const siteConfig: SiteConfig = {
   icons: {
     icon: "/favicon.ico",
     shortcut: "/logo.png",
-    apple: "/logo.png", // apple-touch-icon.png
+    apple: "/apple-touch-icon.png",
   },
 };

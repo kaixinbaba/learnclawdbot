@@ -6,10 +6,12 @@ import { POST_CONFIGS } from "@/components/cms/post-config";
 import { PostCard } from "@/components/cms/PostCard";
 import { RelatedPosts } from "@/components/cms/RelatedPosts";
 import { ViewCounter } from "@/components/cms/ViewCounter";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { TableOfContents } from "@/components/tiptap/TableOfContents";
 import { TiptapRenderer } from "@/components/tiptap/TiptapRenderer";
 import { Button } from "@/components/ui/button";
-import { Link as I18nLink, Locale, UI_LOCALES as LOCALES } from "@/i18n/routing";
+import { siteConfig } from "@/config/site";
+import { DEFAULT_LOCALE, Link as I18nLink, Locale, UI_LOCALES as LOCALES } from "@/i18n/routing";
 import { blogCms } from "@/lib/cms";
 import { constructMetadata } from "@/lib/metadata";
 import { PostBase } from "@/types/cms";
@@ -147,6 +149,63 @@ export default async function BlogPage({ params }: { params: Params }) {
         .filter((tag) => tag)
     : [];
 
+  const slugPath = slug.startsWith("/") ? slug : `/${slug}`;
+  const fullUrl = `${siteConfig.url}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/blog${slugPath}`;
+  const blogListUrl = `${siteConfig.url}${locale === DEFAULT_LOCALE ? '' : `/${locale}`}/blog`;
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description || undefined,
+    url: fullUrl,
+    datePublished: post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined,
+    dateModified: post.updatedAt ? new Date(post.updatedAt).toISOString() : post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined,
+    author: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteConfig.url}/logo.png`,
+      },
+    },
+    ...(post.featuredImageUrl && {
+      image: {
+        "@type": "ImageObject",
+        url: post.featuredImageUrl,
+      },
+    }),
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": fullUrl,
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Blog",
+        item: blogListUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: post.title,
+        item: fullUrl,
+      },
+    ],
+  };
+
   const getVisibilityInfo = () => {
     switch (post.visibility) {
       case "subscribers":
@@ -171,6 +230,7 @@ export default async function BlogPage({ params }: { params: Params }) {
 
   return (
     <div className="container mx-auto px-4 py-12">
+      <JsonLd data={[articleSchema, breadcrumbSchema]} />
       <ViewCounter
         slug={slug}
         postType="blog"
