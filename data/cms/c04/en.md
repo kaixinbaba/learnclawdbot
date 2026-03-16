@@ -1,6 +1,11 @@
 ---
 title: "Operating BambuLab Printers with bambu-cli + OpenClaw"
 description: "How users can run a repeatable BambuLab control workflow with bambu-cli and OpenClaw, based on documented commands and networking requirements."
+featuredImageUrl: /images/blog/c04-bambu-cli-3d-printer-control.webp
+publishedAt: 2026-01-31
+status: published
+visibility: public
+author: "The Curator"
 ---
 
 # C04 User Case: Operating BambuLab Printers with bambu-cli + OpenClaw
@@ -94,8 +99,35 @@ Use OpenClaw conversations to coordinate checks and next actions around the CLI 
 - Confirm network reachability for MQTT/FTPS/camera ports before automation runs.
 - Keep configuration explicit to reduce drift between machines.
 
+## Frequently Asked Questions
+
+**Q: Which BambuLab printer models are supported?**
+Check the bambu-cli README for the current list of supported models. Support depends on network connectivity mode (LAN vs cloud); some commands require specific firmware versions.
+
+**Q: Can I automate print starts without being on the same LAN?**
+Cloud mode is documented in the README. LAN mode is faster and doesn't require internet access, but cloud mode extends reach to remote or mobile use cases.
+
+**Q: What if the printer state doesn't update in OpenClaw?**
+Status commands return machine-readable JSON output. If the state seems stale, re-run the status command rather than relying on cached output from a previous query.
+
+**Q: Is it possible to control multiple printers from the same bambu-cli setup?**
+Yes — bambu-cli supports multiple named printer profiles. Configure each printer with a distinct name using `bambu-cli config set --printer <name>`, then address them individually in commands with `--printer <name>`. The `--default` flag sets which printer is used when no name is specified.
+
+**Q: How does OpenClaw actually help here beyond running the CLI commands?**
+The value comes from the conversational layer. You can ask OpenClaw to "start a print when the current job finishes" — the agent can poll status, detect job completion, and issue the next command. You can also ask it to summarize errors from the status output in plain language, or to run a pre-print checklist against current printer state before starting. The CLI provides the control surface; OpenClaw provides the reasoning and orchestration.
+
+## Key Takeaways
+
+bambu-cli works because BambuLab printers expose a documented MQTT/FTPS interface, and the CLI wraps it with predictable configuration precedence and machine-readable output. The OpenClaw integration is most valuable not for individual commands, but for chained operations: checking status, deciding next steps, and running multi-step print workflows without manual intervention between each step. Secure your access code with file-based references and restricted permissions from the start — it's harder to retrofit this later.
+
 ## References
 
 - [OpenClaw Showcase](https://docs.openclaw.ai/start/showcase)
 - [bambu-cli repository](https://github.com/tobiasbischoff/bambu-cli)
 - [bambu-cli README](https://github.com/tobiasbischoff/bambu-cli/blob/master/README.md?raw=1)
+
+## Related Articles
+
+- [Automating Padel Court Booking with padel-cli + OpenClaw](/blog/c02-padel-cli-booking-automation) — another hardware/service CLI wrapped into an OpenClaw plugin workflow
+- [Managing Linear Issues with linear-cli + OpenClaw](/blog/c05-linear-cli-openclaw-issue-workflow) — the same pattern applied to project management automation
+- [Running 14+ AI Agents in Parallel with OpenClaw](/blog/c06-multi-agent-orchestration-kev-dream-team) — scale up your automation with parallel agent workflows

@@ -1,6 +1,11 @@
 ---
 title: "Managing Linear Issues End-to-End with linear-cli + OpenClaw"
 description: "A source-backed workflow for handling Linear issues from terminal execution to PR handoff, coordinated with OpenClaw."
+featuredImageUrl: /images/blog/c05-linear-cli-issue-workflow.webp
+publishedAt: 2026-02-07
+status: published
+visibility: public
+author: "The Curator"
 ---
 
 # C05 User Case: Managing Linear Issues End-to-End with linear-cli + OpenClaw
@@ -95,8 +100,35 @@ Use OpenClaw conversation context to continue with review checklist, merge readi
 - Prefer machine-readable output when feeding context into AI workflows.
 - Keep auth method explicit per environment to avoid workspace confusion.
 
+## Frequently Asked Questions
+
+**Q: Does linear-cli work with Linear teams that use private workspaces?**
+Yes, but you'll need to generate a personal API token from Linear's settings. Team-level operations require appropriate permissions in your Linear workspace.
+
+**Q: Can I use this workflow without the OpenClaw plugin integration?**
+All linear-cli commands work standalone in any terminal. The OpenClaw integration adds the ability to invoke commands through natural language and chain them with other OpenClaw-supported tools.
+
+**Q: What's the best way to handle bulk issue updates?**
+Use the `--json` output mode with linear-cli to pipe results into scripts. The examples documentation covers batch operation patterns.
+
+**Q: Can I use linear-cli alongside GitHub CLI for a fully terminal-based development workflow?**
+Yes — the two tools complement each other well. Use linear-cli for issue state management and Linear-specific operations (starting issues, adding comments, managing cycles), and `gh` for pull request creation and GitHub-side review workflows. The `linear-cli g pr` command handles the bridge between Linear and GitHub during PR creation.
+
+**Q: How does OpenClaw know which Linear issue to reference without me specifying the ID?**
+If you set the current issue context in the conversation (e.g., "I'm working on LIN-123"), OpenClaw maintains that context for subsequent commands in the session. You can also configure the OpenClaw system prompt to include your current workspace state or active sprint context, so the agent defaults to the right issue without repeated specification.
+
+## Key Takeaways
+
+The linear-cli + OpenClaw combination works because Linear has a well-structured API that the CLI exposes with machine-readable output, and OpenClaw can use that output as structured context for follow-up reasoning. The workflow is most effective for routine issue operations: starting work, leaving progress comments, and creating PRs. For bulk operations and scripting, the JSON output mode is the right path. The main investment is standardizing identifier conventions and authentication across team members.
+
 ## References
 
 - [OpenClaw Showcase](https://docs.openclaw.ai/start/showcase)
 - [linear-cli repository](https://github.com/Finesssee/linear-cli)
 - [linear-cli examples](https://github.com/Finesssee/linear-cli/blob/master/docs/examples.md?raw=1)
+
+## Related Articles
+
+- [Running 14+ AI Agents in Parallel with OpenClaw](/blog/c06-multi-agent-orchestration-kev-dream-team) — coordinate multi-agent workflows on top of your issue management
+- [Claude Code vs OpenClaw: An Honest Comparison for 2026](/blog/claude-code-vs-openclaw) — understand the broader tool landscape before committing to OpenClaw-based workflows
+- [Automating Padel Court Booking with padel-cli + OpenClaw](/blog/c02-padel-cli-booking-automation) — the same CLI-plugin pattern applied to a different domain

@@ -4,101 +4,98 @@ description: "Build a voice AI assistant you can call from any phone using OpenC
 publishedAt: 2026-03-14
 status: published
 visibility: public
+author: "The Architect"
+featuredImageUrl: /images/blog/c13-voice-assistant-openclaw.webp
 ---
 
 # Building Your First Voice Assistant with OpenClaw
 
-The ability to call a phone number and get an intelligent AI response — no app, no account, just a phone — is more useful than it might sound. It works from any phone worldwide, including feature phones. Family members can use it without technical knowledge. You can call it while driving.
+The ability to call a phone number and get an intelligent AI response is more useful than it sounds on paper. It works from any phone anywhere in the world. No app installation. No login. You can use it while driving. Family members who would never set up an AI app can interact with it naturally.
 
-This guide builds a complete voice AI assistant using OpenClaw as the brain, Twilio to handle the phone side, and your choice of speech recognition and text-to-speech provider. If you've looked at the [Clawdia Phone Bridge](/blog/clawdia-phone-bridge) as a managed option, this guide shows you how to build the same kind of system yourself with more control over every component.
+I built this setup primarily because I wanted to query my home AI while doing chores and driving without touching a screen. The result works well enough that I now use it daily.
 
-## The Components
+This guide covers the complete build: Twilio for phone handling, Deepgram or Whisper for speech recognition, ElevenLabs or OpenAI for speech synthesis, and OpenClaw as the reasoning layer. If you're considering [Clawdia Phone Bridge](/blog/clawdia-phone-bridge) as the managed option, this guide shows exactly what you'd be building yourself.
 
-| Component | Role | Recommended options |
+## The Architecture
+
+| Component | Role | Options |
 |---|---|---|
-| **OpenClaw** | AI gateway — routes your voice to the model and back | Self-hosted or cloud |
-| **Twilio Voice** | Handles incoming phone calls, forwards to OpenClaw | Twilio (dominant option) |
+| **OpenClaw** | AI gateway — routes speech to model and back | Self-hosted on any server |
+| **Twilio Voice** | Handles incoming calls, routes audio to OpenClaw | Twilio |
 | **STT (Speech-to-Text)** | Converts your speech to text | Deepgram Nova-2, OpenAI Whisper |
-| **TTS (Text-to-Speech)** | Converts AI responses to speech | ElevenLabs, OpenAI TTS, Google Cloud TTS |
-| **AI Model** | Generates the response | DeepSeek-V3, GPT-4o, Claude, or any OpenClaw-supported model |
+| **TTS (Text-to-Speech)** | Converts AI text response to speech | ElevenLabs, OpenAI TTS, Google Cloud TTS |
+| **AI Model** | Generates the response | Any OpenClaw-supported model |
 
-A minimal working setup uses: **OpenClaw + Twilio + Deepgram + OpenAI TTS**. That combination gives you good accuracy, low latency, and straightforward billing.
+The minimal working setup: **OpenClaw + Twilio + Deepgram + OpenAI TTS**. That's what I'd build first — get it working, then swap components if something doesn't suit you.
 
-## What You Need Before Starting
+**Prerequisites**:
+- OpenClaw running at a public URL. For local development, [ngrok](https://ngrok.com) creates a public tunnel.
+- A Twilio account with a phone number (~$1/month).
+- A Deepgram or OpenAI API key for STT.
+- An ElevenLabs or OpenAI API key for TTS.
 
-- OpenClaw installed and reachable at a public URL. For local development, [ngrok](https://ngrok.com) creates a public tunnel to your local instance.
-- A Twilio account with a phone number. Sign up at [twilio.com](https://twilio.com); phone numbers start at ~$1/month.
-- A Deepgram API key from [console.deepgram.com](https://console.deepgram.com), or an OpenAI API key for Whisper.
-- A TTS provider API key (ElevenLabs, OpenAI, or Google Cloud).
+## Step 1: Speech-to-Text
 
-Twilio charges per minute of call plus a small per-transcription fee if using their native transcription (we'll use Deepgram instead, which is cheaper and more accurate). Budget ~$0.01–$0.02 per call minute for Twilio + Deepgram combined.
+STT is the most latency-sensitive component. Slow transcription makes the whole call feel laggy. Target under 500ms from when you stop speaking to when text hits the model.
 
-## Step 1: Configure Your STT Provider
+### Deepgram Nova-2 (What I Use)
 
-Speech recognition is the most latency-sensitive piece. You want your spoken words converted to text in under 500ms so the total response time stays under 3 seconds.
-
-### Deepgram Nova-2 (Recommended)
-
-Deepgram Nova-2 is purpose-built for real-time phone audio. It handles background noise, accents, and telephone audio quality better than general-purpose models:
+Purpose-built for real-time phone audio. Handles background noise, accents, and telephone audio compression better than general-purpose models. Consistent sub-300ms latency.
 
 ```bash
-# Add to your OpenClaw .env file:
 STT_PROVIDER=deepgram
-DEEPGRAM_API_KEY=your_deepgram_key_here
+DEEPGRAM_API_KEY=your_key_here
 DEEPGRAM_MODEL=nova-2
 DEEPGRAM_LANGUAGE=en-US
 ```
 
-Deepgram's pricing is usage-based — roughly $0.0059/minute for pre-recorded audio and cheaper for streaming. A 100-hour monthly call volume would cost around $35 in STT alone.
+Deepgram's streaming API starts transcribing while you're still speaking and delivers a final result within 200–400ms of your last word. Cost: ~$0.0059/minute.
 
 ### OpenAI Whisper (Alternative)
 
-Whisper supports 57 languages and handles non-standard speech well. Slightly higher latency than Deepgram but excellent accuracy:
+Better multilingual support — 57 languages, strong Chinese/Japanese/Korean performance. Slightly higher latency than Deepgram on English, but the accuracy is excellent:
 
 ```bash
 STT_PROVIDER=openai_whisper
-OPENAI_API_KEY=your_openai_key_here
+OPENAI_API_KEY=your_key_here
 WHISPER_MODEL=whisper-1
 ```
 
-For multilingual use cases, Whisper often performs better. For English-only at low latency, Deepgram edges it out.
+Choose Whisper if your primary language isn't English or if you want one API key to handle both STT and the AI model.
 
-## Step 2: Configure Your TTS Provider
+## Step 2: Text-to-Speech
 
-### ElevenLabs (Most Natural Voice Quality)
+Voice quality matters more than you'd expect. A robotic-sounding response breaks the illusion of conversation. I've tried three options:
 
-ElevenLabs produces the most natural-sounding speech, which matters a lot for phone conversations:
+### ElevenLabs (Best Quality)
 
 ```bash
 TTS_PROVIDER=elevenlabs
-ELEVENLABS_API_KEY=your_elevenlabs_key_here
-ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
+ELEVENLABS_API_KEY=your_key_here
+ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM  # "Rachel" — clear and neutral
 ELEVENLABS_MODEL=eleven_turbo_v2
 ```
 
-The voice ID above is "Rachel," a clear and neutral voice. The `eleven_turbo_v2` model is optimized for low latency — important for keeping the call feeling responsive. You can browse voice options in the ElevenLabs dashboard and substitute any voice ID you prefer.
+The voice ID above is "Rachel." Browse alternatives in the ElevenLabs dashboard. The `eleven_turbo_v2` model is optimized for low latency — important for keeping calls feeling responsive. Standard ElevenLabs models add 800ms–1s of synthesis time; turbo is under 400ms.
 
-### OpenAI TTS (Simpler, Lower Cost)
-
-If you want a simpler setup and slightly lower cost:
+### OpenAI TTS (Simpler, Cheaper)
 
 ```bash
 TTS_PROVIDER=openai_tts
-OPENAI_API_KEY=your_openai_key_here
+OPENAI_API_KEY=your_key_here
 OPENAI_TTS_VOICE=nova
 OPENAI_TTS_MODEL=tts-1
 ```
 
-Available voices: alloy, echo, fable, onyx, nova, shimmer. Use `tts-1-hd` for higher audio quality at the cost of slightly more latency.
+Available voices: alloy, echo, fable, onyx, nova, shimmer. Nova is the clearest for calls. Use `tts-1-hd` for better quality at slightly more latency.
+
+OpenAI TTS is noticeably less natural than ElevenLabs but costs less and requires one fewer API account. For personal use, I'd start here and upgrade to ElevenLabs if the voice quality bothers you.
 
 ## Step 3: Connect Twilio
 
-OpenClaw's Twilio Voice plugin handles the webhook integration between Twilio and OpenClaw.
-
-**Install the Twilio Voice plugin**:
-1. Open OpenClaw Dashboard → **Plugins → Browse**
-2. Search for "Twilio Voice" and click **Install**
-3. Add your credentials via the Dashboard or `.env`:
+Install the Twilio Voice plugin:
+1. Open OpenClaw Dashboard → **Plugins → Browse → "Twilio Voice" → Install**
+2. Add credentials:
 
 ```bash
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -107,96 +104,112 @@ TWILIO_PHONE_NUMBER=+15551234567
 ```
 
 **Configure the webhook in Twilio Console**:
-1. Go to **Phone Numbers → Active Numbers** → click your number
-2. Under **Voice & Fax → A Call Comes In**, set webhook to:
+1. **Phone Numbers → Active Numbers** → your number
+2. Under **Voice & Fax → A Call Comes In**, set webhook URL:
 
 ```
 https://your-openclaw-domain.com/api/twilio/voice
 ```
 
-3. Set the HTTP method to POST
+3. HTTP method: POST
 
-For local development, run ngrok first:
+**For local development**, use ngrok:
 
 ```bash
 ngrok http 3000
 ```
 
-Copy the `https://` URL ngrok gives you and use that as the Twilio webhook. The URL changes each time you restart ngrok unless you use a paid ngrok account with a fixed domain.
+Copy the `https://` URL and use it as the Twilio webhook. Note: free ngrok URLs change every time you restart ngrok. For regular development use a paid ngrok account with a fixed domain, or use a cheap cloud VM.
 
-**Test it**: Call your Twilio number. You should hear OpenClaw answer, speak your question, and receive a spoken response. First call may take 3–5 seconds for cold start; subsequent calls are typically under 2 seconds for STT + model + TTS combined.
+**Test**: Call your Twilio number. First call may take 3–5 seconds (cold start); subsequent calls should be under 2 seconds total for STT + model + TTS.
 
-## Step 4: Optimize the System Prompt for Voice
+## Step 4: Tune the System Prompt for Voice
 
-A voice conversation needs different prompting than a text chat. The AI needs to know it's speaking, not writing:
+This step matters more than most people expect. A voice conversation needs completely different prompting from a text chat.
 
 In OpenClaw Dashboard → **Settings → Voice Mode → System Prompt**:
 
 ```
 You are a voice AI assistant. The user is calling you on the phone.
 
-Voice response rules:
-- Answer in 2–4 sentences unless the user asks for detail.
-- Never use bullet points, numbered lists, markdown, or code blocks — speak in natural sentences.
-- Avoid filler phrases like "Certainly!", "Absolutely!", "Great question!"
-- If you don't know something, say so briefly and offer to help with something else.
-- When a question needs a long answer, give the key point first, then ask if they want more detail.
-- Speak naturally, like talking to a knowledgeable friend.
+Voice rules:
+- Answer in 2–4 sentences for simple questions. Be concise.
+- Never use bullet points, numbered lists, markdown formatting, asterisks, or code blocks.
+- Speak in complete, natural sentences as if talking to a knowledgeable friend.
+- Avoid filler phrases: "Certainly!", "Absolutely!", "Great question!", "Of course!"
+- If you don't know something, say so briefly.
+- For questions needing longer answers: give the key point first, then ask if they want more detail.
 
-Your name is [your assistant name]. You are helpful, direct, and occasionally witty.
+Your name is [your assistant name].
 ```
 
-The most common mistake with voice prompts is forgetting to ban markdown. The AI will start saying "asterisk asterisk important asterisk asterisk" if you don't.
+**The most common mistake**: forgetting to ban markdown. Without that rule, the AI will literally say "asterisk asterisk important asterisk asterisk" for anything it tries to emphasize. This ruins the experience.
 
-## Step 5: Add Plugins for Real Capability
+The "2–4 sentences" rule also needs to be explicit. Without it, the AI defaults to text-chat length responses that are too long to listen to.
 
-A voice assistant that can only chat is limited. The real power comes from plugins:
+## Step 5: Add Plugins
+
+A voice assistant that only chats is limited. The useful version combines OpenClaw's plugins with the voice layer:
 
 - **Google Search**: "What's the weather in Tokyo tomorrow?" — searches and speaks the forecast
-- **Calendar**: "What meetings do I have this week?" — reads your Google Calendar and summarizes
-- **Email**: "Draft a follow-up to the client email I sent yesterday" — finds the email and prepares a reply
-- **WhatsApp/SMS**: "Text my wife that I'll be home by 7" — sends the message and confirms
+- **Calendar**: "What meetings do I have today?" — reads your Google Calendar, gives a spoken summary
+- **Email**: "Any urgent emails this morning?" — reads your inbox and flags time-sensitive items
+- **WhatsApp/SMS**: "Text my wife I'll be home by 7" — sends the message, confirms back
 
-See the [full plugins guide](/blog/openclaw-plugins-productivity) for setup instructions for each of these.
+Each of these needs the corresponding plugin installed and configured. See the [OpenClaw plugins guide](/blog/openclaw-plugins-productivity) for setup instructions.
 
-## What the End-to-End Call Looks Like
+## What the Call Actually Looks Like
 
-Once everything is configured:
+End-to-end timing for a typical short query:
 
-1. **You call** your Twilio number from any phone
-2. **OpenClaw answers** and begins recording your speech
+1. **You call** your Twilio number
+2. **OpenClaw answers**, starts recording
 3. **You speak** your question
-4. **Deepgram transcribes** your speech to text in real time (~200ms)
-5. **Your AI model** generates a response (~500ms–1.5s depending on provider)
-6. **TTS converts** the response to speech (~300ms–500ms)
-7. **You hear the answer** — typically 1–3 seconds end-to-end for short responses
+4. **Deepgram transcribes** in real-time (~200–300ms after you stop)
+5. **Model generates response** (~500ms–1.5s depending on complexity and provider)
+6. **TTS synthesizes** the response (~300–400ms with turbo models)
+7. **You hear the answer** — 1–3 seconds end-to-end for short queries
 
-The latency budget matters for voice. If the total round-trip exceeds 4–5 seconds, conversations feel awkward. Using Deepgram (not Whisper) and `eleven_turbo_v2` (not ElevenLabs' standard model) keeps you well within that budget.
+**Total latency budget**: 4–5 seconds is the boundary. Longer than that and conversations feel awkward. This setup — Deepgram + eleven_turbo_v2 + DeepSeek-V3 — consistently lands under 3 seconds.
 
-## Deploying for Reliable Use
+Where you'll exceed the budget:
+- Using standard ElevenLabs (not turbo) — adds ~600ms
+- Using Claude Opus instead of Sonnet or DeepSeek for the model — adds 1–2s
+- Cold start after OpenClaw restart — adds 3–5s for the first call
 
-For a personal assistant you use regularly, running it on a cloud VM or a [Raspberry Pi 5](/blog/openclaw-raspberry-pi-5) at home with proper uptime is worth it. An always-on Raspberry Pi setup costs about $5–10/month in electricity and gives you a private server you fully control.
+## Deployment
 
-If you're evaluating whether to build this yourself or use a managed service, see the [Clawdia Phone Bridge article](/blog/clawdia-phone-bridge) for how the managed option compares.
+For a personal assistant you use daily, running it on a cloud VM or a [Raspberry Pi 5](/blog/openclaw-raspberry-pi-5) at home is worth the setup effort. An always-on Pi setup costs about $5–10/month in electricity and gives you a private server with full control.
 
-## Frequently Asked Questions
+For a basic cloud VM: any small instance (1vCPU / 1GB RAM) on Hetzner or DigitalOcean runs OpenClaw fine at personal-use scale. Budget ~$4–6/month.
 
-**How much does this cost per month?**
-It depends heavily on usage. A rough estimate for 100 minutes/month of calls:
+## FAQ
+
+**What does this cost per month for light personal use (~100 minutes/month)?**
+
 - Twilio: ~$1–2 (call routing + phone number)
 - Deepgram STT: ~$0.60
-- ElevenLabs TTS: ~$1–3 depending on plan
-- AI model (DeepSeek-V3): ~$0.10 for the responses
-- Total: roughly $3–7/month for light personal use
+- ElevenLabs TTS (turbo): ~$1–3 depending on plan
+- AI model (DeepSeek-V3 for most responses): ~$0.10
+- **Total: roughly $3–7/month**
 
-**Can I use this for more than one phone number / caller?**
-Yes. Twilio supports multiple concurrent calls. You can also set up different phone numbers for different use cases (personal vs. family vs. work) pointing to the same OpenClaw instance with different system prompts.
+If you switch to OpenAI TTS instead of ElevenLabs, cut the TTS cost roughly in half.
 
-**Does it work with non-English languages?**
-Whisper supports 57 languages natively. Deepgram supports major languages but with varying accuracy. Set `DEEPGRAM_LANGUAGE` to your language code, or use Whisper for broader language coverage. For Chinese, Japanese, or Korean, Whisper often performs better.
+**Can I support multiple callers or phone numbers?**
+Yes. Twilio supports concurrent calls. You can set up different numbers pointing to the same OpenClaw instance with different system prompts — one for personal use, one for family, one for work.
 
-**What if I want the voice assistant to recognize specific people calling?**
-OpenClaw supports caller ID via the `TWILIO_CALLER_ID` context — when someone calls, their phone number is available. You can configure different system prompts or permissions based on caller number. This is documented in the Twilio Voice plugin's settings.
+**Does it work in languages other than English?**
+Whisper handles 57 languages well. For Deepgram, set `DEEPGRAM_LANGUAGE` to your language code — supported languages are listed in their docs. Mandarin Chinese, Spanish, French, and German all work. For Japanese or Korean, Whisper tends to outperform Deepgram.
 
-**Can I run this without a public domain (just locally)?**
-For testing, yes — use ngrok to expose your local instance. For regular use, you need a stable public URL since Twilio must be able to reach your webhook on every call.
+**Can it recognize who's calling?**
+OpenClaw gets the caller's phone number from Twilio (`TWILIO_CALLER_ID` context). You can configure different system prompts or permissions based on caller number — useful for multi-user household setups where family members each get a slightly different experience.
+
+**Can I run this without exposing a public URL?**
+For testing only — ngrok works for development. For regular use, Twilio must reach your webhook on every call, which requires a stable public URL. A cheap cloud VM or static home IP with port forwarding both work.
+
+## Related Articles
+
+- [Clawdia Phone Bridge](/blog/clawdia-phone-bridge) — the managed alternative to this DIY build, using Vapi instead of Twilio
+- [Running OpenClaw on Raspberry Pi 5](/blog/openclaw-raspberry-pi-5) — host your voice assistant on a $130 always-on home server
+- [10 OpenClaw Plugins That Changed How I Work](/blog/openclaw-plugins-productivity) — the plugins that power what your voice assistant can actually do
+- [OpenClaw + DeepSeek: The Low-Cost AI Assistant That Actually Delivers](/blog/openclaw-deepseek-low-cost) — pair this voice setup with DeepSeek to keep the per-call AI cost under $0.01

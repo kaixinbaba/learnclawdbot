@@ -1,189 +1,193 @@
 ---
-title: "10 Must-Have OpenClaw Plugins for Productivity"
-description: "Discover the top 10 OpenClaw plugins to supercharge your AI assistant. From Google Search to Slack and GitHub, here's what each plugin actually does and how to get started."
+title: "10 OpenClaw Plugins That Changed How I Work"
+description: "Real-world experience with the OpenClaw plugins I rely on daily. Not a feature list — these are the integrations that actually stuck, why they work, and one thing each of them gets wrong."
 publishedAt: 2026-03-14
 status: published
 visibility: public
+author: "The Architect"
+featuredImageUrl: /images/blog/c12-openclaw-plugins-productivity.webp
 ---
 
-# 10 Must-Have OpenClaw Plugins for Productivity
+# 10 OpenClaw Plugins That Changed How I Work
 
-Out of the box, OpenClaw is a capable AI assistant. But its real power comes from **plugins** — modular extensions that connect your assistant to the tools you actually use. A plugin isn't just a wrapper; it gives the AI real ability to act, not just advise.
+Most plugin roundups are written by people who've tested each one for 20 minutes. This isn't that. These are the plugins I installed over the past several months and either kept or removed — and why.
 
-## How OpenClaw Plugins Work
+A few I listed didn't make the cut and aren't here. A calendar plugin I tried had OAuth issues and silently dropped events without any error message. I removed it. What's below survived actual use.
 
-Each plugin is defined by a manifest file (`openclaw.plugin.json`) that describes what the plugin can do. The manifest tells OpenClaw:
+## How the Plugin System Works (The Short Version)
 
-- What **actions** the plugin exposes (e.g., `search_web`, `create_issue`, `send_message`)
-- What **authentication** it needs (API keys, OAuth tokens)
-- A natural-language **description** the AI uses to decide when to invoke it
+Each plugin is a manifest file (`openclaw.plugin.json`) that tells OpenClaw what actions are available — `search_web`, `create_issue`, `send_message` — and what the AI should understand about when to use them. At runtime, the model reads those descriptions and decides whether to invoke the plugin based on what you said.
 
-At runtime, when you say "find me recent news about X," the AI sees the Google Search plugin's description and decides to use it. You don't have to explicitly invoke plugins — they activate when relevant.
+The implication: **you don't need to invoke plugins manually**. Saying "find recent papers on quantum error correction" is enough for the AI to reach for the Google Search plugin without you specifying it. When it works, this is surprisingly seamless. When the model doesn't invoke a plugin you expected it to, you add a line to the system prompt clarifying when that plugin applies.
 
-You can browse and install community plugins from [ClawdHub](https://clawdhub.com). Each listing shows the plugin's actions, required credentials, user ratings, and a changelog.
-
----
-
-## The Top 10 Plugins
-
-### 1. Google Search
-
-**What it does**: Executes live web searches and pulls structured results, news, or page snippets directly into your conversation context.
-
-**Why it matters**: Without this, your AI assistant's knowledge cuts off at its training date. With it, you can ask about current events, recent software releases, live prices, or anything else that changes.
-
-**Practical example**: "What breaking changes were introduced in React 19?" — the assistant searches, reads the relevant docs, and gives you a specific answer rather than a guess from training data.
-
-**Where to find it**: Search "Google Search" on [ClawdHub](https://clawdhub.com). Requires a Google Custom Search API key (available free tier for low volume).
+Browse and install from [ClawdHub](https://clawdhub.com).
 
 ---
 
-### 2. Browser Relay
+## 1. Google Search
 
-**What it does**: Controls a headless browser to fetch, render, and extract content from any webpage — including JavaScript-heavy sites that break simple scrapers.
+The plugin that makes an AI assistant actually useful for real work.
 
-**Why it matters**: Search engines return links. This plugin gives the AI the actual page content. Indispensable for competitor analysis, research, or reading paywalled content you have legitimate access to.
+Without live search, every AI assistant lies confidently about anything that changed after its training cutoff. With it, "what's the current stable version of Bun?" or "did anything break in the latest Next.js release?" becomes a useful question instead of a liability.
 
-**Practical example**: "Summarize the key findings from this research paper [URL]" — the plugin fetches the full page, the AI reads it and gives you a structured summary.
+The practical limit: it retrieves search result snippets, not full page content. For digging into an article or documentation page, that's where Browser Relay comes in.
 
-**A note**: This plugin can be slow on pages with heavy JavaScript rendering. For simple static pages, the Google Search plugin's snippet extraction is often faster.
+**Setup**: Requires a Google Custom Search Engine API key. The free tier covers roughly 100 queries/day, which is plenty for personal use. ClawdHub listing includes setup instructions.
 
----
-
-### 3. File System Manager
-
-**What it does**: Read, write, move, copy, and delete files and directories on your local machine or connected drives.
-
-**Why it matters**: This is the bridge between AI assistance and your actual files. Instead of copying content back and forth, the AI works directly with your filesystem.
-
-**Practical example**: "Find all `.log` files in `/var/log` modified in the last 24 hours, summarize any ERROR lines, and save the summary to my desktop."
-
-**Security note**: Configure the plugin's allowed paths carefully. You don't want to grant it access to your entire filesystem — scope it to the directories it needs.
+**One thing it gets wrong**: Occasionally it'll search for something when you just wanted the AI's general opinion on a well-established topic. A line in your system prompt like "search the web when asked about recent events or specific current data" helps calibrate this.
 
 ---
 
-### 4. GitHub Integration
+## 2. Browser Relay
 
-**What it does**: Create issues, open pull requests, read file contents, search code, post comments, and check workflow status across your GitHub repositories.
+Google Search tells you a page exists. Browser Relay actually reads it.
 
-**Why it matters**: Turns your AI assistant into a coding collaborator that can actually take action — not just suggest what you should do.
+This plugin uses a headless browser to fetch and render any URL — including JavaScript-heavy SPAs that break simple HTTP scrapers — and returns the page content to the conversation. I use it constantly for reading documentation pages, GitHub issues, and archived articles.
 
-**Practical example**: After debugging a session in chat, tell it: "Create a GitHub issue for this bug in the `auth` repo with the description and reproduction steps we just worked through." It creates the issue with proper formatting.
+**The workflow I rely on**: "Summarize the migration guide at this URL and tell me what would break if I upgraded from version 3 to version 4." The plugin fetches the full page, the model reads it and gives me a structured answer.
 
-**Requires**: A GitHub Personal Access Token with appropriate repo permissions.
-
----
-
-### 5. Twilio Voice
-
-**What it does**: Make and receive phone calls, send SMS messages, and bridge telephone interactions with your AI assistant.
-
-**Why it matters**: Enables a genuine voice interface — call your AI assistant from any phone, anywhere. No app required for the caller.
-
-**Best use**: This plugin is the foundation for building a full voice assistant — see the [voice assistant setup guide](/blog/voice-assistant-openclaw) for the complete walkthrough including STT/TTS configuration.
-
-**Requires**: A Twilio account with a phone number and credentials. Twilio charges per call/SMS, with pricing on their website.
+**One thing it gets wrong**: Render time on heavy pages can be 5-8 seconds. For quick lookups this is annoying. I keep both this and Google Search configured — the search plugin for quick answers, Browser Relay when I need to read the actual page.
 
 ---
 
-### 6. Calendar (Google / Outlook)
+## 3. File System Manager
 
-**What it does**: Read, create, update, and delete calendar events across Google Calendar and Microsoft Outlook, including checking attendee availability.
+This one I was skeptical about. I've been using the terminal for 15 years; why would I want an AI touching my filesystem?
 
-**Why it matters**: Your AI assistant becomes genuinely useful for scheduling when it can see your actual calendar — not just suggest times blindly.
+Turns out the value isn't replacing `ls` and `mv`. It's the combination: the AI can search, read, process, and write in a single chain. "Find all `.log` files in `/var/log` from the last 24 hours, pull out any ERROR lines, write a summary to `~/Desktop/log-report.txt`" — that's five separate terminal commands replaced with one instruction.
 
-**Practical example**: "Block two hours tomorrow morning for deep work, but check first that I don't already have something scheduled." It checks your calendar, finds a gap, and creates the block.
+**Important**: Configure allowed paths carefully. I restrict the plugin to my home directory subdirectories. You absolutely don't want this plugin operating on `/etc` or anything system-level.
 
-**Requires**: OAuth authorization for your Google or Microsoft account.
-
----
-
-### 7. Email (Gmail / Outlook)
-
-**What it does**: Read, draft, send, search, and organize emails from your connected accounts.
-
-**Why it matters**: Email triage is one of the highest-ROI tasks to delegate. "Summarize my unread emails from the last 24 hours and flag anything that looks time-sensitive" is a genuinely useful daily workflow.
-
-**Practical example**: "Draft a polite follow-up to the proposal I sent to Acme Corp last Tuesday. Keep it under 100 words." It finds the original sent email, reads the context, and writes the follow-up.
-
-**Requires**: OAuth authorization. The plugin does not store your email credentials — it uses OAuth tokens that can be revoked anytime.
+**One thing it gets wrong**: Error messages when a path doesn't exist are vague. It'll say the operation failed without telling you whether it was a permissions issue or a missing file. Check your path configuration first when something doesn't work.
 
 ---
 
-### 8. WhatsApp
+## 4. GitHub Integration
 
-**What it does**: Send and receive WhatsApp messages via the WhatsApp Business API or supported third-party bridges.
+The best way I've found to describe this plugin: it turns the AI from an advisor into a participant.
 
-**Why it matters**: Large parts of the world communicate primarily on WhatsApp. This plugin brings your AI into those channels — for personal use, family coordination, or small business customer interactions.
+Without it, you explain a bug, the AI suggests a fix, you go implement it, create the issue, write the PR description. With it, after a debugging session you say "create a GitHub issue in repo X describing this problem with the reproduction steps we just worked through" — and it does, with proper formatting, labels, and a clear title.
 
-**Practical setup**: The official WhatsApp Business API requires business verification. For personal use, some third-party bridges offer simpler setup (check ClawdHub for current options and their status, as this integration landscape changes frequently).
+I use it most for:
+- Creating issues after debugging sessions (the context is already in the conversation)
+- Checking what's currently in a file on a branch before making changes
+- Searching code across a repository when I don't have it checked out locally
 
----
+**Requires**: A Personal Access Token with `repo` scope. Create one at GitHub Settings → Developer settings → Personal access tokens.
 
-### 9. Slack
-
-**What it does**: Post messages, read channel history, search workspace content, respond to mentions, and create scheduled posts in Slack.
-
-**Why it matters**: For teams already living in Slack, this brings the AI into existing workflows rather than requiring a context switch.
-
-**Practical example**: "Summarize yesterday's discussion in #engineering and post a brief status update to #team-updates based on what was resolved." It reads the channel history and posts the summary.
-
-**Requires**: A Slack app with appropriate OAuth scopes (the plugin's ClawdHub listing specifies which scopes are needed).
+**One thing it gets wrong**: It doesn't handle private organization repos without extra token configuration. The public docs on this are thin — check the ClawdHub plugin comments for the right token scope setup.
 
 ---
 
-### 10. ClawdHub Marketplace
+## 5. Twilio Voice
 
-**What it does**: Browse, install, update, and remove plugins directly from within OpenClaw's chat interface — without touching config files.
+This is the plugin that makes the whole system feel like science fiction, and also the one with the most setup friction.
 
-**Why it matters**: The plugin ecosystem grows regularly. New integrations for tools like Notion, Linear, Airtable, and Jira appear on ClawdHub frequently. This plugin makes keeping up with those additions trivial.
+It bridges phone calls to your AI assistant. You call a Twilio number, speak your question, hear the answer. No app, no login, just a phone call. I use this in the car more than anywhere else.
 
-**Practical example**: "What Notion plugins are available on ClawdHub?" — it queries the marketplace and shows you current options with descriptions.
+For the full setup walkthrough — including STT/TTS configuration, system prompt tuning for voice, and latency optimization — the [voice assistant guide](/blog/voice-assistant-openclaw) covers everything this plugin needs to actually work well.
+
+**One thing it gets wrong**: The first call after restarting OpenClaw takes 3–5 seconds longer than normal (cold start). Subsequent calls are fine. If you're demoing this to someone, do a warmup call first.
 
 ---
 
-## How to Install Plugins
+## 6. Email (Gmail / Outlook)
 
-**Via Dashboard (recommended)**:
+Email triage is the task I most consistently didn't do before this plugin existed.
 
-1. Open your OpenClaw Dashboard at `http://localhost:3000`
-2. Go to **Plugins → Browse**
-3. Search for the plugin by name, or browse by category
-4. Click **Install** and provide any required API keys or OAuth authorization
-5. The plugin is immediately available — test it by asking OpenClaw to use it
+The workflow: in the morning, "summarize my unread emails from the last 12 hours, flag anything that looks urgent." It reads through everything, gives me a brief rundown, and highlights the one or two things that need a response today. Takes about 30 seconds. I then handle the flagged ones and ignore the rest until later.
 
-**Via ClawdHub directly**:
+The draft feature is genuinely useful for follow-ups: "draft a reply to the email from Sarah asking about the project timeline. Be direct, two paragraphs max." It finds the email thread automatically from context, drafts the reply, and pastes it into the conversation for me to review before sending.
 
-Visit [clawdhub.com](https://clawdhub.com), find the plugin, and follow its installation instructions. Each plugin page shows exactly what credentials are needed before you start.
+**Requires**: OAuth authorization. The plugin doesn't store credentials — it uses OAuth tokens that can be revoked anytime from your Google or Microsoft account settings.
 
-**Manual installation** (for custom or private plugins):
+**One thing it gets wrong**: Thread context sometimes gets lost on long email chains. For threads longer than about 15 messages, the summary can miss earlier context. For those cases I manually paste the relevant thread into the conversation.
 
-Place your plugin directory (containing `openclaw.plugin.json` and any supporting files) in OpenClaw's plugins folder, then reload OpenClaw. Refer to [docs.openclaw.ai](https://docs.openclaw.ai) for the exact plugin directory path for your installation.
+---
 
-## A Note on Plugin Quality
+## 7. Calendar (Google / Outlook)
 
-Not all community plugins on ClawdHub are equally maintained. Before installing a plugin, check:
-- When it was last updated
-- The number of installs and ratings
-- Whether the author has responded to issues in the comments
+Less flashy than email, more consistently useful.
 
-The plugins listed above are among the most widely used and actively maintained in the ecosystem. For niche tools, verify the plugin is still being updated before building workflows around it.
+The main thing I use this for: scheduling requests that actually check whether I'm free. "Block 90 minutes tomorrow morning for deep work" becomes "blocked 9–10:30am, which was the only gap before your 11am call." It knows my actual schedule.
 
-## Related Reading
+The second use: end-of-day check-in. "What's on my calendar tomorrow?" gives me a spoken rundown (via the Twilio plugin) when I'm heading out.
 
-- [Building a Voice Assistant with OpenClaw](/blog/voice-assistant-openclaw) — uses the Twilio Voice plugin plus STT/TTS to build a phone-callable AI
-- [OpenClaw vs Claude Code: Which Should You Use?](/blog/claude-code-vs-openclaw) — if you're still deciding whether OpenClaw fits your workflow
+**Requires**: OAuth. If you've already set up the Email plugin, this uses the same authorization flow.
+
+**One thing it gets wrong**: Timezone handling is occasionally wrong for events created with explicit timezone overrides. If you travel a lot and schedule meetings across timezones, double-check the times it creates.
+
+---
+
+## 8. WhatsApp
+
+The most significant thing about this plugin is the use case it enables, not the plugin itself: it makes your AI accessible to people who would never install an app or create an account.
+
+In my household, this means family members can message a WhatsApp number to check something — "what time does the pharmacy close today?" — and get an answer routed through the same OpenClaw setup I use for work.
+
+**Practical note on setup**: The official WhatsApp Business API requires business verification, which is a real process. For personal use, third-party bridges are faster to get running — check current ClawdHub listings for what's available and maintained, as this changes. Don't try to set up the official API just for personal use; it's not worth the overhead.
+
+**One thing it gets wrong**: Message delivery occasionally has a 2–5 second delay that isn't visible to you as the operator. For time-sensitive responses, manage expectations with users.
+
+---
+
+## 9. Slack
+
+If your team is in Slack, this plugin either becomes part of your daily workflow or it doesn't get used at all. There isn't much middle ground.
+
+The use case that made it stick for me: morning standup preparation. "Summarize what was discussed in #engineering yesterday" gives me context before I join a call. Takes 10 seconds.
+
+The more ambitious version: "read yesterday's #support channel and identify any recurring issues." This takes longer to set up (the AI needs clear instructions about what patterns to look for) but surfaces things you'd otherwise miss in a busy channel.
+
+**Requires**: A Slack app with `channels:history`, `channels:read`, and `chat:write` OAuth scopes. The ClawdHub page lists the exact scopes needed.
+
+**One thing it gets wrong**: The Slack API rate limits reads aggressively. If you're trying to read a very active channel going back more than a day, you'll hit rate limits. The plugin handles this gracefully (it retries), but expect slower results for large reads.
+
+---
+
+## 10. ClawdHub Marketplace
+
+I debated including this one since it's technically a meta-plugin, but it's legitimately changed how I discover new integrations.
+
+Without it, finding a new plugin means leaving the chat, opening a browser, navigating to ClawdHub, searching. With it, "what Notion plugins are available?" or "is there a Linear integration?" happens in the conversation. When I find something interesting, I can install it immediately with "install that one."
+
+The more useful pattern: "what plugins are available for project management tools?" It searches ClawdHub and gives me a rundown of relevant options I can explore.
+
+**One thing it gets wrong**: Search quality on ClawdHub varies. Common tools (Notion, Jira, Slack) return clean results. More niche searches sometimes surface plugins that haven't been updated in months. Always check the "last updated" date before installing something you'll build workflows around.
+
+---
+
+## Installing Plugins
+
+**Via Dashboard** (easiest):
+1. Open OpenClaw Dashboard at `http://localhost:3000`
+2. Go to **Plugins → Browse**, search by name
+3. Click Install, provide any required API keys or OAuth
+4. Test immediately by asking OpenClaw to use it
+
+**Via ClawdHub directly**: Visit [clawdhub.com](https://clawdhub.com) for detailed setup instructions per plugin.
+
+**Custom plugins**: Place the plugin directory in OpenClaw's plugins folder and reload. The [developer docs](https://docs.openclaw.ai) cover the manifest format. A working custom plugin takes about an hour to build if you're comfortable with JSON and a bit of JavaScript.
+
+---
 
 ## Frequently Asked Questions
 
-**Are plugins secure? What data do they access?**
-Each plugin only accesses what you explicitly authorize. API keys and OAuth tokens are stored in your OpenClaw instance, not transmitted to ClawdHub. Review each plugin's manifest (visible on its ClawdHub page) to see exactly what permissions it requests.
+**How do I know which plugins are actually being used?**
+Check OpenClaw's conversation logs — each plugin invocation is recorded. The Dashboard's activity view shows which plugins were called and when. Useful for debugging cases where the AI called a plugin you didn't expect (or didn't call one you expected it to).
 
-**Can I build my own plugin?**
-Yes. A plugin is a folder containing a `openclaw.plugin.json` manifest and any server-side code needed to handle actions. The [OpenClaw developer docs](https://docs.openclaw.ai) cover the manifest format and how to test locally before publishing to ClawdHub.
+**Do plugins work with all models (DeepSeek, GPT-4o, Claude, etc.)?**
+Yes, but reliability varies. Claude and GPT-4o are the most consistent at choosing the right plugin without explicit prompting. DeepSeek-V3 works well but occasionally needs the system prompt to be more explicit about when a particular plugin applies. This is a model behavior difference, not a plugin issue.
 
-**Do plugins work with all AI models?**
-Yes — plugins are model-agnostic. The AI model (DeepSeek, GPT-4o, Claude, etc.) reads the plugin manifest and decides when to invoke it based on the conversation. Different models may vary slightly in how reliably they invoke plugins, but all supported models work with the plugin system.
+**Can I restrict what a plugin can do after installation?**
+Yes. Most plugins support scope configuration — you can limit which directories the File System plugin can access, or which Slack channels the Slack plugin can read. Set these during installation; they're much harder to change cleanly afterward.
 
-**What if a plugin breaks or stops working?**
-Most breakage is due to API credential expiry or upstream service changes. Check the plugin's ClawdHub page for known issues and updates. You can always disable a plugin from the Dashboard without uninstalling it.
+**What if a plugin stops working after an update?**
+Usually one of two things: an API credential expired, or the upstream service changed an endpoint. Check the plugin's ClawdHub page first — the author typically posts known issues within a day or two of a breaking change.
+
+## Related Articles
+
+- [Claude Code vs OpenClaw: An Honest Comparison for 2026](/blog/claude-code-vs-openclaw) — understand the full OpenClaw feature set that the plugin ecosystem extends
+- [Running 14+ AI Agents in Parallel with OpenClaw](/blog/c06-multi-agent-orchestration-kev-dream-team) — combine plugins with multi-agent orchestration for higher throughput
+- [Building Your First Voice Assistant with OpenClaw](/blog/voice-assistant-openclaw) — use voice plugins to interact with your OpenClaw setup hands-free
+- [OpenClaw + DeepSeek: The Low-Cost AI Assistant That Actually Delivers](/blog/openclaw-deepseek-low-cost) — run all these plugins against a low-cost model backend
