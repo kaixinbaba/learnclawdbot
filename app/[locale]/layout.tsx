@@ -90,6 +90,10 @@ export default async function LocaleLayout({
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
         <JsonLd data={websiteSchema} />
+        {/* Popunder ad - JS SYNC */}
+        <script
+          src="https://pl28925841.effectivegatecpm.com/94/05/63/9405630483ec2e7c1b326daf0b561c4c.js"
+        />
       </head>
       <body
         className={cn(
