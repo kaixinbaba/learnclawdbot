@@ -13,6 +13,7 @@ export type PostBase = {
   slug: string
   tags?: string
   publishedAt: Date
+  updatedAt?: Date
   status?: 'draft' | 'published' | 'archived'
   visibility?: 'public' | 'logged_in' | 'subscribers'
   isPinned?: boolean
