@@ -328,5 +328,26 @@
     ],
     "category": "feature",
     "impact": "high"
+  },
+  {
+    "id": "v2026-3-13",
+    "type": "milestone",
+    "date": "2026-03-13",
+    "version": "v2026.3.13",
+    "title": "Dashboard v2, Fast Mode & Provider Plugins",
+    "description": "Major release: redesigned Control UI dashboard, fast mode for OpenAI/Anthropic, Ollama/vLLM/SGLang as provider plugins, Kubernetes docs, and security hardening.",
+    "highlights": [
+      "Control UI dashboard v2: modular views, command palette, mobile tabs",
+      "Fast mode (/fast) for GPT-5.4 and Claude via API service tiers",
+      "Ollama, vLLM, SGLang moved to provider-plugin architecture",
+      "sessions_yield for orchestrators to hand off turns",
+      "ACP/sessions_spawn: resumeSessionId for continuing existing sessions",
+      "Kubernetes starter install path (K8s manifests + Kind setup)",
+      "iOS onboarding welcome pager & Android chat settings redesign",
+      "Docker OPENCLAW_TZ timezone override support",
+      "Multiple security CVEs fixed (exec approvals, gateway auth, browser)"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]

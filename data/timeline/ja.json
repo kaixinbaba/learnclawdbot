@@ -328,5 +328,26 @@
     ],
     "category": "feature",
     "impact": "high"
+  },
+  {
+    "id": "v2026-3-13",
+    "type": "milestone",
+    "date": "2026-03-13",
+    "version": "v2026.3.13",
+    "title": "Dashboard v2、Fast モード、Provider プラグイン化",
+    "description": "メジャーリリース：新設計のコントロールUI、OpenAI/Anthropic Fast モード、Ollama/vLLM/SGLang プラグイン化、Kubernetes ドキュメント、セキュリティ強化。",
+    "highlights": [
+      "Control UI ダッシュボード v2：モジュール型ビュー、コマンドパレット、モバイルタブ",
+      "GPT-5.4 と Claude 向け Fast モード（/fast）",
+      "Ollama・vLLM・SGLang のプロバイダープラグイン化",
+      "sessions_yield によるオーケストレーターのターン委譲",
+      "ACP sessions_spawn で resumeSessionId をサポート",
+      "Kubernetes スターターインストールパス（K8s マニフェスト + Kind）",
+      "iOS オンボーディングウェルカムページ、Android チャット設定リニューアル",
+      "Docker OPENCLAW_TZ タイムゾーンサポート",
+      "複数セキュリティ CVE 修正（exec 承認、gateway 認証、ブラウザ）"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]

@@ -328,5 +328,26 @@
     ],
     "category": "feature",
     "impact": "high"
+  },
+  {
+    "id": "v2026-3-13",
+    "type": "milestone",
+    "date": "2026-03-13",
+    "version": "v2026.3.13",
+    "title": "Dashboard v2, Fast-режим и плагины провайдеров",
+    "description": "Крупный релиз: новый интерфейс панели управления, Fast-режим для OpenAI/Anthropic, плагинизация Ollama/vLLM/SGLang, документация Kubernetes, усиление безопасности.",
+    "highlights": [
+      "Панель управления v2: модульные виды, командная палитра, мобильные вкладки",
+      "Fast-режим (/fast) для GPT-5.4 и Claude через API service tiers",
+      "Ollama, vLLM, SGLang — новый плагинный архитектурный слой",
+      "sessions_yield — оркестраторы могут передавать ход выполнения",
+      "ACP sessions_spawn поддерживает resumeSessionId для продолжения сессий",
+      "Kubernetes стартовая конфигурация (манифесты + Kind)",
+      "iOS приветственный экран онбординга, редизайн настроек чата Android",
+      "Docker: поддержка OPENCLAW_TZ для часового пояса",
+      "Исправлено несколько CVE (exec-одобрения, auth шлюза, браузер)"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]

@@ -328,5 +328,26 @@
     ],
     "category": "feature",
     "impact": "high"
+  },
+  {
+    "id": "v2026-3-13",
+    "type": "milestone",
+    "date": "2026-03-13",
+    "version": "v2026.3.13",
+    "title": "Dashboard v2、Fast 模式与 Provider 插件化",
+    "description": "重大版本：重新设计的控制台 UI、OpenAI/Anthropic 快速模式、Ollama/vLLM/SGLang 插件化，新增 Kubernetes 文档及多项安全修复。",
+    "highlights": [
+      "控制台 v2：模块化视图、命令面板、移动端底部导航",
+      "Fast 模式（/fast）支持 GPT-5.4 和 Claude API 服务层",
+      "Ollama、vLLM、SGLang 迁移至 Provider 插件架构",
+      "sessions_yield：编排器可提前结束当前轮次",
+      "ACP sessions_spawn 支持 resumeSessionId 续接已有会话",
+      "Kubernetes 快速安装路径（K8s manifests + Kind）",
+      "iOS 新手引导欢迎页、Android 聊天设置重新设计",
+      "Docker OPENCLAW_TZ 时区支持",
+      "多项安全 CVE 修复（exec 审批、gateway 认证、browser）"
+    ],
+    "category": "feature",
+    "impact": "high"
   }
 ]
